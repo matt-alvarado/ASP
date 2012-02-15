@@ -1,0 +1,35 @@
+!! ASPInputDeck.in
+!! Main Input Deck of ASP
+!! Matt Alvarado, 2004-2006 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 (c)
+!! The ordering of the inputs must be kept constant (as in all
+!! input decks) although the formatting is not as important.  Use 
+!! exclamation points to indicate comments (may head or trail lines).
+!! All other input decks may be stored in a subdirectory, 
+!! note that directory, relative or absolute positioning, here.
+!!
+!! Specify the environmental parameters, either a single homogeneous
+!! value (numerical) or an input deck (text)
+285.0  !! Temperature (K)
+921.0  !! Pressure     (mb)
+0.73   !! Initial Relative Humidity (between 0 and 1)
+0.73   !!	Background Relative Humidity (between 0 and 1)
+!!
+!! Which phases have (kinetic) chemical reactions?
+!! Use 1 for yes, 0 for no,
+!! in this format:
+!! (gas phase chemistry) ; (aqueous phase chemistry) 
+1 ; 0  !! Gas ; Aqueous 
+!!
+0       !! Monodisperse (1 is yes (monodispersion of mean size), 0 is sampled from a distribution)
+1	  !! Include Condensation? (1 = yes, 0 = no)
+1 	  !! Include Dissolution of Inorganic Species?
+1	  !! Include Dissolution of Organic Species into Hydrophobic Phase?
+1	  !! Include Dissolution of Organic Species into Aqueous Phase?
+1	  !! Is Dissolution an Equilibrium (0) or Flux (1) process?
+1	  !! Is Ammonia Dissolution an Equilibrium (0) or Flux (1) process?
+0	  !! Is Aerosol Metastable (1) or do solid salts form (0)? 
+1       !! Include Coagulation?
+0	  !! Is the Coagulation Kernel calculated (0) or constant(1)?
+0       !! Ignore diffusivity corrections (1) or include them (0)? (Also sets curvature corrections to 1.0!)
+

@@ -1,0 +1,278 @@
+##################################################
+##  A makefile for ASP				##
+##  Matt Alvarado, 07/26/07		## 
+##################################################
+SHELL = /bin/sh
+##
+## === Define files and directories
+##
+
+PRNTDIR = ./OUTPUT/
+INCDIR  = ./INCLUDE/
+EXEDIR  = ./
+
+SOURCEDIR = ./SourceCode/
+CHEMDIR = ./SourceCode/Chemistry/
+COAGDIR = ./SourceCode/Coagulation/
+COMPDIR = ./SourceCode/ComputationalSubroutines/
+CONDDIR = ./SourceCode/Condensation/
+EULERDIR = ./SourceCode/EulerianEnvironment/
+INFDIR = ./SourceCode/InfrastructuralCode/
+PARTDIR = ./SourceCode/LagrangianParticles/
+OUTPUTDIR = ./SourceCode/OutputRoutines/
+UNIFACDIR = ./SourceCode/UNIFAC/
+
+FILES	= $(SOURCEDIR)ModelParameters.f90 \
+	  $(SOURCEDIR)ReadInputDeck.f90  \
+          $(SOURCEDIR)StepASP.f90 \
+	  $(SOURCEDIR)Time.f90 
+
+
+MODULES = $(CHEMDIR)Chemistry.f90 \
+          $(COAGDIR)Coagulation.f90 \
+          $(CONDDIR)Condensation.f90 \
+	  $(EULERDIR)GridPointFields.f90 \
+          $(INFDIR)InfrastructuralCode.f90 \
+	  $(PARTDIR)LagrangianAerosols.f90 \
+          $(OUTPUTDIR)OutputRoutines.f90 \
+	  $(UNIFACDIR)unifac.f90 \
+          $(UNIFACDIR)soa_unidriv.f90 \
+          $(UNIFACDIR)soa_unidriva.f90 \
+	  $(COMPDIR)CDFNor.f90 \
+          $(COMPDIR)dgaus8.f \
+	  $(COMPDIR)Gibbs-DuhemEvaluationFunction.f90 \
+	  $(COMPDIR)indexx.f \
+          $(COMPDIR)lsodes.f \
+          $(COMPDIR)PPND16.f
+	 
+CHEMINC = $(CHEMDIR)AqPhaseChemistryInits.h  $(CHEMDIR)AqPhaseReactionIntegration.h  \
+	  $(CHEMDIR)ChemicalPropertyRoutines.h  $(CHEMDIR)ChemistryDerivativeStructures.h \
+	  $(CHEMDIR)ChemistryParametersInitRoutines.h  $(CHEMDIR)EvolveGasChemistry.h \
+	   $(CHEMDIR)GasPhaseChemistryInits.h  $(CHEMDIR)OrgPhaseChemInits.h
+
+COAGINC = $(COAGDIR)CoagulationKernels.h
+
+CONDINC = $(CONDDIR)AqOrgCondensationIntegrator.h \
+          $(CONDDIR)binsolu.h \
+	  $(CONDDIR)CondensationInitialization.h  \
+          $(CONDDIR)CondensationIntegrator.h \
+	  $(CONDDIR)CondensationRelatedFunctions.h  \
+	  $(CONDDIR)HydrophobicCondensationFunctions.h \
+	  $(CONDDIR)OrgCondensationIntegrator.h
+
+EULERINC = $(EULERDIR)GasPhaseChemistry.h \
+           $(EULERDIR)Initialize.h  \
+	   $(EULERDIR)InterpolateGrid.h \
+           $(EULERDIR)Pressure.h  \
+           $(EULERDIR)SetGrid.h \
+	   $(EULERDIR)Temperature.h \
+           $(EULERDIR)Water.h
+
+INFINC = $(INFDIR)Counters.h  \
+         $(INFDIR)InputOutputCommands.h \
+	 $(INFDIR)StringCommands.h
+
+PARTINC = $(PARTDIR)InitializationAndSamplingRoutines.h  \
+          $(PARTDIR)ParticleAttributes.h \
+	  $(PARTDIR)ParticleStructure.h  \
+          $(PARTDIR)SCTailorMakeParticle.h \
+	  $(PARTDIR)SortAerosol.h \
+          $(PARTDIR)Thermodynamics.h
+
+UNIFACINC = $(UNIFACDIR)unifacparam.h \
+            $(UNIFACDIR)unifacparamMattAq.h
+
+ALLINC = $(CHEMINC) $(COAGINC) $(EULERINC) $(INFINC) $(PARTINC) $(UNIFACINC)
+
+FILESINC = $(ALLINC)
+
+FILESDUMP = asp 
+	
+##
+## === Compile, link and execute:
+## 
+# IFORT compilation options (for debugging: no optimization)
+FFLAGS = -cpp -w90 -w95 -FI -O -r8 -prec_div -g
+
+# Compile command -- multiprocessor
+#F90 = ifort $(FFLAGS) -openmp -Dmultitask
+
+# Compile command -- single processor
+FC = ifort 
+
+F90FLAGS := $(FFLAGS) -FR
+LDFLAGS := 
+
+OBJECTS :=
+OBJECTS := $(OBJECTS) \
+           CDFNor.o indexx.o lsodes.o \
+           PPND16.o \
+	   dgaus8.o DMiLay.o
+OBJECTS := $(OBJECTS) \
+	   ModelParameters.o \
+	   InfrastructuralCode.o \
+	   GridPointFields.o \
+	   Time.o \
+	   Chemistry.o \
+	   Gibbs-DuhemEvaluationFunction.o \
+           LagrangianAerosols.o \
+	   Condensation.o soa_unidriv.o \
+           soa_unidriva.o unifac.o \
+	   OutputRoutines.o \
+	   Coagulation.o \
+	   ReadInputDeck.o \
+	   StepASP.o DevelopmentDriver.o
+	
+# === Modules: 0 grid define; 1 essential; d type define; s all
+MODASP := DMiLay.o CDFNor.o indexx.o lsodes.o \
+           PPND16.o \
+	   dgaus8.o \
+	   ModelParameters.o \
+	   InfrastructuralCode.o \
+	   GridPointFields.o \
+	   Time.o \
+	   Chemistry.o \
+	   Gibbs-DuhemEvaluationFunction.o \
+           LagrangianAerosols.o \
+	   Condensation.o soa_unidriv.o \
+           soa_unidriva.o unifac.o \
+	   OutputRoutines.o \
+	   Coagulation.o \
+	   ReadInputDeck.o \
+	   StepASP.o DevelopmentDriver.o
+
+MODS := $(MODASP)
+
+PROG = asp
+
+##
+## === Dependency
+##
+
+ALL: $(PROG)
+
+$(PROG): $(OBJECTS)
+	$(FC) $(FFLAGS) -o $@ $(OBJECTS) $(MODS) $(LDFLAGS)
+
+OBJECTS : $(MODS) $(FILESINC)
+
+CDFNor.o: $(COMPDIR)CDFNor.f90	
+	  $(FC) -c $(F90FLAGS) $<
+indexx.o: $(COMPDIR)indexx.f
+	  $(FC) -c $(FFLAGS) $<
+lsodes.o: $(COMPDIR)lsodes.f
+	  $(FC) -c $(FFLAGS) $<
+PPND16.o: $(COMPDIR)PPND16.f
+	  $(FC) -c $(FFLAGS) $<
+dgaus8.o: $(COMPDIR)dgaus8.f
+	  $(FC) -c $(FFLAGS) $<
+DMiLay.o: $(SOURCEDIR)DMiLay.f
+	  $(FC) -c $(FFLAGS) $<
+unifac.o: $(UNIFACDIR)unifac.f
+	  $(FC) -c $(FFLAGS) $<
+soa_unidriv.o: $(UNIFACDIR)soa_unidriv.f \
+	unifac.o $(UNIFACDIR)unifacparam.h
+	  $(FC) -c $(FFLAGS) $<
+soa_unidriva.o: $(UNIFACDIR)soa_unidriva.f \
+	unifac.o $(UNIFACDIR)unifacparamMattAq.h
+	  $(FC) -c $(FFLAGS) $<
+ModelParameters.o: $(SOURCEDIR)ModelParameters.f90 
+	  $(FC) -c $(F90FLAGS) $<
+Gibbs-DuhemEvaluationFunction.o: \
+	$(COMPDIR)Gibbs-DuhemEvaluationFunction.f90
+	  $(FC) -c $(F90FLAGS) $<
+InfrastructuralCode.o: $(INFDIR)InfrastructuralCode.f90 \
+	$(INFINC)
+	  $(FC) -c $(F90FLAGS) $<
+GridPointFields.o: $(EULERDIR)GridPointFields.f90 \
+	ModelParameters.o \
+	InfrastructuralCode.o $(EULERINC) $(INFINC)
+	  $(FC) -c $(F90FLAGS) $<       	
+Time.o: $(SOURCEDIR)Time.f90 ModelParameters.o       	
+	  $(FC) -c $(F90FLAGS) $<   
+Chemistry.o: $(CHEMDIR)Chemistry.f90 \
+       Time.o 	ModelParameters.o \
+       InfrastructuralCode.o \
+       GridPointFields.o $(CHEMINC) $(EULERINC) $(INFINC)
+	  $(FC) -c $(F90FLAGS) $<   
+ReadInputDeck.o: $(SOURCEDIR)ReadInputDeck.f90 \
+	GridPointFields.o Chemistry.o \
+	ModelParameters.o\
+	InfrastructuralCode.o $(CHEMINC) \
+	$(EULERINC) $(INFINC)
+	  $(FC) -c $(F90FLAGS) $<   
+LagrangianAerosols.o: $(PARTDIR)LagrangianAerosols.f90 \
+	GridPointFields.o   Chemistry.o   \
+	ModelParameters.o \
+	InfrastructuralCode.o   Time.o \
+	$(CHEMINC) $(EULERINC) $(INFINC) $(AEROINC)
+	  $(FC) -c $(F90FLAGS) $<   
+Condensation.o: $(CONDDIR)Condensation.f90  \
+	GridPointFields.o Chemistry.o \
+	ModelParameters.o \
+	InfrastructuralCode.o \
+	LagrangianAerosols.o $(CHEMINC) \
+	$(EULERINC) $(INFINC) $(AEROINC) $(CONDINC)
+	  $(FC) -c $(F90FLAGS) $<   	
+OutputRoutines.o: $(OUTPUTDIR)OutputRoutines.f90 \
+	GridPointFields.o   Chemistry.o \
+	ModelParameters.o \
+	InfrastructuralCode.o   LagrangianAerosols.o \
+	Condensation.o $(CHEMINC) \
+	$(EULERINC) $(INFINC) $(AEROINC) $(CONDINC)
+	  $(FC) -c $(F90FLAGS) $<   
+Coagulation.o: $(COAGDIR)Coagulation.f90  \
+	GridPointFields.o   Chemistry.o \
+     	ModelParameters.o \
+	InfrastructuralCode.o LagrangianAerosols.o \
+	OutputRoutines.o $(CHEMINC) \
+	$(EULERINC) $(INFINC) $(AEROINC) $(CONDINC) $(COAGINC) 
+	  $(FC) -c $(F90FLAGS) $<   
+StepASP.o: $(SOURCEDIR)StepASP.f90 \
+	GridPointFields.o   Condensation.o \
+       	ModelParameters.o \
+	Time.o LagrangianAerosols.o $(ALLINC)
+	  $(FC) -c $(F90FLAGS) $<   
+DevelopmentDriver.o: $(SOURCEDIR)DevelopmentDriver.f90 \
+	$(OBJECTS) $(ALLINC)
+	  $(FC) -c $(F90FLAGS) $<   
+#
+# === Rules
+#
+
+.SUFFIXES: .mod .F .F90 .f90 .f
+
+.F90.mod:
+	$(FC) -c $(F90FLAGS) $<
+
+.F.mod:
+	$(FC) -c $(FFLAGS) $<
+
+.F90.o:
+	$(FC) -c $(F90FLAGS) $<
+
+.F.o:
+	$(FC) -c $(FFLAGS) $<
+
+.f90.mod:
+	$(FC) -c $(F90FLAGS) $<
+
+.f.mod:
+	$(FC) -c $(FFLAGS) $<
+
+.f90.o:
+	$(FC) -c $(F90FLAGS) $<
+
+.f.o:
+	$(FC) -c $(FFLAGS) $<
+
+##
+## === Functions
+##
+
+clean:
+	rm -f *.o *.mod *.il *.d *.pc*
+
+cleandump:
+	rm $(FILESDUMP) $(OBJECTS)
+

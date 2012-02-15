@@ -1,0 +1,62 @@
+!! HydrophilicOrgChems.in
+!! ASP
+!! Matt Alvarado, 2004-2006 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 (c)
+!!
+!! This is the HYDROPHILIC ORGANIC CHEMICALS INPUT DECK for ASP
+!! that is read in by SetHydrophilicOrgPhaseChemistry() 
+!! in OrgPhaseChemInits.h 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!
+!! Specify the following variables, separating each by a semi-colon and 
+!! including each on a single line for each gas:
+!!	NAME (no more than 15 characters): Make sure this is the same
+!!	     as that used in the other chemical input decks
+!!	CONSTANT?: Some chemicals will be held fixed, and others allowed
+!!	  to evolve with time.  Put a "1" if evolving, "0" if not
+!!	MOLECULAR MASS (g / mole)
+!!      DENSITY (g/cm3)
+!!      NUMBER of CARBONS per molecule
+!!    REFRACTIVE INDEX (at 550 nm) - Real and Imaginary
+!!    REFRACTIVE INDEX (at 10 um) - Real and Imaginary
+!! Use the same name here as in the gas phase chemical input deck to 
+!! assure proper matching between the two 
+!!
+!Molecular Weights from Pun et al. 2002 and Griffin et al. 2005
+!Refractive Index for OC from Jacobson, "Fund. of Atm. Modeling", 2nd ed, p. 303
+POA1	  ;1	;408.0	  ; 1.5 ; 29 ; 1.45 ; 0.001 ; 1.77 ; 0.12;	
+POA2	  ;1	;118.0	  ; 1.5 ; 4	 ; 1.45 ; 0.001 ; 1.77 ; 0.12;	
+POA3	  ;1	;216.0	  ; 1.5 ; 12 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+POA4	  ;1	;276.0	  ; 1.5 ; 22 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+POA5	  ;1	;412.0	  ; 1.5 ; 30 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+POA6	  ;1	;166.0	  ; 1.5 ; 8	 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+POA7	  ;1	;284.0	  ; 1.5 ; 18 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+POA8	  ;1	;390.0	  ; 1.5 ; 28 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+!
+SOA1	  ;1	;90.0	  	  ; 1.5 ; 2  ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+SOA2	  ;1	;184.0	  ; 1.5 ; 8  ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+SOA3	  ;1	;154.0	  ; 1.5 ; 8  ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+SOA4	  ;1	;186.0	  ; 1.5 ; 9  ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+SOA5	  ;1	;186.0	  ; 1.5 ; 10 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+SOA6	  ;1	;211.0	  ; 1.5 ; 9  ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+SOA7	  ;1	;178.0	  ; 1.5 ; 10 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+SOA8	  ;1	;217.0	  ; 1.5 ; 12 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+SOA9	  ;1	;303.0	  ; 1.5 ; 16 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+SO10	  ;1	;217.0	  ; 1.5 ; 10 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+!
+LEVO	;1	;162.1	  ; 1.5 ; 6  ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+CBIO	;1	;324.3	  ; 1.5 ; 12 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+CPD1	;1	;330.3	  ; 1.5 ; 18 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+CPD2	;1	;332.4	  ; 1.5 ; 19 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+CPD3	;1	;730.7	  ; 1.5 ; 36 ; 1.45 ; 0.001 ; 1.77 ; 0.12;
+!
+IVOC1   ;1      ;249.0    ; 1.5 ;  10 ; 1.45; 0.001; 1.77 ; 0.12;
+IVOC2   ;1      ;249.0    ; 1.5 ;  10 ;1.45; 0.001; 1.77 ; 0.12;
+IVOC3   ;1      ;249.0    ; 1.5 ;  10 ;1.45; 0.001; 1.77 ; 0.12;
+IVOC4   ;1      ;249.0    ; 1.5 ;  10 ;1.45; 0.001; 1.77 ; 0.12;
+IVOC5   ;1      ;249.0    ; 1.5 ;  10 ;1.45; 0.001; 1.77 ; 0.12;
+IVOC6   ;1      ;249.0    ; 1.5 ;  10 ;1.45; 0.001; 1.77 ; 0.12;
+IVOC7   ;1      ;249.0    ; 1.5 ;  10 ;1.45; 0.001; 1.77 ; 0.12;
+IVOC8   ;1      ;249.0    ; 1.5 ;  10 ;1.45; 0.001; 1.77 ; 0.12;
+IVOC9   ;1      ;249.0    ; 1.5 ;  10 ;1.45; 0.001; 1.77 ; 0.12;
+!

@@ -1,0 +1,61 @@
+!! OrgPhaseChems.in
+!! ASP
+!! Matt Alvarado, 2004-2006 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 (c)
+!!
+!! This is the HYDROPHOBIC PHASE CHEMICALS INPUT DECK for MELAM	      !!
+!! that is read in by SetOrgPhaseChemistry() in OrgPhaseChemInits.h     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! Black Carbon (BC) is hard coded to be the first compound and should not
+!! be included here.
+
+!! Specify the following variables, separating each by a semi-colon and 
+!! including each on a single line for each gas:
+!!	NAME (no more than 15 characters): Make sure this is the same
+!!	     as that used in the other chemical input decks
+!!	CONSTANT?: Some chemicals will be held fixed, and others allowed
+!!	  to evolve with time.  Put a "1" if evolving, "0" if not
+!!	MOLECULAR MASS (g / mole)
+!!      DENSITY (g/cm3)
+!!    REFRACTIVE INDEX (at 550 nm) - Real and Imaginary
+!! Use the same name here as in the gas phase chemical input deck to 
+!! assure proper matching between the two 
+
+!Molecular Weights from Pun et al. 2002 and Griffin et al. 2005
+!Refractive Index for OC from Jacobson, "Fund. of Atm. Modeling", 2nd ed, p. 303
+POA1	  ;1	;408.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12 !C29 alkane
+POA2	  ;1	;118.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12 !C4 diacid
+POA3	  ;1	;216.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12 !Naphthalene diacid
+POA4	  ;1	;276.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12 !5 aromatic ring PAH
+POA5	  ;1	;412.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12 !P5 in Griffin (2003), POA7 in Pun et al.
+POA6	  ;1	;166.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12 !Carboxybenzoic acid
+POA7	  ;1	;284.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12 !C18 acid
+POA8	  ;1	;390.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12 !P8 in Griffin (2003) and in Pun et al.
+
+SOA1	  ;1	;90.0	  	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+SOA2	  ;1	;184.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+SOA3	  ;1	;154.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+SOA4	  ;1	;186.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+SOA5	  ;1	;186.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+SOA6	  ;1	;211.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+SOA7	  ;1	;178.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+SOA8	  ;1	;217.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+SOA9	  ;1	;303.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+SO10	  ;1	;217.0	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+
+LEVO	;1	;162.1	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+CBIO	;1	;324.3	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+CPD1	;1	;330.3	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+CPD2	;1	;332.4	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+CPD3	;1	;730.7	  ; 1.5 ; 1.45 ; 0.001; 1.77 ; 0.12
+
+IVOC1   ;1      ;249.0    ; 1.5 ;  1.45; 0.001; 1.77 ; 0.12
+IVOC2   ;1      ;249.0    ; 1.5 ;  1.45; 0.001; 1.77 ; 0.12
+IVOC3   ;1      ;249.0    ; 1.5 ;  1.45; 0.001; 1.77 ; 0.12
+IVOC4   ;1      ;249.0    ; 1.5 ;  1.45; 0.001; 1.77 ; 0.12
+IVOC5   ;1      ;249.0    ; 1.5 ;  1.45; 0.001; 1.77 ; 0.12
+IVOC6   ;1      ;249.0    ; 1.5 ;  1.45; 0.001; 1.77 ; 0.12
+IVOC7   ;1      ;249.0    ; 1.5 ;  1.45; 0.001; 1.77 ; 0.12
+IVOC8   ;1      ;249.0    ; 1.5 ;  1.45; 0.001; 1.77 ; 0.12
+IVOC9   ;1      ;249.0    ; 1.5 ;  1.45; 0.001; 1.77 ; 0.12
