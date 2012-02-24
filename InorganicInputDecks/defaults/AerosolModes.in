@@ -22,21 +22,22 @@
 !!   Dbar_g_N geometric mean diameter (number median diameter) (microns)
 !!   Rho_g Standard Deviation (microns)
 !!
-!! You must also specify the format of the sectional  lagrangian representation.
+!!You must also specify the format of the sectional  lagrangian representation.
 !! You will be allowed to specify a size cutoff separating the two and allowed 
 !! to write the number of bins (which will require a lower cutoff)
 !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! _BULK_MODE_ : You may also set this to BULK mode by setting Nt = 0, which means 
-!! the system will be treated as a single particle and curvature effects are 
-!! neglected.  You may then only specify one mode and only use the microgram per 
-!! meter cube specification.  This mode is not appropriate (and will be rejected) 
-!! for model runs that seek to explicitly condense using kinetic formulations, include 
-!! aerosol dynamics, etc.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! _BULK_MODE_ : You may also set this to BULK mode by setting Nt = 0, 
+!! which means the system will be treated as a single particle and curvature !
+!! effects are 
+!! neglected. You may then only specify one mode and only use the microgram per
+!! meter cube specification.  This mode is not appropriate 
+!! (and will be rejected) for model runs that seek to explicitly condense 
+!! using kinetic formulations, include aerosol dynamics, etc.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! First, specify WHETHER OR NOT WE WILL ALLOW LAGRANGIAN PARTICLES in this model.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!First, specify WHETHER OR NOT WE WILL ALLOW LAGRANGIAN PARTICLES in this model.
 !! (F) No Lagrangian particles (behaves like a moving center sectional model
 !! (T) Yes Lagrangian particles
 F !!
@@ -46,7 +47,7 @@ F !!
 !! (0) mass fraction (Sectional Distribution) or
 !! (1) total mass abundance in ug/m3 (Bulk or Monodisperse Distribution)
 !!
-1 !!
+0 !!
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Next, specify the CHARACTERISTICS of the SECTIONAL DISTRIBUTION
@@ -88,16 +89,16 @@ F !!
 !! Please remember, composition must be in ug/m3, or in total dry mass % (no water)
 !
 !
-0 ; 1.0 ; 2.0
-Lake McKay;
-(NH4)2SO4; 2.636;
-NH4NO3; 4.342;
-KCl; 0.458;
-KNO3; 0.010;
-NaNO3; 0.640;
-BC; 0.0009;
-POA1; 72.0;
-CPD3; 72.0;
+!0 ; 1.0 ; 2.0
+!Lake McKay;
+!(NH4)2SO4; 2.636;
+!NH4NO3; 4.342;
+!KCl; 0.458;
+!KNO3; 0.010;
+!NaNO3; 0.640;
+!BC; 0.0009;
+!POA1; 72.0;
+!CPD3; 72.0;
 !CaC2O4; 1.058;
 !MgC2O4; 0.040;
 !
@@ -133,17 +134,17 @@ CPD3; 72.0;
 !CBIO; 8.
 !CPD3; 1.
 !
-!34000; 0.11; 1.91  
-!Timbavati Size Test
-!KCl; 135.8; 
-!NH4Cl; 204.6; 
+34000; 0.11; 1.91;  
+Timbavati Size Test;
+KCl; 135.8; 
+NH4Cl; 204.6; 
 !KCl; 421;
 !HCl; 139.4;
-!NH4NO3; 17.6; 
-!(NH4)2SO4; 34.3; 
-!BC; 35.0; 
-!POA1; 96.6; 
-!CBIO; 278.3;
+NH4NO3; 17.6; 
+(NH4)2SO4; 34.3; 
+BC; 35.0; 
+POA1; 96.6; 
+CBIO; 278.3;
 !
 !
 !66000 ; 0.02 ; 1.175 

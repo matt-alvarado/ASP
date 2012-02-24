@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -12,6 +12,8 @@
 !!																				!!
 !! Month  Year   Name              Description									!!
 !! 07     2006   Matt Alvarado     Began Update History							!!
+!! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

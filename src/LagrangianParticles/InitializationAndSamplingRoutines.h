@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -6,52 +6,53 @@
 !! These routines are to do with the initialization	
 !! of the aerosol particle distribution
 	
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY							       	!!
-!!									  	!!
-!! Month  Year   Name              Description					!!
-!! 07     2006   Matt Alvarado     Began Update History		         	!!
-!! 07/24  2006   Matt Alvarado     Change "Pointer => NULL()" to		!!
-!!				   NULLIFY(POINTER) to fit pgf90		!!
-!! 09/07  2006   Matt Alvarado     Created PopBoundaryPart and			!!
-!!				       MakeBoundaryParticleExponential	        !!
-!! 09/21  2006   Matt Alvarado     Created MakeBoundaryMonodisperse and
-!!				       MakeBoundaryBulk
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History		             !!
+!! 07/24  2006   Matt Alvarado     Change "Pointer => NULL()" to	     !!
+!!				   NULLIFY(POINTER) to fit pgf90	     !!
+!! 09/07  2006   Matt Alvarado     Created PopBoundaryPart and		     !!
+!!				       MakeBoundaryParticleExponential	     !!
+!! 09/21  2006   Matt Alvarado     Created MakeBoundaryMonodisperse and      !!
+!!				       MakeBoundaryBulk                      !!
+!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:		!!
-!! 1. FUNCTION MakeSection(WhichPopulation, WhichBin, XP, YP, ZP)
-!! 2. SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDistribution)
-!! 3. SUBROUTINE MakeBoundaryParticle)
-!! 4. FUNCTION MakeBulk(XP, YP, ZP)
+!! 1. FUNCTION MakeSection(WhichPopulation, WhichBin)
+!! 2. SUBROUTINE MakeParticle(WhichPopulation, ResultInt, &
+!!      LagrangianOnly, StructuredDistribution)
+!! 3. SUBROUTINE MakeBoundaryParticle()
+!! 4. FUNCTION MakeBulk()
 !! 5. FUNCTION CreateBoundaryDistribution()
 !! 6. SUBROUTINE PopulateParticlesSectionsRightAway()
 !! 7. SUBROUTINE ReadDistributionsOrganic ()
-!! 8. FUNCTION MakeMonodisperse(XP, YP, ZP)
+!! 8. FUNCTION MakeMonodisperse()
 !! 9. SUBROUTINE MakeParticleExponential(WhichPopulation)
 !!10. SUBROUTINE ReadBoundaryDistributionsOrganic ()
 !!11. SUBROUTINE PopBoundaryPart
 !!12. SUBROUTINE MakeBoundaryParticleExponential
 !!13. SUBROUTINE MakeBoundaryMonodisperse
 !!14. FUNCTION MakeBoundaryBulk
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Initializes and returns a sectional pseudo-particle following !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-FUNCTION MakeSection(WhichPopulation, WhichBin, XP, YP, ZP)
+FUNCTION MakeSection(WhichPopulation, WhichBin)
 
-	USE GridPointFields,	 ONLY : LocateGridPoint,			&
-									GasPhaseChemGridIndex,		&
-									GetTemp, GetPress
+	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									HowManyAqEqReactions, &
-									HowManyOrgChems, &
-									HowManyAqOrgChems
+	USE Chemistry,		ONLY : HowManyAqChems,			&
+				HowManyAqCations,			&
+				HowManyAqAnions,			&
+				HowManyAqEqReactions, &
+				HowManyOrgChems, &
+				HowManyAqOrgChems
 
 	USE InfrastructuralCode, ONLY : ERROR
 
@@ -60,13 +61,12 @@ FUNCTION MakeSection(WhichPopulation, WhichBin, XP, YP, ZP)
 	IMPLICIT NONE
 
 	!! External Variables
-	INTEGER :: WhichPopulation, WhichBin,XP, YP, ZP
+	INTEGER :: WhichPopulation, WhichBin
 	TYPE(Particle), POINTER :: MakeSection
 
 
 	!! Local Variables
 	INTEGER :: allocation_error, I,J
-	REAL*8  :: XYZ(3)
 
 	!! If particle is large enough to be tracked, 
 	!! create the New Particle and allocate its arrays
@@ -125,12 +125,6 @@ FUNCTION MakeSection(WhichPopulation, WhichBin, XP, YP, ZP)
 	MakeSection%Edges(1) = BinEdges(WhichBin,1)
 	MakeSection%Edges(2) = BinEdges(WhichBin,2)
 
-	!! Create a Location for the Particle
-	XYZ = LocateGridPoint(XP,YP,ZP,GasPhaseChemGridIndex)
-	MakeSection%location(1) = XYZ(1)
-	MakeSection%location(2) = XYZ(2)
-	MakeSection%location(3) = XYZ(3)
-
 	MakeSection%SurfaceTension  = 0.
 	MakeSection%ParticleDensity = 0.
 	MakeSection%SolutionDensity = 0.
@@ -138,8 +132,8 @@ FUNCTION MakeSection(WhichPopulation, WhichBin, XP, YP, ZP)
 
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
-	MakeSection%Temperature = GetTemp(XYZ(1),XYZ(2),XYZ(3))
-	MakeSection%OriginPressureLevel = GetPress(XYZ(1),XYZ(2),XYZ(3))
+	MakeSection%Temperature = GetTemp()
+	MakeSection%OriginPressureLevel = GetPress()
 
 	!! Use a fake initial water activity:
 	MakeSection%WaterActivity = 1.
@@ -162,7 +156,7 @@ END FUNCTION MakeSection
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Create a New Particle From A Given !!
 !! log-normal mode and Hang it in the !!
-!! Particle Array Structure.		  !!
+!! Particle Array Structure.	      !!
 !!                                    !!
 !! MakeLooseParticle() is a replica of!!
 !! this which does not place the      !!
@@ -172,59 +166,62 @@ END FUNCTION MakeSection
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDistribution)
 
-	USE GridPointFields,	 ONLY : ClosestGridPoint, GasPhaseChemGridIndex, GetTemp, GetPress
+	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
-	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,			&
-									lengthscale,				&
-									Pi, EulerMass,				&
-									micron,	moles,				&
-									AverageAerosolDensity,		&
-									DomainX, DomainY, DomainZ,	&
-									Monodisperse,				&
-									BinEdges, HowManyBins,		&
-									NumbInsolTypes,				&
-									InsolRadii,					&
-									InsolDensity,				&
-									InsolContactAngle
+	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,		&
+					lengthscale,			&
+					Pi, EulerMass,			&
+					micron,	moles,			&
+					AverageAerosolDensity,		&
+					DomainX, DomainY, DomainZ,	&
+					Monodisperse,			&
+					BinEdges, HowManyBins,		&
+					NumbInsolTypes,			&
+					InsolRadii,			&
+					InsolDensity,			&
+					InsolContactAngle
 
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									AqMolecularMass,			&
-									HowManyAqEqReactions, &
-									HowManyOrgChems, &
-									OrgMolecularMass, &
-									HowManyAqOrgChems, &
-									AqOrgMolecularMass
+	USE Chemistry,		ONLY : HowManyAqChems,			&
+				       HowManyAqCations,		&
+				       HowManyAqAnions,			&
+				       AqMolecularMass,			&
+				       HowManyAqEqReactions,            &
+				       HowManyOrgChems,                 &
+				       OrgMolecularMass,                &
+				       HowManyAqOrgChems,               &
+				       AqOrgMolecularMass
 
-	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript, Warn, Error, GetParticleID
+	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript,  &
+                                        Warn, Error, GetParticleID
 
 	IMPLICIT NONE
 
 	!! Input Variables
 	INTEGER :: WhichPopulation, ResultInt
-	LOGICAL :: LagrangianOnly !! If this is true, then return always as lagrangian
+	LOGICAL :: LagrangianOnly 
+!! If this is true, then return always as lagrangian
 
-	!! If we want to draw from a distribution in a structured way, use this input
-	!! and it will go this far up the cumulative distribution functin.
+	!! If we want to draw from a distribution in a structured way, use 
+        !! this input
+	!! and it will go this far up the cumulative distribution function.
 	REAL*8, OPTIONAL :: StructuredDistribution
 
 	!! Local Variables
-	REAL*8 :: II, JJ, KK, XYZ(3), RR(1)
+	REAL*8 :: II, JJ, KK, RR(1)
 	TYPE(Particle), POINTER :: NewParticle, CurrentParticle
-	INTEGER				    :: allocation_error, I,J,X,Y,Z
-	LOGICAL, PARAMETER		:: Scaffolding = .FALSE. !.TRUE.
+	INTEGER			:: allocation_error, I,J,X,Y,Z
+	LOGICAL, PARAMETER	:: Scaffolding = .FALSE. !.TRUE.
 
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticle()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! For sampling, we want to use a random number to find a number of standard	!!
-	!! deviations away from the mean value.  To do this, we must invert the error	!!
-	!! function.  To do this, we use the following numerical trick, which inverts	!!
-	!! an error function for a series with a mean at the Euler-Masscheroni Constant	!!
-	!! and a standard deviation of pi/sqrt(6):										!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! For sampling, we want to use a random number to find a number of standard !!
+!! deviations away from the mean value.  To do this, we must invert the error!!
+!! function.  To do this, we use the following numerical trick, which inverts!!
+!!an error function for a series with a mean at the Euler-Masscheroni Constant!
+!! and a standard deviation of pi/sqrt(6):			             !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	IF (MONODISPERSE .EQ. .FALSE.) THEN
 
@@ -252,23 +249,12 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	IF (II .LE. BinEdges(HowManyBins,2) .AND. .NOT.LagrangianOnly) THEN
 
-		!! Create a Location for the Particle
-		CALL Random_Number(JJ)
-		XYZ(1) = JJ*DomainX
-		CALL Random_Number(JJ)
-		XYZ(2) = JJ*DomainY
-		CALL Random_Number(JJ)
-		XYZ(3) = JJ*DomainZ
-
-		!! Place the particle at the local gridpoint
-		CALL ClosestGridPoint(XYZ(1),XYZ(2),XYZ(3),GasPhaseChemGridIndex, X, Y, Z) 
-
-		CurrentParticle => Particles(X,Y,Z)%First
+		CurrentParticle => Particles%First
 
 		!! Find the appropriate section to put it in, or err
 		IF (ASSOCIATED(CurrentParticle)) THEN
 
-10		IF ((CurrentParticle%Sectional            .EQ. .TRUE.) .AND.			&
+10		IF ((CurrentParticle%Sectional .EQ. .TRUE.) .AND.			&
 		    (II .GT. CurrentParticle%Edges(1)) .AND.							&
 			(II .LE. CurrentParticle%Edges(2)))								THEN
 			
@@ -314,10 +300,11 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 		RETURN
 	END IF
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! If particle is large enough to be tracked (Lagrangian, above section cutoff),		!!
-	!! create the New Particle and allocate its arrays	!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! If particle is large enough to be tracked        !!
+!!(Lagrangian, above section cutoff),               !!
+!! create the New Particle and allocate its arrays  !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	ALLOCATE (NewParticle, stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of NewParticle Failed in MakeParticle()")
 	ALLOCATE (NewParticle%AqChems(HowManyAqChems+HowManyAqCations+HowManyAqAnions), stat = allocation_error)
@@ -368,20 +355,9 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	NewParticle%Edges(1)			 = 0.
 	NewParticle%Edges(2)			 = 0.
 	
-	!! Create a Location for the Particle
-	CALL Random_Number(II)
-	NewParticle%location(1) = II*DomainX
-	CALL Random_Number(II)
-	NewParticle%location(2) = II*DomainY
-	CALL Random_Number(II)
-	NewParticle%location(3) = II*DomainZ
-
-	!! Place the particle at the local gridpoint
-	CALL ClosestGridPoint(NewParticle%location(1), NewParticle%location(2), NewParticle%location(3), GasPhaseChemGridIndex,X,Y,Z)
-
 	!! Budge the new particle in at the head of the list
-	IF (ASSOCIATED(Particles(X,Y,Z)%First)) THEN
-		CurrentParticle		   => Particles(X,Y,Z)%First
+	IF (ASSOCIATED(Particles%First)) THEN
+		CurrentParticle		   => Particles%First
 
 		!! Sectional Bins are at the head of the lists
 20		IF(CurrentParticle%Sectional .EQ. .TRUE. .AND. ASSOCIATED(CurrentParticle%Next)) THEN
@@ -398,20 +374,20 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 			CurrentParticle%Next => NewParticle
 		END IF
 	ELSE
-		Particles(X,Y,Z)%First => NewParticle
+		Particles%First => NewParticle
 		NULLIFY(NewParticle%Next)
 		!NewParticle%Next	   => Null()
 	END IF
 
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment
-	NewParticle%Temperature = GetTemp(NewParticle%Location(1),NewParticle%Location(2),NewParticle%Location(3))
-	NewParticle%OriginPressureLevel  = GetPress(NewParticle%Location(1),NewParticle%Location(2),NewParticle%Location(3))
+	NewParticle%Temperature = GetTemp()
+	NewParticle%OriginPressureLevel  = GetPress()
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Create a Velocity for the Particle.  It is some random		!!
+	!! Create a Velocity for the Particle.  It is some random	!!
 	!! percentage of the terminal velocity, randomly apportioned	!!
-	!! between the three directions.								!!
+	!! between the three directions.				!!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	CALL Random_Number(II)
 	CALL Random_Number(JJ)
@@ -424,7 +400,8 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	II = 2.*Pi*II	 ! Flat Angle is out of 360 degrees
 	JJ = Pi*JJ-Pi/2. ! Azimuthal angle is out of 180 degrees
 
-	!! Change this into two random angles and then move to cosines and sines from there:
+	!! Change this into two random angles 
+        !! and then move to cosines and sines from there:
 	NewParticle%velocity(1) = KK*DCOS(II)*DCOS(JJ)
 	NewParticle%velocity(2) = KK*DSIN(II)*DCOS(JJ)
 	NewParticle%velocity(3) = KK*DSIN(JJ)
@@ -494,31 +471,32 @@ END SUBROUTINE MakeParticle
 !!Matt Alvarado, 09/07/06 
 SUBROUTINE MakeBoundaryParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDistribution)
 
-	USE GridPointFields,	 ONLY : ClosestGridPoint, GasPhaseChemGridIndex, GetTemp, GetPress
-	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,			&
-									lengthscale,				&
-									Pi, EulerMass,				&
-									micron,	moles,				&
-									AverageAerosolDensity,		&
-									DomainX, DomainY, DomainZ,	&
-									Monodisperse,				&
-									BinEdges, HowManyBins,		&
-									NumbInsolTypes,				&
-									InsolRadii,					&
-									InsolDensity,				&
-									InsolContactAngle
+	USE GridPointFields,	 ONLY : GetTemp, GetPress
+	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,		&
+					lengthscale,			&
+					Pi, EulerMass,			&
+					micron,	moles,			&
+					AverageAerosolDensity,		&
+					DomainX, DomainY, DomainZ,	&
+					Monodisperse,			&
+					BinEdges, HowManyBins,		&
+					NumbInsolTypes,			&
+					InsolRadii,			&
+					InsolDensity,			&
+					InsolContactAngle
 
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									AqMolecularMass,			&
-									HowManyAqEqReactions, &
-									HowManyOrgChems, &
-									OrgMolecularMass, &
-									HowManyAqOrgChems, &
-									AqOrgMolecularMass
+	USE Chemistry,		 ONLY : HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqAnions,		&
+					AqMolecularMass,		&
+					HowManyAqEqReactions,           &
+					HowManyOrgChems,                &
+					OrgMolecularMass,               &
+					HowManyAqOrgChems, &
+					AqOrgMolecularMass
 
-	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript, Warn, Error, GetParticleID
+	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript,  &
+                                        Warn, Error, GetParticleID
 
 	IMPLICIT NONE
 
@@ -531,7 +509,7 @@ SUBROUTINE MakeBoundaryParticle(WhichPopulation, ResultInt, LagrangianOnly, Stru
 	REAL*8, OPTIONAL :: StructuredDistribution
 
 	!! Local Variables
-	REAL*8 :: II, JJ, KK, XYZ(3), RR(1)
+	REAL*8 :: II, JJ, KK, RR(1)
 	TYPE(Particle), POINTER :: NewParticle, CurrentParticle
 	INTEGER				    :: allocation_error, I,J,X,Y,Z
 	LOGICAL, PARAMETER		:: Scaffolding = .FALSE. !.TRUE.
@@ -539,13 +517,13 @@ SUBROUTINE MakeBoundaryParticle(WhichPopulation, ResultInt, LagrangianOnly, Stru
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeBoundaryParticle()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! For sampling, we want to use a random number to find a number of standard	!!
-	!! deviations away from the mean value.  To do this, we must invert the error	!!
-	!! function.  To do this, we use the following numerical trick, which inverts	!!
-	!! an error function for a series with a mean at the Euler-Masscheroni Constant	!!
-	!! and a standard deviation of pi/sqrt(6):										!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! For sampling, we want to use a random number to find a number of standard !!
+!! deviations away from the mean value.  To do this, we must invert the error!!
+!! function.  To do this, we use the following numerical trick, which inverts!!
+!!an error function for a series with a mean at the Euler-Masscheroni Constant!
+!! and a standard deviation of pi/sqrt(6):				     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	IF (MONODISPERSE .EQ. .FALSE.) THEN
 
 		IF (PRESENT(StructuredDistribution)) THEN
@@ -625,18 +603,16 @@ END SUBROUTINE MakeBoundaryParticle
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Initializes and returns a sectional pseudo-particle following !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-FUNCTION MakeBulk(XP, YP, ZP)
+FUNCTION MakeBulk()
 
-	USE GridPointFields,	 ONLY : LocateGridPoint,			&
-									GasPhaseChemGridIndex,		&
-									GetTemp, GetPress
+	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									HowManyAqEqReactions, &
-									HowManyOrgChems, &
-									HowManyAqOrgChems
+	USE Chemistry,		 ONLY : HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqAnions,		&
+					HowManyAqEqReactions,           &
+					HowManyOrgChems,                &
+					HowManyAqOrgChems
 
 	USE InfrastructuralCode, ONLY : ERROR
 
@@ -645,13 +621,12 @@ FUNCTION MakeBulk(XP, YP, ZP)
 	IMPLICIT NONE
 
 	!! External Variables
-	INTEGER :: XP, YP, ZP
 	TYPE(Particle), POINTER :: MakeBulk
 
 
 	!! Local Variables
 	INTEGER :: allocation_error, I,J
-	REAL*8  :: XYZ(3), II
+	REAL*8  :: II
 
 	!! If particle is large enough to be tracked, 
 	!! create the New Particle and allocate its arrays
@@ -706,16 +681,10 @@ FUNCTION MakeBulk(XP, YP, ZP)
 	MakeBulk%Edges(1)			 = 0.
 	MakeBulk%Edges(2)			 = 1.0e9 
 
-	!! Create a Location for the Particle
-	XYZ = LocateGridPoint(XP,YP,ZP,GasPhaseChemGridIndex)
-	MakeBulk%location(1) = XYZ(1)
-	MakeBulk%location(2) = XYZ(2)
-	MakeBulk%location(3) = XYZ(3)
-
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
-	MakeBulk%Temperature = GetTemp(XYZ(1),XYZ(2),XYZ(3))
-	MakeBulk%OriginPressureLevel  = GetPress(XYZ(1),XYZ(2),XYZ(3))
+	MakeBulk%Temperature = GetTemp()
+	MakeBulk%OriginPressureLevel  = GetPress()
 
 
 	!! Use a fake initial water activity:
@@ -767,41 +736,40 @@ INCLUDE "SCTailorMakeParticle.h"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Add each of the individual modes to the Particles() array     !!
 !! NOTE: Creates a single, internally mixed size distribution    !!
-!! as the sum of the input modes.								 !!                                                             !!                                             !!
+!! as the sum of the input modes.				 !!       
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE PopulateParticlesSectionsRightAway ()
 
-	USE InfrastructuralCode, ONLY : INT2STR, REAL2STR, Transcript, SetParticleID, ERROR
+	USE InfrastructuralCode, ONLY : INT2STR, REAL2STR, Transcript, &
+                                        SetParticleID, ERROR
 
-	USE ModelParameters,     ONLY : lengthscale,				&
-									DomainX, DomainY, DomainZ,	&
-									LagrSectSizeCutoff,			&
-									ThermoBulkMode,				&
-									HowManyBins,				&
-									BinEdges,					&
-									micron,						&
-									SmallestAerosolPossible, &
-									Monodisperse
+	USE ModelParameters,     ONLY : lengthscale,			&
+					DomainX, DomainY, DomainZ,	&
+					LagrSectSizeCutoff,		&
+					ThermoBulkMode,			&
+					HowManyBins,			&
+					BinEdges,			&
+					micron,				&
+					SmallestAerosolPossible,        &
+					Monodisperse
 
-	USE GridPointFields,     ONLY : GasPhaseChemGridIndex,		&
-									XGridPoints,				&
-									YGridPoints,				&
-									ZGridPoints, &
-									GetTemp
+	USE GridPointFields,     ONLY : GetTemp
 
-	USE Chemistry,			ONLY :	HowManyAqChems,				&
-									AqMolecularMass,			&
-									howmanyaqanions,howmanyaqcations, &
-									HowManyOrgChems,			&
-									OrgMolecularMass, AqPhaseChemicalNames
+	USE Chemistry,		ONLY :	HowManyAqChems,		        &
+					AqMolecularMass,	        &
+					howmanyaqanions,                &
+                                        howmanyaqcations,               &
+					HowManyOrgChems,	        &
+					OrgMolecularMass,               &
+                                        AqPhaseChemicalNames
 
 	IMPLICIT NONE
 
 	!! Local Variables
 	INTEGER :: I, J, K, X, Y, Z, Q,	&
-			   NumbParticles,		&
-			   SectionalParticles,	&
-			   LagrangianParticles
+	           NumbParticles,	&
+	           SectionalParticles,	&
+		   LagrangianParticles
 
 	REAL*8  :: II, Temperature
 	REAL*8  :: RescalingFactors(HowManyAerosolModes,HowManyAqChems+HowManyOrgChems) 
@@ -826,72 +794,67 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	!! for particles below the certain size cutoff.			  !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	IF (HowManyBins .GT. 0. .OR. ThermoBulkMode) THEN
-		DO X = 1,XGridPoints(GasPhaseChemGridIndex)
-		DO Y = 1,YGridPoints(GasPhaseChemGridIndex)
-		DO Z = 1,ZGridPoints(GasPhaseChemGridIndex)
-
 		IF (.NOT.ThermoBulkMode .AND. .NOT.Monodisperse) THEN
-				DO J = 1, HowManyBins
-					NewSection => MakeSection(I,J,X,Y,Z)
+			DO J = 1, HowManyBins
+				NewSection => MakeSection(I,J)
 
-					!! Budge the new mode in at the head of the list
-					IF (ASSOCIATED(Particles(X,Y,Z)%First)) THEN
-						NewSection%Next		   => Particles(X,Y,Z)%First
-						Particles(X,Y,Z)%First => NewSection
-					ELSE
-						Particles(X,Y,Z)%First => NewSection
-						NULLIFY(NewSection%Next)
-						!NewSection%Next		   => Null()
-					END IF
-				END DO
+				!!Budge the new mode in at the head of the list
+				IF (ASSOCIATED(Particles%First)) THEN
+					NewSection%Next	=> Particles%First
+					Particles%First => NewSection
+				ELSE
+					Particles%First => NewSection
+					NULLIFY(NewSection%Next)
+					!NewSection%Next=> Null()
+				END IF
+			END DO
 
 		ELSE IF (Monodisperse) THEN
 			!Monodisperse Distribution
 			!WRITE(*,*) "Check 0"
 			HowManyBins = 1
-			NewSection => MakeMonodisperse(X,Y,Z)
+			NewSection => MakeMonodisperse()
 			!WRITE(*,*) "Check 0.5"
-			Particles(X,Y,Z)%First => NewSection
+			Particles%First => NewSection
 		
 		ELSE
 			!Bulk Mode
-			NewSection => MakeBulk(X,Y,Z)
-			Particles(X,Y,Z)%First => NewSection
-
+			NewSection => MakeBulk()
+			Particles%First => NewSection
 		END IF
 
-	END DO ; END DO ; END DO ; END IF
+	END IF
 
 	IF(Scaffolding) WRITE(*,*) "Check 1", ThermoBulkMode 
 	IF (.NOT.ThermoBulkMode .AND. .NOT.Monodisperse) THEN
 
-			!! Allocate all of the aerosol and place them in the appropriate structures:
-			DO I = 1, MAX(1,HowManyAerosolModes)
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				!! Scale the particle concentration by the number !!
-				!! concentration and the domain volume.				  !!
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				NumbParticles = ANINT(AerosolModes(I,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
-				SectionalParticles  = 0
-				LagrangianParticles = 0
-				IF(AerosolModes(I,3) .NE. 0.0) THEN !Log-normal mode
-					DO J = 1, NumbParticles
-						!Matt changed this to hopefully put particles in sections right away
-						CALL MakeParticle(I, K, .FALSE., StructuredDistribution = (DFLOAT(J)-0.5)/NumbParticles)
-						SectionalParticles  = SectionalParticles + 1 - K
-						LagrangianParticles = LagrangianParticles + K
-					END DO
+!! Allocate all of the aerosol and place them in the appropriate structures:
+	        DO I = 1, MAX(1,HowManyAerosolModes)
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		!! Scale the particle concentration by the number !!
+		!! concentration and the domain volume.	          !!
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			NumbParticles = ANINT(AerosolModes(I,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
+			SectionalParticles  = 0
+			LagrangianParticles = 0
+			IF(AerosolModes(I,3) .NE. 0.0) THEN !Log-normal mode
+				DO J = 1, NumbParticles
+					!Matt changed this to hopefully put particles in sections right away
+					CALL MakeParticle(I, K, .FALSE., StructuredDistribution = (DFLOAT(J)-0.5)/NumbParticles)
+					SectionalParticles  = SectionalParticles + 1 - K
+					LagrangianParticles = LagrangianParticles + K
+				END DO
 
-					!! Report the results and allocations of the population
-					IF (TRANSCRIBE) CALL TRANSCRIPT ("")
-					IF (TRANSCRIBE) CALL TRANSCRIPT ("For the '"//TRIM(AerosolModeNames(I))//"' aerosol mode")
-					IF (TRANSCRIBE) CALL TRANSCRIPT ("Allocated "//TRIM(INT2STR(LagrangianParticles))//" Lagrangian particles")
-					IF (TRANSCRIBE) CALL TRANSCRIPT ("and "//TRIM(INT2STR(SectionalParticles))//" Sectional particles")
+				!! Report the results and allocations of the population
+				IF (TRANSCRIBE) CALL TRANSCRIPT ("")
+				IF (TRANSCRIBE) CALL TRANSCRIPT ("For the '"//TRIM(AerosolModeNames(I))//"' aerosol mode")
+				IF (TRANSCRIBE) CALL TRANSCRIPT ("Allocated "//TRIM(INT2STR(LagrangianParticles))//" Lagrangian particles")
+				IF (TRANSCRIBE) CALL TRANSCRIPT ("and "//TRIM(INT2STR(SectionalParticles))//" Sectional particles")
 				
-				ELSE !Exponential Mode
-					CALL MakeParticleExponential(I)
-				END IF
-			END DO
+			ELSE !Exponential Mode
+				CALL MakeParticleExponential(I)
+			END IF
+		END DO
 	
 
 	END IF
@@ -913,33 +876,26 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 			RescalingFactors(I,J) = 0.
 		END DO ; END DO
 
+		Current => PARTICLES%First
+                 write(*,*) current%EffectiveRadius
 
+	10	IF (ASSOCIATED(Current)) THEN
 
-		DO X = 1,XGridPoints(GasPhaseChemGridIndex)
-		DO Y = 1,YGridPoints(GasPhaseChemGridIndex)
-		DO Z = 1,ZGridPoints(GasPhaseChemGridIndex)
+			DO I = 2,HowManyAqChems
+				RescalingFactors(Current%ParticleDistribution,I) = RescalingFactors(Current%ParticleDistribution,I) + &
+				Current%AqChems(I)*Current%NumberOfParticles
+			END DO
 
-			Current => PARTICLES(X,Y,Z)%First
-                        write(*,*) current%EffectiveRadius
+			DO I = 1,HowManyOrgChems
+				RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) = RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) + &
+				Current%OrgChems(I)*Current%NumberOfParticles
+			END DO
 
-		10	IF (ASSOCIATED(Current)) THEN
-
-				DO I = 2,HowManyAqChems
-					RescalingFactors(Current%ParticleDistribution,I) = RescalingFactors(Current%ParticleDistribution,I) + &
-																	   Current%AqChems(I)*Current%NumberOfParticles
-				END DO
-
-				DO I = 1,HowManyOrgChems
-					RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) = RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) + &
-																	   Current%OrgChems(I)*Current%NumberOfParticles
-				END DO
-
-				IF (ASSOCIATED(Current%Next)) THEN
-					Current => Current%Next
-					GOTO 10
-				END IF
+			IF (ASSOCIATED(Current%Next)) THEN
+				Current => Current%Next
+				GOTO 10
 			END IF
-		END DO ; END DO ; END DO 
+		END IF 
 
 		IF(Scaffolding) WRITE(*,*) "Check 2"
 
@@ -962,28 +918,23 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 		END DO
 
 		IF(Scaffolding) WRITE(*,*) "Check 3"
-		DO X = 1,XGridPoints(GasPhaseChemGridIndex)
-		DO Y = 1,YGridPoints(GasPhaseChemGridIndex)
-		DO Z = 1,ZGridPoints(GasPhaseChemGridIndex)
+		Current => PARTICLES%First
 
-			Current => PARTICLES(X,Y,Z)%First
+	20	IF (ASSOCIATED(Current)) THEN
 
-		20	IF (ASSOCIATED(Current)) THEN
+			DO I = 2,HowManyAqChems
+				Current%AqChems(I) = Current%AqChems(I) * RescalingFactors(Current%ParticleDistribution,I)
+			END DO
 
-				DO I = 2,HowManyAqChems
-					Current%AqChems(I) = Current%AqChems(I) * RescalingFactors(Current%ParticleDistribution,I)
-				END DO
-
-				DO I = 1,HowManyOrgChems
-					Current%OrgChems(I) = Current%OrgChems(I) * RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I)
-				END DO
+			DO I = 1,HowManyOrgChems
+				Current%OrgChems(I) = Current%OrgChems(I) * RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I)
+			END DO
 				
-				IF (ASSOCIATED(Current%Next)) THEN
-					Current => Current%Next
-					GOTO 20
-				END IF
+			IF (ASSOCIATED(Current%Next)) THEN
+				Current => Current%Next
+				GOTO 20
 			END IF
-		END DO ; END DO ; END DO 
+		END IF
 	END IF
 
 
@@ -991,11 +942,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 
 	!! Now that all of the consitutents have been added,
 	!! walk through the lists and equilibrate everything
-	DO X = 1,XGridPoints(GasPhaseChemGridIndex)
-	DO Y = 1,YGridPoints(GasPhaseChemGridIndex)
-	DO Z = 1,ZGridPoints(GasPhaseChemGridIndex)
-
-	Current => PARTICLES(X,Y,Z)%First
+	Current => PARTICLES%First
 	NULLIFY(Trailer)
 	!Trailer => Null()
 
@@ -1004,7 +951,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 		IF (Current%NumberOfParticles .GT. 0.0) THEN
 			II = 0.
 			DO I = 2, HowManyAqChems
-				IF (Current%AqChems(I) .NE. 0.0) WRITE(*,*) AqPhaseChemicalNames(I)
+				!IF (Current%AqChems(I) .NE. 0.0) WRITE(*,*) AqPhaseChemicalNames(I)
 				II = II + Current%AqChems(I)
 			END DO
 
@@ -1015,67 +962,74 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 			!WRITE(*,*) Current%EffectiveRadius
 			CALL KusikMeissner (Current)
 				IF(Scaffolding) WRITE(*,*) "Before Equilibrate"
-			WRITE(*,*) Current%AqChems(1), Current%AqChems(7)
+			!WRITE(*,*) Current%AqChems(1), Current%AqChems(7)
                         CALL FindElectrolyteEquilibrium(Current, .TRUE., FirstEquilibration=.TRUE., ReturnType = Q)
 				IF(Scaffolding) WRITE(*,*) "After Equilibrate"
-			WRITE(*,*) Current%AqChems(1), Current%AqChems(7), Current%EffectiveRadius
+			!WRITE(*,*) Current%AqChems(1), Current%AqChems(7), Current%EffectiveRadius
                         CALL EquilibriumWaterContent  (Current, OpenSystem=.TRUE., ReturnType = Q, ForceEquilibrium=.FALSE.)
 				IF(Scaffolding) WRITE(*,*) "After Water EQ"
-			WRITE(*,*) Current%AqChems(7), Current%EffectiveRadius
+			!WRITE(*,*) Current%AqChems(7), Current%EffectiveRadius
                         CALL RecalculateRadius (Current)
 				IF(Scaffolding) WRITE(*,*) "After RecalculateRadius"
-			WRITE(*,*) Current%AqChems(7), Current%EffectiveRadius
+			!WRITE(*,*) Current%AqChems(7), Current%EffectiveRadius
                         !CALL ShellRefIndAndRad(Current)
 				IF(Scaffolding) WRITE(*,*) "After ShellRefIndAndRad"
 		
 		END IF
 
 		Trailer => Current
-		Current => Current%Next
-
-		GOTO 30
+		Current => Current%Next		
+                GOTO 30
 	END IF
 
-	END DO ; END DO ; END DO
-
 	!! Report what ended up with
-	CALL TRANSCRIPT("")
-	CALL TRANSCRIPT("Reallocated "//TRIM(INT2STR(SectionalParticles))//" particles to sections and left "//		&
-					TRIM(INT2STR(LagrangianParticles))//" as lagrangian particles.")
-	CALL TRANSCRIPT("")
-
+	IF(NOT(Monodisperse) .AND. NOT(ThermoBulkMode)) THEN
+           CALL TRANSCRIPT("")
+	   CALL TRANSCRIPT("Reallocated "//TRIM(INT2STR(SectionalParticles))//" particles to sections and left "//		&
+	       TRIM(INT2STR(LagrangianParticles))//" as lagrangian particles.")
+	   CALL TRANSCRIPT("")
+        ELSEIF(Monodisperse) THEN
+           CALL TRANSCRIPT("")
+	   CALL TRANSCRIPT("Monodisperse distribution.") 
+	   CALL TRANSCRIPT("")
+        ELSE
+           CALL TRANSCRIPT("")
+	   CALL TRANSCRIPT("Bulk Thermodynamics Mode.") 
+	   CALL TRANSCRIPT("")
+        ENDIF
 	RETURN
 END SUBROUTINE PopulateParticlesSectionsRightAway 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This subroutine reads in the information on the		 !!
+!! This subroutine reads in the information on the       !!
 !! inital aerosol modes.                                 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE ReadDistributionsOrganic ()
 
-	USE InfrastructuralCode, ONLY : GetFileHandle,		&
-									ReturnFileHandle,	&
-									GetLine,			&
-									GetToken,			&
-									IsReal,				&
-									IsInteger,			&
-									INT2STR,			&
-									STR2INT,			&
-									STR2REAL,			&
-									EOF,				&
-									ERROR,				&
-									WARN,				&
-									Transcript,			&
-									REAL2STR
+	USE InfrastructuralCode, ONLY : GetFileHandle,		        &
+					ReturnFileHandle,	        &
+					GetLine,			&
+					GetToken,			&
+					IsReal,				&
+					IsInteger,			&
+					INT2STR,			&
+					STR2INT,			&
+					STR2REAL,			&
+					EOF,				&
+					ERROR,				&
+					WARN,				&
+					Transcript,			&
+					REAL2STR
 
 	USE ModelParameters,	 ONLY : lengthscale,		&
-									InputDeckSubDir,	&
-									micron,	grams, cm,	&
-									ThermoBulkMode,		&
-									SetSectionalParameters,	&
-									Monodisperse
+					InputDeckSubDir,	&
+					micron,	grams, cm,	&
+					ThermoBulkMode,		&
+					SetSectionalParameters,	&
+					Monodisperse
 
-	USE Chemistry,			 ONLY : AqPhase, FindChem, HowManyAqChems, HowManyOrgChems
+	USE Chemistry,		 ONLY : AqPhase, FindChem, & 
+                                        HowManyAqChems, HowManyOrgChems
 
 	IMPLICIT NONE
 
@@ -1418,36 +1372,33 @@ SUBROUTINE ReadDistributionsOrganic ()
 END SUBROUTINE ReadDistributionsOrganic
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Initializes and returns a sectional pseudo-particle following !!
+!! Initializes and returns a single sectional pseudo-particle    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-FUNCTION MakeMonodisperse(XP, YP, ZP)
+FUNCTION MakeMonodisperse()
 
-	USE GridPointFields,	 ONLY : LocateGridPoint,			&
-									GasPhaseChemGridIndex,		&
-									GetTemp, GetPress
+	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									HowManyAqEqReactions, &
-									HowManyOrgChems, &
-									HowManyAqOrgChems
+	USE Chemistry,	 	 ONLY : HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqAnions,		&
+					HowManyAqEqReactions,           &
+					HowManyOrgChems,                &
+					HowManyAqOrgChems
 
 	USE InfrastructuralCode, ONLY : ERROR
 
 	USE ModelParameters,     ONLY : micron,NumbInsolTypes, Lengthscale, &
-									DomainX, DomainY, DomainZ	
+					DomainX, DomainY, DomainZ	
 
 	IMPLICIT NONE
 
 	!! External Variables
-	INTEGER :: XP, YP, ZP
 	TYPE(Particle), POINTER :: MakeMonodisperse
 
 
 	!! Local Variables
 	INTEGER :: allocation_error, I,J
-	REAL*8  :: XYZ(3), II
+	REAL*8  ::  II
 
 	!! If particle is large enough to be tracked, 
 	!! create the New Particle and allocate its arrays
@@ -1508,16 +1459,10 @@ FUNCTION MakeMonodisperse(XP, YP, ZP)
 	MakeMonodisperse%NumberOfParticles    = ANINT(AerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)		
 	MakeMonodisperse%Sectional			 = .TRUE.
 
-	!! Create a Location for the Particle
-	XYZ = LocateGridPoint(XP,YP,ZP,GasPhaseChemGridIndex)
-	MakeMonodisperse%location(1) = XYZ(1)
-	MakeMonodisperse%location(2) = XYZ(2)
-	MakeMonodisperse%location(3) = XYZ(3)
-
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
-	MakeMonodisperse%Temperature = GetTemp(XYZ(1),XYZ(2),XYZ(3))
-	MakeMonodisperse%OriginPressureLevel  = GetPress(XYZ(1),XYZ(2),XYZ(3))
+	MakeMonodisperse%Temperature = GetTemp()
+	MakeMonodisperse%OriginPressureLevel  = GetPress()
 
 
 	!! Use a fake initial water activity:
@@ -1565,32 +1510,33 @@ END FUNCTION MakeMonodisperse
 !!size distribution
 SUBROUTINE MakeParticleExponential(WhichPopulation)
 
-	USE GridPointFields,	 ONLY : ClosestGridPoint, GasPhaseChemGridIndex, GetTemp, GetPress
+	USE GridPointFields,	 ONLY :  GetTemp, GetPress
 
-	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,			&
-									lengthscale,				&
-									Pi, EulerMass,				&
-									micron,	moles,				&
-									AverageAerosolDensity,		&
-									DomainX, DomainY, DomainZ,	&
-									Monodisperse,				&
-									BinEdges, HowManyBins,		&
-									NumbInsolTypes,				&
-									InsolRadii,					&
-									InsolDensity,				&
-									InsolContactAngle
+	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,		&
+					lengthscale,			&
+					Pi, EulerMass,			&
+					micron,	moles,			&
+					AverageAerosolDensity,		&
+					DomainX, DomainY, DomainZ,	&
+					Monodisperse,			&
+					BinEdges, HowManyBins,		&
+					NumbInsolTypes,			&
+					InsolRadii,			&
+					InsolDensity,			&
+					InsolContactAngle
 
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									AqMolecularMass,			&
-									HowManyAqEqReactions, &
-									HowManyOrgChems, &
-									OrgMolecularMass, &
-									HowManyAqOrgChems, &
-									AqOrgMolecularMass
+	USE Chemistry,			 ONLY : HowManyAqChems,		&
+						HowManyAqCations,	&
+					        HowManyAqAnions,	&
+					        AqMolecularMass,	&
+						HowManyAqEqReactions,   &
+						HowManyOrgChems,        &
+						OrgMolecularMass,       &
+						HowManyAqOrgChems,      &
+						AqOrgMolecularMass
 
-	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript, Warn, Error, GetParticleID
+	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript,  &
+                                        Warn, Error, GetParticleID
 
 	IMPLICIT NONE
 
@@ -1598,26 +1544,15 @@ SUBROUTINE MakeParticleExponential(WhichPopulation)
 	INTEGER :: WhichPopulation
 
 	!! Local Variables
-	REAL*8 :: JJ, XYZ(3), N12, M12, Exp1, Exp2, InitNum, VolSum1, VolSum2
+	REAL*8 :: JJ, N12, M12, Exp1, Exp2, InitNum, VolSum1, VolSum2
 	TYPE(Particle), POINTER :: CurrentParticle
-	INTEGER				    :: I,X,Y,Z
+	INTEGER				    :: I
 	LOGICAL, PARAMETER		:: Scaffolding = .FALSE. !.TRUE.
 
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticleExponential()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
 
-	!! Create a Location for the Particle
-	CALL Random_Number(JJ)
-	XYZ(1) = JJ*DomainX
-	CALL Random_Number(JJ)
-	XYZ(2) = JJ*DomainY
-	CALL Random_Number(JJ)
-	XYZ(3) = JJ*DomainZ
-
-	!! Place the particle at the local gridpoint
-	CALL ClosestGridPoint(XYZ(1),XYZ(2),XYZ(3),GasPhaseChemGridIndex, X, Y, Z) 
-
-	CurrentParticle => Particles(X,Y,Z)%First
+	CurrentParticle => Particles%First
 
 	!! Find the appropriate section to put it in, or err
 	IF (ASSOCIATED(CurrentParticle)) THEN		
@@ -1689,34 +1624,35 @@ SUBROUTINE MakeParticleExponential(WhichPopulation)
 END SUBROUTINE MakeParticleExponential
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This subroutine reads in the information on the		 !!
+!! This subroutine reads in the information on the	 !!
 !! boundary aerosol modes.                               !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE ReadBoundaryDistributionsOrganic ()
 
 	USE InfrastructuralCode, ONLY : GetFileHandle,		&
-									ReturnFileHandle,	&
-									GetLine,			&
-									GetToken,			&
-									IsReal,				&
-									IsInteger,			&
-									INT2STR,			&
-									STR2INT,			&
-									STR2REAL,			&
-									EOF,				&
-									ERROR,				&
-									WARN,				&
-									Transcript,			&
-									REAL2STR
+					ReturnFileHandle,	&
+					GetLine,			&
+					GetToken,			&
+					IsReal,				&
+					IsInteger,			&
+					INT2STR,			&
+					STR2INT,			&
+					STR2REAL,			&
+					EOF,				&
+					ERROR,				&
+					WARN,				&
+					Transcript,			&
+					REAL2STR
 
 	USE ModelParameters,	 ONLY : lengthscale,		&
-									InputDeckSubDir,	&
-									micron,	grams, cm,	&
-									ThermoBulkMode,		&
-									SetSectionalParameters,	&
-									Monodisperse
+					InputDeckSubDir,	&
+					micron,	grams, cm,	&
+					ThermoBulkMode,		&
+					SetSectionalParameters,	&
+					Monodisperse
 
-	USE Chemistry,			 ONLY : AqPhase, FindChem, HowManyAqChems, HowManyOrgChems
+	USE Chemistry,		 ONLY : AqPhase, FindChem, &
+                                        HowManyAqChems, HowManyOrgChems
 
 	IMPLICIT NONE
 
@@ -1936,47 +1872,47 @@ SUBROUTINE ReadBoundaryDistributionsOrganic ()
 	RETURN
 END SUBROUTINE ReadBoundaryDistributionsOrganic
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Add each of the individual modes to the BoundaryParticles() array     !!
-!! NOTE: Creates a single, internally mixed size distribution    !!
-!! as the sum of the input modes.								 !!                                                             !!                                             !!
-!!This subroutine is like PoputlateParticlesSectionsRightAway, 
-!! but only for environmental
-!!(boundary) aerosol modes listed in EnvAewrosolModes.in
-!!Any changes made to PoputlateParticlesSectionsRightAway
-!! should be made here as well 
-!!Matt Alvarado, 09/07/06 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! NOTE: Creates a single, internally mixed size distribution            !!
+!! as the sum of the input modes.				         !!   
+!!                                                                       !!
+!!This subroutine is like PopulateParticlesSectionsRightAway,            !!
+!! but only for environmental                                            !!
+!!(boundary) aerosol modes listed in EnvAewrosolModes.in                 !!
+!!Any changes made to PopulateParticlesSectionsRightAway                 !!
+!! should be made here as well                                           !!
+!!Matt Alvarado, 09/07/06                                                !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE PopBoundaryPart ()
 
-	USE InfrastructuralCode, ONLY : INT2STR, REAL2STR, Transcript, SetParticleID, ERROR
+	USE InfrastructuralCode, ONLY : INT2STR, REAL2STR, &
+                                        Transcript, SetParticleID, ERROR
 
-	USE ModelParameters,     ONLY : lengthscale,				&
-									DomainX, DomainY, DomainZ,	&
-									LagrSectSizeCutoff,			&
-									ThermoBulkMode,				&
-									HowManyBins,				&
-									BinEdges,					&
-									micron,						&
-									SmallestAerosolPossible, &
-									Monodisperse
+	USE ModelParameters,     ONLY : lengthscale,			&
+					DomainX, DomainY, DomainZ,	&
+				        LagrSectSizeCutoff,		&
+					ThermoBulkMode,			&
+					HowManyBins,			&
+					BinEdges,			&
+					micron,				&
+					SmallestAerosolPossible,        &
+					Monodisperse
 
-	USE GridPointFields,     ONLY : GasPhaseChemGridIndex,		&
-									XGridPoints,				&
-									YGridPoints,				&
-									ZGridPoints, &
-									GetTemp
+	USE GridPointFields,     ONLY : GetTemp
 
-	USE Chemistry,			ONLY :	HowManyAqChems,				&
-									AqMolecularMass,			&
-									howmanyaqanions,howmanyaqcations, &
-									HowManyOrgChems,			&
-									OrgMolecularMass, AqPhaseChemicalNames
+	USE Chemistry,		 ONLY :	HowManyAqChems,			&
+					AqMolecularMass,		&
+					howmanyaqanions,                &
+                                        howmanyaqcations,               &
+					HowManyOrgChems,		&
+					OrgMolecularMass,               &
+                                        AqPhaseChemicalNames
 
 	IMPLICIT NONE
 
 	!! Local Variables
-	INTEGER :: I, J, K, X, Y, Z, Q,	&
+	INTEGER :: I, J, K, Q,	&
 			   NumbParticles,		&
 			   SectionalParticles,	&
 			   LagrangianParticles
@@ -2005,7 +1941,7 @@ SUBROUTINE PopBoundaryPart ()
 	
 		IF (.NOT.ThermoBulkMode .AND. .NOT.Monodisperse) THEN
 				DO J = 1, HowManyBins
-					NewSection => MakeSection(I,J,X,Y,Z)
+					NewSection => MakeSection(I,J)
 
 					!! Budge the new mode in at the head of the list
 					IF (ASSOCIATED(BoundaryParticles%First)) THEN
@@ -2037,12 +1973,12 @@ SUBROUTINE PopBoundaryPart ()
 	IF(Scaffolding) WRITE(*,*) "Check 1"
 	IF (.NOT.ThermoBulkMode .AND. .NOT.Monodisperse) THEN
 
-			!! Allocate all of the aerosol and place them in the appropriate structures:
+!! Allocate all of the aerosol and place them in the appropriate structures:
 			DO I = 1, MAX(1,HowManyEnvAerosolModes)
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				!! Scale the particle concentration by the number !!
-				!! concentration and the domain volume.				  !!
-				!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			!! Scale the particle concentration by the number !!
+			!! concentration and the domain volume.		  !!
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				!!WRITE(*,*) "Hi!"
 				NumbParticles = ANINT(EnvAerosolModes(I,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
 				!This is to make sure small modes are included
@@ -2208,37 +2144,38 @@ SUBROUTINE PopBoundaryPart ()
 END SUBROUTINE PopBoundaryPart 
 
 !!This subroutine is like MakeParticleExponential, but only for environmental
-!!(boundary) aerosol modes listed in EnvAewrosolModes.in
+!!(boundary) aerosol modes listed in EnvAerosolModes.in
 !!Any changes made to MakeParticleExponential should be made here as well 
 !!Matt Alvarado, 09/07/06 
 SUBROUTINE MakeBoundaryParticleExponential(WhichPopulation)
 
-	USE GridPointFields,	 ONLY : ClosestGridPoint, GasPhaseChemGridIndex, GetTemp, GetPress
+	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
-	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,			&
-									lengthscale,				&
-									Pi, EulerMass,				&
-									micron,	moles,				&
-									AverageAerosolDensity,		&
-									DomainX, DomainY, DomainZ,	&
-									Monodisperse,				&
-									BinEdges, HowManyBins,		&
-									NumbInsolTypes,				&
-									InsolRadii,					&
-									InsolDensity,				&
-									InsolContactAngle
+	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,		&
+					lengthscale,			&
+					Pi, EulerMass,			&
+					micron,	moles,			&
+					AverageAerosolDensity,		&
+					DomainX, DomainY, DomainZ,	&
+					Monodisperse,			&
+					BinEdges, HowManyBins,		&
+					NumbInsolTypes,			&
+					InsolRadii,			&
+					InsolDensity,			&
+					InsolContactAngle
 
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									AqMolecularMass,			&
-									HowManyAqEqReactions, &
-									HowManyOrgChems, &
-									OrgMolecularMass, &
-									HowManyAqOrgChems, &
-									AqOrgMolecularMass
+	USE Chemistry,			 ONLY : HowManyAqChems,		&
+						HowManyAqCations,	&
+						HowManyAqAnions,	&
+						AqMolecularMass,	&
+						HowManyAqEqReactions,   &
+						HowManyOrgChems,        &
+						OrgMolecularMass,       &
+						HowManyAqOrgChems,      &
+						AqOrgMolecularMass
 
-	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript, Warn, Error, GetParticleID
+	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript,  &
+                                        Warn, Error, GetParticleID
 
 	IMPLICIT NONE
 
@@ -2246,24 +2183,13 @@ SUBROUTINE MakeBoundaryParticleExponential(WhichPopulation)
 	INTEGER :: WhichPopulation
 
 	!! Local Variables
-	REAL*8 :: JJ, XYZ(3), N12, M12, Exp1, Exp2, InitNum, VolSum1, VolSum2
+	REAL*8 :: JJ,N12, M12, Exp1, Exp2, InitNum, VolSum1, VolSum2
 	TYPE(Particle), POINTER :: CurrentParticle
-	INTEGER				    :: I,X,Y,Z
+	INTEGER				    :: I
 	LOGICAL, PARAMETER		:: Scaffolding = .FALSE. !.TRUE.
 
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeBoundaryParticleExponential()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
-
-	!! Create a Location for the Particle
-	CALL Random_Number(JJ)
-	XYZ(1) = JJ*DomainX
-	CALL Random_Number(JJ)
-	XYZ(2) = JJ*DomainY
-	CALL Random_Number(JJ)
-	XYZ(3) = JJ*DomainZ
-
-	!! Place the particle at the local gridpoint
-	CALL ClosestGridPoint(XYZ(1),XYZ(2),XYZ(3),GasPhaseChemGridIndex, X, Y, Z) 
 
 	CurrentParticle => BoundaryParticles%First
 
@@ -2337,25 +2263,24 @@ SUBROUTINE MakeBoundaryParticleExponential(WhichPopulation)
 END SUBROUTINE MakeBoundaryParticleExponential
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Like MakeMonodisperse, but for a boundary particle.			 !!
+!! Like MakeMonodisperse, but for a boundary particle.		 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 FUNCTION MakeBoundaryMonodisperse()
 
-	USE GridPointFields,	 ONLY : LocateGridPoint,			&
-									GasPhaseChemGridIndex,		&
-									GetTemp, GetPress
+	USE GridPointFields,	 ONLY :  GetTemp, GetPress
 
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									HowManyAqEqReactions, &
-									HowManyOrgChems, &
-									HowManyAqOrgChems
+	USE Chemistry,	         ONLY : HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqAnions,		&
+					HowManyAqEqReactions,           &
+					HowManyOrgChems,                &
+					HowManyAqOrgChems
 
 	USE InfrastructuralCode, ONLY : ERROR
 
-	USE ModelParameters,     ONLY : micron,NumbInsolTypes, Lengthscale, &
-									DomainX, DomainY, DomainZ	
+	USE ModelParameters,     ONLY : micron,NumbInsolTypes,          &
+                                        Lengthscale,                    &
+					DomainX, DomainY, DomainZ	
 
 	IMPLICIT NONE
 
@@ -2365,7 +2290,7 @@ FUNCTION MakeBoundaryMonodisperse()
 
 	!! Local Variables
 	INTEGER :: allocation_error, I,J
-	REAL*8  :: XYZ(3), II
+	REAL*8  :: II
 
 	!! If particle is large enough to be tracked, 
 	!! create the New Particle and allocate its arrays
@@ -2426,16 +2351,10 @@ FUNCTION MakeBoundaryMonodisperse()
 	MakeBoundaryMonodisperse%NumberOfParticles    = ANINT(EnvAerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)		
 	MakeBoundaryMonodisperse%Sectional			 = .TRUE.
 
-	!! Create a (pseudo) Location for the Particle
-	XYZ    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)		
-	MakeBoundaryMonodisperse%location(1) = XYZ(1)
-	MakeBoundaryMonodisperse%location(2) = XYZ(2)
-	MakeBoundaryMonodisperse%location(3) = XYZ(3)
-
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
-	MakeBoundaryMonodisperse%Temperature = GetTemp(XYZ(1),XYZ(2),XYZ(3))
-	MakeBoundaryMonodisperse%OriginPressureLevel  = GetPress(XYZ(1),XYZ(2),XYZ(3))
+	MakeBoundaryMonodisperse%Temperature = GetTemp()
+	MakeBoundaryMonodisperse%OriginPressureLevel  = GetPress()
 
 
 	!! Use a fake initial water activity:
@@ -2480,20 +2399,18 @@ FUNCTION MakeBoundaryMonodisperse()
 END FUNCTION MakeBoundaryMonodisperse
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Like MakeBulk, but for boundary aerosol						 !!
+!! Like MakeBulk, but for boundary aerosol			 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 FUNCTION MakeBoundaryBulk()
 
-	USE GridPointFields,	 ONLY : LocateGridPoint,			&
-									GasPhaseChemGridIndex,		&
-									GetTemp, GetPress
+	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									HowManyAqEqReactions, &
-									HowManyOrgChems, &
-									HowManyAqOrgChems
+	USE Chemistry,		 ONLY : HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqAnions,		&
+					HowManyAqEqReactions,           &
+					HowManyOrgChems,                &
+					HowManyAqOrgChems
 
 	USE InfrastructuralCode, ONLY : ERROR
 
@@ -2507,7 +2424,7 @@ FUNCTION MakeBoundaryBulk()
 
 	!! Local Variables
 	INTEGER :: allocation_error, I,J
-	REAL*8  :: XYZ(3), II
+	REAL*8  :: II
 
 	!! If particle is large enough to be tracked, 
 	!! create the New Particle and allocate its arrays
@@ -2562,16 +2479,10 @@ FUNCTION MakeBoundaryBulk()
 	MakeBoundaryBulk%Edges(1)			 = 0.
 	MakeBoundaryBulk%Edges(2)			 = 1.0e9 
 
-	!! Create a (psuedo) Location for the Particle
-	XYZ    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)		
-	MakeBoundaryBulk%location(1) = XYZ(1)
-	MakeBoundaryBulk%location(2) = XYZ(2)
-	MakeBoundaryBulk%location(3) = XYZ(3)
-
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
-	MakeBoundaryBulk%Temperature = GetTemp(XYZ(1),XYZ(2),XYZ(3))
-	MakeBoundaryBulk%OriginPressureLevel  = GetPress(XYZ(1),XYZ(2),XYZ(3))
+	MakeBoundaryBulk%Temperature = GetTemp()
+	MakeBoundaryBulk%OriginPressureLevel  = GetPress()
 
 
 	!! Use a fake initial water activity:

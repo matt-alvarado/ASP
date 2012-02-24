@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -7,12 +7,15 @@
 !! finds the physical location closest to a grid point, and
 !! finds the grid point closest to a physical location.
 	
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 02/15  2012   Matt Alvarado     Removing most of these grids, making ASP  !!
+!!                                 a one-box model or subroutine. This       !!
+!!                                 header file no longer needed              !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:
@@ -21,13 +24,13 @@
 !! 3. SUBROUTINE ClosestGridPoint(XX, YY, ZZ, Index, X, Y, Z) 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! This subroutine interpolates a data value from one of the Eulerian Grids.	!!
-	!! In the first draft (July 2001), the interpolation is bilinear as per Press	!!
-	!! et al's Numerical Recipes (1992).  Which weights each of the 8 nearest grid	!!
-	!! points according to the volume not bounded (opposing corner) by each and the	!!
-	!! free point.  See Press et al. Section 3.6 for further discussion.			!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This subroutine interpolates a data value from one of the Eulerian Grids.	!!
+!! In the first draft (July 2001), the interpolation is bilinear as per Press	!!
+!! et al's Numerical Recipes (1992).  Which weights each of the 8 nearest grid	!!
+!! points according to the volume not bounded (opposing corner) by each and the!!
+!! free point.  See Press et al. Section 3.6 for further discussion.	!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	REAL*8 FUNCTION InterpolateGrid (XP, YP, ZP, Grid, Index) RESULT (OutValue)
 		
 		use ModelParameters

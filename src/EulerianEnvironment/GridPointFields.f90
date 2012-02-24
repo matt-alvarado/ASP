@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -8,12 +8,14 @@
 !! are updated after each time step.
 !! This is the source file linking many header files together.
 	
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY					                       	!!
-!!										!!
-!! Month  Year   Name              Description					!!
-!! 07     2006   Matt Alvarado     Began Update History				!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY					                    !!
+!!									    !!
+!! Month  Year   Name              Description				    !!
+!! 07     2006   Matt Alvarado     Began Update History			    !!
+!! 02/15  2012   Matt Alvarado     Removing most of these grids, making ASP !!
+!!                                 a one-box model or subroutine.           !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! DEPENDENCIES                             !!
@@ -22,21 +24,20 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! LINKED HEADER FILES												!!
-!! 1. SetGrid.h														!!
-!! 2. Initialize.h													!!
-!! 3. Temperature.h													!!
-!! 4. Pressure.h													!!
-!! 5. Water.h														!!
-!! 6. InterpolateGrid.h												!!
-!! 7. GasPhaseChemistry.h											!!
+!! LINKED HEADER FILES						    !!
+!! 1. SetGrid.h							    !!
+!! 2. Initialize.h						    !!
+!! 3. Temperature.h						    !!
+!! 4. Pressure.h						    !!
+!! 5. Water.h							    !!
+!! 6. GasPhaseChemistry.h				            !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:
-!! 1. SUBROUTINE SetHowManyGasChems(inHowManyGasChems)
-!! 2. SUBROUTINE SetYLEN(inYLEN)
-!! 3. SUBROUTINE SetHowManyEvolveGasChems(inHowManyEvolveGasChems)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This file contains the following functions and subroutines:      !!
+!! 1. SUBROUTINE SetHowManyGasChems(inHowManyGasChems)              !!
+!! 2. SUBROUTINE SetYLEN(inYLEN)                                    !!
+!! 3. SUBROUTINE SetHowManyEvolveGasChems(inHowManyEvolveGasChems)  !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
 	module GridPointFields
@@ -46,103 +47,99 @@
 	!! Everything is private unless declared otherwise
 	PRIVATE
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Now specify which subroutines may be accessed by the outside world	 !!
-	!! most will be retrieval (GET---) or initialization (SET--- or INIT---) !!
-	!! functions.															 !! 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!! Now specify which subroutines may be accessed by the outside     !!
+	!! most will be retrieval (GET---)                                  !!
+        !! or initialization (SET--- or INIT---)                            !!
+	!! functions.							    !! 
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  	PUBLIC	::	AllocateGasChemistryGrid,		& 
-				AllocateGasReactionGrid,		&
-				ClosestGridPoint,				&
-				DiffusionCoefficientOfWater,	&
-				GasPhaseChemGridIndex,			&
-				GasPhaseChemicalRates,			&
-				GetAirDensity,					&
-				GetCpm,							&
-				GetDynamicViscosityOfAir,		& 
-				GetGasChem,						&
-				GetGasBurden,					&
-				GetGasChems,					&
-				GetGasChemVector,				&
-				GetGasChemFromBurden,			&
-				GetM,							&
-				GetMixingRatio,					&
-				GetPartialPressure,				&
-				GetPress, GetPressFromGrid,		& 
-				GetRelativeHumidity,			&
-				GetRelativeHumidityFromGrid,	&
-				GetRelativeHumidityFromBurden,	&
-				GetSatVapPress,					& 
-				GetSatMixingRatio,				&
-				GetSatVapConcentration,			&
-				GetSatVapBurden,				&
-				GetTemp, GetTempFromGrid,		& 
-				GetThermalVelocityOfAir,		&  !! Thermal Velocity of Other Gases is in Condensation, for dependency reasons
-				GridPointVolume,				&
-				InitializeGridPointFields,		& 
-				LocateGridPoint,				&
-				MeanFreePathOfAir,				&
-				MolecularThermalConductivity,	&
-				MolecularThermalDiffusivity,	&
-				ResetGasPhaseReactionRates,		&
-				SetGridPointVolumes,			&
-				SetChemFieldFromDeck,			&
-				SetHomogeneousChemFieldPPB,		&
-				SetHomogeneousChemFieldMGperM3,	&
-				SetHowManyGasChems,				&
-				SetWaterVaporField,				&
-				SetPressField,					&
-				SetTempField,					&
-				SetYLEN,						&
-				SetHowManyEvolveGasChems,		&
-				SurfaceTensionOfWater,			&
-				SetRelativeHumidity,			&
-				SetAllRelativeHumidities,		&
-				UpdateChemicalBurdens,			&
-				UpdateChemicalConcentrations,	&
-				XGridPoints,					&
-				YGridPoints,					&
-				ZGridPoints,					&
-				GetGridCellChemBurden,			&
-				AddToGridCellChemBurden,		&
-				ReplaceGridCellChemBurden,		&
-				AllSameGrid,					&
-gridgaschem
+			AllocateGasReactionGrid,		&
+			DiffusionCoefficientOfWater,	        &
+			GasPhaseChemicalRates,			&
+			GetAirDensity,				&
+			GetCpm,					&
+			GetDynamicViscosityOfAir,		& 
+			GetGasChem,				&
+			GetGasBurden,				&
+			GetGasChems,				&
+			GetGasChemVector,			&
+			GetGasChemFromBurden,			&
+			GetM,					&
+			GetMixingRatio,				&
+			GetPartialPressure,			&
+			GetPress, GetPressFromGrid,		& 
+			GetRelativeHumidity,			&
+			GetRelativeHumidityFromGrid,	        &
+			GetRelativeHumidityFromBurden,	        &
+			GetSatVapPress,				& 
+			GetSatMixingRatio,			&
+			GetSatVapConcentration,			&
+			GetSatVapBurden,			&
+			GetTemp, GetTempFromGrid,		& 
+			GetThermalVelocityOfAir,		&  
+			GridPointVolume,			&
+			InitializeGridPointFields,		& 
+			MeanFreePathOfAir,			&
+			MolecularThermalConductivity,	        &
+			MolecularThermalDiffusivity,	        &
+			ResetGasPhaseReactionRates,		&
+			SetGridPointVolumes,			&
+			SetHomogeneousChemFieldPPB,		&
+			SetHomogeneousChemFieldMGperM3,	        &
+			SetHowManyGasChems,			&
+			SetWaterVaporField,			&
+			SetPressField,				&
+			SetTempField,				&
+			SetYLEN,SetHowManyEvolveGasChems,	&
+			SurfaceTensionOfWater,			&
+			SetRelativeHumidity,			&
+			SetAllRelativeHumidities,		&
+			UpdateChemicalBurdens,			&
+			UpdateChemicalConcentrations,	        &
+			GetGridCellChemBurden,			&
+			AddToGridCellChemBurden,		&
+			ReplaceGridCellChemBurden,		&
+			AllSameGrid,				&
+                        gridgaschem
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Each of the EULERIAN GRIDS have their own GRID SPACING !!
-	!! We define the several sets of those here.			  !!
-	!!														  !!
-	!!   1 is TEMPERATURE									  !!
-	!!   2 is PRESSURE										  !!
-	!!   3 is WATER SATURATION VAPOR PRESSURE				  !!
-	!!   4 is GAS PHASE CHEMISTRY and Particles				  !!
+	!! We define the several sets of those here.	          !!
+	!!							  !!
+	!!   1 is TEMPERATURE					  !!
+	!!   2 is PRESSURE					  !!
+	!!   3 is WATER SATURATION VAPOR PRESSURE		  !!
+	!!   4 is GAS PHASE CHEMISTRY and Particles		  !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	integer, parameter :: HowManyGrids					 = 3
-			 integer, parameter :: TempGridIndex		 = 1
-			 integer, parameter :: PressGridIndex		 = 2
-			 integer, parameter :: GasPhaseChemGridIndex = 3  !! Also the grid for particles
+!	integer, parameter :: HowManyGrids	         = 3
+!        integer, parameter :: TempGridIndex		 = 1
+!	integer, parameter :: PressGridIndex		 = 2
+!	integer, parameter :: GasPhaseChemGridIndex      = 3  
+        !! Also the grid for particles
 
 	!! These arrays hold the number of grid points in each cartesian 
 	!! coordinate for each grid mesh.
-	integer :: XGridPoints(HowManyGrids)
-	integer :: YGridPoints(HowManyGrids)
-	integer :: ZGridPoints(HowManyGrids)
-	real*8  :: GridPointVolume(HowManyGrids)
+!	integer :: XGridPoints(HowManyGrids)
+!	integer :: YGridPoints(HowManyGrids)
+!	integer :: ZGridPoints(HowManyGrids)
+	real*8  :: GridPointVolume
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! The folling arrays are PRIMARY !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	real*8, allocatable :: GridTemp(:,:,:)				! Air Temperature (K)
-	real*8, allocatable :: GridPress(:,:,:)				! Air Pressure (mb)
-	real*8, allocatable :: GridGasChem(:,:,:,:)			! Gas Phase Chemistry (mol per cc)
-	real*8, allocatable :: TemporaryWaterArray(:,:,:)	! Relative Humidity (between 0 and 1) is stored temporarily
+	real*8              :: GridTemp 	! Air Temperature (K)
+	real*8              :: GridPress	! Air Pressure (mb)
+	real*8, allocatable :: GridGasChem(:)   
+        ! Gas Phase Chemistry (mol per cc for each molecule)
+	real*8              :: TemporaryWaterArray
+        ! Relative Humidity (between 0 and 1) is stored temporarily
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! The folling arrays hold SECONDARY THERMODYNAMIC variables, 
 	!! and are diagnosed from the primary variables above.
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	real*8, allocatable :: GasPhaseChemicalRates(:,:,:,:)
+	real*8, allocatable :: GasPhaseChemicalRates(:)
 
 	!! If all the grids are the same scale, then this is true
 	LOGICAL :: AllSameGrid
@@ -168,17 +165,16 @@ gridgaschem
 		HowManyEvolveGasChems = inHowManyEvolveGasChems
 	END SUBROUTINE
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! This series of includes specify target files that contain grid point
-	!! field subrountines to be included in this module (and thus not compiled
-	!! on their own but rather drawn into here.
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!! This series of includes specify target files that contain       !!
+        !! grid point field subrountines to be included in this module     !!
+        !! (and thus not compiled on their own but rather drawn into here. !!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	include "SetGrid.h"
 	include "Initialize.h"
 	include "Temperature.h"
 	include "Pressure.h"
 	include "Water.h"
-	include "InterpolateGrid.h"
 	include "GasPhaseChemistry.h"
 
 	end module GridPointFields

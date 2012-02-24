@@ -1,20 +1,20 @@
-!2345678901234567890123456789012345678901234567890123456789012345678901234567890
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
 !! ParticleAttributes.h
-!! Contains functions for calculating particle properties (density, radius, mass
+!! Contains functions for calculating particle properties 
+!! (density, radius, mass
 !! curvature correction, Knudsen number, Reynolds number, etc.)
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY							      	!!
-!!									       	!!
-!! Month  Year   Name              Description					!!
-!! 07     2006   Matt Alvarado     Began Update History				!!
-!! 07/24  2006   Matt Alvarado     Removed "ISNAN" to fit pgf90			!!
-!! 09/07  2006   Matt Alvarado     Changed RecalculateRadius to give lower edge	!!
-!!				      when number conc. = 0.			!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 07/24  2006   Matt Alvarado     Removed "ISNAN" to fit pgf90		     !!
+!! 09/07  2006   Matt Alvarado   Changed RecalculateRadius to give lower edge!!
+!!				      when number conc. = 0.		     !!
 !! 11/01  2006   Matt Alvarado     Created ShellRefIndAndRad
 !! 05/18  2007   Matt Alvarado     Revised ShellRefIndAndRad
 !!				   Created AerosolOptProp
@@ -23,26 +23,35 @@
 !! 07/17  2007   Matt Alvarado     Added line to SurfaceTension
 !!				      to keep value above that of pure Ethanol
 !! 07/18  2007   Matt Alvarado     Removed calls to ParticleDensity from
-!!				      CurvatureCorrection and OrgCurvatureCorrection
-!!				      Just use values in particle data structure instead
+!!				CurvatureCorrection and OrgCurvatureCorrection
+!!			 Just use values in particle data structure instead
 !!				   In ParticleDensity, if ion loop fails, force
 !!				      density of ionic solution to 1.0 g/cm3
-!! 07/26  2007   Matt Alvarado     Fixed AbsCoreRad calculation in ShellRefIndAndRad
+!! 07/26  2007   Matt Alvarado     Fixed AbsCoreRad calculation in 
+!!                                 ShellRefIndAndRad
 !! 09/07  2007   Matt Alvarado     Fixed shell refractive index calcultion
 !! 09/17  2007   Matt Alvarado     Removed write statement from ParticleDensity
-!! 10/01  2007   Matt Alvarado     Set ParticleDensity to skip bins with 0 particles
-!! 10/03  2007   Matt Alvarado     Set Denomsum limit in SurfaceTension to 1.0e40
-!! 10/04  2007   Matt Alvarado     Protected ShellRefIndAndRad from near zero number concentrations
-!! 10/11  2007   Matt Alvarado     Set HypotheticalElectrolyteConcentrations to warn of charge
+!! 10/01  2007   Matt Alvarado     Set ParticleDensity to skip bins 
+!!                                 with 0 particles
+!! 10/03  2007   Matt Alvarado     Set Denomsum limit in SurfaceTension to 
+!!                                 1.0e40
+!! 10/04  2007   Matt Alvarado     Protected ShellRefIndAndRad from near zero 
+!!                                  number concentrations
+!! 10/11  2007   Matt Alvarado     Set HypotheticalElectrolyteConcentrations 
+!!                                 to warn of charge
 !!                                 imbalance, but not stop.
-!! 10/15  2007   Matt Alvarado     Fixed Assymetry parameter in ShellRefIndAndRad
-!! 08/30  2010   Matt Alvarado     Changed ShellRefIndandRad, AerosolOpticalDepth,
-!!                                   and AerosolOptProp to allow 62 photolysis wavelengths
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! 10/15  2007   Matt Alvarado     Fixed Assymetry parameter in 
+!!                                 ShellRefIndAndRad
+!! 08/30  2010   Matt Alvarado     Changed ShellRefIndandRad, 
+!!                                 AerosolOpticalDepth, and AerosolOptProp 
+!!                                 to allow 62 photolysis wavelengths
+!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:		!!
-!! 1. SUBROUTINE ResetAllOriginPressureLevels (OriginPressureLevel, X, Y, Z)
+!! 1. SUBROUTINE ResetAllOriginPressureLevels (OriginPressureLevel)
 !! 2. FUNCTION ParticleKnudsen (InParticle)
 !! 3. FUNCTION ParticleKnudsenForEnergy (InParticle)
 !! 4. FUNCTION CunninghamSlipCorrectionFactor (InParticle)
@@ -60,19 +69,18 @@
 !!16. REAL*8 FUNCTION MolalityAqCarbon(InParticle)
 !!17. REAL*8 FUNCTION AqueousSolutionMass
 !!18. SUBROUTINE ShellRefIndAndRad(InParticle)
-!!19. REAL*8 FUNCTION AerosolOpticalDepth(XP, YP, ZP)
+!!19. REAL*8 FUNCTION AerosolOpticalDepth()
 !!20. SUBROUTINE AerosolOptProp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  
-SUBROUTINE ResetAllOriginPressureLevels (OriginPressureLevel, X, Y, Z)
+SUBROUTINE ResetAllOriginPressureLevels (OriginPressureLevel)
 
 	IMPLICIT NONE
 
 	Type(Particle),POINTER :: Particle
-	INTEGER :: X, Y, Z
 	REAL    :: OriginPressureLevel
 
-	Particle => Particles(X,Y,Z)%First
+	Particle => Particles%First
 
 10	IF (ASSOCIATED(Particle)) Particle%OriginPressureLevel = OriginPressureLevel
 		
@@ -95,8 +103,7 @@ REAL*8 FUNCTION ParticleKnudsen (InParticle)
 
 	Type(Particle),POINTER :: InParticle
 
-	ParticleKnudsen = MeanFreePathOfAir (InParticle%Location(1),InParticle%Location(2),InParticle%Location(3)) &
-					  / InParticle%EffectiveRadius
+	ParticleKnudsen = MeanFreePathOfAir ()/ InParticle%EffectiveRadius
 
 END FUNCTION ParticleKnudsen
 
@@ -106,15 +113,15 @@ END FUNCTION ParticleKnudsen
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION ParticleKnudsenForEnergy (InParticle)
 
-	USE GridPointFields, ONLY : MolecularThermalDiffusivity, GetThermalVelocityOfAir
+	USE GridPointFields, ONLY : MolecularThermalDiffusivity, & 
+                                    GetThermalVelocityOfAir
 
     IMPLICIT NONE
 
 	Type(Particle),POINTER :: InParticle
 
-	ParticleKnudsenForEnergy = 3 *																			  &
-			MolecularThermalDiffusivity(InParticle%Location(1),InParticle%Location(2),InParticle%Location(3)) &
-			/ GetThermalVelocityOfAir(InParticle%Location(1),InParticle%Location(2),InParticle%Location(3))   &
+	ParticleKnudsenForEnergy = 3 *MolecularThermalDiffusivity() &
+			/ GetThermalVelocityOfAir()   &
 			/ InParticle%EffectiveRadius
 
 	RETURN
@@ -126,7 +133,6 @@ END FUNCTION ParticleKnudsenForEnergy
 !! the appropriate one and returns the value.			  !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION CunninghamSlipCorrectionFactor (InParticle)
-
 
     IMPLICIT NONE
 
@@ -181,12 +187,23 @@ END FUNCTION AerosolPH
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION ParticleDensity (InParticle)
 
-	USE ModelParameters,     ONLY : grams, cm, aqchemscale, moles, pi, avogadro,SmallestAerosolPossible
-	USE Chemistry,			 ONLY : IFSOLID, AqMolecularMass,HowManyAqChems,HowManyAqCations,		&
-									HowManyAqAnions, HowManyAqEqReactions, AqEquilibriaList,		&
-									AqAnionCharge, AqCationCharge , &
-									HowManyOrgChems, OrgMolecularMass, OrgDensity, SolidSaltDensity, &
-									HowManyAqOrgChems, AqOrgMolecularMass, AqOrgDensity
+	USE ModelParameters,     ONLY : grams, cm, aqchemscale, &
+                                        moles, pi, avogadro,    &
+                                        SmallestAerosolPossible
+
+	USE Chemistry,		ONLY : IFSOLID, AqMolecularMass,       &
+                                       HowManyAqChems,HowManyAqCations,&
+				       HowManyAqAnions,                &
+                                       HowManyAqEqReactions,           & 
+                                       AqEquilibriaList,	       &
+				       AqAnionCharge, AqCationCharge,  &
+				       HowManyOrgChems,                &
+                                       OrgMolecularMass, OrgDensity,   &
+                                       SolidSaltDensity,               &
+                                       HowManyAqOrgChems,              &
+                                       AqOrgMolecularMass,             &
+                                       AqOrgDensity
+
 	USE InfrastructuralCode, ONLY : ERROR,REAL2STR, WARN
 
 	IMPLICIT NONE
@@ -196,10 +213,10 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
 
 	!! Internal Variables
 	INTEGER :: I,K, SkipFlag, C
-	REAL*8  :: Volume, Mass, ionMass, PSIij, TempElectrolytes(HowManyAqChems),	&
-			   BinaryDensity, NumerSum, DenomSum, TempMolality,					&
-  			   PatKumWeights(HowManyAqEqReactions,3), XX, YY, Residual, dR, &
-			    SolutionDensity, InsolMass, InsolVolume, InsolDensity, InorgSolnDensity
+	REAL*8  ::Volume,Mass,ionMass,PSIij, TempElectrolytes(HowManyAqChems),&
+	BinaryDensity, NumerSum, DenomSum, TempMolality, &
+  	PatKumWeights(HowManyAqEqReactions,3), XX, YY, Residual, dR, &
+	SolutionDensity, InsolMass, InsolVolume, InsolDensity, InorgSolnDensity
  
 	REAL*8, PARAMETER :: ResidualThreshold = 0.0025 !**3.
 
@@ -241,16 +258,16 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
 
 			!! This is the equivalent molality of the associated electrolyte
 			!Write(*,*) "Temp Electrolytes: ", TempElectrolytes(AqEquilibriaList(I,1))
-                        TempMolality = TempElectrolytes(AqEquilibriaList(I,1)) / InParticle%AqChems(1) / &
+                        TempMolality = TempElectrolytes(INT(AqEquilibriaList(I,1))) / InParticle%AqChems(1) / &
 						   (moles / grams * AqMolecularMass(1)) * 1000.
 
-			Mass    = Mass    + AqMolecularMass(AqEquilibriaList(I,1))*TempElectrolytes(AqEquilibriaList(I,1))
-			ionMass = ionMass + AqMolecularMass(AqEquilibriaList(I,1))*TempElectrolytes(AqEquilibriaList(I,1))
+			Mass    = Mass    + AqMolecularMass(INT(AqEquilibriaList(I,1)))*TempElectrolytes(INT(AqEquilibriaList(I,1)))
+			ionMass = ionMass + AqMolecularMass(INT(AqEquilibriaList(I,1)))*TempElectrolytes(INT(AqEquilibriaList(I,1)))
 	
 			IF(IsNaN (TempMolality)) THEN
 				WRITE(*,*) "Problem in Temp Molality"
 				WRITE(*,*) InParticle%NumberOfParticles, I, AqEquilibriaList(I,13)
-				WRITE(*,*) TempElectrolytes(AqEquilibriaList(I,1)), TempMolality, InParticle%AqChems(1)
+				WRITE(*,*) TempElectrolytes(INT(AqEquilibriaList(I,1))), TempMolality, InParticle%AqChems(1)
 			END IF
 
 			!WRITE(*,*) TempMolality, I
@@ -274,7 +291,7 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
 			END IF
 
 			!! Employ Mixing Rule of Patwardhan and Kumar (AIChE J. 39, 711-714) to Mix these ions appropriately
-			PSIij =  1000. * PatKumWeights(I,1) + AqMolecularMass(AqEquilibriaList(I,1)) * TempMolality
+			PSIij =  1000. * PatKumWeights(I,1) + AqMolecularMass(INT(AqEquilibriaList(I,1))) * TempMolality
 			IF(IsNaN(PatKumWeights(I,1))) THEN
 				CALL WARN("Problem in PatKumWeights! Get NaN!")
 			END IF
@@ -369,23 +386,7 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	InParticle%EffectiveRadius = (0.75 * Volume / pi)**0.33333333333
-	!WRITE(*,*) "Volumes: ", Volume, InsolVolume
-	!! If this returns nonsense, then probably it wasn't ever pushed into thermodynamic equilibrium
-	!! and there are no ions, which will lead to infinite numbers!
-	!IF (IsNaN(InParticle%EffectiveRadius)) THEN
-	!	!CALL DumpParticleContentsAtError(InParticle, "NoIonsInParticleDensityParticle.txt",InDensity=.FALSE.,		&
-	!	!								 InDoWaterActivity=.FALSE.,InDoSurfaceTension=.FALSE.)
-	!	IF (InParticle%Sectional .AND. InParticle%NumberOfParticles .LE. 0) &
-	!	CALL ERROR ("Called ParticleDensity() for a sectional distribution with negative particle concentration.")
-	!	IF (InParticle%AqChems(1) .EQ. 0) THEN
-	!		CALL ERROR ("Called ParticleDensity() for an aerosol with no water which is really not ok.  Please look into it!")
-	!	ELSE
-	!		WRITE(*,*) InParticle%AqChems(1), InParticle%NumberOfParticles, Mass
-	!		CALL ERROR ("Called ParticleDensity() for an aerosol with no ions, leading me to believe that it is not in "// &
-	!					"thermodynamic equilibrium (there should either be ions or no water), or that no equilibrium "//   &
-	!					"reactions were defined for any of the constituent species.  Please look into it!")
-	!	END IF
-	!END IF
+
 
 	InParticle%InorgSolnDensity = InorgSolnDensity 
 	InParticle%SolutionDensity = SolutionDensity
@@ -568,7 +569,7 @@ FUNCTION GetPatwardhandAndKumarWeightings (InParticle)
 		
 		!Exclude Levitocite reaction from this calculation
 		IF(AqEquilibriaList(K,22) .NE. 0) THEN
-			IF (AqPhaseChemicalNames(AqEquilibriaList(K,1)) .EQ. "(NH4)3H(SO4)2") THEN
+			IF (AqPhaseChemicalNames(INT(AqEquilibriaList(K,1))) .EQ. "(NH4)3H(SO4)2") THEN
 				GetPatwardhandAndKumarWeightings(K,1) = 0.
 			END IF
 		
@@ -610,9 +611,15 @@ END FUNCTION GetPatwardhandAndKumarWeightings
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 FUNCTION HypotheticalElectrolyteConcentrations (InParticle)
 
-	USE Chemistry, ONLY : HowManyAqChems, HowManyAqCations, HowManyAqAnions, HowManyAqEqReactions, AqEquilibriaList, & 
-AqPhaseChemicalNames, AqAnionNames, AqCationNames
-	USE ModelParameters, ONLY : AqThermoNumbAllowedIterationsForHypLoop,moles,WaterEquilibriumIndex
+	USE Chemistry, ONLY : HowManyAqChems, HowManyAqCations, &
+                              HowManyAqAnions, HowManyAqEqReactions, &
+                              AqEquilibriaList, & 
+                              AqPhaseChemicalNames, AqAnionNames, &
+                              AqCationNames
+
+	USE ModelParameters, ONLY : AqThermoNumbAllowedIterationsForHypLoop, &
+                                    moles,WaterEquilibriumIndex
+
 	USE InfrastructuralCode, ONLY : ERROR, REAL2STR, TRANSCRIPT
 
 	IMPLICIT NONE
@@ -671,12 +678,12 @@ AqPhaseChemicalNames, AqAnionNames, AqCationNames
 			!WRITE(*,*) AqCationNames(AqEquilibriaList(I,2)), TempChem (HowManyAqChems+AqEquilibriaList(I,2)), TempChem(AqEquilibriaList(I,1))*AqEquilibriaList(I,4)
 			!WRITE(*,*) AqAnionNames(AqEquilibriaList(I,3)), TempChem (HowManyAqChems+HowManyAqCations + AqEquilibriaList(I,3)), TempChem(AqEquilibriaList(I,1))*AqEquilibriaList(I,5)
 		
-			TempChem (HowManyAqChems+AqEquilibriaList(I,2))					   =		&
-					TempChem (HowManyAqChems+AqEquilibriaList(I,2)) + TempChem(AqEquilibriaList(I,1))*AqEquilibriaList(I,4)
-			TempChem (HowManyAqChems+HowManyAqCations + AqEquilibriaList(I,3)) =		&
-					TempChem (HowManyAqChems+HowManyAqCations + AqEquilibriaList(I,3)) + &
-					TempChem(AqEquilibriaList(I,1))*AqEquilibriaList(I,5)
-			TempChem (AqEquilibriaList(I,1))                                   = TempChem(AqEquilibriaList(I,1)) - TempChem(AqEquilibriaList(I,1))*AqEquilibriaList(I,5)
+			TempChem (HowManyAqChems+INT(AqEquilibriaList(I,2)))					   =		&
+					TempChem (HowManyAqChems+INT(AqEquilibriaList(I,2))) + TempChem(INT(AqEquilibriaList(I,1)))*AqEquilibriaList(I,4)
+			TempChem (HowManyAqChems+HowManyAqCations + INT(AqEquilibriaList(I,3))) =		&
+					TempChem (HowManyAqChems+HowManyAqCations + INT(AqEquilibriaList(I,3))) + &
+					TempChem(INT(AqEquilibriaList(I,1)))*AqEquilibriaList(I,5)
+			TempChem (INT(AqEquilibriaList(I,1)))                                   = TempChem(INT(AqEquilibriaList(I,1))) - TempChem(INT(AqEquilibriaList(I,1)))*AqEquilibriaList(I,5)
 			!WRITE(*,*) AqCationNames(AqEquilibriaList(I,2)), TempChem (HowManyAqChems+AqEquilibriaList(I,2))
 			!WRITE(*,*) AqAnionNames(AqEquilibriaList(I,3)), TempChem (HowManyAqChems+HowManyAqCations + AqEquilibriaList(I,3))
 			!WRITE(*,*) TempChem (AqEquilibriaList(I,1))
@@ -687,16 +694,16 @@ AqPhaseChemicalNames, AqAnionNames, AqCationNames
 
 			!! The adjustment parameter is limited by the concentration of each ion divided
 			!! by the appropriate stoicheometric coefficient.
-			DeltaMoles  = MIN(TempChem (HowManyAqChems+AqEquilibriaList(I,2)) / AqEquilibriaList(I,4),					&
-						      TempChem (HowManyAqChems+HowManyAqCations + AqEquilibriaList(I,3)) / AqEquilibriaList(I,5))
+			DeltaMoles  = MIN(TempChem (HowManyAqChems+INT(AqEquilibriaList(I,2))) / AqEquilibriaList(I,4),					&
+						      TempChem (HowManyAqChems+HowManyAqCations + INT(AqEquilibriaList(I,3))) / AqEquilibriaList(I,5))
 
 			!! Now adjust all of the concentrations appropriately
 			IF (DeltaMoles .GT. 0) THEN
 				!! Don't adjust back towards water at all, just get rid of it
-				TempChem (HowManyAqChems+AqEquilibriaList(I,2))					   = &
-					TempChem (HowManyAqChems+AqEquilibriaList(I,2)) - DeltaMoles * AqEquilibriaList(I,4)
-				TempChem (HowManyAqChems+HowManyAqCations + AqEquilibriaList(I,3)) = &
-					TempChem (HowManyAqChems+HowManyAqCations + AqEquilibriaList(I,3)) - DeltaMoles * AqEquilibriaList(I,5)
+				TempChem (HowManyAqChems+INT(AqEquilibriaList(I,2)))					   = &
+					TempChem (HowManyAqChems+INT(AqEquilibriaList(I,2))) - DeltaMoles * AqEquilibriaList(I,4)
+				TempChem (HowManyAqChems+HowManyAqCations + INT(AqEquilibriaList(I,3))) = &
+					TempChem (HowManyAqChems+HowManyAqCations + INT(AqEquilibriaList(I,3))) - DeltaMoles * AqEquilibriaList(I,5)
 			END IF
 
 		!! And still others are canonical
@@ -706,16 +713,16 @@ AqPhaseChemicalNames, AqAnionNames, AqCationNames
 			
 				!! The adjustment parameter is limited by the concentration of each ion divided
 				!! by the appropriate stoicheometric coefficient.
-				DeltaMoles  = MIN(TempChem (HowManyAqChems+AqEquilibriaList(I,2)) / AqEquilibriaList(I,4),					&
-						      TempChem (HowManyAqChems+HowManyAqCations + AqEquilibriaList(I,3)) / AqEquilibriaList(I,5))
+				DeltaMoles  = MIN(TempChem (HowManyAqChems+INT(AqEquilibriaList(I,2))) / AqEquilibriaList(I,4),					&
+						      TempChem (HowManyAqChems+HowManyAqCations + INT(AqEquilibriaList(I,3))) / AqEquilibriaList(I,5))
                                 !WRITE(*,*) "Delta Moles: ", DeltaMoles
 				!! Now adjust all of the concentrations appropriately
 				IF (DeltaMoles .GT. 0) THEN
-					TempChem (AqEquilibriaList(I,1))                           = TempChem(AqEquilibriaList(I,1)) + DeltaMoles
-					TempChem (HowManyAqChems+AqEquilibriaList(I,2))			   = TempChem (HowManyAqChems+AqEquilibriaList(I,2)) - &
+					TempChem (INT(AqEquilibriaList(I,1)))                           = TempChem(INT(AqEquilibriaList(I,1))) + DeltaMoles
+					TempChem (HowManyAqChems+INT(AqEquilibriaList(I,2)))			   = TempChem (HowManyAqChems+INT(AqEquilibriaList(I,2))) - &
 																			 DeltaMoles * AqEquilibriaList(I,4)
-					TempChem (HowManyAqChems+HowManyAqCations + AqEquilibriaList(I,3)) = TempChem (HowManyAqChems+HowManyAqCations + &
-																	AqEquilibriaList(I,3)) - DeltaMoles * AqEquilibriaList(I,5)
+					TempChem (HowManyAqChems+HowManyAqCations + INT(AqEquilibriaList(I,3))) = TempChem (HowManyAqChems+HowManyAqCations + &
+																	INT(AqEquilibriaList(I,3))) - DeltaMoles * AqEquilibriaList(I,5)
 				END IF
 		
 
@@ -801,9 +808,9 @@ REAL*8 FUNCTION TerminalVelocity (InParticle)
 	!! Internal Vairables
 	REAL*8 :: Dum
 
-	TerminalVelocity = ReynoldsNumber (InParticle) * 0.5  &
-					   * GetDynamicViscosityOfAir(InParticle%Location(1),InParticle%Location(2),InParticle%Location(3))  &
-					   / GetAirDensity(InParticle%Location(1),InParticle%Location(2),InParticle%Location(3))			 &
+	TerminalVelocity = ReynoldsNumber (InParticle) * 0.5             &
+					   * GetDynamicViscosityOfAir()  &
+					   / GetAirDensity()		 &
 					   / InParticle%EffectiveRadius
 
 	RETURN
@@ -949,7 +956,7 @@ REAL*8 FUNCTION SurfaceTension (InParticle)
 			CALL ERROR ("In SurfaceTension(), the mean activity coefficients appear to have grown without bounds.  "// &
 					"This is likely because the water is leaching out of the system towards zero.  Perhaps the "// &
 					"relative humidity for the particle is too small?  I think it is "//trim(real2str(100*         &
-					GetRelativeHumidity(InParticle%location(1),InParticle%location(2),InParticle%location(3))))//  &
+					GetRelativeHumidity()))//  &
 					"%.  Another possibility is that you are in the water equilibration routine and it is dumping "// &
 					"water from the particle to try to reduce the water activity, and it got too dry.")
 		END IF
@@ -971,7 +978,7 @@ REAL*8 FUNCTION SurfaceTension (InParticle)
 		END DO
 
 		!! Surface Tesion of the Solution is the Surface Tension of Water + R * T * Sum1
-		SurfaceTension = SurfaceTensionOfWater(InParticle%Location(1),InParticle%Location(2),InParticle%Location(3)) &
+		SurfaceTension = SurfaceTensionOfWater() &
 	                 + Rstar*InParticle%Temperature*Sum1
 	
 		!Now, add in effect of aqueous organics using formula in
@@ -979,7 +986,7 @@ REAL*8 FUNCTION SurfaceTension (InParticle)
  		SurfaceTension = SurfaceTension - 0.0187*InParticle%Temperature*LOG(1+628.14*MolalityAqCarbon(InParticle))
 	
 	ELSE !Use formulas from Jacobson, "Fund. of Atm. Modeling", 2nd ed., p. 534		
-		SurfaceTension = SurfaceTensionOfWater(InParticle%Location(1),InParticle%Location(2),InParticle%Location(3)) 
+		SurfaceTension = SurfaceTensionOfWater() 
 		!Ions
 		TotalIonMolality = 0.
 		DO I = HowManyAqChems+1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
@@ -1005,12 +1012,12 @@ END FUNCTION SurfaceTension
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Calculate the PARTICLE REYNOLDS NUMBER !!
-!!										  !!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Uses a three-regime (slip, continuum, and transition) !!
 !! from Beard's parameterization. (see Jacobson, 1997)   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Tested against Fig. 16.3 in Jacobson, 1999 and it     !!
-!! matches well.										 !!
+!! matches well.					 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION ReynoldsNumber (InParticle)
 
@@ -1024,9 +1031,9 @@ REAL*8 FUNCTION ReynoldsNumber (InParticle)
 	!! Type local variables
 	REAL*8 :: Dv, Cs, AirDensity, X, Y
 
-	Dv		   = GetDynamicViscosityOfAir(InParticle%Location(1),InParticle%Location(2),InParticle%Location(3))
+	Dv         = GetDynamicViscosityOfAir()
 	Cs         = CunninghamSlipCorrectionFactor(InParticle)
-	AirDensity = GetAirDensity(InParticle%Location(1),InParticle%Location(2),InParticle%Location(3))
+	AirDensity = GetAirDensity()
 
 	!! Estimate the Reynolds Number and then Calculate the Real Value, 
 	!! this is the estimated terminal velocity
@@ -1557,21 +1564,18 @@ END SUBROUTINE ShellRefIndAndRad
 
 !Calculates aerosol optical depth for a grid point at 550 nm.
 !Can only be used in inversion mode! 
-REAL*8 FUNCTION AerosolOpticalDepth (X, Y, Z)
+REAL*8 FUNCTION AerosolOpticalDepth ()
 ! 08/30/2010 Changed for photolysis radiation bins MJA
 	
 	USE ModelParameters, ONLY : PI, InversionHeight
 
 	IMPLICIT NONE
-
-	!External Variables
-	INTEGER :: X, Y, Z
 	
 	Type(Particle),POINTER :: Particle
 
 	AerosolOpticalDepth = 0.
 	
-	Particle => Particles(X,Y,Z)%First
+	Particle => Particles%First
 
 10	IF (ASSOCIATED(Particle)) THEN
 
@@ -1593,7 +1597,7 @@ END FUNCTION AerosolOpticalDepth
 !average single scattering albedo, and 
 !average assymetry factor 
 !for a grid point at 18 radiative bands.
-SUBROUTINE AerosolOptProp (X, Y, Z, ExtCoeff, SingScat, Assym)
+SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym)
 ! 08/30/2010 Changed for the photolysis wavebands MJA
 	
 	USE ModelParameters, ONLY : PI, InversionHeight
@@ -1602,9 +1606,6 @@ SUBROUTINE AerosolOptProp (X, Y, Z, ExtCoeff, SingScat, Assym)
 
 	!Output Variables
 	REAL*8, DIMENSION(18) :: ExtCoeff, SingScat, Assym
-	
-	!External Variables
-	INTEGER :: X, Y, Z
 	
 	!Internal variables
 	INTEGER :: ib
@@ -1617,7 +1618,7 @@ SUBROUTINE AerosolOptProp (X, Y, Z, ExtCoeff, SingScat, Assym)
 		ExtCoeff(ib) = 0.0
 		ScatCoeff(ib) = 0.0
 		AssymSum = 0.0
-		Particle => Particles(X,Y,Z)%First
+		Particle => Particles%First
 
 	10	IF (ASSOCIATED(Particle)) THEN
 			xxx = Particle%NumberofParticles*(PI*Particle%EffectiveRadius**2)
@@ -1634,15 +1635,15 @@ SUBROUTINE AerosolOptProp (X, Y, Z, ExtCoeff, SingScat, Assym)
 
 		!Formula from p.327, eqn 9.103 of Jacobson, 2nd ed. "Fundamentals of Atm. Modeling"
 		SingScat(ib) = ScatCoeff(ib)/ExtCoeff(ib)
-		IF(ib .EQ. 61) WRITE(*,*) "SingScat: ", SingScat(1)
+		!IF(ib .EQ. 61) WRITE(*,*) "SingScat: ", SingScat(1)
 		
 		!Formula from p.329, eqn 9.117 of Jacobson, 2nd ed. "Fundamentals of Atm. Modeling"
 		Assym(ib) = AssymSum/ScatCoeff(ib)
-		IF(ib .EQ. 61) WRITE(*,*) "Assym: ", Assym(1)
+		!IF(ib .EQ. 61) WRITE(*,*) "Assym: ", Assym(1)
 
 		!Convert ExtCoeff from 1/cm to 1/m
 		ExtCoeff(ib) = 100*ExtCoeff(ib)
-		IF(ib .EQ. 61) WRITE(*,*) "ExtCoeff: ", ExtCoeff(1)
+		!IF(ib .EQ. 61) WRITE(*,*) "ExtCoeff: ", ExtCoeff(1)
 
 	END DO
 	

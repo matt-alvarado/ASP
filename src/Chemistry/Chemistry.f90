@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -8,14 +8,16 @@
 !! routine for gas phase chemistry.
 !! This is the source file linking many header files together.
 	
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY							        !!
-!!										!!
-!! Month  Year   Name              Description					!!
-!! 07     2006   Matt Alvarado     Began Update History				!!
-!! 10/19  2006   Matt Alvarado     Changed ResetPhotoRates to do linear	        !!
-!!				   interpolation.			        !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!							                     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 10/19  2006   Matt Alvarado     Changed ResetPhotoRates to do linear	     !!
+!!			             interpolation.			     !!
+!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! DEPENDENCIES		                    !!
@@ -39,8 +41,8 @@
 !! 8. OrgPhaseChemInits.h"					    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:			!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This file contains the following functions and subroutines:	             !!
 !! 1. SUBROUTINE SetPhaseIfs(iIFGAS, iIFAQ)
 !! 2. SUBROUTINE SetChemistryParams()
 !! 3. SUBROUTINE RecalculateReactionRates(IFGAS, IFAQ, IFSOLID)
@@ -62,175 +64,201 @@ MODULE Chemistry
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Specify which variables, arrays, subroutines, and functions	!!
 	!! and may be accessed from outside the module					!!
-	PUBLIC	::  EnthalpyOfVaporization,		&
-				HowManyGasChems,			&	!Variables
-				HowManyAqChems,				&	!	  "
-				HowManyAqCations,			&	!     "
-				HowManyAqAnions,			&	!     "
-				HowManyCondensingChems,		&	!	  "
-				HowManyOrgChems,            &   !
-				HowManyAqOrgChems,          &
-				HowManyAqEqReactions,		&	!	  "
-				HowManyGasAqEqReactions,	&   !     "
-				HowManyEvolveGasChems,		&	!     "
-				HowManyEvolveAqChems,		&	!     "
-				HowManyNonZeroGasJacTerms,	&	!	  "
-				HowManyNonZeroAqJacTerms,	&	!	  "
-				HowManyKMParams,			&	!     "
-				GasPhaseODESet,				&	!     " 
-				GasPhaseJacobian,			&	!	  "
-				GasPhaseSensitivityMatrix,  &
-				GasPhaseReactionRates,		&
-				GasPhaseReactionRateArraySize, &				
-				GasIa, GasJa,				&	!     "
-				ChemTerm,					&	! Derived Types
-				DiffEqTerm,					&	!     "
-				DiffEqList,					&	!     "
-				SetChemistryParams,			&	! Subroutines
-				SetPhaseIfs,				&	!     "
-				ReadPhotolysisRates,		&
-				PhotoRates,                 &
-				GasPhaseChemicalNames,		&	! Names for Error Checking and Messaging
-				AqPhaseChemicalNames,		&	!     "
-				AqCationNames,AqAnionNames,	&	!     "
-				OrgPhaseChemicalNames,      &
-				OrgMolecularMass,           &
-				OrgDensity,					&
-				AqOrgPhaseChemicalNames,      &
-				AqOrgMolecularMass,           &
-				AqOrgDensity,					&
-				SolidSaltDensity,           &
-				GasMolecularMass,			&	! Chemical Mass Values
-				AqMolecularMass,			&	!     "
-				AqCationMass, AqAnionMass,	&	!     "
-				AqCationCharge,				&	! For Thermodynamic Calculations
-				AqAnionCharge,				&	!     "  (Charge)
-				GetAqCharge,				&
-				AqEquilibriaList,			&	!	  "  (Eq Reactions Index List)
-				KMRef,						&
-				SolidMolecularMass,			&
-				IFGAS, IFAQ, IFSOLID,		&	! Logical Variables
-				RecalculateReactionRates,	&	! 
-				RecalculateHeteroRates,     &
-				RecalculatePhotoRates,      &
-				FindChem,					&	! Indexing Functions & Variables
-				FindIon,					&	!	  "
-				FindCation,FindAnion,		&
-				GasPhase,AqPhase,SolidPhase,&
-				StepGasChemistry,			&
-				MolecularDiffusionCoefficient, &
-				AqWaterDissociationReaction, &   ! The aq dissociation rxn of water, if any
-				TestChems,					&
-				GasPhaseBackground, &
-				AqOrgNumCarbon, &
-				GasPhaseDepVel, &
-				AqRefractiveIndex, &
-				OrgRefractiveIndex, &
-				AqOrgRefractiveIndex
+	PUBLIC	::      EnthalpyOfVaporization,		&
+		        HowManyGasChems,		&	!Variables
+			HowManyAqChems,			&	!	  "
+			HowManyAqCations,		&	!     "
+			HowManyAqAnions,		&	!     "
+			HowManyCondensingChems,		&	!	  "
+			HowManyOrgChems,                &   !
+			HowManyAqOrgChems,              &
+			HowManyAqEqReactions,		&	!	  "
+			HowManyGasAqEqReactions,	&   !     "
+			HowManyEvolveGasChems,		&	!     "
+			HowManyEvolveAqChems,		&	!     "
+			HowManyNonZeroGasJacTerms,	&	!	  "
+			HowManyNonZeroAqJacTerms,	&	!	  "
+			HowManyKMParams,		&	!     "
+			GasPhaseODESet,			&	!     " 
+			GasPhaseJacobian,		&	!	  "
+			GasPhaseSensitivityMatrix,      &
+			GasPhaseReactionRates,		&
+			GasPhaseReactionRateArraySize,  &	
+			GasIa, GasJa,			&	!     "
+			ChemTerm,			&	! Derived Types
+			DiffEqTerm,			&	!     "
+			DiffEqList,			&	!     "
+			SetChemistryParams,		&	! Subroutines
+			SetPhaseIfs,			&	!     "
+			ReadPhotolysisRates,		&
+			PhotoRates,                     &
+			GasPhaseChemicalNames,		&	! Names for Error Checking and Messaging
+			AqPhaseChemicalNames,		&	!     "
+			AqCationNames,AqAnionNames,	&	!     "
+			OrgPhaseChemicalNames,          &
+			OrgMolecularMass,               &
+			OrgDensity,			&
+			AqOrgPhaseChemicalNames,        &
+			AqOrgMolecularMass,             &
+			AqOrgDensity,			&
+			SolidSaltDensity,               &
+			GasMolecularMass,		&! Chemical Mass Values
+			AqMolecularMass,		&	!     "
+			AqCationMass, AqAnionMass,	&	!     "
+			AqCationCharge,			&! For Thermodynamic Calculations
+			AqAnionCharge,			&!     "  (Charge)
+			GetAqCharge,			&
+			AqEquilibriaList,		&!(Eq Reactions Index List)
+			KMRef,				&
+			SolidMolecularMass,		&
+			IFGAS, IFAQ, IFSOLID,		&! Logical Variables
+			RecalculateReactionRates,	&! 
+			RecalculateHeteroRates,         &
+			RecalculatePhotoRates,          &
+			FindChem,			&! Indexing Functions & Variables
+			FindIon,			&	!	  "
+			FindCation,FindAnion,		&
+			GasPhase,AqPhase,SolidPhase,    &
+			StepGasChemistry,		&
+			MolecularDiffusionCoefficient,  &
+			AqWaterDissociationReaction,    & ! The aq dissociation rxn of water, if any
+			TestChems,			&
+			GasPhaseBackground,             &
+			AqOrgNumCarbon,                 &
+			GasPhaseDepVel,                 &
+			AqRefractiveIndex,              &
+			OrgRefractiveIndex,             &
+			AqOrgRefractiveIndex
 					!     "
 	!! These are indexed by the GAS PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: GasPhaseChemicalNames(:)	   !
-	REAL*8,				ALLOCATABLE :: EnthalpyOfVaporization(:)   ! The Latent Heat of Evaporation of Each Species (J/g)
-	REAL*8,				ALLOCATABLE :: GasMolecularMass(:)		   ! Molecular Mass (g / mole)
-	REAL*8,				ALLOCATABLE :: GasPhaseReactionRates(:,:)  ! This holds reaction rate information
-	REAL*8,				ALLOCATABLE :: GasPhaseBackground(:)
-	REAL*8,				ALLOCATABLE :: GasPhaseDepVel(:)		
-	REAL*8							:: PhotoRates(96,12)
+	REAL*8,		    ALLOCATABLE :: EnthalpyOfVaporization(:)   
+! The Latent Heat of Evaporation of Each Species (J/g)
+	REAL*8,		    ALLOCATABLE :: GasMolecularMass(:)		   
+! Molecular Mass (g / mole)
+	REAL*8,		    ALLOCATABLE :: GasPhaseReactionRates(:,:)  
+! This holds reaction rate information
+	REAL*8,		    ALLOCATABLE :: GasPhaseBackground(:)
+	REAL*8,		    ALLOCATABLE :: GasPhaseDepVel(:)		
+	REAL*8				:: PhotoRates(96,21)
 
 	INTEGER :: GasConcInputTypeFlag
 
-	!!! --
-	!!! -- DECODING KEY FOR GasAerEquilibriaList (a,b)
-	!!! -- 
-	!!! --   (i,1) : Gas Phase Index of the Species
-	!!! --   (i,2) : Aqueous Phase Index of the Species
-	!!! --   (i,3) : Associated Aq Phase Equilibrium Reaction
-	!!! --   (i,4) : Equilibrium Coefficient at 298 K (either true or infinite, which would
-	!!! --					imply that it condenses directly into a dissociated form)
-	!!! --   (i,5): - Delta Ho0 / R T0   for Equilibrium Coefficient Temperature Dependence
-	!!! --   (i,6): - Delta Cp0 / R      for Equilibrium Coefficient Temperature Dependence
-	REAL*8,				ALLOCATABLE :: GasAerEquilibriaList(:,:)
-	INTEGER						    :: GasPhaseReactionRateArraySize(2)
+!!! --
+!!! -- DECODING KEY FOR GasAerEquilibriaList (a,b)
+!!! -- 
+!!! --   (i,1) : Gas Phase Index of the Species
+!!! --   (i,2) : Aqueous Phase Index of the Species
+!!! --   (i,3) : Associated Aq Phase Equilibrium Reaction
+!!! --   (i,4) : Equilibrium Coefficient at 298 K (either true or infinite)
+!!! --		imply that it condenses directly into a dissociated form)
+!!! --   (i,5): - Delta Ho0 / R T0   for Equilibrium Coefficient 
+!!! --            Temperature Dependence
+!!! --   (i,6): - Delta Cp0 / R      for Equilibrium Coefficient 
+!!! --            Temperature Dependence
+	REAL*8,		    ALLOCATABLE :: GasAerEquilibriaList(:,:)
+	INTEGER	:: GasPhaseReactionRateArraySize(2)
 
 	!! These are indexed by the AQUEOUS PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: AqPhaseChemicalNames(:) 
-	REAL*8,				ALLOCATABLE :: AqRefractiveIndex(:,:)	   ! Index of Refraction for each aqueous species
-	REAL*8,				ALLOCATABLE :: SolidSaltDensity(:)   ! Electrolyte Density (mole / cm3) for aq. species
-	REAL*8,				ALLOCATABLE :: AqPhaseReactionRateInfo(:,:) ! This holds reaction rate information
-	REAL*8,				ALLOCATABLE :: AqPhaseReactionRates(:,:)   ! This holds reaction rates v. temperature
-	REAL*8,				ALLOCATABLE :: AqMolecularMass(:)		   ! Molecular Mass (g / mole)
-	INTEGER						    :: AqPhaseReactionRateArraySize(2)
+	REAL*8,		    ALLOCATABLE :: AqRefractiveIndex(:,:)
+! Index of Refraction for each aqueous species
+	REAL*8,		    ALLOCATABLE :: SolidSaltDensity(:)   
+! Electrolyte Density (mole / cm3) for aq. species
+	REAL*8,		    ALLOCATABLE :: AqPhaseReactionRateInfo(:,:) 
+! This holds reaction rate information
+	REAL*8,		    ALLOCATABLE :: AqPhaseReactionRates(:,:)   
+! This holds reaction rates v. temperature
+	REAL*8,		    ALLOCATABLE :: AqMolecularMass(:)	
+! Molecular Mass (g / mole)
+	INTEGER	:: AqPhaseReactionRateArraySize(2)
 
-	INTEGER, ALLOCATABLE :: AqChemicalCharge(:)					! The charge allocations are reportd as integral values
+	INTEGER, ALLOCATABLE :: AqChemicalCharge(:)			
+	! The charge allocations are reportd as integral values
 
-	CHARACTER (len=15),	 ALLOCATABLE :: AqCationNames(:)		! 
-	CHARACTER (len=15),	 ALLOCATABLE :: AqAnionNames(:)			! 
-	INTEGER, ALLOCATABLE :: AqCationCharge(:)					! The charge allocations are reportd as + integral values
-	INTEGER, ALLOCATABLE :: AqAnionCharge(:)					! The charge allocations are reportd as + integral values
-	REAL*8,  ALLOCATABLE :: AqIonGrid(:,:,:)					! Maps Ion Pair to Electrolyte and Provides Equilibrium Data
-	REAL*8,  ALLOCATABLE :: AqCationMass(:)						! The charge allocations are reportd as + integral values
-	REAL*8,  ALLOCATABLE :: AqAnionMass(:)						! The charge allocations are reportd as + integral values
-	REAL*8,  ALLOCATABLE :: CationIonicRefraction(:)					!Ionic refraction for each ion	
-	REAL*8,  ALLOCATABLE :: AnionIonicRefraction(:)					!Ionic refraction for each ion	
-		!!! -- ION-ELECTROLYTE MAP and EQUILIBRIUM DATA -- !!!
-		!!! --
-		!!! -- DECODING KEY FOR AqEquilibriaList (a,b)
-		!!! -- 
-		!!! --   (i,1) : Electrolyte  : this is -1 if water is the only dissociator (e.g., H2O <=> H+ & OH-)
-		!!! --   (i,2) : Cation 
-		!!! --   (i,3) : Anion
-		!!! --   (i,4) : Cation Stoicheometric Coefficient
-		!!! --   (i,5) : Anion  Stoicheometric Coefficient
-		!!! --   (i,6) : Flag for solid compound
-		!!! --   (i,7) : Blank 
-		!!! --   (i,8) : Number of H2O Molecules Needed on Left Hand Side of Dissociation
-		!!! --   (i,9) : Equilibrium Coefficient at 298 K (either true or infinite, which would
-		!!! --					imply that it condenses directly into a dissociated form)
-		!!! --   (i,10): - Delta Ho0 / R T0   for Equilibrium Coefficient Temperature Dependence
-		!!! --   (i,11): - Delta Cp0 / R      for Equilibrium Coefficient Temperature Dependence
-		!!! --   (i,12): First Density Parameter for dissociated ion solution
-		!!! --   (i,13): Second Density Parameter for dissociated ion solution
-		!!! --   (i,14): Surface Tension Surface Excess at Saturation (mol / m2)
-		!!! --   (i,15): Surface Tension Adsorption coefficient (dimentionless)
-		!!!
-		!!! ----------- Indexing of activities for various reaction types:
-		!!! --- for simple reactions where everything fits KM, (I,17) = (I,18) = 0 and
-		!!! ---  (I,16): Index into KMRef for thermodynamic reaction data
-		!!!
-		!!! --- for dissociating electrolytes (like bisulfate) (I,18) = 0 and
-		!!! ---  (I,16): Index into AqEquilibriaList of numerator reaction
-		!!! ---  (I,17): Index into KMRef of denominator reaction (which is this actual reaction)
-		!!!
-		!!! --- for complex reactions in which the activity is a composite of several other reactions
-		!!! --   (i,16): Numerator Activity for Equilibrium Reaction (stored as reaction+exponent/10,000)
-		!!! --   (i,17): Denominator Activity for Equilibrium Reaction (stored as reaction+exponent/10,000)
-		!!! --   (i,18): Another Numerator Activity 
-		!!! --- for levitocite (NH4)3H(SO4)3, follow Kim et al., 1993 (I,18) = 0 and
-		!!! --   (i,16): Index into AqEquilibriaList for Ammonium Sulfate
-		!!! --   (i,17): Index into AqEquilibriaList for Sulfuric Acid 
-		!!!
-		!!! --   (i,19): A flag: if this is a positive number then this reaction will be assigned the mixed coefficient of 
-		!!!              another reaction (for bisulfate mixing and Levitocite)
-		!!! --   (i,20): DRH at 298 K
-		!!! --   (i,21): Temperature dependence of DRH
-		!!! --   (i,22): Third dissociated species index (for levitocite)
-		!!! --   (i,23): Third dissociated species stoichiometry
-		!!! --   (i,24): Third dissociated species index (for hydrates, should be water)
-		!!! --   (i,25): Third dissociated species stoichiometry
-	! The list of electrolytes used in the model, and also density and surface tension parameters
+	CHARACTER (len=15),	 ALLOCATABLE :: AqCationNames(:)	! 
+	CHARACTER (len=15),	 ALLOCATABLE :: AqAnionNames(:)		! 
+	INTEGER, ALLOCATABLE :: AqCationCharge(:)		
+	! The charge allocations are reportd as + integral values
+	INTEGER, ALLOCATABLE :: AqAnionCharge(:)	
+	! The charge allocations are reportd as + integral values
+	REAL*8,  ALLOCATABLE :: AqIonGrid(:,:,:)		
+	! Maps Ion Pair to Electrolyte and Provides Equilibrium Data
+	REAL*8,  ALLOCATABLE :: AqCationMass(:)			
+	! The charge allocations are reportd as + integral values
+	REAL*8,  ALLOCATABLE :: AqAnionMass(:)			
+	! The charge allocations are reportd as + integral values
+	REAL*8,  ALLOCATABLE :: CationIonicRefraction(:)	
+		!Ionic refraction for each ion	
+	REAL*8,  ALLOCATABLE :: AnionIonicRefraction(:)		
+	!Ionic refraction for each ion	
+	
+!!! -- ION-ELECTROLYTE MAP and EQUILIBRIUM DATA -- !!!
+!!! --
+!!! -- DECODING KEY FOR AqEquilibriaList (a,b)
+!!! -- 
+!!! --   (i,1) : Electrolyte  : this is -1 if water is the only dissociator 
+!!! --           (e.g., H2O <=> H+ & OH-)
+!!! --   (i,2) : Cation 
+!!! --   (i,3) : Anion
+!!! --   (i,4) : Cation Stoicheometric Coefficient
+!!! --   (i,5) : Anion  Stoicheometric Coefficient
+!!! --   (i,6) : Flag for solid compound
+!!! --   (i,7) : Blank 
+!!! --   (i,8) : Number of H2O Molecules Needed on LHS of Dissociation
+!!! --   (i,9) : Equilibrium Coefficient at 298 K (either true or infinite)
+!!! --   (i,10): - Delta Ho0 / R T0   for Equilibrium Coefficient Temp Dep
+!!! --   (i,11): - Delta Cp0 / R      for Equilibrium Coefficient Temp Dep
+!!! --   (i,12): First Density Parameter for dissociated ion solution
+!!! --   (i,13): Second Density Parameter for dissociated ion solution
+!!! --   (i,14): Surface Tension Surface Excess at Saturation (mol / m2)
+!!! --   (i,15): Surface Tension Adsorption coefficient (dimentionless)
+!!!
+!!! ----------- Indexing of activities for various reaction types:
+!!! --- for simple reactions where everything fits KM, (I,17) = (I,18) = 0 and
+!!! ---  (I,16): Index into KMRef for thermodynamic reaction data
+!!!
+!!! --- for dissociating electrolytes (like bisulfate) (I,18) = 0 and
+!!! ---  (I,16): Index into AqEquilibriaList of numerator reaction
+!!! ---  (I,17): Index into KMRef of denominator reaction 
+!!! ---          (which is this actual reaction)
+!!!
+!!! --- for complex reactions in which the activity is a 
+!!! --    composite of several other reactions
+!!! --   (i,16): Numerator Activity for Equilibrium Reaction 
+!!! --           (stored as reaction+exponent/10,000)
+!!! --   (i,17): Denominator Activity for Equilibrium Reaction 
+!!! --           (stored as reaction+exponent/10,000)
+!!! --   (i,18): Another Numerator Activity 
+!!! --- for levitocite (NH4)3H(SO4)3, follow Kim et al., 1993 (I,18) = 0 and
+!!! --   (i,16): Index into AqEquilibriaList for Ammonium Sulfate
+!!! --   (i,17): Index into AqEquilibriaList for Sulfuric Acid 
+!!!
+!!! --   (i,19): A flag: if this is a positive number then this reaction 
+!!! --           will be assigned the mixed coefficient of 
+!!!              another reaction (for bisulfate mixing and Levitocite)
+!!! --   (i,20): DRH at 298 K
+!!! --   (i,21): Temperature dependence of DRH
+!!! --   (i,22): Third dissociated species index (for levitocite)
+!!! --   (i,23): Third dissociated species stoichiometry
+!!! --   (i,24): Third dissociated species index (for hydrates, should be water
+!!! --   (i,25): Third dissociated species stoichiometry
+
+! The list of electrolytes used in the model, 
+! and also density and surface tension parameters
 	REAL*8,  ALLOCATABLE :: AqEquilibriaList(:,:)	
 
-	!!! -- DECODING KEY FOR KMRef (a,b)
-	!!! -- 
-	!!! --   (i,1) : Electrolyte
-	!!! --   (i,2) : Cation 
-	!!! --   (i,3) : Anion
-	!!! --   (i,4) : Cation Stoicheometric Coefficient
-	!!! --   (i,5) : Anion  Stoicheometric Coefficient
-	!!! --   (i,6) : Kusik-Meissner Coefficient
-	!!! --   (i,7) : Kusik-Meissner Temperature Dependence
-	!!! --   (i,8) : Number of H2O Molecules Needed on Left Hand Side of Dissociation
-	! The list of electrolytes used in the model, and also density and surface tension parameters
+!!! -- DECODING KEY FOR KMRef (a,b)
+!!! -- 
+!!! --   (i,1) : Electrolyte
+!!! --   (i,2) : Cation 
+!!! --   (i,3) : Anion
+!!! --   (i,4) : Cation Stoicheometric Coefficient
+!!! --   (i,5) : Anion  Stoicheometric Coefficient
+!!! --   (i,6) : Kusik-Meissner Coefficient
+!!! --   (i,7) : Kusik-Meissner Temperature Dependence
+!!! --   (i,8) : Number of H2O Molecules Needed on LHS of Dissociation
+
 	REAL*8,  ALLOCATABLE :: KMRef(:,:)				
 	INTEGER :: HowManyKMParams
 
@@ -241,40 +269,50 @@ MODULE Chemistry
 
 	!! These are indexed by the ORGANIC PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: OrgPhaseChemicalNames(:) 
-	REAL*8,				ALLOCATABLE :: OrgRefractiveIndex(:,:)	   ! Index of Refraction for each aqueous species
-	REAL*8,				ALLOCATABLE :: OrgMolecularMass(:)		   ! Molecular Mass (g / mole)
-	REAL*8,				ALLOCATABLE :: OrgDensity(:)		   ! Molecular Mass (g / mole)
+	REAL*8,		ALLOCATABLE :: OrgRefractiveIndex(:,:)	   
+! Index of Refraction for each aqueous species
+	REAL*8,		ALLOCATABLE :: OrgMolecularMass(:)		   
+! Molecular Mass (g / mole)
+	REAL*8,		ALLOCATABLE :: OrgDensity(:)		   
+! Molecular Mass (g / mole)
 
 	!! These are indexed by the HYDROPHILIC ORGANIC COMPOUND INDEX
 	CHARACTER (len=15), ALLOCATABLE :: AqOrgPhaseChemicalNames(:) 
-	REAL*8,				ALLOCATABLE :: AqOrgRefractiveIndex(:,:)	   ! Index of Refraction for each aqueous species
-	REAL*8,				ALLOCATABLE :: AqOrgMolecularMass(:)		   ! Molecular Mass (g / mole)
-	REAL*8,				ALLOCATABLE :: AqOrgDensity(:)		   ! Molecular Mass (g / mole)
-	INTEGER,			ALLOCATABLE :: AqOrgNumCarbon(:)		   ! Molecular Mass (g / mole)
+	REAL*8,		ALLOCATABLE :: AqOrgRefractiveIndex(:,:)	   
+! Index of Refraction for each aqueous species
+	REAL*8,		ALLOCATABLE :: AqOrgMolecularMass(:)		   
+! Molecular Mass (g / mole)
+	REAL*8,		ALLOCATABLE :: AqOrgDensity(:)		   
+! Molecular Mass (g / mole)
+	INTEGER,	ALLOCATABLE :: AqOrgNumCarbon(:)		   
+! Molecular Mass (g / mole)
 	
-	!! Each array is sized by the number of evolving chemicals,
+        !! Each array is sized by the number of evolving chemicals,
 	!! but only a certain subset of these will evolve (placed first
 	!! in each of the arrays).
 	INTEGER :: HowManyGasChems,   HowManyEvolveGasChems, &
-			   HowManyAqChems,    HowManyEvolveAqChems,  &
-			   HowManyAqCations,  HowManyAqAnions, HowManyAqEqReactions, &
-			   HowManyCondensingChems, HowManyOrgChems, HowManyEvolveOrgChems, &
-			   HowManyAqOrgChems, HowManyEvolveAqOrgChems
+	           HowManyAqChems,    HowManyEvolveAqChems,  &
+		   HowManyAqCations,  HowManyAqAnions, HowManyAqEqReactions, &
+	     HowManyCondensingChems, HowManyOrgChems, HowManyEvolveOrgChems, &
+		   HowManyAqOrgChems, HowManyEvolveAqOrgChems
 
 	INTEGER :: AqWaterDissociationReaction
 
 	!! The structures used in the linked lists are defined here
 	INCLUDE "ChemistryDerivativeStructures.h"
 
-	!! The actual ODE Set and Jacobian are set as arrays of these linked lists
-	TYPE (DiffEqList), ALLOCATABLE :: GasPhaseODESet(:),	 AqPhaseODESet(:)
-	TYPE (DiffEqList), ALLOCATABLE :: GasPhaseJacobian(:,:), AqPhaseJacobian(:,:)
-	TYPE (DiffEqList), ALLOCATABLE :: GasPhaseSensitivityMatrix(:,:), AqPhaseSensitivityMatrix(:,:)
+	!! The actual ODE Set and Jacobian 
+        !! are set as arrays of these linked lists
+	TYPE (DiffEqList), ALLOCATABLE :: GasPhaseODESet(:),AqPhaseODESet(:)
+	TYPE (DiffEqList), ALLOCATABLE :: GasPhaseJacobian(:,:), &
+                                           AqPhaseJacobian(:,:)
+	TYPE (DiffEqList), ALLOCATABLE :: GasPhaseSensitivityMatrix(:,:),  &
+                                           AqPhaseSensitivityMatrix(:,:)
 	
-	INTEGER						   :: HowManyNonZeroGasJacTerms
-	INTEGER, ALLOCATABLE		   :: GasIa(:), GasJa(:)
-	INTEGER						   :: HowManyNonZeroAqJacTerms
-	INTEGER, ALLOCATABLE		   :: AqIa(:), AqJa(:)
+	INTEGER	:: HowManyNonZeroGasJacTerms
+	INTEGER, ALLOCATABLE	:: GasIa(:), GasJa(:)
+	INTEGER	:: HowManyNonZeroAqJacTerms
+	INTEGER, ALLOCATABLE    :: AqIa(:), AqJa(:)
 
 	!! Phases are indexed for some functions
 	INTEGER, PARAMETER :: GasPhase   = 0
@@ -301,9 +339,9 @@ MODULE Chemistry
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Publicly available routine to call several Chemical	!!
-	!! Parameter initialization subroutines					!!
+	!! Parameter initialization subroutines			!!
 	!! This must be called after the grid point fields are  !!
-	!! initialized.											!!
+	!! initialized.						!!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	SUBROUTINE SetChemistryParams()
 
@@ -311,7 +349,7 @@ MODULE Chemistry
 
 		!! Deal with Gas Phase Initialization
 		CALL SetGasPhaseChemistry ()
-		
+
 		!! Deal with Aq Phase Initialization
 		CALL SetAqPhaseChemistry ()
 
@@ -348,39 +386,39 @@ MODULE Chemistry
 	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! All of the routines that are used to initialize chemistry!!
-	!! are contained within a .h file to be stored in the same	!!
-	!! directory as this primary .f90 file.						!!
+	!! are contained within a .h file to be stored in the same  !!
+	!! directory as this primary .f90 file.			    !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	INCLUDE "ChemistryParametersInitRoutines.h"
 	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! These routines calculate properties of particular chems, !!
-	!! such as diffusivity and the like.					    !!
+	!! such as diffusivity and the like.			    !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	INCLUDE "ChemicalPropertyRoutines.h"
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Aqueous Phase Chemistry is Integrated Using Parameterized !!
 	!! (against Temperature) Reaction Rates.  All routines are   !!
-	!! stored here.
+	!! stored here.                                              !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	INCLUDE "AqPhaseReactionIntegration.h"
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! The initialization routines for each phase are contained !!
-	!! in their own files.										!!
+	!! in their own files.					    !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	INCLUDE "GasPhaseChemistryInits.h"
 	INCLUDE "AqPhaseChemistryInits.h"
 	INCLUDE "EvolveGasChemistry.h"
 	INCLUDE "OrgPhaseChemInits.h"
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! The reaction rates are recalculated sometime during		!!
 	!! each timestep.  Gas phase reaction rates are stored at	!!
 	!! each gridpoint and aqueous and solid are stored in each	!!
-	!! of the particles.										!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!! of the particles.						!!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	SUBROUTINE RecalculateReactionRates(IFGAS, IFAQ)
 
 		USE Time, ONLY : CurrentTime, BeginningTime
@@ -422,115 +460,103 @@ MODULE Chemistry
 	SUBROUTINE ResetHeteroRates (ReactionRates,ArraySize,Radius,NumberConc,NumberBins, FirstTime)
 
 		Use ModelParameters
-		USE InfrastructuralCode, ONLY : Transcript, ERROR, Int2Str, Real2Str
-		USE GridPointFields,	 ONLY : GasPhaseChemGridIndex, &
-										GasPhaseChemicalRates, &
-										XGridPoints, &
-										YGridPoints, &
-										ZGridPoints, &
-										LocateGridPoint, &
-										GetTemp, &
-										GetAirDensity
-												  
+		USE InfrastructuralCode, ONLY : Transcript, ERROR, Int2Str, & 
+                                                Real2Str
+		USE GridPointFields,	 ONLY :	GasPhaseChemicalRates, &
+						GetTemp, &
+						GetAirDensity
+					  
 		IMPLICIT NONE
 
 		REAL*8,  INTENT(in) :: ReactionRates(:,:)
 		REAL*8,  INTENT(in) :: Radius(:) !Radius in m
-		REAL*8,  INTENT(in) :: NumberConc(:) !NumberConcentration in cm**(-3)
-		INTEGER, INTENT(in) :: ArraySize(2)
-		INTEGER, INTENT(in) :: NumberBins  !Number of particle types to sum over
+		REAL*8,  INTENT(in) :: NumberConc(:) 
+                !Number Concentration in cm**(-3)
+		
+                INTEGER, INTENT(in) :: ArraySize(2)
+		INTEGER, INTENT(in) :: NumberBins  
+                !Number of particle types to sum over
+
 		LOGICAL, INTENT(in) :: FirstTime
 
 		INTEGER :: I,J,K,L,N
-		REAL*8	:: Temp,Mgas,X(3),Uptake, MW, MWingrams, Dg, R, c_bar, &
-					Surf_Conc, Term, Total, k_het, massofmolecule, A
+		REAL*8	:: Temp,Mgas,X(3),Uptake, MW, MWingrams, & 
+                           Dg, R, c_bar, &
+			   Surf_Conc, Term, Total, k_het, massofmolecule, A
 
-		!! Loop over all gridcells and reactions
-		DO I = 1, XGridPoints(GasPhaseChemGridIndex)
-			DO J = 1, YGridPoints(GasPhaseChemGridIndex)
-				DO K = 1, ZGridPoints(GasPhaseChemGridIndex)
-					DO L = 1, ArraySize(1)
+		!! Loop over all reactions
+		DO L = 1, ArraySize(1)
 						
-						!! Select only 1st order hetero rxns
-						IF (INT(ReactionRates(L,1)) .EQ. 1 .AND. INT(ReactionRates(L,3)) .EQ. 3) THEN	
-												
-								!Assign uptake coefficient and molecular weight
-								Uptake = ReactionRates(L,4)
-								MW = ReactionRates(L,5)/1000 !kg/mol
-							    MWingrams = ReactionRates(L,5)
-								!IF(FirstTime .AND. NumberBins .EQ. 1) WRITE(*,*) Uptake, MW
-								
-								!Assign Temperature
-								X    = LocateGridPoint(I,J,K,GasPhaseChemGridIndex)	
-								TEMP = GetTemp(X(1),X(2),X(3))
+			!! Select only 1st order hetero rxns
+			IF (INT(ReactionRates(L,1)) .EQ. 1 .AND. &
+                            INT(ReactionRates(L,3)) .EQ. 3) THEN	
 						
-								!Calculate Diffusivity from MW
-								Dg = 0.375/(4.5*Angstrom)**2./GetAirDensity(X(1),X(2),X(3))*		&
-										SQRT(Rstar*Temp*AirMolecMass*ChemScale/	&
-										Avogadro/MWingrams*(MWingrams+		&
-										Avogadro*AirMolecMass)/2/Pi)
+				!Assign uptake coefficient and molecular weight
+				Uptake = ReactionRates(L,4)
+				MW = ReactionRates(L,5)/1000 !kg/mol
+				MWingrams = ReactionRates(L,5)
+							
+				!Assign Temperature
+				TEMP = GetTemp()
+						
+		                !Calculate Diffusivity from MW
+			       Dg = 0.375/(4.5*Angstrom)**2./GetAirDensity()* &
+				SQRT(Rstar*Temp*AirMolecMass*ChemScale/	&
+				Avogadro/MWingrams*(MWingrams+		&
+				Avogadro*AirMolecMass)/2/Pi)
 								
-								!IF(FirstTime .AND. NumberBins .EQ. 1) WRITE(*,*) Dg
-								Dg = Dg/1e4 !convert to m2/s from cm2/s		
-								!IF(FirstTime .AND. NumberBins .EQ. 1) WRITE(*,*) Dg
-
-
-								R = Rstar/1e7 !J/mol/K
-								!IF(FirstTime .AND. NumberBins .EQ. 1) WRITE(*,*) "Rstar", R
-
-								c_bar = SQRT(8.0*R*Temp/pi/MW) !m/s
-								!IF(FirstTime .AND. NumberBins .EQ. 1) WRITE(*,*) c_bar
-								
-								
-								!Sum rate constants over all particle bins
-								!See Jacob, 2000 Hetero. Chem. Review
-								Total = 0.0
-								DO N=1,NumberBins
-									Surf_Conc = 4.0*pi*(Radius(N)**2)*(NumberConc(N)*1e6) !1/m
-									Term = Surf_Conc*((Radius(N)/Dg + 4/Uptake/c_bar)**(-1.0)) !1/s
-									Total = Total + Term	
-									IF(FirstTime .AND. NumberBins .EQ. 1) THEN
-										A = 100*Total/Surf_Conc !cm/s
-										!WRITE(*,*) Radius(N)/Dg, 4/Uptake/c_bar, Surf_Conc
-										!CALL TRANSCRIPT(TRIM(REAL2STR(A)))
-									END IF
-								
-								END DO
-
-								GasPhaseChemicalRates(I,J,K,L) = Total 						
-								IF (FirstTime) CALL TRANSCRIPT("Heterogeneous Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(I,J,K,L)))//"")	
-
-						!Second order heterogeneous reactions
-						ELSE IF (INT(ReactionRates(L,1)) .EQ. 2 .AND. INT(ReactionRates(L,3)) .EQ. 6) THEN	
-								!Sum surface area over all particle bins
-								Total = 0.0
-								DO N=1,NumberBins
-									Surf_Conc = 4.0*pi*(Radius(N)**2)*(NumberConc(N)*1e6) !1/m
-									Total = Total + Surf_Conc	
-								END DO
-								
-								GasPhaseChemicalRates(I,J,K,L) = (Total/100)*ReactionRates(L,4)						
-								IF (FirstTime) CALL TRANSCRIPT("2nd order Heterogeneous Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(I,J,K,L)))//"")	
+				Dg = Dg/1e4 !convert to m2/s from cm2/s	
+	
+				R = Rstar/1e7 !J/mol/K
 			
-						
-						END IF							
-					END DO
+				c_bar = SQRT(8.0*R*Temp/pi/MW) !m/s
+								
+				!Sum rate constants over all particle bins
+				!See Jacob, 2000 Hetero. Chem. Review
+				Total = 0.0
+				DO N=1,NumberBins
+				   Surf_Conc = 4.0*pi*(Radius(N)**2) &
+                                                *(NumberConc(N)*1e6) !1/m
+				   Term = Surf_Conc* ((Radius(N)/Dg + 4/Uptake/c_bar)**(-1.0)) !1/s
+				   Total = Total + Term	
+				   IF(FirstTime .AND. NumberBins .EQ. 1) THEN
+					A = 100*Total/Surf_Conc !cm/s	
+				   END IF
+								
 				END DO
-			END DO
-		END DO
 
+				GasPhaseChemicalRates(L) = Total 						
+				IF (FirstTime) CALL TRANSCRIPT("Heterogeneous Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")	
+
+			!Second order heterogeneous reactions
+			ELSE IF (INT(ReactionRates(L,1)) .EQ. 2 .AND. &
+                                 INT(ReactionRates(L,3)) .EQ. 6) THEN	
+				!Sum surface area over all particle bins
+				Total = 0.0
+				DO N=1,NumberBins
+					Surf_Conc = 4.0*pi*(Radius(N)**2)*(NumberConc(N)*1e6) !1/m
+					Total = Total + Surf_Conc	
+				END DO
+				
+				GasPhaseChemicalRates(L) = (Total/100)*ReactionRates(L,4)						
+				IF (FirstTime) CALL TRANSCRIPT("2nd order Heterogeneous Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")						
+			END IF						
+		END DO
 	END SUBROUTINE ResetHeteroRates
 
 	
 	SUBROUTINE ReadPhotolysisRates()
-	!!Matt Alvarado designed this subroutine to read in a text file of photolysis
-	!!rate data generated off-line by TUV v4.6 and store it in the array PhotoRates(I,J)
+	!!Matt Alvarado designed this subroutine to read in a text file 
+        !!of photolysis
+	!!rate data generated off-line by TUV v4.6 and store it in the 
+        !! array PhotoRates(I,J)
 	!! I = INT(UT*4 + 1), where UT is universal time in hours
 	!! J = reaction rate index
 	!! The file must contain 96 lines of data (every quarter hour)
 	!! and 23 columns, with the first being the time in UT
         !! the second being solar zenith angle (sza)
-	!!and the next 21 being the reaction in the order given in the header of PhotoRates.in
+	!! and the next 21 being the reaction in the order given in the header 
+        !! of PhotoRates.in
 	!! The lines must start at UT = 0.0
 		
 		USE InfrastructuralCode
@@ -545,7 +571,7 @@ MODULE Chemistry
 		FH = GetFileHandle()
 	    OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//"PhotoRates.in", STATUS='OLD')
 		
-		!The input file must have 96 lines and 21 reactions (13 column total, first one time, second solar zenith angle)
+		!The input file must have 96 lines and 21 reactions (23 column total, first one time, second solar zenith angle)
 		
 		DO I = 1, 96
 			!! Get a new data line (non-comment) from the input deck
@@ -560,7 +586,8 @@ MODULE Chemistry
 				CALL GetToken(CurrLine," ", Token)
 				Token = StripToken(Token)		
 				PhotoRates(I,J) = STR2REAL(Token)
-				IF (J .EQ.21 ) WRITE(*,*) I, PhotoRates(I,J)
+				!IF (J .EQ.21 ) WRITE(*,*) I, PhotoRates(I,J)
+                                !CALL flush(6)
                                 !STOP
 			END DO
 		END DO
@@ -568,16 +595,15 @@ MODULE Chemistry
 	END SUBROUTINE ReadPhotolysisRates
 	
 	SUBROUTINE ResetPhotoRates(ReactionRates,ArraySize, ut, FirstTime)
-	!!This subroutine looks for the appropriate value of the photolysis rate constant
-	!!given the time in UT and the reaction rate index (read from the gas chemical mechanism)	
+	!!This subroutine looks for the appropriate value of the 
+        !! photolysis rate constant
+	!!given the time in UT and the reaction rate index 
+        !! (read from the gas chemical mechanism)	
 	!! Changed on 10/19/06 to include linear interpolation - Matt Alvarado
 		Use ModelParameters
-		USE InfrastructuralCode, ONLY : Transcript, ERROR, Int2Str, Real2Str
-		USE GridPointFields,	 ONLY : GasPhaseChemGridIndex, &
-										GasPhaseChemicalRates, &
-										XGridPoints, &
-										YGridPoints, &
-										ZGridPoints
+		USE InfrastructuralCode, ONLY : Transcript, ERROR, & 
+                                                Int2Str, Real2Str
+		USE GridPointFields,	 ONLY : GasPhaseChemicalRates
 
 		IMPLICIT NONE
 
@@ -591,57 +617,49 @@ MODULE Chemistry
 		REAL*8, PARAMETER :: Scale = 1.0
 
 
-	!! Loop over all gridcells and reactions
-		DO I = 1, XGridPoints(GasPhaseChemGridIndex)
-			DO J = 1, YGridPoints(GasPhaseChemGridIndex)
-				DO K = 1, ZGridPoints(GasPhaseChemGridIndex)
-					DO L = 1, ArraySize(1)
-						!WRITE(*,*) L
-						!! Only do photolysis reactions
-						IF (INT(ReactionRates(L,1)) .EQ. 1 .AND. INT(ReactionRates(L,3)) .EQ. 0.) THEN	
+	        !! Loop over all reactions
+		DO L = 1, ArraySize(1)
+					
+			!! Only do photolysis reactions
+			IF (INT(ReactionRates(L,1)) .EQ. 1 .AND. &
+                            INT(ReactionRates(L,3)) .EQ. 0.) THEN	
 								
-								OldRate = GasPhaseChemicalRates(I,J,K,L)
+				OldRate = GasPhaseChemicalRates(L)
 								
-								!Find reaction index number
-								RxnIndex = INT(ReactionRates(L,4))
+				!Find reaction index number
+				RxnIndex = INT(ReactionRates(L,4))
 								
-								!Find lower time index number
-								TimeIndex = INT(ut*4 + 1.0)
+				!Find lower time index number
+				TimeIndex = INT(ut*4 + 1.0)
 
-								IF( 0. .EQ. 0.) THEN !Linear Interp
-									ut1 = (TimeIndex - 1)/4.
-									IF(TimeIndex .EQ. 96) THEN
-										ut2 = 0.
-									ELSE
-										ut2 = (TimeIndex)/4.
-									END IF
+				IF( 0. .EQ. 0.) THEN !Linear Interp
+					ut1 = (TimeIndex - 1)/4.
+					IF(TimeIndex .EQ. 96) THEN
+	                                    ut2 = 0.
+					ELSE
+					    ut2 = (TimeIndex)/4.
+					END IF
 
-									!WRITE(*,*) "ut: ", ut, ut1, ut2
+					!Early Value
+					y1 = PhotoRates(TimeIndex, RxnIndex) 
+					!Later Value
+					IF(TimeIndex .EQ. 96) THEN
+					 y2 = PhotoRates(1, RxnIndex)
+					ELSE
+					 y2 = PhotoRates(TimeIndex+1, RxnIndex)
+					END IF
 
-									!Early Value
-									y1 = PhotoRates(TimeIndex, RxnIndex) 
-									!Later Value
-									IF(TimeIndex .EQ. 96) THEN
-										y2 = PhotoRates(1, RxnIndex)
-									ELSE
-										y2 = PhotoRates(TimeIndex+1, RxnIndex)
-									END IF
-
-									A = (ut2 - ut)/(ut2 - ut1)
-									!WRITE(*,*) A
+					A = (ut2 - ut)/(ut2 - ut1)
+					!WRITE(*,*) A
 								
-									GasPhaseChemicalRates(I,J,K,L) = Scale*(A*y1 + (1-A)*y2)
+					GasPhaseChemicalRates(L) = Scale*(A*y1 + (1-A)*y2)
 								
-								ELSE !Step Change
-									GasPhaseChemicalRates(I,J,K,L) = Scale*PhotoRates(TimeIndex, RxnIndex) 
-								END IF
-								IF (FirstTime) CALL TRANSCRIPT("Photolysis Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(I,J,K,L)))//"")	
-						END IF							
-					END DO
-				END DO
-			END DO
+				ELSE !Step Change
+					GasPhaseChemicalRates(L) = Scale*PhotoRates(TimeIndex, RxnIndex) 
+				END IF
+				IF (FirstTime) CALL TRANSCRIPT("Photolysis Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")	
+			END IF	
 		END DO
-               !Write(*,*) "EXIT Reset PhotoRates"
 
 	END SUBROUTINE ResetPhotoRates
 	

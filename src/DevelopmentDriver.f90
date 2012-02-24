@@ -1,28 +1,31 @@
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!  ASP Model								        !!
-!!  Developed by Matt Alvarado (mjalvara@mit.edu) for his thesis		!!
-!!  with Prof. R.G. Prinn (rprinn@mit.edu) at MIT. (2004-2008)			!!
-!!										!!
-!!  ASP is an updated, expanded version of the					!!
-!!  Mixed Eulerian-Lagrangian Aerosol Model (MELAM) developed by 		!!
-!!	Donnan Steele (donnan@mit.edu) for his thesis project			!!
-!!  with Prof. R.G.Prinn at MIT. (2000-2004)					!!
-!!										!!
-!!	+ Always compile promoting all reals to *8				!!
-!!										!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!  ASP Model (c) 2004-2012 Matt Alvarado (malvarad@aer.com)		     !!
+!!  Developed by Matt Alvarado (mjalvara@mit.edu) for his thesis             !!
+!!  with Prof. R.G. Prinn (rprinn@mit.edu) at MIT. (2004-2008)		     !!
+!!									     !!
+!!  ASP is an updated, expanded version of the				     !!
+!!  Mixed Eulerian-Lagrangian Aerosol Model (MELAM) developed by 	     !!
+!!	Donnan Steele (donnan@mit.edu) for his thesis project		     !!
+!!  with Prof. R.G.Prinn at MIT. (2000-2004)				     !!
+!!									     !!
+!!	+ Always compile promoting all reals to *8			     !!
+!!									     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY								!!
-!!										!!
-!! Month  Year   Name              Description					!!
-!! 07     2006   Matt Alvarado     Began Update History				!!
-!! 08/25  2006   Matt Alvarado     Changed GOTO loops to DO WHILE loops         !!
-!! 09/06  2006   Matt Alvarado     Added particle deposition to size dist. test !!
-!! 09/07  2006   Matt Alvarado     Added gas deposition to size dist. test	!!
-!! 10/03  2007   Matt Alvarado     Minor Changes                                !!
-!! 08/27  2010   Matt Alvarado     Minor Changes                                !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY						             !!
+!!								             !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 08/25  2006   Matt Alvarado     Changed GOTO loops to DO WHILE loops      !!
+!! 09/06  2006   Matt Alvarado     Added particle deposition to size dist.   !!
+!!                                   tests                                   !!
+!! 09/07  2006   Matt Alvarado     Added gas deposition to size dist. test   !!
+!! 10/03  2007   Matt Alvarado     Minor Changes                             !!
+!! 08/27  2010   Matt Alvarado     Minor Changes                             !!
+!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 PROGRAM ASP
 
@@ -89,7 +92,7 @@ PROGRAM ASP
 	!! Send a Welcome Message
 	CALL Transcript ("**********************************************************")
 	CALL Transcript ("** Welcome to the ASP Model developed by Matt Alvarado  **")
-	CALL Transcript ("** (mjalvara@mit.edu).                                  **")
+	CALL Transcript ("** (malvarad@aer.com).                                  **")
 	CALL Transcript ("** ASP is an updated, expanded version of MELAM         **")
 	CALL Transcript ("** by H. D. Steele (donnan@mit.edu).                    **")
 	CALL Transcript ("**********************************************************")
@@ -97,8 +100,8 @@ PROGRAM ASP
 	IF(.FALSE.) THEN !Gas Chemistry Only
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
-		!Small domain compensates for large particle #
-		CALL SetDomainSize (1*cm, 1*cm, 1*cm)
+		!! MJA 02-15-2012 always 1 cm^3
+		CALL SetDomainSize ()
 	
 		!! Call subroutines to set module data
 		CALL SetFileHandleCounter(12)
@@ -136,9 +139,8 @@ PROGRAM ASP
       
 		ALLOCATE(CHEM(HowManyGasChems))
 
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+		TEMP = GetTemp()
+		Mgas = GetM   ()
          
 
 		ALLOCATE(OutFH(3))
@@ -180,7 +182,7 @@ PROGRAM ASP
 		
 				DO q = 1, HowManyGasChems
 		
-					Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+					Chem(q) = GridGasChem(q) !molecules/cm3
 
 					IF (q .LE. 70) THEN
 						WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas
@@ -211,7 +213,7 @@ PROGRAM ASP
 			CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .FALSE.)
 			
 			!Step Gas Chemistry
-			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep),1,1,1)
+			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep))
 
 			Slope = 2.0 
 			b = 212.22 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from yo = 1km, Ky = 1178 m2/s
@@ -236,12 +238,12 @@ PROGRAM ASP
 		
 			!Step Dilution of Chems
 			DO q = 1, HowManyGasChems
-				Chem(q) = GridGasChem(1,1,1,q)
+				Chem(q) = GridGasChem(q)
 				Chem(q) = (Chem(q) + (GasPhaseBackground(q)*MixTimestep/T_mix))/(1+ MixTimestep/T_mix)
 			END DO		
 		
 			!Update chemical concentrations
-			CALL UpdateChemicalConcentrations(1, 1, 1, Chem(1:HowManyEvolveGasChems))
+			CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 			
 			!Step Dilution of "particles" for heterogeneous chemistry
 			DO q = 1, HeteroBins
@@ -256,10 +258,10 @@ PROGRAM ASP
 
 	END IF !Gas Chemistry Only
 
-	IF (.TRUE.) THEN !BULK PARTICLE TESTS
+	IF (.FALSE.) THEN !BULK PARTICLE TESTS
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
-		CALL SetDomainSize (1*cm, 1*cm, 1*cm)
+		CALL SetDomainSize ()
 	
 		!! Call subroutines to set module data
 		CALL SetFileHandleCounter(12)
@@ -267,10 +269,11 @@ PROGRAM ASP
 	
 		! INITIALIZE the CHEMISTRY 
 		CALL SetChemistryParams
-		CALL ReadPhotolysisRates
-		
+		!WRITE(*,*) "Before Read Photo"
+                CALL ReadPhotolysisRates
+		!WRITE(*,*) "After Read Photo"
 		CALL RecalculateReactionRates(IFGAS,IFAQ)
-		
+		!WRITE(*,*) "After Recalc rates"
 		!Set heterogeneous Reactions
 		HeteroBins = 1
 		ALLOCATE(HeteroNumberConc(HeteroBins))
@@ -297,20 +300,20 @@ PROGRAM ASP
 
 		!! INITIALIZE the PARTICLES
 		CALL InitializeParticlesSectional	
-		current => particles(1,1,1)%first
+		current => particles%first
 		Dum1 = HydrophilicOrganicWaterContent(current, 298.15, 0.5555)
 		
 		
-		WRITE(*,*) "Check 1", current%EffectiveRadius
+		!WRITE(*,*) "Check 1", current%EffectiveRadius
 		!!WARNING Force initial equilibrium between gas and aerosol
 		!!(Uses open system for water eq.)
-		CALL EquilibrateInternallyAtGridPoint(1,1,1, EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
-                 !CALL EquilibrateGridPointAll(1, 1, 1, .TRUE., .TRUE., .TRUE.)
-		WRITE(*,*) "Check 2"
-                CALL EquilibrateHydrophobicPhaseAtGridPoint(1,1,1)
-		WRITE(*,*) "Check 3"
+		CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+                 !CALL EquilibrateGridPointAll( .TRUE., .TRUE., .TRUE.)
+		!WRITE(*,*) "Check 2"
+                CALL EquilibrateHydrophobicPhaseAtGridPoint()
+		!WRITE(*,*) "Check 3"
 		
-		CALL SpillBeans(1,1,1)
+		CALL SpillBeans()
 
 		!Find chemical indices for later
 		PotassiumIndex = FindChem("K+", 1)
@@ -339,7 +342,7 @@ PROGRAM ASP
 		HSO4i = FindChem("HSO4-", 1)
 		
 		!Count # of bins, # of Aq. Chems
-		current => particles(1,1,1)%first
+		current => particles%first
 		NumBins = 0
 		DO WHILE(associated(current))
 			NumBins = NumBins + 1
@@ -350,10 +353,9 @@ PROGRAM ASP
 		END DO
 
 		ALLOCATE(NumConc(NumBins))
-		
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+			
+		TEMP = GetTemp()
+		Mgas = GetM   ()
 
 		ALLOCATE(OutFH(4))
 		OutFH(1) = GetFileHandle()
@@ -392,15 +394,15 @@ PROGRAM ASP
 		WRITE(OutFH(4),FMT='(A4, A9)', ADVANCE='NO') "Temp", " "
 		DO I = 1, NumAqChems
 			WRITE(OutFH(4),FMT='(A13)', ADVANCE='NO') AqPhaseChemicalNames(I)
-                        WRITE(*,*) I, AqPhaseChemicalNames(I)
+                        !WRITE(*,*) I, AqPhaseChemicalNames(I)
 		END DO
 		DO I = 1, NumOrgChems		
 					WRITE(OutFH(4),FMT='(A13)', ADVANCE='NO') OrgPhaseChemicalNames(I)  
-                                        WRITE(*,*) I, OrgPhaseChemicalNames(I)
+                                        !WRITE(*,*) I, OrgPhaseChemicalNames(I)
 		END DO
 		DO I = 1, NumAqOrgChems		
 					WRITE(OutFH(4),FMT='(A13)', ADVANCE='NO') AqOrgPhaseChemicalNames(I)
-                                        WRITE(*,*) I, AqOrgPhaseChemicalNames(I)
+                                        !WRITE(*,*) I, AqOrgPhaseChemicalNames(I)
 		END DO
 		WRITE(OutFH(4),FMT='(A5, A8)', ADVANCE='NO') "TotBC", " "
 		WRITE(OutFH(4),FMT='(A6, A7)', ADVANCE='NO') "TotPOA", " "
@@ -448,7 +450,7 @@ PROGRAM ASP
 				!Write gas phase concentrations in ppb
 				DO q = 1, HowManyGasChems
 		
-					Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+					Chem(q) = GridGasChem(q) !molecules/cm3
 
 					IF (q .LE. 70) THEN
 						WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas
@@ -462,7 +464,7 @@ PROGRAM ASP
 				
 				IF (NumBins .GT. 1) CALL ERROR("The current output routine needs a bulk aerosol to work.") 
 	
-				current => particles(1,1,1)%first
+				current => particles%first
 				WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%numberofparticles
 				WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%effectiveradius
 				WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%IonicStr
@@ -592,8 +594,7 @@ PROGRAM ASP
 			END IF !Write Output
 		
 			!Calculate Temperature
-			X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-			TEMP = GetTemp(X(1),X(2),X(3))
+			TEMP = GetTemp()
 
 			!NOTE: Right now, pressure and temperature are assumed to be 
 			!constant, so we don't recalculate the rest of the reaction rates
@@ -608,16 +609,16 @@ PROGRAM ASP
 			CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .FALSE.)
 						
 			!Step Gas Chemistry
-			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep),1,1,1)
+			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep))
 			
 			!Only Equilibrate every 60 s (one second before the minute)
 			IF (MOD(t,CondTimeStep) .LT. 59.01 .AND. MOD(t,CondTimeStep) .GT. 58.99) THEN
 
 				!Equilibrate Gases and particles
-				CALL EquilibrateSulfate(1, 1, 1)
-				CALL EquilibrateGridPointAll(1,1,1,EquilibrateWater = .TRUE., ForceWaterEquilibrium=.FALSE., WaterOpenSystem=.FALSE.)
-				!CALL EquilibrateGridPointAll(1,1,1,EquilibrateWater = .FALSE.)
-				CALL EquilibrateHydrophobicPhaseAtGridPoint(1,1,1)
+				CALL EquilibrateSulfate()
+				CALL EquilibrateGridPointAll(EquilibrateWater = .TRUE., ForceWaterEquilibrium=.FALSE., WaterOpenSystem=.FALSE.)
+				!CALL EquilibrateGridPointAll(EquilibrateWater = .FALSE.)
+				CALL EquilibrateHydrophobicPhaseAtGridPoint()
 				!WRITE(*,*) "Eq. Okay"
 
 			END IF
@@ -627,15 +628,15 @@ PROGRAM ASP
 		
 			!Step Dilution of Chems
 			DO q = 1, HowManyGasChems
-				Chem(q) = GridGasChem(1,1,1,q)
+				Chem(q) = GridGasChem(q)
 				Chem(q) = (Chem(q) + (GasPhaseBackground(q)*MixTimestep/T_mix))/(1+ MixTimestep/T_mix)
 			END DO	
 
 			!Update chemical concentrations
-			CALL UpdateChemicalConcentrations(1, 1, 1, Chem(1:HowManyEvolveGasChems))
+			CALL UpdateChemicalConcentrations( Chem(1:HowManyEvolveGasChems))
 			
 			!Step Dilution of Particles
-			current => particles(1,1,1)%first
+			current => particles%first
 			I = 1
 			DO WHILE(associated(current))
 									
@@ -660,7 +661,7 @@ PROGRAM ASP
 			END DO !END STEP PARTICLE DILUTION			
 			
 			!Spill Beans
-			!CALL SpillBeans(1,1,1)
+			!CALL SpillBeans()
 									
 			!Step Dilution of "particles" for heterogeneous chemistry
 			!and recalculate heterogeneous reaction rates
@@ -672,21 +673,21 @@ PROGRAM ASP
 			t = t + MixTimestep
 
 			IF (MOD(t,60.0)<=0.05) THEN
-				!WRITE(*,*) trim(real2str(t/60)), " minutes done"
+				WRITE(*,*) trim(real2str(t/60)), " minutes done"
 			END IF
 
 		END DO
 
 		!Spill Beans
-		CALL SpillBeans(1,1,1)
+		CALL SpillBeans()
 		    
 	END IF !Bulk Particle Tests
 
-	IF (.FALSE.) THEN !Size Dist PARTICLE TESTS
+	IF (.TRUE.) THEN !Size Dist PARTICLE TESTS
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
-		CALL SetDomainSize (1*cm, 1*cm, 1*cm)
+		CALL SetDomainSize ()
 	
 		!! Call subroutines to set module data
 		CALL SetFileHandleCounter(12)
@@ -710,27 +711,26 @@ PROGRAM ASP
 
 		!! INITIALIZE the PARTICLES	
 		CALL InitializeParticlesSectional
-		CALL RegridAerosol (1, 1, 1)
-		CALL SpillBeans(1,1,1)
-		!WRITE(*,*) "AOD: ", AerosolOpticalDepth (1, 1, 1)
+		CALL RegridAerosol ()
+		CALL SpillBeans()
+		!WRITE(*,*) "AOD: ", AerosolOpticalDepth ()
 
 		!! Call Boundary distributions
 		CALL ReadBoundaryDistributionsOrganic
 		CALL PopBoundaryPart
 		CALL SortBoundaryPart
-		CALL SpillBeans(1,1,1,Env=.TRUE.)
+		CALL SpillBeans(Env=.TRUE.)
 		
 		!!WARNING Force initial water equilibrium between gas and aerosol
 		!!(Uses open system for water eq.)
-		CALL EquilibrateInternallyAtGridPoint(1,1,1, EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
-		!CALL EquilibrateGridPointAll(1, 1, 1, EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
-		CALL RegridAerosol (1, 1, 1)
-		CALL SpillBeans(1,1,1)
+		CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+		!CALL EquilibrateGridPointAll( EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+		CALL RegridAerosol ()
+		CALL SpillBeans()
 	
 	
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+		TEMP = GetTemp()
+		Mgas = GetM   ()
 		
 		!Find chemical indices for later
 		PotassiumIndex = FindChem("K+", 1)
@@ -759,7 +759,7 @@ PROGRAM ASP
 		HSO4i = FindChem("HSO4-", 1)
 
 		!Count # of bins, # of Aq. Chems
-		current => particles(1,1,1)%first
+		current => particles%first
 		Env => BoundaryParticles%first
 		NumBins = 0
 		Potassium = 0
@@ -776,7 +776,7 @@ PROGRAM ASP
 			Env => Env%next
 			current => current%next
 		END DO
-		WRITE(*,*) "Potassium (ug/m3): ", Potassium*AqMolecularMass(PotassiumIndex)*1.0E12
+		!WRITE(*,*) "Potassium (ug/m3): ", Potassium*AqMolecularMass(PotassiumIndex)*1.0E12
 
 		ALLOCATE(NumConc(NumBins))
 		ALLOCATE(InitNumConc(NumBins))
@@ -788,7 +788,7 @@ PROGRAM ASP
 		ALLOCATE(HeteroRadii(HeteroBins))
 
 		!Get particle number conc. and radii for hetero. rate calculation
-		current => particles(1,1,1)%first
+		current => particles%first
 		I = 1
 		DO WHILE(associated(current))
 			HeteroNumberConc(I) = current%NumberofParticles
@@ -802,9 +802,8 @@ PROGRAM ASP
 		CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .TRUE.)
 		CALL RecalculatePhotoRates(ut, .TRUE.)
 					
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+		TEMP = GetTemp()
+		Mgas = GetM   ()
 
 		ALLOCATE(OutFH(3+NumBins))
 		DO I = 1, 3+Numbins
@@ -877,7 +876,7 @@ PROGRAM ASP
 		!Write gas phase concentrations in ppb
 		DO q = 1, HowManyGasChems
 		
-			Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+			Chem(q) = GridGasChem(q) !molecules/cm3
 
 			IF (q .LE. 70) THEN
 				WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas
@@ -896,7 +895,7 @@ PROGRAM ASP
 		WRITE(OutFH(2), FMT='(A1)') ""
 		WRITE(OutFH(3), FMT='(A1)') ""
 			
-		current => particles(1,1,1)%first
+		current => particles%first
 		DO I = 4, 3+NumBins
 			WRITE(OutFH(I),FMT='(7ES13.5E2)', ADVANCE='NO') t/60
 				
@@ -1027,7 +1026,7 @@ PROGRAM ASP
 		END DO
 		
 		!Output size distribution
-		CALL SizeDistOutput(1,1,1,t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
+		CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 	
 		Slope = 2.0 
 		b = 142 + (6.0/7.0) !Timbavati
@@ -1051,8 +1050,7 @@ PROGRAM ASP
 			IF (r .GT. INT(60/Mixtimestep)) CondTimeStep = 20. 
 			
 			!Calculate Temperature
-			X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-			TEMP = GetTemp(X(1),X(2),X(3))
+			TEMP = GetTemp()
 
 			!NOTE: Right now, pressure and temperature are assumed to be 
 			!constant, so we don't have to recalculate the rest of the reaction rates
@@ -1065,7 +1063,7 @@ PROGRAM ASP
 			!WRITE(*,*) "Photo Okay"
 
 			!Get particle number conc. and radii for hetero. rate calculation
-			current => particles(1,1,1)%first
+			current => particles%first
 			I = 1
 			DO WHILE(associated(current))
 				HeteroNumberConc(I) = current%NumberofParticles
@@ -1080,16 +1078,16 @@ PROGRAM ASP
 			!WRITE(*,*) "Hetero Okay"
 						
 			!Step Gas Chemistry
-			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep),1,1,1)
+			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep))
 			!WRITE(*,*) "StepGasChem Okay"
 			
 			!Step Condensation
 			IF (MOD(t,CondTimeStep) .LT. 0.01 .AND. t .NE. 0.0) THEN
 				!Step Condensation, if desired
 				IF(.TRUE.) THEN
-					CALL RegridAerosol (1, 1, 1)
-					CALL FindAqElectrolyteEquilibriumForGridPoint (1, 1, 1, UpdateThermo = .TRUE.) 
-					CALL StepCondensationAll (CondTimeStep, 1, 1, 1, 1)
+					CALL RegridAerosol ()
+					CALL FindAqElectrolyteEquilibriumForGridPoint ( UpdateThermo = .TRUE.) 
+					CALL StepCondensationAll (CondTimeStep,  1)
 					!Note above calls RegridAerosol automatically
 					!WRITE(*,*) t, "Cond Okay"
 				END IF
@@ -1101,7 +1099,7 @@ PROGRAM ASP
 				!Step Coagulation, if desired
 				DoTestCoagulation = .TRUE.
 				IF (DoTestCoagulation) THEN	
-					CALL StepSectionalCoagulationJacobson(1,1,1,CoagTimeStep)
+					CALL StepSectionalCoagulationJacobson(CoagTimeStep)
 					!Note that above already calls RegridAerosol
 					!WRITE(*,*) t, "Coag Okay"
 				END IF
@@ -1113,16 +1111,16 @@ PROGRAM ASP
 		
 			!Step Dilution of Chems
 			DO q = 1, HowManyGasChems
-				Chem(q) = GridGasChem(1,1,1,q)
+				Chem(q) = GridGasChem(q)
 				Chem(q) = (Chem(q) + (GasPhaseBackground(q)*MixTimestep/T_mix))/(1+ MixTimestep/T_mix + MixTimestep*GasPhaseDepVel(q)/InversionHeight)
 			END DO	
 
 			!Update chemical concentrations
-			CALL UpdateChemicalConcentrations(1, 1, 1, Chem(1:HowManyEvolveGasChems))
+			CALL UpdateChemicalConcentrations( Chem(1:HowManyEvolveGasChems))
 
 			!Step Dilution and Deposition of Particles
-			CALL SortAerosolAtGridPointForCoagulation (1, 1, 1) 
-			current => particles(1,1,1)%first
+			CALL SortAerosolAtGridPointForCoagulation () 
+			current => particles%first
 			Env => BoundaryParticles%first
 			I = 1
 			DO WHILE(associated(current))
@@ -1196,10 +1194,10 @@ PROGRAM ASP
 				
 			END DO !END STEP PARTICLE DILUTION
 			!WRITE(*,*) "Before AOD"
-			!WRITE(*,*) "AOD: ", AerosolOpticalDepth (1, 1, 1)	
+			!WRITE(*,*) "AOD: ", AerosolOpticalDepth ()	
 			!WRITE(*,*) "Dilution Okay"	
-			!CALL SpillBeans(1,1,1)
-			CALL AerosolOptProp (1, 1, 1, ExtCoeff, SingScat, Assym)
+			!CALL SpillBeans()
+			CALL AerosolOptProp ( ExtCoeff, SingScat, Assym)
 			
 			!Write Output to file every minute 
 			IF (MOD(t,10.0) .LT. 0.01) THEN
@@ -1212,7 +1210,7 @@ PROGRAM ASP
 				!Write gas phase concentrations in ppb
 				DO q = 1, HowManyGasChems
 		
-					Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+					Chem(q) = GridGasChem(q) !molecules/cm3
 
 					IF (q .LE. 70) THEN
 						WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas
@@ -1232,7 +1230,7 @@ PROGRAM ASP
 				WRITE(OutFH(3), FMT='(A1)') ""
 			
 				GridTotalSOA = 0.0
-				current => particles(1,1,1)%first
+				current => particles%first
 				DO I = 4, 3+NumBins
 					WRITE(OutFH(I),FMT='(7ES13.5E2)', ADVANCE='NO') t/60
 				
@@ -1364,7 +1362,7 @@ PROGRAM ASP
 
 			IF (MOD(t,600.0)<=0.05 .OR. ABS(t-540) <=0.05 .OR. ABS(t-2820) <=0.05) THEN
 				IF(INT(t) .NE. 0.) THEN
-					CALL SizeDistOutput(1,1,1,t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
+					CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 				END IF
 			END IF
 			
@@ -1388,7 +1386,7 @@ PROGRAM ASP
 		IF(NOT(DohumidityTest)) THEN
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
-		CALL SetDomainSize (1*cm, 1*cm, 1*cm)
+		CALL SetDomainSize ()
 	
 		!! Call subroutines to set module data
 		CALL SetFileHandleCounter(12)
@@ -1412,18 +1410,18 @@ PROGRAM ASP
 		!! INITIALIZE the DISSOLUTION routine
 		CALL SetAllDissolution
 
-		WRITE(*,*) "Before Initialization"
+		!WRITE(*,*) "Before Initialization"
 		
 		!! INITIALIZE the PARTICLES
 		CALL InitializeParticlesSectional	
 		
-		WRITE(*,*) "After Initialization"
+		!WRITE(*,*) "After Initialization"
 		END IF
 		!Spill Beans
-		CALL SpillBeans(1,1,1)
+		CALL SpillBeans()
                  
 		!Count # of bins, # of Aq. Chems
-		current => particles(1,1,1)%first
+		current => particles%first
 		NumBins = 0
 		DO WHILE(associated(current))
 			NumBins = NumBins + 1
@@ -1432,9 +1430,8 @@ PROGRAM ASP
 		END DO	
 		IF(NOT(DohumidityTest)) ALLOCATE(NumConc(NumBins))
 		
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+		TEMP = GetTemp()
+		Mgas = GetM   ()
                 
 
 		ALLOCATE(OFH(4))
@@ -1446,14 +1443,14 @@ PROGRAM ASP
 		OPEN(UNIT = OFH(4), FILE=TRIM(OutputDeckSubDir)//"BulkAerosolOut.txt", STATUS="REPLACE")
 		WRITE(OFH(4), FMT='(A2,A13)', ADVANCE='NO') "RH", " "
 		
-                WRITE(*,*) "After File Handles"
+                !WRITE(*,*) "After File Handles"
 
 		DO q = 1, HowManyGasChems
 			IF (q .LE. 70) THEN
 				WRITE(OFH(1),FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(q)
 			END IF
 		END DO
-                WRITE(*,*) "After first write"
+                !WRITE(*,*) "After first write"
                 
 		
                 IF (NumBins .GT. 1) CALL ERROR("The current output routine needs a bulk aerosol to work.")
@@ -1479,38 +1476,38 @@ PROGRAM ASP
 		DO I = 1, NumAqChems
 			WRITE(OFH(4),FMT='(A13)', ADVANCE='NO') AqPhaseChemicalNames(I)
 		END DO
-                WRITE(*,*) "After aero write"
+                !WRITE(*,*) "After aero write"
                 
 
 		WRITE(OFH(1), FMT='(A1)') ""
 		WRITE(OFH(4), FMT='(A1)') ""
 		Write(*,*) Mgas
 		!Spill Beans
-		CALL SpillBeans(1,1,1)
-                WRITE(*,*) "After Spill Beans"
+		CALL SpillBeans()
+                !WRITE(*,*) "After Spill Beans"
                 
 
 		NewRH = 0.82
 		DO J = 1, 26
 			NewRH = NewRH - 0.02		
-			CALL SetRelativeHumidity (1,1,1,NewRH)
+			CALL SetRelativeHumidity (NewRH)
 			
-			WRITE(*,*) "Before Equilibrate"								
-			!CALL EquilibrateInternallyAtGridPoint(1,1,1, EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+			!WRITE(*,*) "Before Equilibrate"								
+			!CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
 					!Spill Beans
-                        CALL EquilibrateGridPointAll(1,1,1, .TRUE., .TRUE., .TRUE.)
-			WRITE(*,*) "Equilibrate Okay"
+                        CALL EquilibrateGridPointAll( .TRUE., .TRUE., .TRUE.)
+			!WRITE(*,*) "Equilibrate Okay"
 			
 			
 
 			!Recalculate optical parameters
-			current => particles(1,1,1)%first
+			current => particles%first
 			DO I = 1, NumBins
 				CALL ShellRefIndAndRad(Current)
 				current => current%next
 			END DO
 
-			current => particles(1,1,1)%first
+			current => particles%first
 				!Write current RH
 				WRITE(OFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') NewRH
 				WRITE(OFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') NewRH
@@ -1518,7 +1515,7 @@ PROGRAM ASP
 				!Write gas phase concentrations in ppb
 				DO q = 1, HowManyGasChems
 		
-					Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+					Chem(q) = GridGasChem(q) !molecules/cm3
 
 					IF (q .LE. 70) THEN
 						WRITE(OFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas !ppb
@@ -1527,9 +1524,9 @@ PROGRAM ASP
 
 				!IF (NumBins .GT. 1) CALL ERROR("The current output routine needs a bulk aerosol to work.") 
 	
-				CALL AerosolOptProp (1, 1, 1, ExtCoeff, SingScat, Assym)
+				CALL AerosolOptProp ( ExtCoeff, SingScat, Assym)
 		
-				current => particles(1,1,1)%first
+				current => particles%first
 				WRITE(OFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%IonicStr
 				WRITE(OFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%WaterActivity
 				WRITE(OFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%SolutionDensity
@@ -1558,104 +1555,104 @@ PROGRAM ASP
 				WRITE(OFH(4), FMT='(A1)') ""
 			
 			!Spill Beans
-			CALL SpillBeans(1,1,1)
+			CALL SpillBeans()
 
 			Gas = 0
 			Aq = 1
 			HNO3GasIndex = FindChem("HNO3", Gas)
 			!Calculate gas conc of HNO3 in mol/cm3
-			HNO3Conc = GridGasChem(1,1,1,HNO3GasIndex) !molec/cm3
+			HNO3Conc = GridGasChem(HNO3GasIndex) !molec/cm3
 			!WRITE(*,*) "HNO3 gas (molecule/cm3): ", trim(real2str(HNO3Conc))
 			
 			NH3GasIndex = FindChem("NH3", Gas)
 			!Calculate gas conc of NH3 in mol/cm3
-			NH3Conc = GridGasChem(1,1,1,NH3GasIndex) !molec/cm3
+			NH3Conc = GridGasChem(NH3GasIndex) !molec/cm3
 			!WRITE(*,*) "NH3 gas (molecule/cm3): ", trim(real2str(NH3Conc))
 
 			HClGasIndex = FindChem("HCl", Gas)
 			!Calculate gas conc of HCl in mol/cm3
-			HClConc = GridGasChem(1,1,1,HClGasIndex) !molec/cm3
+			HClConc = GridGasChem(HClGasIndex) !molec/cm3
 			!WRITE(*,*) "HCl gas (molecule/cm3): ", trim(real2str(HClConc))
 
 			SOA2GasIndex = FindChem("SOA2", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
 			!WRITE(*,*) "SOA2 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
 			SOA2GasIndex = FindChem("RP13", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
 			!WRITE(*,*) "RP13 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
 			SOA2GasIndex = FindChem("RP17", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
 			!WRITE(*,*) "RP17 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
 			SOA2GasIndex = FindChem("RP18", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
 			!WRITE(*,*) "RP18 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
 			SOA2GasIndex = FindChem("UR26", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
 			!WRITE(*,*) "UR26 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
 			SOA2GasIndex = FindChem("UR29", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
 			!WRITE(*,*) "UR29 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
 			SOA2GasIndex = FindChem("UR30", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
 			!WRITE(*,*) "UR30 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 			
                         SOA2GasIndex = FindChem("IVOC1", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
-			WRITE(*,*) "IVOC1 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
+			!WRITE(*,*) "IVOC1 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
                         SOA2GasIndex = FindChem("IVOC2", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
-			WRITE(*,*) "IVOC2 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
+			!WRITE(*,*) "IVOC2 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
                         
                          SOA2GasIndex = FindChem("IVOC3", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
-			WRITE(*,*) "IVOC3 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
+			!WRITE(*,*) "IVOC3 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
 			 SOA2GasIndex = FindChem("IVOC4", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
-			WRITE(*,*) "IVOC4 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
+			!WRITE(*,*) "IVOC4 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
  SOA2GasIndex = FindChem("IVOC5", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
 			WRITE(*,*) "IVOC5 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
  SOA2GasIndex = FindChem("IVOC6", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
 			WRITE(*,*) "IVOC6 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
  SOA2GasIndex = FindChem("IVOC7", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
-			WRITE(*,*) "IVOC7 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
+			!WRITE(*,*) "IVOC7 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
  SOA2GasIndex = FindChem("IVOC8", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
-			WRITE(*,*) "IVOC8 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
+			!WRITE(*,*) "IVOC8 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
  SOA2GasIndex = FindChem("IVOC9", Gas)
 			!Calculate gas conc of SOA2 in mol/cm3
-			SOA2Conc = GridGasChem(1,1,1,SOA2GasIndex) !molec/cm3
-			WRITE(*,*) "IVOC9 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
+			SOA2Conc = GridGasChem(SOA2GasIndex) !molec/cm3
+			!WRITE(*,*) "IVOC9 gas (molecule/cm3): ", trim(real2str(SOA2Conc))
 
 
 LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
@@ -1669,7 +1666,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 	IF (.FALSE.) THEN !COAG TESTS 
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
-		CALL SetDomainSize (1*cm, 1*cm, 1*cm)
+		CALL SetDomainSize ()
 	
 		!! Call subroutines to set module data
 		CALL SetFileHandleCounter(12)
@@ -1683,11 +1680,11 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 
 		
 		!! Sort the gridcell, sections in order and first
-		CALL SortAerosolAtGridPointForCoagulation (1, 1, 1)
-		CALL SpillBeans(1,1,1)
+		CALL SortAerosolAtGridPointForCoagulation ()
+		CALL SpillBeans()
 
 		!Count # of bins
-		current => particles(1,1,1)%first
+		current => particles%first
 		NumBins = 0
 		DO WHILE(associated(current))
 			NumBins = NumBins + 1
@@ -1696,8 +1693,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		ALLOCATE(NumConc(NumBins))
 
 		!Calculate Temperature
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
+		TEMP = GetTemp()
 			
 		ALLOCATE(OFH(4))
 		OutFH(4) = GetFileHandle()
@@ -1713,15 +1709,15 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		WRITE(OutFH(4), FMT='(A1)') ""
 			
 		!Spill Beans
-		CALL RegridAerosol(1, 1, 1)
-		CALL SpillBeans(1,1,1)
+		CALL RegridAerosol()
+		CALL SpillBeans()
 
 		t=0
-		CALL SizeDistOutput(1,1,1,t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
+		CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 		MixTimestep = 60
 		CoagTimeStep = 60 
 		
-		current => particles(1,1,1)%first
+		current => particles%first
 		I = 1
 		TotalNumber = 0.0
 		TotalVolume = 0.0
@@ -1756,9 +1752,9 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 				!Write current time in minutes
 				WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') t/60
 				
-			    CALL SortAerosolAtGridPointForCoagulation (1, 1, 1)
+			    CALL SortAerosolAtGridPointForCoagulation ()
 				
-				current => particles(1,1,1)%first
+				current => particles%first
 				DO WHILE(associated(current))
 					WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%numberofparticles
 					WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%effectiveradius/micron
@@ -1769,7 +1765,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 				WRITE(OutFH(4), FMT='(A1)') ""
 			END IF
 			
-			current => particles(1,1,1)%first
+			current => particles%first
 			I = 1
 			TotalNumber = 0.0
 			TotalVolume = 0.0
@@ -1801,14 +1797,14 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 			!END IF
 
 			!Coagulate
-			CALL StepSectionalCoagulationJacobson(1,1,1,CoagTimeStep)
+			CALL StepSectionalCoagulationJacobson(CoagTimeStep)
 			
-			!CALL SpillBeans(1,1,1)
+			!CALL SpillBeans()
 			!Update time
 			t = t + MixTimestep
 
 			IF (MOD(t,3600.0)<=0.05) THEN
-					CALL SizeDistOutput(1,1,1,t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
+					CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 			END IF
 
 			IF (MOD(t,60.0)<=0.05) THEN
@@ -1817,7 +1813,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 
 		END DO
 
-		current => particles(1,1,1)%first
+		current => particles%first
 		I = 1
 		TotalNumber = 0.0
 		TotalVolume = 0.0
@@ -1839,7 +1835,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		END DO 
 
 		!Spill Beans
-		!CALL SpillBeans(1,1,1)
+		!CALL SpillBeans()
 		!WRITE(*,*) "Total Final Number Conc: ", TotalNumber
 		!WRITE(*,*) "Total Final Volume Conc: ", TotalVolume
 		!WRITE(*,*) "Total Final Particle Mass: ", TotalMass
@@ -1850,7 +1846,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 	IF (.FALSE.) THEN !Condensation (flux) TESTS
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
-		CALL SetDomainSize (1*cm, 1*cm, 1*cm)
+		CALL SetDomainSize ()
 	
 		!! Call subroutines to set module data
 		CALL SetFileHandleCounter(12)
@@ -1877,17 +1873,16 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		
 		!!WARNING Force initial water equilibrium between gas and aerosol
 		!!(Uses open system for water eq.)
-		CALL EquilibrateInternallyAtGridPoint(1,1,1, EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
-		CALL RegridAerosol (1, 1, 1)
-		CALL SpillBeans(1,1,1)
+		CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+		CALL RegridAerosol ()
+		CALL SpillBeans()
 
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+		TEMP = GetTemp()
+		Mgas = GetM   ()
 		
 		!PressEq = SaturationVaporPressure (TEMP, 1)
 		!WRITE(*,*) "Press Eq: ", PressEq
-		!WRITE(*,*) "Diff: " , MolecularDiffusionCoefficient(X(1),X(2),X(3),INT(OrganicDissolutionData(1,1)))
+		!WRITE(*,*) "Diff: " , MolecularDiffusionCoefficient(,INT(OrganicDissolutionData(1,1)))
 		!STOP
 
 		!Find chemical indices for later
@@ -1922,7 +1917,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		HSO4i = FindChem("HSO4-", 1)
 
 		!Count # of bins, # of Aq. Chems, and equilibrate water
-		current => particles(1,1,1)%first
+		current => particles%first
 		NumBins = 0
 		DO WHILE(associated(current))
 			NumBins = NumBins + 1
@@ -1940,7 +1935,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		ALLOCATE(HeteroRadii(HeteroBins))
 
 		!Get particle number conc. and radii for hetero. rate calculation
-		current => particles(1,1,1)%first
+		current => particles%first
 		I = 1
 		DO WHILE(associated(current))
 			HeteroNumberConc(I) = current%NumberofParticles
@@ -1954,9 +1949,8 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .TRUE.)
 		CALL RecalculatePhotoRates(ut, .TRUE.)
 					
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+		TEMP = GetTemp()
+		Mgas = GetM   ()
 
 		ALLOCATE(OutFH(3+NumBins))
 		DO I = 1, 3+Numbins
@@ -2029,7 +2023,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		!Write gas phase concentrations in ppb
 		DO q = 1, HowManyGasChems
 		
-			Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+			Chem(q) = GridGasChem(q) !molecules/cm3
 
 			IF (q .LE. 70) THEN
 				WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas
@@ -2045,7 +2039,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		WRITE(OutFH(2), FMT='(A1)') ""
 		WRITE(OutFH(3), FMT='(A1)') ""
 			
-		current => particles(1,1,1)%first
+		current => particles%first
 		DO I = 4, 3+NumBins
 			WRITE(OutFH(I),FMT='(7ES13.5E2)', ADVANCE='NO') t/60
 				
@@ -2179,12 +2173,12 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		END DO
 		
 		!Output size distribution
-		CALL SizeDistOutput(1,1,1,t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
+		CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 			
-		WRITE(*,*) "Initial NH3 : ", trim(real2str(GridGasChem(1,1,1,NH3Gas)*1e9/Mgas)), " ppb"
-		WRITE(*,*) "Initial HNO3 : ", trim(real2str(GridGasChem(1,1,1,HNO3Gas)*1e9/Mgas)), " ppb"
-		WRITE(*,*) "Initial HCl : ", trim(real2str(GridGasChem(1,1,1,HClGas)*1e9/Mgas)), " ppb"
-		WRITE(*,*) "Initial H2SO4 : ", trim(real2str(GridGasChem(1,1,1,H2SO4Gas)*1e9/Mgas)), " ppb"
+		WRITE(*,*) "Initial NH3 : ", trim(real2str(GridGasChem(NH3Gas)*1e9/Mgas)), " ppb"
+		WRITE(*,*) "Initial HNO3 : ", trim(real2str(GridGasChem(HNO3Gas)*1e9/Mgas)), " ppb"
+		WRITE(*,*) "Initial HCl : ", trim(real2str(GridGasChem(HClGas)*1e9/Mgas)), " ppb"
+		WRITE(*,*) "Initial H2SO4 : ", trim(real2str(GridGasChem(H2SO4Gas)*1e9/Mgas)), " ppb"
 				
 		!Run the main loop with above timesteps
 		TimeStepSize = 60.0
@@ -2192,31 +2186,30 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 			
 			!Call Condensation
 			!WRITE(*,*) "Before StepCondensationAll"
-			!CALL FindAqElectrolyteEquilibriumForGridPoint (1, 1, 1, UpdateThermo = .TRUE.) 
-			CALL StepCondensationAll (TimeStepSize, 1, 1, 1, 1)
+			!CALL FindAqElectrolyteEquilibriumForGridPoint ( UpdateThermo = .TRUE.) 
+			CALL StepCondensationAll (TimeStepSize,  1)
 	
 			!PressEq = SaturationVaporPressure (TEMP, 1)
-			!P1 = GetGridCellChemBurden (1, 1, 1, INT(OrganicDissolutionData(1,1)))*RstarMB*Temp/Avogadro
+			!P1 = GetGridCellChemBurden ( INT(OrganicDissolutionData(1,1)))*RstarMB*Temp/Avogadro
 			!WRITE(*,*) "Press Diff (mbar): ", P1-PressEq
 			!WRITE(*,*) "Molecular Weight: ", GasMolecularMass(INT(OrganicDissolutionData(1,1)))
-			!WRITE(*,*) "Diff: " , MolecularDiffusionCoefficient(X(1),X(2),X(3),INT(OrganicDissolutionData(1,1)))
+			!WRITE(*,*) "Diff: " , MolecularDiffusionCoefficient(,INT(OrganicDissolutionData(1,1)))
 			!STOP
 			
 			
 			!Decrease Temperature
-			!X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-			!TEMP = GetTemp(X(1),X(2),X(3))
+			!TEMP = GetTemp()
 			!Temp = Temp -0.01*TimeStepSize
-			!CALL SetTempField (1, 1, 1, Temp)
-			!WRITE(*,*) "Temperature: ", GetTemp(X(1),X(2),X(3))
-			!WRITE(*,*) "RH :", GetRelativeHumidity (X(1), X(2), X(3))
-			!Mgas = GetM (X(1),X(2),X(3))
+			!CALL SetTempField ( Temp)
+			!WRITE(*,*) "Temperature: ", GetTemp()
+			!WRITE(*,*) "RH :", GetRelativeHumidity ()
+			!Mgas = GetM ()
 
 			!WRITE(*,*) "Before regrid"
 			
 			!Move particles across bin boundaries, if necessary!
 			!(Also updates temperature)
-			CALL RegridAerosol (1, 1, 1)
+			CALL RegridAerosol ()
 
 			!Update time
 			t = t + TimeStepSize
@@ -2234,7 +2227,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 				!Write gas phase concentrations in ppb
 				DO q = 1, HowManyGasChems
 		
-					Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+					Chem(q) = GridGasChem(q) !molecules/cm3
 
 					IF (q .LE. 70) THEN
 						WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas
@@ -2251,7 +2244,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 				WRITE(OutFH(3), FMT='(A1)') ""
 			
 				GridTotalSOA = 0.0
-				current => particles(1,1,1)%first
+				current => particles%first
 				DO I = 4, 3+NumBins
 					WRITE(OutFH(I),FMT='(7ES13.5E2)', ADVANCE='NO') t/60
 				
@@ -2388,9 +2381,9 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 			
 			IF (MOD(t,60.0)<=0.05 .OR. DissolutionEquilibriumorFlux .EQ. .FALSE.) THEN
 				IF(DissolutionEquilibriumorFlux .EQ. .TRUE.) THEN
-					CALL SizeDistOutput(1,1,1,t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
+					CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 				ELSE
-					CALL SizeDistOutput(1,1,1,t,"SizeDist2.txt")
+					CALL SizeDistOutput(t,"SizeDist2.txt")
 				END IF
 			END IF
 
@@ -2404,19 +2397,19 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		
 		END DO
 
-		CALL SpillBeans(1,1,1)
-		WRITE(*,*) "Final NH3 : ", trim(real2str(GridGasChem(1,1,1,NH3Gas)*1e9/Mgas)), " ppb"
-		WRITE(*,*) "Final HNO3 : ", trim(real2str(GridGasChem(1,1,1,HNO3Gas)*1e9/Mgas)), " ppb"
-		WRITE(*,*) "Final HCl : ", trim(real2str(GridGasChem(1,1,1,HClGas)*1e9/Mgas)), " ppb"
-		WRITE(*,*) "Final H2SO4 : ", trim(real2str(GridGasChem(1,1,1,H2SO4Gas)*1e9/Mgas)), " ppb"
-		WRITE(*,*) "Final POA1 : ", trim(real2str(GridGasChem(1,1,1,INT(OrganicDissolutionData(1,1)))*1e9/Mgas)), " ppb"
+		CALL SpillBeans()
+		WRITE(*,*) "Final NH3 : ", trim(real2str(GridGasChem(NH3Gas)*1e9/Mgas)), " ppb"
+		WRITE(*,*) "Final HNO3 : ", trim(real2str(GridGasChem(HNO3Gas)*1e9/Mgas)), " ppb"
+		WRITE(*,*) "Final HCl : ", trim(real2str(GridGasChem(HClGas)*1e9/Mgas)), " ppb"
+		WRITE(*,*) "Final H2SO4 : ", trim(real2str(GridGasChem(H2SO4Gas)*1e9/Mgas)), " ppb"
+		WRITE(*,*) "Final POA1 : ", trim(real2str(GridGasChem(INT(OrganicDissolutionData(1,1)))*1e9/Mgas)), " ppb"
 		    
 	END IF !Condensation (flux) Tests
 	
 	IF (.FALSE.) THEN !MOVING CENTER TESTS 
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
-		CALL SetDomainSize (1*cm, 1*cm, 1*cm)
+		CALL SetDomainSize ()
 	
 		!! Call subroutines to set module data
 		CALL SetFileHandleCounter(12)
@@ -2444,10 +2437,10 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		CALL InitializeParticlesSectional
 			
 		!Spill Beans
-		CALL SpillBeans(1,1,1)
+		CALL SpillBeans()
 
 		DO r = 1, 100
-			current => particles(1,1,1)%first
+			current => particles%first
 			NumAqChems = size(current%AqChems)
 			i = 1
 			DO WHILE(associated(current))
@@ -2476,16 +2469,16 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		
 			
 			!Equilibrate Aq. Phase	
-			!CALL FindAqElectrolyteEquilibriumForGridPoint (1, 1, 1, .TRUE.)
+			!CALL FindAqElectrolyteEquilibriumForGridPoint ( .TRUE.)
 
 			!Resize Particles
-			CALL RegridAerosol (1, 1, 1)
+			CALL RegridAerosol ()
 		END DO
 
-		CALL RegridAerosol (1, 1, 1)
+		CALL RegridAerosol ()
 
 		!Spill Beans
-		CALL SpillBeans(1,1,1)
+		CALL SpillBeans()
 			
 	END IF !MOVING CENTER TESTS
 
@@ -2493,7 +2486,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 	IF (.FALSE.) THEN !Chamber TESTS
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
-		CALL SetDomainSize (1*cm, 1*cm, 1*cm)
+		CALL SetDomainSize ()
 	
 		!! Call subroutines to set module data
 		CALL SetFileHandleCounter(12)
@@ -2519,11 +2512,11 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		!WRITE(*,*) "Check 1"
 		!!WARNING Force initial equilibrium between gas and aerosol
 		!!(Uses open system for water eq.)
-		!CALL EquilibrateGridPointAll(1,1,1, .TRUE., .TRUE., .TRUE.)
-		CALL EquilibrateHydrophobicPhaseAtGridPoint(1,1,1)
+		!CALL EquilibrateGridPointAll(, .TRUE., .TRUE., .TRUE.)
+		CALL EquilibrateHydrophobicPhaseAtGridPoint()
 		!WRITE(*,*) "Check 2"
 		
-		CALL SpillBeans(1,1,1)
+		CALL SpillBeans()
 
 		!Find chemical indices for later
 		PotassiumIndex = FindChem("K+", 1)
@@ -2552,7 +2545,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		HSO4i = FindChem("HSO4-", 1)
 		
 		!Count # of bins, # of Aq. Chems
-		current => particles(1,1,1)%first
+		current => particles%first
 		NumBins = 0
 		DO WHILE(associated(current))
 			NumBins = NumBins + 1
@@ -2562,9 +2555,9 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		END DO
 		ALLOCATE(NumConc(NumBins))
 		
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+	
+		TEMP = GetTemp()
+		Mgas = GetM   ()
 
 		ALLOCATE(OutFH(4))
 		OutFH(1) = GetFileHandle()
@@ -2642,7 +2635,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 				!Write gas phase concentrations in ppb
 				DO q = 1, HowManyGasChems
 		
-					Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+					Chem(q) = GridGasChem(q) !molecules/cm3
 
 					IF (q .LE. 70) THEN
 						WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas
@@ -2656,7 +2649,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 				
 				IF (NumBins .GT. 1) CALL ERROR("The current output routine needs a bulk aerosol to work.") 
 	
-				current => particles(1,1,1)%first
+				current => particles%first
 				WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%numberofparticles
 				WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%effectiveradius
 				WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%IonicStr
@@ -2785,8 +2778,8 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 			END IF !Write Output
 		
 			!Calculate Temperature
-			X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-			TEMP = GetTemp(X(1),X(2),X(3))
+		
+			TEMP = GetTemp()
 
 			!NOTE: Right now, pressure and temperature are assumed to be 
 			!constant, so we don't recalculate the rest of the reaction rates
@@ -2798,17 +2791,17 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 			
 			
 			UR21i = FindChem("UR21", 0)
-			!WRITE(*,*) "Before Chem", GridGasChem(1,1,1,UR21i)
-			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep),1,1,1)			
-			!WRITE(*,*) "After Chem", GridGasChem(1,1,1,UR21i)
+			!WRITE(*,*) "Before Chem", GridGasChem(UR21i)
+			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep))			
+			!WRITE(*,*) "After Chem", GridGasChem(UR21i)
 			!Only Equilibrate every 60 s (one second before the minute)
 			!IF (MOD(t,CondTimeStep) .LT. 59.01 .AND. MOD(t,CondTimeStep) .GT. 58.99) THEN
 
 				!Equilibrate Gases and particles
-				!CALL EquilibrateGridPointAll(1,1,1, .TRUE., .TRUE., .TRUE.)
-				!WRITE(*,*) "Before Eq", GridGasChem(1,1,1,UR21i)
-				CALL EquilibrateHydrophobicPhaseAtGridPoint(1,1,1)
-				!WRITE(*,*) "After Eq", GridGasChem(1,1,1,UR21i)
+				!CALL EquilibrateGridPointAll( .TRUE., .TRUE., .TRUE.)
+				!WRITE(*,*) "Before Eq", GridGasChem(,UR21i)
+				CALL EquilibrateHydrophobicPhaseAtGridPoint()
+				!WRITE(*,*) "After Eq", GridGasChem(,UR21i)
 			!END IF
 								
 			!Update time
@@ -2826,7 +2819,7 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		END DO
 
 		!Spill Beans
-		CALL SpillBeans(1,1,1)
+		CALL SpillBeans()
 		    
 	END IF !Chamber Tests
 

@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -6,57 +6,57 @@
 !! This file contains the functions for calculating Brownian diffusion
 !! and gravitational collection coagulation kernels.
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!! 08/29  2007   Matt Alvarado     Fixed mean free path calculation in 
-!!									CoagKernBrownianDiff
-!!								   Fixed calculation of Schmidt number in
-!!									CoagKernBrownianDiff
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 08/29  2007   Matt Alvarado   Fixed mean free path calculation in         !!
+!!				    CoagKernBrownianDiff                     !!
+!!				 Fixed calculation of Schmidt number in      !!
+!!				    CoagKernBrownianDiff                     !!
+!! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:	!!
-!! 1. FUNCTION CoagKernBrownianDiff (Particle1, Particle2)		!!
+!! 1. FUNCTION CoagKernBrownianDiff (Particle1, Particle2)	!!
 !! 2. FUNCTION CoagKernGravCollection (Particle1, Particle2)	!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Calculate the Brownian Diffusion Coagulation Kernel for a				!!
-!! two given sizes of particles.  Ther kernel has the form:					!!
-!!																			!!
-!!		KBD(r1,r2) = 4*pi (ri + rj) (Di + Dj) Beta							!!
-!!																			!!
-!! In which ri is the radius of i, Di is the diffusion coefficient,			!!
-!! and Beta is a transition-region correction factor based on the Knudsen	!!
-!! number.  The inputs rib and rit signify the bottom and top of a			!!
-!! bin's size range.  The bins have flat distributions.  The Mass values	!!
-!! are the full masses associated with a size bin (we track both mass and	!!
-!! number).																	!!
-!!																			!!
-!! We also calculate the Coagulation Kernel of Brownian Convective			!!
+!! Calculate the Brownian Diffusion Coagulation Kernel for a		    !!
+!! two given sizes of particles.  Ther kernel has the form:		    !!
+!!									    !!
+!!		KBD(r1,r2) = 4*pi (ri + rj) (Di + Dj) Beta		    !!
+!!									    !!
+!! In which ri is the radius of i, Di is the diffusion coefficient,	    !!
+!! and Beta is a transition-region correction factor based on the Knudsen   !!
+!! number.  The inputs rib and rit signify the bottom and top of a	    !!
+!! bin's size range.  The bins have flat distributions.  The Mass values    !!
+!! are the full masses associated with a size bin (we track both mass and   !!
+!! number).								    !!
+!!									    !!
+!! We also calculate the Coagulation Kernel of Brownian Convective          !!
 !! Enhancement, which is a separate kernel addressing the pull of larger    !!
-!! particles' wakes on smaller particles.									!!
-!!																			!!
+!! particles' wakes on smaller particles.				    !!
+!!									    !!
 !! The routine returns the SUM of the two kernels, appropriate given the    !!
-!! way these will be solved.												!!
+!! way these will be solved.						    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION CoagKernBrownianDiff (Particle1, Particle2)
 
-	USE GridPointFields, ONLY : LocateGridPoint,				&
-								GasPhaseChemGridIndex,			&
-								GetDynamicViscosityOfAir,		&
-								GetTemp,						&
-								GetAirDensity
+	USE GridPointFields, ONLY : GetDynamicViscosityOfAir,		&
+				    GetTemp,				&
+				    GetAirDensity
 
 	USE Chemistry, ONLY        : AqMolecularMass
 
 	USE Aerosols,		 ONLY : Particle,			&
-								ParticleKnudsen,	&
-								ParticleMass,		&
-								ReynoldsNumber	
+					ParticleKnudsen,	&
+					ParticleMass,		&
+					ReynoldsNumber	
 
 	USE ModelParameters, ONLY : Pi, kB, ThmVelFac
 
@@ -66,8 +66,8 @@ REAL*8 FUNCTION CoagKernBrownianDiff (Particle1, Particle2)
 	TYPE(Particle), POINTER :: Particle1, Particle2
 
 	!! Local Variables
-	REAL*8 :: DynVisc, Temp, AirDensity								!! Environmental
-	REAL*8 :: D1, D2, Knudsen1, Knudsen2, Cs1, Cs2,				 &	!! Particle
+	REAL*8 :: DynVisc, Temp, AirDensity	!! Environmental
+	REAL*8 :: D1, D2, Knudsen1, Knudsen2, Cs1, Cs2,	&	!! Particle
 			  Mass1, Mass2, MFP1, MFP2, Del1, Del2, CE, BetaInv, &
 			  ReNumb, ScNumb
 
@@ -79,9 +79,9 @@ REAL*8 FUNCTION CoagKernBrownianDiff (Particle1, Particle2)
 	!! Use the location of one of those as a stand-in.
 	!! First Calculate the Di's.  These depend on kB, T, the Cunningham Correction
 	!! Factor, the Dynamic Viscosity, and the radius.
-	DynVisc    = GetDynamicViscosityOfAir (Particle1%Location(1),Particle1%Location(2),Particle1%Location(3))
-	Temp       = GetTemp (Particle1%Location(1),Particle1%Location(2),Particle1%Location(3))
-	AirDensity = GetAirDensity (Particle1%Location(1),Particle1%Location(2),Particle1%Location(3))
+	DynVisc    = GetDynamicViscosityOfAir ()
+	Temp       = GetTemp ()
+	AirDensity = GetAirDensity ()
 
 	Knudsen1   = ParticleKnudsen (Particle1)
 	Knudsen2   = ParticleKnudsen (Particle2)
@@ -171,22 +171,22 @@ END FUNCTION CoagKernBrownianDiff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Calculate the Gravitational Collection Coagulation Kernel for       !!
-!! two given sizes of particles.  Ther kernel has the form:			   !!
-!!																	   !!
-!!		KGC(r1,r2) = Ec pi (r1 + r2)^2 (Vf_t,1 - Vf_t,2)               !!
-!!																	   !!
-!! The difficulty with this form is properly writing the collection	   !!
-!! efficiency, Ec.   												   !!
+!! two given sizes of particles.  Ther kernel has the form:	       !!
+!!								       !!
+!!		KGC(r1,r2) = Ec pi (r1 + r2)^2 (Vf_t,1 - Vf_t,2)       !!
+!!								       !!
+!! The difficulty with this form is properly writing the collection    !!
+!! efficiency, Ec.   						       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION CoagKernGravCollection (Particle1, Particle2)
 
-	USE GridPointFields, ONLY : GetDynamicViscosityOfAir,		&
-								GetAirDensity
+	USE GridPointFields, ONLY : GetDynamicViscosityOfAir,	&
+					GetAirDensity
 
 	USE Chemistry,       ONLY : AqMolecularMass
 
-	USE Aerosols,		 ONLY : Particle,			&
-								TerminalVelocity
+	USE Aerosols,	     ONLY : Particle,		&
+				    TerminalVelocity
 
 	USE ModelParameters, ONLY : Pi
 
@@ -204,8 +204,8 @@ REAL*8 FUNCTION CoagKernGravCollection (Particle1, Particle2)
 	!! the location of one of those as a stand-in.
 	!! First Calculate the Di's.  These depend on kB, T, the Cunningham Correction
 	!! Factor, the Dynamic Viscosity, and the radius.
-	DynVisc    = GetDynamicViscosityOfAir (Particle1%Location(1),Particle1%Location(2),Particle1%Location(3))
-	AirDensity = GetAirDensity (Particle1%Location(1),Particle1%Location(2),Particle1%Location(3))
+	DynVisc    = GetDynamicViscosityOfAir ()
+	AirDensity = GetAirDensity ()
 
 	!!From Jacobson, "Fundamentals of Atmospheric Modeling", p. 510
 	Ec = CollisionEfficiency(Particle1, Particle2)

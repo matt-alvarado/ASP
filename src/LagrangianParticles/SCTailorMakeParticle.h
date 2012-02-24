@@ -2,16 +2,27 @@
 !! Donnan Steele -- MELAM -- (c) 2001   !!
 !! Update Information:					!!  
 !! 08     2005   Matt Alvarado	   Added comments
-!! 07/24  2006   Matt Alvarado     Change "Pointer => NULL()" to				!!
-!!									NULLIFY(POINTER) to fit pgf90							!!
-!!				
-!!										!!			
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! 07/24  2006   Matt Alvarado     Change "Pointer => NULL()" to	!!
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! Based on MELAM of H.D.Steele (c) 2000-2004
+!!
+!! File Description:
+!! SCTailorMakeParticle.h
+!! These routines are to do with the initialization	
+!! of the aerosol particle distribution
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:		!!	
+!! This file contains the following functions and subroutines:	    !!	
 !! 1. FUNCTION SCTailorMakeParticle(WhichPopulation, Radius)        !!
-!! 2. FUNCTION SCTailorMakeWaterParticle(Radius)					!!
+!! 2. FUNCTION SCTailorMakeWaterParticle(Radius)		    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -24,18 +35,20 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 FUNCTION SCTailorMakeParticle(WhichPopulation, Radius)
 
-	USE GridPointFields,	 ONLY : ClosestGridPoint, GasPhaseChemGridIndex, GetTemp
-	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,			&
-									lengthscale,				&
-									Pi, EulerMass,				&
-									micron,	moles,				&
-									AverageAerosolDensity,		&
-									DomainX, DomainY, DomainZ
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									AqMolecularMass,			&
-									HowManyAqEqReactions
+	USE GridPointFields,	 ONLY : GetTemp
+	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,		&
+					lengthscale,			&
+					Pi, EulerMass,			&
+					micron,	moles,			&
+					AverageAerosolDensity,		&
+					DomainX, DomainY, DomainZ
+
+	USE Chemistry,		 ONLY : HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqAnions,		&
+					AqMolecularMass,		&
+					HowManyAqEqReactions
+
 	USE InfrastructuralCode, ONLY : REAL2STR, Transcript, Warn, Error
 
 	IMPLICIT NONE
@@ -47,19 +60,19 @@ FUNCTION SCTailorMakeParticle(WhichPopulation, Radius)
 	!! Local Variables
 	REAL*8 :: II, JJ, KK
 	TYPE(Particle), POINTER :: SCTailorMakeParticle, CurrentParticle
-	INTEGER				    :: allocation_error, I,J,X,Y,Z
+	INTEGER				    :: allocation_error, I,J
 	LOGICAL, PARAMETER		:: Scaffolding = .FALSE. !.TRUE.
 
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticle()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! For sampling, we want to use a random number to find a number of standard	!!
-	!! deviations away from the mean value.  To do this, we must invert the error	!!
-	!! function.  To do this, we use the following numerical trick, which inverts	!!
-	!! an error function for a series with a mean at the Euler-Masscheroni Constant	!!
-	!! and a standard deviation of pi/sqrt(6):										!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! For sampling, we want to use a random number to find a number of standard !!
+!! deviations away from the mean value.  To do this, we must invert the error!!
+!! function.  To do this, we use the following numerical trick, which inverts!!
+!!an error function for a series with a mean at the Euler-Masscheroni Constant!
+!! and a standard deviation of pi/sqrt(6):				     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	II = Radius
 
@@ -84,27 +97,14 @@ FUNCTION SCTailorMakeParticle(WhichPopulation, Radius)
 	SCTailorMakeParticle%InsolubleRadius	= 0.
 	SCTailorMakeParticle%EffectiveRadius	= II
 
-	!! Create a Location for the Particle
-	CALL Random_Number(II)
-	SCTailorMakeParticle%location(1) = II*DomainX
-	CALL Random_Number(II)
-	SCTailorMakeParticle%location(2) = II*DomainY
-	CALL Random_Number(II)
-	SCTailorMakeParticle%location(3) = II*DomainZ
-
-	!! Place the particle at the local gridpoint
-	CALL ClosestGridPoint(SCTailorMakeParticle%location(1), SCTailorMakeParticle%location(2), SCTailorMakeParticle%location(3), &
-						  GasPhaseChemGridIndex, X, Y, Z) 
-
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
-	SCTailorMakeParticle%Temperature = GetTemp(SCTailorMakeParticle%Location(1),SCTailorMakeParticle%Location(2),	&
-											   SCTailorMakeParticle%Location(3))
+	SCTailorMakeParticle%Temperature = GetTemp()
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Create a Velocity for the Particle.  It is some random		!!
+	!! Create a Velocity for the Particle.  It is some random	!!
 	!! percentage of the terminal velocity, randomly apportioned	!!
-	!! between the three directions.								!!
+	!! between the three directions.				!!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	CALL Random_Number(II)
 	CALL Random_Number(JJ)
@@ -165,18 +165,20 @@ END FUNCTION SCTailorMakeParticle
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 FUNCTION SCTailorMakeWaterParticle(Radius)
 
-	USE GridPointFields,	 ONLY : ClosestGridPoint, GasPhaseChemGridIndex, GetTemp
-	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,			&
-									lengthscale,				&
-									Pi, EulerMass,				&
-									micron,	moles,				&
-									AverageAerosolDensity,		&
-									DomainX, DomainY, DomainZ
-	USE Chemistry,			 ONLY : HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqAnions,			&
-									AqMolecularMass,			&
-									HowManyAqEqReactions
+	USE GridPointFields,	 ONLY : GetTemp
+	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,		&
+					lengthscale,			&
+					Pi, EulerMass,			&
+					micron,	moles,			&
+					AverageAerosolDensity,		&
+					DomainX, DomainY, DomainZ
+
+	USE Chemistry,		 ONLY : HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqAnions,		&
+					AqMolecularMass,		&
+					HowManyAqEqReactions
+
 	USE InfrastructuralCode, ONLY : REAL2STR, Transcript, Warn, Error
 
 	IMPLICIT NONE
@@ -188,19 +190,19 @@ FUNCTION SCTailorMakeWaterParticle(Radius)
 	!! Local Variables
 	REAL*8 :: II, JJ, KK
 	TYPE(Particle), POINTER :: SCTailorMakeWaterParticle, CurrentParticle
-	INTEGER				    :: allocation_error, I,J,X,Y,Z
+	INTEGER				    :: allocation_error, I,J
 	LOGICAL, PARAMETER		:: Scaffolding = .FALSE. !.TRUE.
 
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticle()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! For sampling, we want to use a random number to find a number of standard	!!
-	!! deviations away from the mean value.  To do this, we must invert the error	!!
-	!! function.  To do this, we use the following numerical trick, which inverts	!!
-	!! an error function for a series with a mean at the Euler-Masscheroni Constant	!!
-	!! and a standard deviation of pi/sqrt(6):										!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! For sampling, we want to use a random number to find a number of standard !!
+!! deviations away from the mean value.  To do this, we must invert the error!!
+!! function.  To do this, we use the following numerical trick, which inverts!!
+!! an error function for a series with a mean at the Euler-Masscheroni Constant
+!! and a standard deviation of pi/sqrt(6):				     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	II = Radius
 
@@ -233,24 +235,14 @@ FUNCTION SCTailorMakeWaterParticle(Radius)
 	SCTailorMakeWaterParticle%Sectional = .FALSE.
 	SCTailorMakeWaterParticle%NumberOfParticles	= 1
 
-	!! Create a Location for the Particle
-	SCTailorMakeWaterParticle%location(1) = 0.00001
-	SCTailorMakeWaterParticle%location(2) = 0.00001
-	SCTailorMakeWaterParticle%location(3) = 0.00001
-
-	!! Place the particle at the local gridpoint
-	CALL ClosestGridPoint(SCTailorMakeWaterParticle%location(1), SCTailorMakeWaterParticle%location(2), &
-						  SCTailorMakeWaterParticle%location(3), GasPhaseChemGridIndex, X, Y, Z) 
-
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
-	SCTailorMakeWaterParticle%Temperature = GetTemp(SCTailorMakeWaterParticle%Location(1),SCTailorMakeWaterParticle%Location(2), &
-													SCTailorMakeWaterParticle%Location(3))
+	SCTailorMakeWaterParticle%Temperature = GetTemp()
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Create a Velocity for the Particle.  It is some random		!!
+	!! Create a Velocity for the Particle.  It is some random	!!
 	!! percentage of the terminal velocity, randomly apportioned	!!
-	!! between the three directions.								!!
+	!! between the three directions.				!!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	CALL Random_Number(II)
 	CALL Random_Number(JJ)

@@ -6,49 +6,49 @@
 !! This file holds parameters and constants germaine to the 
 !! aerosol definitions and internal processes
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY			  			             !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! DEPENDENCIES						        !!
-!! 1. Chemistry								!!
-!! 2. InfrastructuralCode					!!
-!! 3. GridPointFields						!!				
-!! 4. ModelParameters						!!
+!! DEPENDENCIES		                    !!
+!! 1. Chemistry	       	                    !!
+!! 2. InfrastructuralCode		    !!
+!! 3. GridPointFields			    !!				
+!! 4. ModelParameters			    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:		!!	
-!! 1. SUBROUTINE ReadMainInputDeck()								!!
+!! This file contains the following functions and subroutines:	    !!	
+!! 1. SUBROUTINE ReadMainInputDeck()				    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
 	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! READ INPUT DECK !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Read the main input deck and set the appropriate !!
-	!! parameters throughout the model.					!!
+	!! parameters throughout the model.		    !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	SUBROUTINE ReadMainInputDeck ()
 
 		USE Chemistry,			 ONLY : SetPhaseIfs
 		USE InfrastructuralCode, ONLY : GetFileHandle,		&
-										ReturnFileHandle,	&
-										GetLine,			&
-										GetToken,			&
-										IsInteger,			&
-										IsReal,				&
-										STR2INT,			&
-										STR2REAL,			&
-										StripToken,			&
-										EOF,				&
-										ERROR,WARN,			&
-										Transcript
-		USE GridPointFields,     ONLY : InitializeGridPointFields,	&
-										SetWaterVaporField 
+						ReturnFileHandle,	&
+						GetLine,		&
+						GetToken,		&
+						IsInteger,		&
+						IsReal,			&
+						STR2INT,		&
+						STR2REAL,		&
+						StripToken,		&
+						EOF,			&
+						ERROR,WARN,		&
+						Transcript
+		USE GridPointFields,     ONLY : InitializeGridPointFields, &
+						SetWaterVaporField 
 		USE ModelParameters
 
 		IMPLICIT NONE

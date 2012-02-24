@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -6,18 +6,20 @@
 !! Reads in and stores data on the gas phase chemicals and the
 !! gas phase kinetic reaction mechanism.
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY							       	!!
-!!     										!!
-!! Month  Year   Name              Description					!!
-!! 07     2006   Matt Alvarado     Began Update History				!!
-!! 07/24  2006   Matt Alvarado     Change "Pointer => NULL()" to		!!
-!!				   NULLIFY(POINTER) to fit pgf90	        !!
-!! 09/07  2006   Matt Alvarado     Added in Deposition Velocity for gases	!!
-!! 06/27  2007   Matt Alvarado     Removed Sensitivity Matrix Calculation       !!
-!! 07/30  2007   Matt Alvarado     Fixed background water concentration in      !!
-!!				   SetGasPhaseChemistry - removed eps from calc !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!     								             !!
+!! Month  Year   Name            Description				     !!
+!! 07     2006   Matt Alvarado   Began Update History			     !!
+!! 07/24  2006   Matt Alvarado   Change "Pointer => NULL()" to	             !!
+!!				   NULLIFY(POINTER) to fit pgf90	     !!
+!! 09/07  2006   Matt Alvarado   Added in Deposition Velocity for gases      !!
+!! 06/27  2007   Matt Alvarado   Removed Sensitivity Matrix Calculation      !!
+!! 07/30  2007   Matt Alvarado   Fixed background water concentration in     !!
+!!				 SetGasPhaseChemistry - removed eps from calc!!
+!! 02/15  2012   Matt Alvarado     Removing Eulerian grids, making ASP       !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:	!!
@@ -25,335 +27,315 @@
 !! 2. SUBROUTINE SetGasPhaseODEandJacobian ()			!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Read Gas Phase Chemical Information from 'GasPhaseChemistryInputDeck.in',	!!
-	!! an input deck, defines the appropriate chemical arrays in this module,	!!
-	!! and calls the appropriate eulerian grid subroutines to establich the		!!
-	!! chemical fields					      			!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	SUBROUTINE SetGasPhaseChemistry ()
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Read Gas Phase Chemical Information from 'GasPhaseChemistryInputDeck.in',!!
+!! an input deck, defines the appropriate chemical arrays in this module,   !!
+!! and calls the appropriate eulerian grid subroutines to establich the	    !!
+!! chemical fields					      		    !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE SetGasPhaseChemistry ()
 
-		USE ModelParameters
-		USE InfrastructuralCode
-		USE GridPointFields, ONLY: SetHomogeneousChemFieldPPB,		&
-					   SetHomogeneousChemFieldMGperM3,	&
-					   AllocateGasChemistryGrid,		&
-					   SetChemFieldFromDeck,		&
-					   SetHowManyGasChems,			&
-					   GridGasChem,				&
-					   GetM,				&
-					   GetPress,				&
-					   GetSatVapPress,			&
-					   GasPhaseChemGridIndex,	        &
-					   GetRelativeHumidity,			&
-					   LocateGridPoint,			&
-					   GetSatMixingRatio
-		IMPLICIT NONE
+	USE ModelParameters
+	USE InfrastructuralCode
+	USE GridPointFields, ONLY: SetHomogeneousChemFieldPPB,	&
+				   SetHomogeneousChemFieldMGperM3,&
+				   AllocateGasChemistryGrid,	&
+				   SetHowManyGasChems,		&
+				   GridGasChem,			&
+				   GetM,			&
+				   GetPress,			&
+				   GetSatVapPress,		&
+				   GetRelativeHumidity,		&
+				   GetSatMixingRatio
+	IMPLICIT NONE
 
-		!! Local Infrastructural Variables
-		integer				:: i, j, k,			 &
-						   allocation_error,             &
-						   index1, index2, currindex
-		logical				:: Scaffolding, Transcribe
-		character (len=512)	:: CurrLine, Token, Name
-		character (len=12)	:: Numbers = "0123456789+-"
+	!! Local Infrastructural Variables
+	integer				:: i, j, k,		&
+					   allocation_error,    &
+					   index1, index2, currindex
+	logical				:: Scaffolding, Transcribe
+	character (len=512)	:: CurrLine, Token, Name
+	character (len=12)	:: Numbers = "0123456789+-"
 
-		!! These Local Variables Arrive From the Input Deck
-		integer	:: NumbChems
-		REAL*8	:: Mgas, X(3), MixH2O, RH, SPress
+	!! These Local Variables Arrive From the Input Deck
+	integer	:: NumbChems
+	REAL*8	:: Mgas, MixH2O, RH, SPress
 
-		!! And there is a file handle to be used
-		integer	:: FH
-		FH = GetFileHandle()
-		HowManyGasChems=1		! Water is the first, which is why these aren't 0
-		HowManyEvolveGasChems=1
+	!! And there is a file handle to be used
+	integer	:: FH
+	FH = GetFileHandle()
+	HowManyGasChems=1
+        ! Water is the first, which is why these aren't 0
+	HowManyEvolveGasChems=1
 
-		IF (TranscriptFH > 0) THEN
-			Transcribe = .TRUE.
-		ELSE 
-			Transcribe = .FALSE.
-		END IF
+	IF (TranscriptFH > 0) THEN
+		Transcribe = .TRUE.
+	ELSE 
+		Transcribe = .FALSE.
+	END IF
 
-		!! Use Scaffolding Code?
-	!	Scaffolding = .TRUE.
-		Scaffolding = .FALSE.
+	!! Use Scaffolding Code?
+	!Scaffolding = .TRUE.
+	Scaffolding = .FALSE.
 
-		!! SCSCSCSC -- Announce Arrival
-		IF (Scaffolding) CALL TRANSCRIPT(">>Entering SetGasPhaseChemistry()<<")
+	!! SCSCSCSC -- Announce Arrival
+	IF (Scaffolding) CALL TRANSCRIPT(">>Entering SetGasPhaseChemistry()<<")
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! Most of the Parameters Arrive from an Input Deck	!!
-		!! That deck is "GasPhaseChemistryInputDeck.in" and	!!		
-		!! is located in the main directory of the program	!!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	        OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//"GasPhaseChems.in", STATUS='OLD')
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!! Most of the Parameters Arrive from an Input Deck !!
+	!! That deck is "GasPhaseChemistryInputDeck.in" and !!
+	!! is located in the main directory of the program  !!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//"GasPhaseChems.in", STATUS='OLD')
 
-		!! The first line is a flag for input concentration type which equals:
-		!!  0 if inputs are in ppb
-		!!  1 if inputs are in mg / m3
-                WRITE(*,*) "Open GasPhaseChems.in"
-		CurrLine = GetLine(FH)
-                WRITE(*,*) STR2REAL("0.     ")
+	!! The first line is a flag for input concentration type which equals:
+	!!  0 if inputs are in ppb
+	!!  1 if inputs are in mg / m3
+        !WRITE(*,*) "Open GasPhaseChems.in"
+	CurrLine = GetLine(FH)
+        !WRITE(*,*) STR2REAL("0.     ")
 
-		!IF (.NOT.IsInteger(CurrLine)) &
-		!CALL ERROR("In GasPhaseChems.in, the first non-commentary line should be a flag telling the model how you are "//  &
-		!           "specifying the initial concentrations.  It must either be 0 or 1, with no decimal points.")
-		GasConcInputTypeFlag = 0 !Force ppb, mja 08/27/2010 STR2INT(TRIM(CurrLine))
-		!WRITE(*,*) "GasConcInputTypeFlag", GasConcInputTypeFlag
+	GasConcInputTypeFlag = 0 !Force ppb, mja 08/27/2010 
 
-		IF (GasConcInputTypeFlag .NE. 0 .AND. GasConcInputTypeFlag .NE. 1) &
-		CALL ERROR("In GasPhaseChems.in, the first non-commentary line should be a flag telling the model how you are "// &
-				   "specifying the initial concentrations.  It must either be 0 or 1, with no decimal points.  Your input "// &
-				   "appears to be an integer but out of range.")
+	IF (GasConcInputTypeFlag .NE. 0 .AND. GasConcInputTypeFlag .NE. 1) &
+	  CALL ERROR("In GasPhaseChems.in, the first non-commentary line should be a flag telling the model how you are "// &
+	  "specifying the initial concentrations.  It must either be 0 or 1, with no decimal points.  Your input "// &
+	  "appears to be an integer but out of range.")
 
-		!! Make a first pass through the file to determine the number of 
-		!! chemicals specified therein.
-		!! Need this number early to allocate all of the arrays.
-10		CurrLine = GetLine(FH)
-		IF (CurrLine .NE. EOF) THEN
-			HowManyGasChems = HowManyGasChems+1
-			GOTO 10
-		END IF
+	!! Make a first pass through the file to determine the number of 
+	!! chemicals specified therein.
+	!! Need this number early to allocate all of the arrays.
+10	CurrLine = GetLine(FH)
+	IF (CurrLine .NE. EOF) THEN
+		HowManyGasChems = HowManyGasChems+1
+		GOTO 10
+	END IF
 
-		!! Send this value to the grid point module
-		CALL SetHowManyGasChems(HowManyGasChems)
+	!! Send this value to the grid point module
+	CALL SetHowManyGasChems(HowManyGasChems)
 
-		!! Back up for a second pass to parse the chemical traits
-		REWIND(FH)
+	!! Back up for a second pass to parse the chemical traits
+	REWIND(FH)
 
-		!! Skip the input flag line on this pass
-		CurrLine = GetLine(FH)
+	!! Skip the input flag line on this pass
+	CurrLine = GetLine(FH)
 
-		!! SCSCSCSC
-		IF (Scaffolding) CALL TRANSCRIPT(">>About to allocate<<")
+	!! SCSCSCSC
+	IF (Scaffolding) CALL TRANSCRIPT(">>About to allocate<<")
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! Now ALLOCATE each of the arrays that are size HowManyGasChems !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!! Now ALLOCATE each of the arrays that are size HowManyGasChems !!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-		!!! -- up to 15 character CHEMICAL NAME which should be identical to that -- !!!
-		!!! -- given in other input decks if it is to be matched across phases    -- !!!
-		ALLOCATE (GasPhaseChemicalNames(HowManyGasChems), stat = allocation_error)
-		if (allocation_error > 0) &
-			CALL ERROR("Allocation of GasPhaseChemicalNames could not proceed in SetChemistryParams()")
+	!!! -- up to 15 character CHEMICAL NAME which should be identical to that -- !!!
+	!!! -- given in other input decks if it is to be matched across phases    -- !!!
+	ALLOCATE (GasPhaseChemicalNames(HowManyGasChems), stat = allocation_error)
+	if (allocation_error > 0) &
+		CALL ERROR("Allocation of GasPhaseChemicalNames could not proceed in SetChemistryParams()")
 
-		!!! -- ENTHALPY OF VAPORIZATION (Latent Heat) in J/g -- !!!
-		ALLOCATE (EnthalpyOfVaporization(1), stat = allocation_error)
-		if (allocation_error > 0) CALL ERROR("Allocation of EnthalpyOfVaporization could not proceed in SetChemistryParams()")
+	!!! -- ENTHALPY OF VAPORIZATION (Latent Heat) in J/g -- !!!
+	ALLOCATE (EnthalpyOfVaporization(1), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of EnthalpyOfVaporization could not proceed in SetChemistryParams()")
 
-		!!! -- MOLECULAR MASS in g / mole -- !!!
-		ALLOCATE (GasMolecularMass(HowManyGasChems), stat = allocation_error)
-		if (allocation_error > 0) CALL ERROR("Allocation of GasMolecularMass could not proceed in SetChemistryParams()")
+	!!! -- MOLECULAR MASS in g / mole -- !!!
+	ALLOCATE (GasMolecularMass(HowManyGasChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of GasMolecularMass could not proceed in SetChemistryParams()")
 		
-		!!! -- GAS PHASE LATERAL BACKGROUND CONCENTRATION in ppb -- !!!
-		ALLOCATE (GasPhaseBackground(HowManyGasChems), stat = allocation_error)
-		if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseBackground could not proceed in SetChemistryParams()")
+	!!! -- GAS PHASE LATERAL BACKGROUND CONCENTRATION in ppb -- !!!
+	ALLOCATE (GasPhaseBackground(HowManyGasChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseBackground could not proceed in SetChemistryParams()")
 
-		!!! -- DEPOSITION VELOCITY in cm/s -- !!!
-		ALLOCATE (GasPhaseDepVel(HowManyGasChems), stat = allocation_error)
-		if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseBackground could not proceed in SetChemistryParams()")
+	!!! -- DEPOSITION VELOCITY in cm/s -- !!!
+	ALLOCATE (GasPhaseDepVel(HowManyGasChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseBackground could not proceed in SetChemistryParams()")
 
 		
-		!! Make the grid of gas phase chemicals
-		CALL AllocateGasChemistryGrid(HowManyGasChems)
+	!! Make the grid of gas phase chemicals
+	CALL AllocateGasChemistryGrid(HowManyGasChems)
 
-		!! SCSCSCSCSC
-		IF (Scaffolding) CALL Transcript(">>Importing Gas Phase Species Info<<")
+	!! SCSCSCSCSC
+	IF (Scaffolding) CALL Transcript(">>Importing Gas Phase Species Info<<")
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! -- IMPORT OTHER GAS PHASE SPECIES INFORMATION FROM THE DECK -- !!
-		!!  Evolving Species Go First, Non-Evolving Last				  !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!! -- IMPORT OTHER GAS PHASE SPECIES INFORMATION FROM THE DECK -- !!
+	!!  Evolving Species Go First, Non-Evolving Last	          !!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-		!! Hard Code the Information related to Water
-		GasPhaseChemicalNames(1)    = "H2O"
-		EnthalpyOfVaporization(1)   = 2501. * joules / grams ! (Iribarne and Godson)
-		GasMolecularMass(1)		    = 18.016 * grams
-		GasPhaseDepVel(1)			= 0.0
+	!! Hard Code the Information related to Water
+	GasPhaseChemicalNames(1)    = "H2O"
+	EnthalpyOfVaporization(1)   = 2501. * joules / grams ! (Iribarne and Godson)
+	GasMolecularMass(1)         = 18.016 * grams
+	GasPhaseDepVel(1)	    = 0.0
 
-		index1 = 2				  ! Evolving Species are Placed with this index
-		index2 = HowManyGasChems  ! Non Evolving Species are Placed with this index
+	index1 = 2		! Evolving Species are Placed with this index
+	index2 = HowManyGasChems  ! Non Evolving Species are Placed with this index
 
-		!! Transcribe
-		IF (Transcribe) THEN
-			CALL Transcript("")
-			CALL Transcript("__Initializing_Gas_Phase_Chemicals_("//TRIM(INT2STR(HowManyGasChems))//"_Species)_")
-			CALL Transcript("_Species_Names_and_Initial_Mixing_Ratio_")
-		END IF
-
-		DO i = 2, HowManyGasChems
-
-			CurrLine = GetLine(FH)
-
-			!! Tokenize the input line !!
-			!! The token order is:
-			!! ---	1. Chemical Name (15 Characters Max)
-			CALL GetToken(CurrLine, ";", Name)				! Hold until know where to place it
-
-			!! Don't want the user to specify water
-			IF (TRIM(Name) .EQ. "H2O" .OR.		&
-				TRIM(Name) .EQ. "h2o" .OR.		&
-				TRIM(Name) .EQ. "water" .OR.	&
-				TRIM(Name) .EQ. "Water" .OR.	&
-				TRIM(Name) .EQ. "WATER") &
-				CALL ERROR ("You specified "//TRIM(Name)//" in GasPhaseChems.in.  This model hardcodes in the values for "// &
-							"water.  Please don't specify anything about it and use 'H2O' when referring to it in chemical "// &
-							"mechanisms.")
-
-			!! ---	2. Evolve Chemical or Keep Constant?
-			CALL GetToken(CurrLine,";",Token) 
-			k = STR2INT (Token)
-
-			IF (k == 1) THEN
-				HowManyEvolveGasChems = HowManyEvolveGasChems + 1
-				CurrIndex             = index1
-				index1				  = index1 + 1
-			ELSE IF (k == 0) THEN
-				CurrIndex             = index2
-				index2				  = index2 - 1
-			ELSE
-				CALL ERROR("Don't Understand "//Trim(StripToken(Token))//" as a value for the Constant or evolve flag"// &
-				           "For Chemical "//Trim(GasPhaseChemicalNames(CurrIndex))//" in GasPhaseChems.in")
-			END IF
-
-			!! Now Place Name in Correct Slot
-			GasPhaseChemicalNames(CurrIndex) = Trim(StripToken(Name))
-
-			!! ---  3. Molecular Mass of the Gas
-			CALL GetToken(CurrLine, ";", Token)
-			GasMolecularMass(CurrIndex) = STR2REAL (Token) * grams
-
-			!! ---	4. Initial Concentration (mixing ratio)
-			CALL GetToken(CurrLine,";",Token) 
-
-
-
-			!! If the token is numerical, the entire background will be set to 
-			!! that value homogeneously.  If it is not, it is considered to be 
-			!! name of an input deck that specifies a point-by-point initial 
-			!! concentration.
-			k = 1
-			IF (Token(1:1) == ".") k = 2		 !! This selects between numerical input and strings
-			IF (INDEX (Numbers,Token(k:k)) > 0) THEN !! that would be filenames
-
-				IF (GasConcInputTypeFlag .EQ. 0) THEN
-					CALL SetHomogeneousChemFieldPPB (CurrIndex, STR2REAL(Token)*ppb)
-				ELSE IF (GasConcInputTypeFlag .EQ. 1) THEN
-					CALL SetHomogeneousChemFieldMGperM3 (CurrIndex, STR2REAL(Token), GasMolecularMass(CurrIndex))
-				END IF
-
-				!! Transcript
-				IF (Transcribe) CALL Transcript(GasPhaseChemicalNames(CurrIndex)//" ("//TRIM(REAL2STR(STR2REAL(Token),5))//" ppb)")
-			ELSE
-				CALL SetChemFieldFromDeck (CurrIndex, Trim((Token)))
-
-				!! SCSCSCSC
-				IF (Scaffolding) CALL Transcript("Accessing Input Deck"//Trim(Token)//"for input "//  &
-												 Trim(StripToken(GasPhaseChemicalNames(CurrIndex))))
-
-			END IF
-		
-			!! ---  5. Background Conc. of the Gas
-			X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-			Mgas = GetM   (X(1),X(2),X(3))
-			CALL GetToken(CurrLine, ";", Token)
-			GasPhaseBackground(CurrIndex) = STR2REAL (Token) * Mgas/1e9 ! convert from ppb to molecules/cm3
-		
-			!! ---  6. Deposition Velocity of the gas (cm/s)
-			CALL GetToken(CurrLine, ";", Token)
-			GasPhaseDepVel(CurrIndex) = STR2REAL (Token)
-		END DO
-
-		!Set background concentration of water
-		RH = Back_RH
-		SPress = GetSatVapPress(X(1),X(2),X(3))
-		GasPhaseBackground(1) = ChemScale * SPress * RH * GetM(X(1),X(2),X(3)) / (GetPress(X(1),X(2),X(3))) !MixH2O*RH*Mgas/1e9 !molecules/cm3
-
-		!! SCSCSCSC -- Double Check ordering and values
-		IF (Scaffolding) THEN
+	!! Transcribe
+	IF (Transcribe) THEN
 		CALL Transcript("")
-		DO i = 1, HowManyGasChems
-			CALL Transcript(TRIM(INT2STR(i))//" "//Trim(GasPhaseChemicalNames(i))//" "//TRIM(REAL2STR(EnthalpyOfVaporization(i))) &
-							//" "//TRIM(REAL2STR(GasMolecularMass(i))))
-		END DO
-		END IF
+		CALL Transcript("__Initializing_Gas_Phase_Chemicals_("//TRIM(INT2STR(HowManyGasChems))//"_Species)_")
+		CALL Transcript("_Species_Names_and_Initial_Mixing_Ratio_")
+	END IF
 
-		CLOSE (FH)
-		CALL ReturnFileHandle(FH)
+	DO i = 2, HowManyGasChems
 
-		!! SCSCSCSC -- Announce Departure
-		IF (.TRUE.) CALL Transcript(">>Exiting SetGasPhaseChemistry()<<")
+		CurrLine = GetLine(FH)
 
-		RETURN
-	END SUBROUTINE SetGasPhaseChemistry
+		!! Tokenize the input line !!
+		!! The token order is:
+		!! ---	1. Chemical Name (15 Characters Max)
+		CALL GetToken(CurrLine, ";", Name)
+		! Hold until know where to place it
 
+		!! Don't want the user to specify water
+		IF (TRIM(Name) .EQ. "H2O" .OR.		&
+			TRIM(Name) .EQ. "h2o" .OR.		&
+			TRIM(Name) .EQ. "water" .OR.	&
+			TRIM(Name) .EQ. "Water" .OR.	&
+			TRIM(Name) .EQ. "WATER") &
+			CALL ERROR ("You specified "//TRIM(Name)//" in GasPhaseChems.in.  This model hardcodes in the values for "// &
+			"water.  Please don't specify anything about it and use 'H2O' when referring to it in chemical "// &
+			"mechanisms.")
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! The Jacobian and ODE set for the chemical solver is formulated
-	!! as an array of linked lists.  This function populates interprets
-	!! the input deck and populates that array.
+		!! ---	2. Evolve Chemical or Keep Constant?
+		CALL GetToken(CurrLine,";",Token) 
+		k = STR2INT (Token)
 
-	SUBROUTINE SetGasPhaseODEandJacobian ()
-		use ModelParameters
-		USE InfrastructuralCode, ONLY : INT2STR, ERROR, Transcript
-		implicit none
-
-		!! Input Vars
-		integer :: NumbChem, ListLength
-		
-		!! Internal Variables
-		integer	:: i, j, allocation_error
-		logical	:: Scaffolding, Transcribe
-
-		!! Use Scaffolding Code?
-		!Scaffolding = .TRUE.
-		Scaffolding = .FALSE.
-
-		IF (TranscriptFH > 0) THEN
-			Transcribe = .TRUE.
+		IF (k == 1) THEN
+			HowManyEvolveGasChems = HowManyEvolveGasChems + 1
+			CurrIndex             = index1
+			index1		      = index1 + 1
+		ELSE IF (k == 0) THEN
+			CurrIndex             = index2
+			index2		      = index2 - 1
 		ELSE
-			Transcribe = .FALSE.
+		        CALL ERROR("Don't Understand "//Trim(StripToken(Token))//" as a value for the Constant or evolve flag"// &
+		        "For Chemical "//Trim(GasPhaseChemicalNames(CurrIndex))//" in GasPhaseChems.in")
 		END IF
 
-		!!! -- The ODE Set for Gas Phase Chemistry -- !!
-		ALLOCATE (GasPhaseODESet(HowManyEvolveGasChems), stat = allocation_error)
-		if (allocation_error > 0) &
-		CALL ERROR("Allocation of the Gas Phase ODE Linked List Array could not proceed in SetGasPhaseODEandJacobian()")
+		!! Now Place Name in Correct Slot
+		GasPhaseChemicalNames(CurrIndex) = Trim(StripToken(Name))
 
-		!!! -- The Jacobian for Gas Phase Chemistry -- !!
-		ALLOCATE (GasPhaseJacobian(HowManyEvolveGasChems,HowManyEvolveGasChems), stat = allocation_error)
-		if (allocation_error > 0) &
-		CALL ERROR("Allocation of the Gas Phase Jacobian Array could not proceed in SetGasPhaseODEandJacobian()")
+		!! ---  3. Molecular Mass of the Gas
+		CALL GetToken(CurrLine, ";", Token)
+		GasMolecularMass(CurrIndex) = STR2REAL (Token) * grams
 
-		!! Initialize the List Arrays
-		DO i = 1, HowManyEvolveGasChems
-			NULLIFY(GasPhaseODESet(i)%FirstTerm)
-			!GasPhaseODESet(i)%FirstTerm => Null()
-			DO j = 1, HowManyEvolveGasChems
-				NULLIFY(GasPhaseJacobian(i,j)%FirstTerm)
-				!GasPhaseJacobian(i,j)%FirstTerm => Null()
-			END DO
+		!! ---	4. Initial Concentration (mixing ratio)
+		CALL GetToken(CurrLine,";",Token) 
+
+		!! The entire background will be set
+                !! to that value homogeneously.
+	        IF (GasConcInputTypeFlag .EQ. 0) THEN
+		   CALL SetHomogeneousChemFieldPPB (CurrIndex, STR2REAL(Token)*ppb)
+		ELSE IF (GasConcInputTypeFlag .EQ. 1) THEN
+		   CALL SetHomogeneousChemFieldMGperM3 (CurrIndex, STR2REAL(Token), GasMolecularMass(CurrIndex))
+		END IF
+
+		!! Transcript
+		IF (Transcribe) CALL Transcript(GasPhaseChemicalNames(CurrIndex)//" ("//TRIM(REAL2STR(STR2REAL(Token),5))//" ppb)")
+	
+		
+		!! ---  5. Background Conc. of the Gas
+
+		Mgas = GetM   ()
+		CALL GetToken(CurrLine, ";", Token)
+		GasPhaseBackground(CurrIndex) = STR2REAL (Token) * Mgas/1e9 
+                ! convert from ppb to molecules/cm3
+		
+		!! ---  6. Deposition Velocity of the gas (cm/s)
+		CALL GetToken(CurrLine, ";", Token)
+		GasPhaseDepVel(CurrIndex) = STR2REAL (Token)
+	END DO
+
+	!Set background concentration of water
+	RH = Back_RH
+	SPress = GetSatVapPress()
+	GasPhaseBackground(1) = ChemScale * SPress * RH * GetM() / (GetPress())
+        !MixH2O*RH*Mgas/1e9 !molecules/cm3
+
+	!! SCSCSCSC -- Double Check ordering and values
+	IF (Scaffolding) THEN
+	CALL Transcript("")
+	DO i = 1, HowManyGasChems
+		CALL Transcript(TRIM(INT2STR(i))//" "//Trim(GasPhaseChemicalNames(i))//" "//TRIM(REAL2STR(EnthalpyOfVaporization(i))) &
+		//" "//TRIM(REAL2STR(GasMolecularMass(i))))
+	END DO
+	END IF
+
+	CLOSE (FH)
+	CALL ReturnFileHandle(FH)
+	
+        !! SCSCSCSC -- Announce Departure
+	IF (.TRUE.) CALL Transcript(">>Exiting SetGasPhaseChemistry()<<")
+
+	RETURN
+END SUBROUTINE SetGasPhaseChemistry
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! The Jacobian and ODE set for the chemical solver is formulated
+!! as an array of linked lists.  This function populates interprets
+!! the input deck and populates that array.
+SUBROUTINE SetGasPhaseODEandJacobian ()
+	use ModelParameters
+	USE InfrastructuralCode, ONLY : INT2STR, ERROR, Transcript
+	implicit none
+
+	!! Input Vars
+	integer :: NumbChem, ListLength
+	
+	!! Internal Variables
+	integer	:: i, j, allocation_error
+	logical	:: Scaffolding, Transcribe
+
+	!! Use Scaffolding Code?
+	!Scaffolding = .TRUE.
+	Scaffolding = .FALSE.
+
+	IF (TranscriptFH > 0) THEN
+		Transcribe = .TRUE.
+	ELSE
+		Transcribe = .FALSE.
+	END IF
+
+	!!! -- The ODE Set for Gas Phase Chemistry -- !!
+	ALLOCATE (GasPhaseODESet(HowManyEvolveGasChems), stat = allocation_error)
+	if (allocation_error > 0) &
+	CALL ERROR("Allocation of the Gas Phase ODE Linked List Array could not proceed in SetGasPhaseODEandJacobian()")
+
+	!!! -- The Jacobian for Gas Phase Chemistry -- !!
+	ALLOCATE (GasPhaseJacobian(HowManyEvolveGasChems,HowManyEvolveGasChems), stat = allocation_error)
+	if (allocation_error > 0) &
+	CALL ERROR("Allocation of the Gas Phase Jacobian Array could not proceed in SetGasPhaseODEandJacobian()")
+
+	!! Initialize the List Arrays
+	DO i = 1, HowManyEvolveGasChems
+		NULLIFY(GasPhaseODESet(i)%FirstTerm)
+		!GasPhaseODESet(i)%FirstTerm => Null()
+		DO j = 1, HowManyEvolveGasChems
+			NULLIFY(GasPhaseJacobian(i,j)%FirstTerm)
+			!GasPhaseJacobian(i,j)%FirstTerm => Null()
 		END DO
+	END DO
 
-		!! SCSCSC
-		IF (Scaffolding) CALL TRANSCRIPT("Trying to find water in the system: "//TRIM(INT2STR(FindChem("H2O", GasPhase))))
+	!! SCSCSC
+	IF (Scaffolding) CALL TRANSCRIPT("Trying to find water in the system: "//TRIM(INT2STR(FindChem("H2O", GasPhase))))
 
-		!! Now Create the appropriate ODE Set
-		CALL MakeODESet('GasChemicalMechanism.in',GasPhaseODESet,HowManyEvolveGasChems,HowManyGasChems,"+",GasPhase)
-		!! And Print its Results
-		CALL PrintODESet (GasPhaseODESet,HowManyEvolveGasChems,GasPhase,"GasPhaseODESet.txt")
+	!! Now Create the appropriate ODE Set
+	CALL MakeODESet('GasChemicalMechanism.in',GasPhaseODESet,HowManyEvolveGasChems,HowManyGasChems,"+",GasPhase)
+	!! And Print its Results
+	CALL PrintODESet (GasPhaseODESet,HowManyEvolveGasChems,GasPhase,"GasPhaseODESet.txt")
 
-		IF (Transcribe) THEN
-			CALL Transcript ("")
-			CALL Transcript ("Printing Gas Phase ODE Set to (GasPhaseODESet.txt)")
-		END IF
+	IF (Transcribe) THEN
+		CALL Transcript ("")
+		CALL Transcript ("Printing Gas Phase ODE Set to (GasPhaseODESet.txt)")
+	END IF
 
-		!! Now Use that ODE Set to Make a Jacobian
-		CALL MakeJacobian(GasPhaseJacobian, GasPhaseODESet, HowManyEvolveGasChems, GasPhase)
+	!! Now Use that ODE Set to Make a Jacobian
+	CALL MakeJacobian(GasPhaseJacobian, GasPhaseODESet, HowManyEvolveGasChems, GasPhase)
 
-		!! And Print its Results
-		CALL PrintJacobian (GasPhaseJacobian,HowManyEvolveGasChems,GasPhase,"GasPhaseJacobian.txt")
-		IF (Transcribe) CALL Transcript ("Printing Gas Phase Jacobian to (GasPhaseJacobian.txt)")
+	!! And Print its Results
+	CALL PrintJacobian (GasPhaseJacobian,HowManyEvolveGasChems,GasPhase,"GasPhaseJacobian.txt")
+	IF (Transcribe) CALL Transcript ("Printing Gas Phase Jacobian to (GasPhaseJacobian.txt)")
 
-		RETURN
-	END SUBROUTINE SetGasPhaseODEandJacobian
+	RETURN
+END SUBROUTINE SetGasPhaseODEandJacobian

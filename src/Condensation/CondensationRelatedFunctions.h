@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -7,172 +7,158 @@
 !! and includes the main equilibration routine, as well as many equilibration 
 !! subroutines (water, sulfate, gas-solid reactions, internal equilibrium).
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!! 08/30  2006   Matt Alvarado     EquilibrateInternallyatGridPoint now stops	!!
-!!									checking for inorg eq after 5 iterations	!!
-!! 08/31  2006	 Matt Alvarado     Edited EquilibrateDissolutionReaction		!!
-!!									to return if NH3(aq) approaches 0.			!!
-!! 09/07  2006   Matt Alvarado     1. Added RecalculateRadius to				!!
-!!									EquilibrateInternallyatGridPoint			!!
-!!								   2. Created RidderMethod root finder			!!
-!! 09/08  2006   Matt Alvarado    Created  EquilibriumWaterContentAll			!!
-!!									UpdateWaterActivityAll and WaterResidualAll !!
-!! 08/01  2007   Matt Alvarado    Removed low water checks from 
-!!									SUBROUTINE EquilibrateGridPointAll, since they
-!!									sometimes lead to unphysical answers.
-!! 09/28  2007   Matt Alvarado    Created EquilibrateInorgGridPoint
-!! 10/01  2007   Matt Alvarado    Increased "already in eq" error tolerance 
-!!									in EquilibrateGasSolidReactions
-!!									to 1%
-!!									Protected EquilibrateGasSolidReactions against 0 particles
-!! 10/03  2007   Matt Alvarado     Added line to EquilibrateInorgGridPoint to skip mostly empty bins
-!!									Added same to EquilibrateGridPointAll
-!!									Reduced gas-solis error tolerance to 0.5%
-!! 10/04  2007   Matt Alvarado     In EquilibrateInorgGridPoint, go to lower error tolerance 
-!!									after 10 iterations instead of 25
-!! 10/05  2007   Matt Alvarado     Changed EquilibrateDissolutionReaction to just exit
-!!									after trying to equilibrate for 2000 iterations
-!!									Set EquilibrateGasSolid to just exit after 1000 iterations
-!! 10/11  2007   Matt Alvarado     Changed EquilibrateDissolutionReaction to just exit
-!!									*with returntype=2* after trying 
-!!								    to equilibrate for 2000 iterations
-!! 10/14  2010   Matt Alvarado     Removed "OPTIONAL" statements
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 08/30  2006   Matt Alvarado     EquilibrateInternallyatGridPoint now stops!!
+!!				checking for inorg eq after 5 iterations     !!
+!! 08/31  2006	 Matt Alvarado     Edited EquilibrateDissolutionReaction     !!
+!!				   to return if NH3(aq) approaches 0.	     !!
+!! 09/07  2006   Matt Alvarado     1. Added RecalculateRadius to	     !!
+!!					EquilibrateInternallyatGridPoint     !!
+!!				   2. Created RidderMethod root finder	     !!
+!! 09/08  2006   Matt Alvarado    Created  EquilibriumWaterContentAll	     !!
+!!				UpdateWaterActivityAll and WaterResidualAll  !!
+!! 08/01  2007   Matt Alvarado    Removed low water checks from              !!
+!!				  EquilibrateGridPointAll, since they        !!
+!!				  sometimes lead to unphysical answers.      !!
+!! 09/28  2007   Matt Alvarado    Created EquilibrateInorgGridPoint          !!
+!! 10/01  2007   Matt Alvarado    Increased "already in eq" error tolerance  !!
+!!				  in EquilibrateGasSolidReactions
+!!				  to 1%
+!!		Protected EquilibrateGasSolidReactions against 0 particles
+!!
+!! 10/03  2007   Matt Alvarado     Added line to EquilibrateInorgGridPoint 
+!!                                 to skip mostly empty bins
+!!				Added same to EquilibrateGridPointAll
+!!				Reduced gas-solid error tolerance to 0.5%
+!! 10/04  2007   Matt Alvarado     In EquilibrateInorgGridPoint, go to lower !!
+!!                          error tolerance after 10 iterations instead of 25!!
+!! 10/05  2007   Matt Alvarado     Changed EquilibrateDissolutionReaction to !!
+!!                                  just exit after trying to equilibrate    !!
+!!                                 for 2000 iterations                       !!
+!!		Set EquilibrateGasSolid to just exit after 1000 iterations   !!
+!! 10/11  2007   Matt Alvarado     Changed EquilibrateDissolutionReaction    !!
+!!                                 to just exit *with returntype=2* after    !!
+!!                                  trying to equilibrate for 2000 iterations!!
+!! 10/14  2010   Matt Alvarado     Removed "OPTIONAL" statements             !!
+!! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:		!!
-!! 1. FUNCTION GetThermalVelocity (XP, YP, ZP, ChemIndex, ChemName
-!! 2. FUNCTION CondensationRateCoefficients (XP, YP, ZP, ReactionNumb, NumbLinks)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This file contains the following functions and subroutines:		     !!
+!! 1. FUNCTION GetThermalVelocity (ChemIndex, ChemName
+!! 2. FUNCTION CondensationRateCoefficients (ReactionNumb, NumbLinks)
 !! 3. FUNCTION HenrysLaw (Temperature, DissolutionRxn)
-!! 4. FUNCTION SatVapPressRatio ( InParticle , ChemIndex )
-!! 5. SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle, Temperature, ReturnType, OptErrorTolerance, &
-!!										   WaterSatBurden, GasPhaseBurden2)
-!! 6. FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle,	&
-!!													  GasPhaseBurden2, WaterSatBurden)
-!! 7. SUBROUTINE EquilibrateSulfate(X, Y, Z)
-!! 8. SUBROUTINE EquilibrateGasSolidReactions(X,Y,Z)
+!! 4. FUNCTION SatVapPressRatio (InParticle , ChemIndex )
+!! 5. SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, & !!
+!!                 InParticle, Temperature, ReturnType, OptErrorTolerance, & !!
+!!		    WaterSatBurden, GasPhaseBurden2)                         !!
+!! 6. FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden,       & !!
+!!                                    WhichRxn, Temperature, InParticle,   & !!
+!!					GasPhaseBurden2, WaterSatBurden)     !!
+!! 7. SUBROUTINE EquilibrateSulfate()
+!! 8. SUBROUTINE EquilibrateGasSolidReactions()
 !! 9. SUBROUTINE EquilibrateGridPointAll
 !!10. SUBROUTINE EqAllWater
-!!11. SUBROUTINE DryParticleQuickly(XP,YP,ZP,InParticle)
+!!11. SUBROUTINE DryParticleQuickly(InParticle)
 !!12. SUBROUTINE EquilibrateInternallyatGridPoint
 !!13. FUNCTION RidderMethod
 !!14. SUBROUTINE EquilibriumWaterContentAll
 !!15. SUBROUTINE UpdateWaterActivityAll 
 !!16. FUNCTION WaterResidualAll
 !!17. SUBROUTINE EquilibrateInorgGridPoint
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! The THERMAL VELOCITY of SOME NON-WATER CHEMICAL !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-REAL*8 FUNCTION GetThermalVelocity (XP, YP, ZP, ChemIndex)
+REAL*8 FUNCTION GetThermalVelocity (ChemIndex)
 
 	USE ModelParameters,	 ONLY : ThmVelFac, cm, Avogadro
-	USE Chemistry,			 ONLY : GasMolecularMass, FindChem, HowManyAqEqReactions
+	USE Chemistry,	ONLY : GasMolecularMass, FindChem, HowManyAqEqReactions
 	USE InfrastructuralCode, ONLY : WARN, ERROR, INT2STR
-	USE GridPointFields,     ONLY : GetTemp, GasPhaseChemGridIndex
+	USE GridPointFields,     ONLY : GetTemp
 
 	IMPLICIT NONE
 
 	!! External Variables
-	REAL*8, INTENT(in)		:: XP, YP, ZP
 	INTEGER		:: ChemIndex
-	!CHARACTER*(*) :: ChemName
 
 	!! Internal Variables
 	INTEGER :: I
+ 
+        I = ChemIndex
 
-	!IF (PRESENT(ChemIndex)) 
-             I = ChemIndex
-	!IF (PRESENT(ChemName))  I = FindChem(ChemName,GasPhaseChemGridIndex)
-
-	!IF (PRESENT(ChemIndex).AND.PRESENT(ChemName)) THEN
-	!	IF (i .EQ. ChemIndex) THEN
-	!		CALL WARN("Both a Chem Index ("//TRIM(INT2STR(ChemIndex))//") and a Chemical Name ("//TRIM(ChemName)//	&
-	!				  ") were passed to GetThermalVelocityOfAir.  They signify the same chemical, which is "//		&
-	!				  "acceptable, but this is bad form nonetheless.")
-	!	ELSE
-	!		CALL ERROR("Both a Chem Index ("//TRIM(INT2STR(ChemIndex))//") and a Chemical Name ("//TRIM(ChemName)//") "// &
-	!				   "were passed to GetThermalVelocityOfAir.  They specify different chemicals.  Please fix.")
-	!	END IF
-	!END IF
-
-	GetThermalVelocity = ThmVelFac * SQRT(Avogadro * GetTemp(XP, YP, ZP) / GasMolecularMass(I))
+	GetThermalVelocity = ThmVelFac * SQRT(Avogadro * GetTemp() / &
+                              GasMolecularMass(I))
 
 	RETURN
 END FUNCTION GetThermalVelocity
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Calculate MASS FLUX CONDENSATION RATE COEFFICIENT condensation !!
 !! and dissolution.  This is separated from CondensationRates()   !!
 !! to make it easier to calculate both the Jacobian and the ODEs  !!
-!! without having to recalculate all of this hooey at each step.  !!
+!! without having to recalculate all of this at each step.        !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-FUNCTION CondensationRateCoefficients (XP, YP, ZP, ReactionNumb, NumbLinks)
+FUNCTION CondensationRateCoefficients (ReactionNumb, NumbLinks)
 
-	USE Chemistry,		 ONLY : EnthalpyOfVaporization,			&
-								GasMolecularmass,				&
-								MolecularDiffusionCoefficient
+	USE Chemistry,		 ONLY : EnthalpyOfVaporization,		&
+					GasMolecularmass,		&
+					MolecularDiffusionCoefficient
 
-	USE GridPointFields, ONLY : LocateGridPoint,				&
-								GasPhaseChemGridIndex,			&
-								GetAirDensity,					&
-								GetCpm,							&
-								GetDynamicViscosityOfAir,		&
-								GetTemp,						&
-								MolecularThermalConductivity,	&
-								GetSatVapConcentration
+	USE GridPointFields,     ONLY : GetAirDensity,		        &
+					GetCpm,				&
+					GetDynamicViscosityOfAir,       &
+					GetTemp,			&
+					MolecularThermalConductivity,	&
+					GetSatVapConcentration
 
 	USE InfrastructuralCode, ONLY : ERROR, INT2STR
 
 	USE Aerosols,		 ONLY : Particle, Particles,		&
-								ParticleKnudsenForEnergy,	&
-								ReynoldsNumber
+					ParticleKnudsenForEnergy,	&
+					ReynoldsNumber
 
-	USE ModelParameters, ONLY : AirMolecMass,				&
-								Avogadro,					&
-								Pi,							&
-								ThermalAccommodationCoeff,	&
-								Rstar,						&
-								ChemScale,					&
-								ThermoBulkMode,				&
-								IgnoreCorrectionstoDiffusivity
+	USE ModelParameters,     ONLY : AirMolecMass,		        &
+				        Avogadro,		        &
+					Pi,				&
+					ThermalAccommodationCoeff,	&
+					Rstar,				&
+					ChemScale,			&
+					ThermoBulkMode,			&
+					IgnoreCorrectionstoDiffusivity
 
     IMPLICIT NONE
 
 	!! Define input and output variables
-	INTEGER	:: ReactionNumb, NumbLinks, XP, YP, ZP
+	INTEGER	:: ReactionNumb, NumbLinks
 	REAL*8	:: CondensationRateCoefficients(NumbLinks)
 
 	TYPE(Particle),POINTER :: Current
 	INTEGER ::  I, ChemIndex
-	REAL*8  ::	AirDensity,		&
-				AirTemp,		&
-				Cpm,			&	! Moist specific heat
-				Dv,				&	! Diffusion Coeffienct of Condensing Gas
-				DvPrime,		&
-				DynVisc,		&
-				EnergyKnud,		&	
-				GasKnud,		&
-				GasThermalVel,	&
-				KappaD,			&	! Thermal conductivity of condensing gas
-				KappaDPrime,	&
-				ReynoldsNumb,	&
-				SchmidtNumber,	&
-				X,				&
-				GasMeanFreePath,&
-				SatWaterVapConc, &
-				XX(3)
+	REAL*8  ::      AirDensity,		&
+			AirTemp,		&
+			Cpm,			&	! Moist specific heat
+			Dv,			&	! Diffusion Coeffienct
+			DvPrime,		&
+			DynVisc,		&
+			EnergyKnud,		&	
+			GasKnud,		&
+			GasThermalVel,	        &
+			KappaD,			&	! Thermal conductivity 
+			KappaDPrime,	        &
+			ReynoldsNumb,	        &
+			SchmidtNumber,	        &
+			X,			&
+			GasMeanFreePath,        &
+			SatWaterVapConc
 	
 	LOGICAL :: Scaffolding = .FALSE.
-
-	!! Locate the gridpoint in 3-space
-	XX = LocateGridPoint (XP, YP, ZP, GasPhaseChemGridIndex)
 
 	!! Get the primary condensing chemical
 	ChemIndex = DissolutionData(ReactionNumb,1)
@@ -185,28 +171,28 @@ FUNCTION CondensationRateCoefficients (XP, YP, ZP, ReactionNumb, NumbLinks)
 
 	!! Retrieve or Calculate the Variables that are the 
 	!! same for all aerosol
-	AirTemp			= GetTemp(XX(1),XX(2),XX(3))
-	AirDensity		= GetAirDensity(XX(1),XX(2),XX(3))
-	Dv				= MolecularDiffusionCoefficient(XX(1),XX(2),XX(3),ChemIndex)
-	DynVisc			= GetDynamicViscosityOfAir(XX(1),XX(2),XX(3))
-	GasThermalVel   = GetThermalVelocity(XX(1),XX(2),XX(3),ChemIndex)
-	SatWaterVapConc	= GetSatVapConcentration(XX(1),XX(2),XX(3))
+	AirTemp		= GetTemp()
+	AirDensity	= GetAirDensity()
+	Dv		= MolecularDiffusionCoefficient(ChemIndex)
+	DynVisc		= GetDynamicViscosityOfAir()
+	GasThermalVel   = GetThermalVelocity(ChemIndex)
+	SatWaterVapConc	= GetSatVapConcentration()
 
 
 	!! Non water condensation
 	IF (ReactionNumb .GT. 0) THEN
-		Cpm	   = GetCpm(XX(1),XX(2),XX(3))
-		KappaD = MolecularThermalConductivity(XX(1),XX(2),XX(3))
+		Cpm    = GetCpm()
+		KappaD = MolecularThermalConductivity()
 	END IF
 
 
 	!! Constant is 32. / 3. / Pi
-	GasMeanFreePath = 3.395305453 * Dv * AirMolecMass / GasThermalVel /			&
-					  (AirMolecMass + GasMolecularMass(ChemIndex) / Avogadro)
+	GasMeanFreePath = 3.395305453 * Dv * AirMolecMass / GasThermalVel /&
+			(AirMolecMass + GasMolecularMass(ChemIndex) / Avogadro)
 
 
 	!! Get the first particle
-	Current => Particles(XP,YP,ZP)%First
+	Current => Particles%First
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Loop over all of the particles !!
@@ -216,8 +202,7 @@ FUNCTION CondensationRateCoefficients (XP, YP, ZP, ReactionNumb, NumbLinks)
 	!! Walk the chain and err if can't find the next link
 	IF (I .GT. 1) THEN
 		IF (.NOT. ASSOCIATED(Current%Next)) &
-			CALL ERROR("Miscounted the number of particles at point "//TRIM(INT2STR(XP))//", "//TRIM(INT2STR(YP))//", "//	&
-					   TRIM(INT2STR(ZP))//" in the argument to CondensationRateCoefficients().  This just shouldn't happen.")
+			CALL ERROR("Miscounted the number of particles in the argument to CondensationRateCoefficients().  This just shouldn't happen.")
 		Current => Current%Next
 	END IF
 
@@ -237,30 +222,30 @@ FUNCTION CondensationRateCoefficients (XP, YP, ZP, ReactionNumb, NumbLinks)
 	!! Water is not the same other Chems. !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Wa are calculating k_i for a Dissolution ODE that looks like this: !!
-	!!                                                                    !!
-	!!  d c_i          /               c_i   \                            !!
-	!!  -----  =  k_i |  C_i - S'_i * -----   |                           !!
-	!!    dt           \                H'   /                            !!
-	!!																	  !!
-	!! Condensation is similar, as noted below.							  !!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! We are calculating k_i for a Dissolution ODE that looks like this: !!
+!!                                                                    !!
+!!  d c_i          /               c_i   \                            !!
+!!  -----  =  k_i |  C_i - S'_i * -----   |                           !!
+!!    dt           \                H'   /                            !!
+!!								      !!
+!! Condensation is similar, as noted below.			      !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! The Dissolution Rate Coefficient   !!
 	!! is this (condensation is corrected !!
-	!! further, see below):				  !!
-	!!									  !!
+	!! further, see below):		      !!
+	!!				      !!
 	!! k_i = 4 pi r D_i'                  !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! The MOLECULAR DIFFUSION COEFFICIENT must be corrected !!
-	!! for collisional geometry and ventilation.			 !!
+	!! for collisional geometry and ventilation.		 !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!! The Gas Knudsen Number, (place this after grabbing the uncorrected Dv)
+	!! The Gas Knudsen Number 
 	GasKnud	= GasMeanFreePath / Current%EffectiveRadius 
 	SchmidtNumber = DynVisc / AirDensity / Dv
 
@@ -274,10 +259,12 @@ FUNCTION CondensationRateCoefficients (XP, YP, ZP, ReactionNumb, NumbLinks)
 		DvPrime = Dv*(0.78+0.308*X)
 	END IF
 
-	!! Correct Dv away from the continuum solution for COLLISIONAL GEOMETRY and STICKING PROBABILITY
-	!! Following Jacobson, 1999, who follows Fuchs and Sutugin 1971 and Pruppacher and Klett 1997
+	!! Correct Dv away from the continuum solution for 
+        !! COLLISIONAL GEOMETRY and STICKING PROBABILITY
+	!! Following Jacobson, 1999, (textbook) who follows 
+        !! Fuchs and Sutugin 1971 and Pruppacher and Klett 1997
 	DvPrime = DvPrime/(1. + ((1.33+0.71/GasKnud)/(1.+1./GasKnud)+ &
-			  4*(1.-DissolutionData(ReactionNumb,10))/			  &
+			  4*(1.-DissolutionData(ReactionNumb,10))/    &
 			  (3*DissolutionData(ReactionNumb,10)))*GasKnud)
 
 
@@ -319,28 +306,29 @@ FUNCTION CondensationRateCoefficients (XP, YP, ZP, ReactionNumb, NumbLinks)
 	END IF
 
 	!! Correct for the Collisional Geometry
-	KappaDPrime = KappaDPrime/(1. + ((1.33+0.71/EnergyKnud)/				&
-				  (1.+1./EnergyKnud) + 4*(1.-ThermalAccommodationCoeff) /	&
-				  (3*ThermalAccommodationCoeff))*EnergyKnud)
+	KappaDPrime = KappaDPrime/(1. + ((1.33+0.71/EnergyKnud)/	&
+		(1.+1./EnergyKnud) + 4*(1.-ThermalAccommodationCoeff) /	&
+		(3*ThermalAccommodationCoeff))*EnergyKnud)
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! But we do find the Condensation Rate Coefficient for H2O:	!!
-	!!																!!
-	!!			              4 pi r D_w'							!!
-	!! k_w = ------------------------------------------------------	!!
-	!!		  /  D_w' L_w M_w S_w' C_s,w  / L_w M_w	    \	   \	!!
-	!!		 |  -----------------------  | --------- - 1 | + 1  | V	!!
-	!!		  \	    kappa_d'  T	          \  R*  T      /	   /	!!
-	!!																!!
-	!! is a more complex form because we don't let ourselves		!!
-	!! neglect L_w, as we did before, and so have a big term in		!!
-	!! the denominator.												!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	CondensationRateCoefficients(I) = CondensationRateCoefficients(I)				&
-				/((DvPrime * EnthalpyOfVaporization(1) * GasMolecularMass(1) *		&
-				SatVapPressRatio(Current, 1) *	SatWaterVapConc / chemscale /		&
-				Avogadro / KappaDPrime / AirTemp) *	(EnthalpyOfVaporization(1) *	&
-				GasMolecularMass(1) / ChemScale / Rstar / AirTemp - 1.) + 1.)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! But we do find the Condensation Rate Coefficient for H2O:	        !!
+!!								        !!
+!!			              4 pi r D_w'		        !!
+!! k_w = ------------------------------------------------------	        !!
+!!		  /  D_w' L_w M_w S_w' C_s,w  / L_w M_w	    \	   \	!!
+!!		 |  -----------------------  | --------- - 1 | + 1  | V	!!
+!!		  \	    kappa_d'  T	      \  R*  T      /	   /    !!
+!!									!!
+!!						                        !!
+!! is a more complex form because we don't let ourselves		!!
+!! neglect L_w, as we did before, and so have a big term in		!!
+!! the denominator.							!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	CondensationRateCoefficients(I) = CondensationRateCoefficients(I) &
+	/((DvPrime * EnthalpyOfVaporization(1) * GasMolecularMass(1) *	&
+	SatVapPressRatio(Current, 1) *	SatWaterVapConc / chemscale /	&
+	Avogadro / KappaDPrime / AirTemp) *	(EnthalpyOfVaporization(1) * &
+	GasMolecularMass(1) / ChemScale / Rstar / AirTemp - 1.) + 1.)
 
 	END IF	!! End of water if
 	END DO  !! Move to another particle
@@ -352,10 +340,10 @@ END FUNCTION  CondensationRateCoefficients
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Calculate Henry's Law Coefficient !!
 !! This is indexed by the aqueous    !!
-!! phase chemical index.			 !!
+!! phase chemical index.	     !!
 !! Puts out in Moles / MB, so make   !!
 !! sure to convert to the weird      !!
-!! pressure units.					 !!
+!! pressure units.		     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION HenrysLaw (Temperature, DissolutionRxn)
 
@@ -369,9 +357,9 @@ REAL*8 FUNCTION HenrysLaw (Temperature, DissolutionRxn)
 	TempRatio = EqCoeffTref / Temperature
 
 
-	HenrysLaw = DissolutionData(DissolutionRxn,5)										 &
-	  		    * EXP(DissolutionData(DissolutionRxn,6) * (TempRatio - 1.0) +			 &
-			    DissolutionData(DissolutionRxn,7) * (LOG(TempRatio) - TempRatio + 1.))
+	HenrysLaw = DissolutionData(DissolutionRxn,5)			&
+	  	* EXP(DissolutionData(DissolutionRxn,6) * (TempRatio - 1.0) + &
+	DissolutionData(DissolutionRxn,7) * (LOG(TempRatio) - TempRatio + 1.))
 
 	
 	RETURN
@@ -383,28 +371,28 @@ END FUNCTION HenrysLaw
 !! for use in the condensation routines.  For water vapor, this !!
 !! may either be the kelvin or a more complicated effect.  For	!!
 !! other species, it is a simple correction based on the kelvin !!
-!! effect.														!!
+!! effect.							!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-REAL*8 FUNCTION SatVapPressRatio ( InParticle , ChemIndex )
+REAL*8 FUNCTION SatVapPressRatio (InParticle , ChemIndex )
 
-	USE Chemistry,	ONLY :	HowManyGasChems,			&
-							HowManyAqChems,				&
-							HowManyAqCations,			&
-							HowManyAqAnions,			&
-							EnthalpyOfVaporization,&
-							AqPhaseChemicalNames,		&	!     "
-							AqCationNames,AqAnionNames
+	USE Chemistry,	ONLY :	HowManyGasChems,	&
+				HowManyAqChems,		&
+				HowManyAqCations,	&
+				HowManyAqAnions,	&
+				EnthalpyOfVaporization, &
+				AqPhaseChemicalNames,	&	
+				AqCationNames,AqAnionNames
 
 
-	USE Aerosols,   ONLY : CurvatureCorrection,&
-							FindElectrolyteEquilibrium, &
-							recalculateradius,ParticleMass
+	USE Aerosols,   ONLY : CurvatureCorrection,    &
+				FindElectrolyteEquilibrium, &
+				recalculateradius,ParticleMass
 
-	USE ModelParameters, ONLY : ThermoBulkMode, RStar, Pi, moles, micron, WaterMolecMass,&
-								OutputDeckSubDir, CosContactAngle
+	USE ModelParameters, ONLY : ThermoBulkMode, RStar,  &
+                                    Pi, moles, micron, WaterMolecMass,&
+				OutputDeckSubDir, CosContactAngle
 
-	USE InfrastructuralCode, ONLY : ERROR,&
-			real2str
+	USE InfrastructuralCode, ONLY : ERROR,real2str
 
 	IMPLICIT NONE
 
@@ -413,11 +401,9 @@ REAL*8 FUNCTION SatVapPressRatio ( InParticle , ChemIndex )
 	INTEGER				   :: ChemIndex
 
 	!! Internal Variables
-	INTEGER        :: I
-	REAL*8		   :: Radiative, XX, YY, dRdV
-	real*8 :: ii,jj,kk
-
-	!WRITE(*,*) "Before Sat Vap Press Ratio"
+	INTEGER :: I
+	REAL*8  :: Radiative, XX, YY, dRdV
+	real*8  :: ii,jj,kk
 	
 	!! Thermo Mode doesn't use this correction
 	IF (ThermoBulkMode) THEN
@@ -426,45 +412,48 @@ REAL*8 FUNCTION SatVapPressRatio ( InParticle , ChemIndex )
 		RETURN
 
 	ELSE
-		!WRITE(*,*) "After IF 1"
 
 		
 		IF (ChemIndex .EQ. 1) THEN
 		
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!!!!! WATER CONDENSATION !!!!!!!!!!!!!!!!!
-		!!										!!!!!!!!!!!!!!!!!!
-		!! The water activity term is not addressed here,		!!
-		!! it happens either in the condensation calculation	!!
-		!! itself (where we use Raoult's Law) or in the			!!
-		!! equilibration routine (where we use a more compelx	!!
-		!! form).  We then here choose either a Kohler or		!!
-		!! a Gorbunov and Hamilton type approach.				!!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			IF (InParticle%InsolubleRadius .EQ. 0.) THEN				
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! WATER CONDENSATION !!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! The water activity term is not addressed here,	!!
+!! it happens either in the condensation calculation	!!
+!! itself (where we use Raoult's Law) or in the		!!
+!! equilibration routine (where we use a more compelx	!!
+!! form).  We then here choose either a Kohler or	!!
+!! a Gorbunov and Hamilton type approach.		!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			IF (InParticle%InsolubleRadius .EQ. 0.) THEN	
 
-				!! Use Kohler Formulation?
-				!! The Kelvin Effect is abstracted to a function and housed in "ParticleAttributes.h"
-				SatVapPressRatio  = CurvatureCorrection(InParticle)
+			!! The Kelvin Effect is abstracted to a function 
+			!! and housed in "ParticleAttributes.h"
+			    SatVapPressRatio  = CurvatureCorrection(InParticle)
 			
 			ELSE
 				
-				!! Use the Gorbunov and Hamilton (1998 and 1999 approach)
-
-				!! Calculate the dimentionless parameters
-				XX = InParticle%InsolubleRadius / InParticle%EmbryoRadius
+			!! Use Gorbunov and Hamilton 1998 and 1999 approach
+			!! Calculate the dimentionless parameters
+				XX = InParticle%InsolubleRadius / &
+                                      InParticle%EmbryoRadius
 				YY = Sqrt(1. + XX*XX - 2.*XX*CosContactAngle)
 
-				!! If this is the Kohler Example, there may be problems if we use Fletcher's Approx.
-				IF (InParticle%InsolubleRadius .EQ. 0. .OR. CosContactAngle+1. .LT. 0.0000001) THEN
+				!! If this is the Kohler Example, there may 
+                                !! be problems if we use Fletcher's Approx.
+				IF (InParticle%InsolubleRadius .EQ. 0. .OR. & 
+                                 CosContactAngle+1. .LT. 0.0000001) THEN
 
-					!! The core is not involved in this case, so make the simple calculation
+					!! The core is not involved in this 
+                                        !! case, so make the simple calculation
 					dRdV = 0.25/Pi/InParticle%EmbryoRadius/InParticle%EmbryoRadius
 
 				ELSE
 
-					!! This is a problem, meaning either no or negative volume for the embryo
+					!! This is a problem, meaning either no
+                                        !! or negative volume for the embryo
 					IF ((ABS(CosContactAngle -1.)<0.0000001) .AND.			&
 						(InParticle%InsolubleRadius .GE. InParticle%EffectiveRadius))   &
 						CALL ERROR("In SUBROUTINE SatVapPressRatio (), a water condensation related function that " //	&
@@ -482,9 +471,9 @@ REAL*8 FUNCTION SatVapPressRatio ( InParticle , ChemIndex )
 				END IF
 
 
-				!! S' from Gorbunov and Hamilton, 1997 using their eq. (21) except
-				!! we do not assume that the density of the solution is the density
-				!! of water (we use the calculated density)
+	!! S' from Gorbunov and Hamilton, 1997 using their eq. (21) except
+	!! we do not assume that the density of the solution is the density
+	!! of water (we use the calculated density)
 				SatVapPressRatio = DEXP(										&
 				InParticle%SurfaceTension / Rstar / InParticle%Temperature *	&
 				2.*Pi * InParticle%InsolubleRadius *							&
@@ -497,7 +486,8 @@ REAL*8 FUNCTION SatVapPressRatio ( InParticle , ChemIndex )
 			END IF
 		ELSE
 
-			!! The Kelvin Effect is abstracted to a function and housed in "ParticleAttributes.h"
+!! The Kelvin Effect is abstracted to a function 
+!! housed in "ParticleAttributes.h"
 			!WRITE(*,*) "Before CurveCorr"
 			SatVapPressRatio  = CurvatureCorrection(InParticle)
 			!WRITE(*,*) "After CurveCorr"
@@ -508,41 +498,41 @@ REAL*8 FUNCTION SatVapPressRatio ( InParticle , ChemIndex )
 END FUNCTION SatVapPressRatio
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! --- EQUILIBRATE ONE AQUEOUS DISSOCIATION REACTION ---	   !!
-!!															   !!
+!! --- EQUILIBRATE ONE AQUEOUS DISSOCIATION REACTION ---       !!
+!!							       !!
 !! Iterate a particular reaction until it reaches equilibrium. !!
-!!															   !!
-!! ReturnType: 1 is normal, 2 is "already was in eq"		   !!
+!!							       !!
+!! ReturnType: 1 is normal, 2 is "already was in eq"	       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle, Temperature, ReturnType, &
-										   WaterSatBurden, GasPhaseBurden2, OptErrorTolerance)
+SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, & 
+               InParticle, Temperature, ReturnType, &
+	       WaterSatBurden, GasPhaseBurden2, OptErrorTolerance)
 
-	USE Chemistry,				ONLY :	AqEquilibriaList,		&
-										HowManyAqChems,			&
-										HowManyAqCations,		&
-										AqPhaseChemicalNames,	&
-										HowManyEvolveGasChems,	&
-										GasPhaseChemicalNames
+	USE Chemistry,	ONLY :	AqEquilibriaList,		&
+				HowManyAqChems,			&
+				HowManyAqCations,		&
+				AqPhaseChemicalNames,	&
+				HowManyEvolveGasChems,	&
+				GasPhaseChemicalNames
 
-	USE ModelParameters,		ONLY :	AqThermoEquilibriumError,			&
-										WaterContentPrecision,				&
-										AqThermoNumbAllowedIterations,		&
-										AerosolWaterEquilibriumRHThreshold,	&
-										Avogadro,							&
-										moles, grams, WaterMolecMass, micron 
+	USE ModelParameters,	ONLY :	AqThermoEquilibriumError,	&
+					WaterContentPrecision,		&
+					AqThermoNumbAllowedIterations,	&
+					AerosolWaterEquilibriumRHThreshold,&
+					Avogadro,			&
+					moles, grams, WaterMolecMass, micron 
 
-	USE GridPointFields,		ONLY :  GasPhaseChemGridIndex,	&
-										GetRelativeHumidity
+	USE GridPointFields,	ONLY :  GetRelativeHumidity
 
-	USE InfrastructuralCode,	ONLY :	INT2STR, REAL2STR,		&
-										Transcript,				&
-										ERROR, WARN
+	USE InfrastructuralCode,ONLY :	INT2STR, REAL2STR,		&
+					Transcript,			&
+					ERROR, WARN
 
-	USE Aerosols,				ONLY :	EquilibriumWaterContent,	 &
-										DumpParticleContentsAtError, &
-										EqCoeff,					 &
-										MeanActivity,&
-										EquilibrateAqueousDissociationReaction
+	USE Aerosols,		ONLY :	EquilibriumWaterContent,	 &
+					DumpParticleContentsAtError,     &
+					EqCoeff,			 &
+					MeanActivity,                    &
+					EquilibrateAqueousDissociationReaction
 
 	IMPLICIT NONE
 
@@ -551,11 +541,11 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 	TYPE(PARTICLE),POINTER :: InParticle
 	REAL*8 :: GasPhaseBurden, Temperature
 	REAL*8 :: OptErrorTolerance, WaterSatBurden, GasPhaseBurden2
-	!REAL*8 :: WaterSatBurden, GasPhaseBurden2
 
 	!! Local Variables
 	INTEGER :: I, GG
-	REAL*8  :: II, Qdenom, Qnumer, Z, dX, EqRatio, ActivityCoefficients, ErrorTolerance, DissociatedScaling, DissociatedExp
+	REAL*8  :: II, Qdenom, Qnumer, Z, dX, EqRatio, ActivityCoefficients, &
+                   ErrorTolerance, DissociatedScaling, DissociatedExp
 	LOGICAL :: WaterRxn
 
 	!! SCSCSCSCSC
@@ -563,41 +553,20 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 
 	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
-	!! Set the error tolerance according to the 
-	!! subroutine's optinoal input.
-	!! THIS IS NOT THE TOLERANCE FOR THE EQUILIBRATION
-	!! CHECK (WHICH USES THE GLOBAL VALUE), RATHER IT 
-	!! IS THE VALUE WE EQUILIBRATE TO IF THAT CHECK FAILS	
-	!IF (PRESENT(OptErrorTolerance)) THEN
-		ErrorTolerance = OptErrorTolerance
-	!ELSE
-	!	IF (WhichRxn .EQ. 1) THEN
-	!		ErrorTolerance = WaterContentPrecision
-	!	ELSE
-	!		ErrorTolerance = AqThermoEquilibriumError / 2.
-	!	END IF
-	!END IF
+	ErrorTolerance = OptErrorTolerance
 
-	!IF (DissolutionData(WhichRxn,11) .EQ. 0. .AND. .NOT.PRESENT(WaterSatBurden))			   &
-	!	CALL ERROR("If calling EquilibrateDissolutionReaction() for water condensation, you must provide the saturation "// &
-	!			   "water vapor pressure and you have not.")
-
-	!IF (DissolutionData(WhichRxn,11) .EQ. 6. .AND. .NOT.PRESENT(GasPhaseBurden2))    &
-	!	CALL ERROR("If calling EquilibrateDissolutionReaction() for a reaction that involves two gas phase species (reaction "// &
-	!			   "type = 6), you must provide the second gas phase chemical's burden -- which is an optional argument -- "// &
-	!			   "and you have not.")
-
-	!!Matt Alvarado added this to check for solid-gas reactions that are already in
-	!!Equilibrium, as the solid conc = 0.0 and the gas-phase is subsaturated
+!!Matt Alvarado added this to check for solid-gas reactions that are already in
+!!Equilibrium, as the solid conc = 0.0 and the gas-phase is subsaturated
 	
 	IF (DissolutionData(WhichRxn,11) .EQ. 6.)  THEN
-		!WRITE(*,*) "Check Started for Reaction: ", WhichRxn
-		EqRatio = DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle, &
-				  WaterSatBurden=WaterSatBurden, GasPhaseBurden2=GasPhaseBurden2)
+	   EqRatio = DissolutionEquilibriumConstantsRatio (GasPhaseBurden, & 
+                        WhichRxn, Temperature, InParticle, &
+                        WaterSatBurden=WaterSatBurden, &
+                        GasPhaseBurden2=GasPhaseBurden2)
 
-		!WRITE(*,*) "Ratio Okay for Reaction: ", WhichRxn
 		IF (EqRatio .GT. 1.0 & !The gas-phase is sub-saturated
-			.AND. InParticle%AqChems(DissolutionData(WhichRxn,3)) .LT. 1e-27) THEN !There is no solid left
+		   .AND. InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) &
+                    .LT. 1e-27) THEN !There is no solid left
 			ReturnType = 2
 			RETURN
 		END IF
@@ -608,14 +577,14 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 	!This checks to make sure the NH3(g) <=> NH3(aq)
 	!doesn't crash because there isn't enough NH3(aq)
 	IF (DissolutionData(WhichRxn,11) .EQ. 1. .AND. &
-		GasPhaseChemicalNames(DissolutionData(WhichRxn,1)) .EQ. "NH3")  THEN
+      GasPhaseChemicalNames(INT(DissolutionData(WhichRxn,1))) .EQ. "NH3")  THEN
 		!WRITE(*,*) "Check Started for Reaction: ", WhichRxn
 		EqRatio = DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle, &
 				  WaterSatBurden=WaterSatBurden, GasPhaseBurden2=GasPhaseBurden2)
 
 		!WRITE(*,*) "Ratio Okay for Reaction: ", WhichRxn
 		IF (EqRatio .GT. 1.0 & !The gas-phase is sub-saturated
-			.AND. InParticle%AqChems(DissolutionData(WhichRxn,3)) .LT. 1e-26) THEN !There is no NH3 left
+			.AND. InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .LT. 1e-26) THEN !There is no NH3 left
 			ReturnType = 2
 			RETURN
 		END IF
@@ -624,41 +593,40 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 	
 	!! Presume innocence in the form of a successful return.
 	ReturnType = 1
-	!WRITE(*,*) "Start EquilibrateDissolutionReaction for Reaction: ", WhichRxn
-	!WRITE(*,*) "Embryo Radius: ", InParticle%EmbryoRadius/micron
+	
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This routine generally follows the Mass Flux Iteration method reviewed!! 
+!! in Jacobson, 1999 (the textbook) and reviewed earlier in              !!
+!! Jacobson et al. 1996, and Villars 1959                                !!
+!!                                                                       !!
+!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium  !!
+!!       within aerosols and nonequilibrium between gases and aerosols,  !!
+!!       Journal of Geophysical Research, 101 (D4), 9079-9091, 1996.     !!
+!!									 !!
+!! Villars, D.S., A method of successive approximations for computing    !!
+!!    combustion equilibria on a high speed digital computer,            !!
+!!    Journal of Physical Chemistry, 63, 521-5, 1959.			 !!
+!!									 !!
+!! STEP 1: Find the most aberrant ratio of concentration to              !!
+!!         stoicheometric coefficient  (cf., Jacobson 1999, p.497)	 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! This routine generally follows the Mass Flux Iteration method reviewed in Jacobson,  !!
-	!! 1999 (the textbook) and reviewed earlier in Jacobson et al. 1996, and Villars 1959   !!
-	!!																						!!
-	!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium within aerosols !!
-	!!    and nonequilibrium between gases and aerosols, Journal of Geophysical Research,	!!
-	!!    101 (D4), 9079-9091, 1996.														!!
-	!!																						!!
-	!! Villars, D.S., A method of successive approximations for computing combustion		!!
-	!!    equilibria on a high speed digital computer, Journal of Physical Chemistry,		!!
-	!!    63, 521-5, 1959.																	!!
-	!!																						!!
-	!! STEP 1: Find the most aberrant ratio of concentration to stoicheometric coefficient  !!
-	!! (cf., Jacobson 1999, p.497)															!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Check for already equilibrated (either by none of 
+!! the species being present or explicit equilibrium)
+!!
+!! And then pre-calculate the Qnumer and Qdenomer
 
-	!! Check for already equilibrated (either by none of 
-	!! the species being present or explicit equilibrium)
-	!!
-	!! And then pre-calculate the Qnumer and Qdenomer
-
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! There are several reactions types:											!!
-	!!																				!!
-	!! 0. Water Condensation.														!!
-	!! 1. Direct dissolution of a single species not inclorporating dissociation.	!!
-	!! 2. Dissolution of a single species that then dissociates directly.			!!
-	!! 4. Dissolution of a species that binds with an ion on the way in.			!!
-	!! 5. Dissolution of two gas phase species to form 1 or 2 aqueous species.		!!
-	!!																				!!
-	!! Identify which we're dealing with and go from there.  (Type 3 doesn't apply.)!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! There are several reactions types:				             !!
+!!									     !!
+!! 0. Water Condensation.						     !!
+!! 1. Direct dissolution of a single species not inclorporating dissociation.!!
+!! 2. Dissolution of a single species that then dissociates directly.	     !!
+!! 4. Dissolution of a species that binds with an ion on the way in.	     !!
+!! 5. Dissolution of two gas phase species to form 1 or 2 aqueous species.   !!
+!!									     !!
+!! Identify which we're dealing with and go from there.(Type 3 doesn't apply.)!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	SELECT CASE (INT(DissolutionData(WhichRxn,11)))
 
 	CASE(0)
@@ -671,8 +639,9 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 			RETURN
 		END IF
 
-		!! If we want to include water equilibration in this, then equilibrate it and return
-		IF (GetRelativeHumidity(InParticle%Location(1),InParticle%Location(2),InParticle%Location(3)) .GT. &
+                !! If we want to include water equilibration in this, 
+                !! then equilibrate it and return
+		IF (GetRelativeHumidity() .GT. &
 		    AerosolWaterEquilibriumRHThreshold) &
 		CALL ERROR("Passed EquilibrateDissolutionReaction() in CondensationRelatedFunctions.h the water equilibration " //  &
 				   "reaction even though the RH is above the threshold you specify for allowable equilibration ("//			&
@@ -693,7 +662,7 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 			RETURN
 		END IF
 
-		Qnumer = InParticle%AqChems(DissolutionData(WhichRxn,3))
+		Qnumer = InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))
 		Qdenom = GasPhaseBurden / Avogadro / InParticle%NumberOfParticles
 		!WRITE(*,*) "Reaction Check 3"
 		
@@ -708,8 +677,8 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 			ReturnType = 2
 			RETURN
 		END IF
-		Qnumer = MIN( InParticle%AqChems(DissolutionData(WhichRxn,3)) / DissolutionData(WhichRxn,13),	&
-					  InParticle%AqChems(DissolutionData(WhichRxn,4)) / DissolutionData(WhichRxn,14) )
+		Qnumer = MIN( InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) / DissolutionData(WhichRxn,13),	&
+					  InParticle%AqChems(INT(DissolutionData(WhichRxn,4))) / DissolutionData(WhichRxn,14) )
 
 		Qdenom = GasPhaseBurden / Avogadro 	/ InParticle%NumberOfParticles
 		!WRITE(*,*) "Reaction Check 3"
@@ -726,9 +695,9 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 			RETURN
 		END IF
 
-		Qnumer = InParticle%AqChems(DissolutionData(WhichRxn,3))
+		Qnumer = InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))
 		Qdenom = MIN(GasPhaseBurden / Avogadro  / InParticle%NumberOfParticles,	&
-					 InParticle%AqChems(DissolutionData(WhichRxn,2)))
+					 InParticle%AqChems(INT(DissolutionData(WhichRxn,2))))
 		IF(Qnumer .LT. 0. .OR. Qdenom .LT. 0.) CALL ERROR("Conc below 0 in EqDissRxn!")
 		!WRITE(*,*) "Reaction Check 3"
 	
@@ -744,7 +713,7 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 			RETURN
 		END IF
 
-		Qnumer = InParticle%AqChems(DissolutionData(WhichRxn,3)) 
+		Qnumer = InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) 
 		Qdenom = MIN(GasPhaseBurden,GasPhaseBurden2)
 		Qdenom = Qdenom / Avogadro / InParticle%NumberOfParticles
 		!WRITE(*,*) "Type 5", Qnumer, Qdenom
@@ -771,16 +740,16 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 
 	CASE (1)
 
-		InParticle%AqChems(DissolutionData(WhichRxn,3)) = InParticle%AqChems(DissolutionData(WhichRxn,3)) + dX
+		InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) = InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) + dX
 		IF (DissolutionData(WhichRxn,1) .LE. HowManyEvolveGasChems) &
 			GasPhaseBurden = GasPhaseBurden - dX * Avogadro * InParticle%NumberOfParticles
 
 	CASE (2)
 
-		InParticle%AqChems(DissolutionData(WhichRxn,3))	= InParticle%AqChems(DissolutionData(WhichRxn,3))	&
+		InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	= InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	&
 														  + dX * DissolutionData(WhichRxn,13)
 
-		InParticle%AqChems(DissolutionData(WhichRxn,4))	= InParticle%AqChems(DissolutionData(WhichRxn,4))	&
+		InParticle%AqChems(INT(DissolutionData(WhichRxn,4)))	= InParticle%AqChems(INT(DissolutionData(WhichRxn,4)))	&
 														  + dX * DissolutionData(WhichRxn,14)
 
 		IF (DissolutionData(WhichRxn,1) .LE. HowManyEvolveGasChems)	&
@@ -788,14 +757,14 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 		!WRITE(*,*) "Check 6"
 	CASE (4)
 
-		InParticle%AqChems(DissolutionData(WhichRxn,3))	= InParticle%AqChems(DissolutionData(WhichRxn,3)) + dX
-		InParticle%AqChems(DissolutionData(WhichRxn,2))	= InParticle%AqChems(DissolutionData(WhichRxn,2)) - dX
+		InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	= InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) + dX
+		InParticle%AqChems(INT(DissolutionData(WhichRxn,2)))	= InParticle%AqChems(INT(DissolutionData(WhichRxn,2))) - dX
 		IF (DissolutionData(WhichRxn,1) .LE. HowManyEvolveGasChems)		&
 			GasPhaseBurden = GasPhaseBurden - dX * Avogadro * InParticle%NumberOfParticles
 
 	CASE (6)
 
-		InParticle%AqChems(DissolutionData(WhichRxn,3))	= InParticle%AqChems(DissolutionData(WhichRxn,3)) + dX
+		InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	= InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) + dX
 		IF (DissolutionData(WhichRxn,1) .LE. HowManyEvolveGasChems)		&
 		  GasPhaseBurden  = GasPhaseBurden  - dX * Avogadro * InParticle%NumberOfParticles
 		IF (DissolutionData(WhichRxn,2) .LE. HowManyEvolveGasChems)		&
@@ -831,7 +800,7 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 	!! Count the number of attempts before convergence
 	I = I+1
 
-	IF (INT(DissolutionData(WhichRxn,11)) .EQ. 6 .AND. InParticle%AqChems(DissolutionData(WhichRxn,3)) .LT. 1.0e-27) THEN !Much Less than a molecule per particle
+	IF (INT(DissolutionData(WhichRxn,11)) .EQ. 6 .AND. InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .LT. 1.0e-27) THEN !Much Less than a molecule per particle
 		!WRITE(*,*) "Solid Electrolyte ", trim(AqPhaseChemicalNames(DissolutionData(WhichRxn,3))), " is negligible.", I		
 		RETURN
 	END IF
@@ -839,10 +808,10 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 	!This checks to make sure the NH3(g) <=> NH3(aq)
 	!doesn't crash because there isn't enough NH3(aq)
 	IF (DissolutionData(WhichRxn,11) .EQ. 1. .AND. &
-		GasPhaseChemicalNames(DissolutionData(WhichRxn,1)) .EQ. "NH3")  THEN		
+		GasPhaseChemicalNames(INT(DissolutionData(WhichRxn,1))) .EQ. "NH3")  THEN		
 		!WRITE(*,*) "Ratio Okay for Reaction: ", WhichRxn
 		IF (EqRatio .GT. 1.0 & !The gas-phase is sub-saturated
-			.AND. InParticle%AqChems(DissolutionData(WhichRxn,3)) .LT. 1e-26) THEN !There is no NH3 left
+			.AND. InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .LT. 1e-26) THEN !There is no NH3 left
 			RETURN
 		END IF	
 	END IF	
@@ -853,21 +822,6 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 		ReturnType = 2
 		EXIT
 		
-		!IF (InParticle%IonicStr .EQ. 0.) THEN
-		!	CALL DumpParticleContentsAtError(InParticle, "UnEquilableParticle-DissolutionError.txt", &
-		!									 InDoSurfaceTension=.FALSE.,InDoWaterActivity=.FALSE.)
-		!ELSE
-		!	CALL DumpParticleContentsAtError(InParticle, "UnEquilableParticle-DissolutionError.txt", &
-		!									 InDoSurfaceTension=.FALSE.,InDoWaterActivity=.FALSE.)
-		!END IF
-		!WRITE(*,*) "EqRatio: ", EqRatio
-		!WRITE(*,*) "GasPhase (mol/particle): ", GasPhaseBurden/ Avogadro / InParticle%NumberOfParticles
-		!WRITE(*,*) "Aerosol (mol/particle): ", InParticle%AqChems(DissolutionData(WhichRxn,3))
-		!WRITE(*,*) GasPhaseBurden2/ Avogadro / InParticle%NumberOfParticles
-		!CALL ERROR("Apparent Non Convergence in EquilibrateDissolutionReaction().  Trying to converge "// &
-		!		   "towards equilibrium in dissolution reaction number "//TRIM(INT2STR(WhichRxn))//       &
-		!		   " (where 1 is water dissolution, 2 is sulfate condensation, and the rxns above that are as ordered in the input deck Dissolution.in).")
-
 	END IF
 
 	!WRITE(*,*) "Check 11"
@@ -876,28 +830,29 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, InParticle,
 	RETURN
 END SUBROUTINE EquilibrateDissolutionReaction
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Check the Ratio between the Existing and Ideal Equilibrium   !!
-!! Constants.  This is used by several other routines.		    !!
-!!															    !!
+!! Constants.  This is used by several other routines.		!!
+!!								!!
 !! When the equations are read, the program tries to figure out !!
 !! whether an uncharged electrolyte is dissociating (in which   !!
 !! case the denominator activity coefficient is simply 1), and  !!
 !! if not it stores an equivalent activity coefficient ratio.   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!! This should only be used in the context of EquilibrateDissolutionReaction!  Otherwise there is
-	!! no check for lack of the species.
-REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle,	&
-													  GasPhaseBurden2, WaterSatBurden)
+!! This should only be used in the context of EquilibrateDissolutionReaction!  
+!! Otherwise there is no check for lack of the species.
+REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, &
+                       WhichRxn, Temperature, InParticle,	&
+			GasPhaseBurden2, WaterSatBurden)
 
-	USE Chemistry,       ONLY : AqEquilibriaList, HowManyAqChems, HowManyAqCations, AqPhaseChemicalNames
-	USE Aerosols, ONLY : MeanActivity
+	USE Chemistry,       ONLY : AqEquilibriaList, HowManyAqChems, &
+                                    HowManyAqCations, AqPhaseChemicalNames
+	USE Aerosols,        ONLY : MeanActivity
 
-	USE ModelParameters, ONLY : RStarMB, moles, grams, WaterMolecMass, Avogadro
+	USE ModelParameters, ONLY : RStarMB, moles, grams, & 
+                                    WaterMolecMass, Avogadro
 
-	USE GridPointFields,		ONLY :  GasPhaseChemGridIndex
 	USE InfrastructuralCode, ONLY : Error
 
 	IMPLICIT NONE
@@ -909,26 +864,19 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	REAL*8 :: GasPhaseBurden2, WaterSatBurden 
 
 	!! Internal Variables
-	REAL*8	:: Eq, IonA, IonB, ExpA, ExpB, XX(3), P1, P2, MeanAct ! AwPow,
+	REAL*8	:: Eq, ExpA, ExpB, P1, P2, MeanAct ! AwPow,
+        INTEGER :: IonA, IonB
 
-
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! There are several reactions types:											!!
-	!!																				!!
-	!! 0. Water Condensation.														!!
-	!! 1. Direct dissolution of a single species not incorporating dissociation.	!!
-	!! 2. Dissolution of a single species that then dissociates directly.			!!
-	!! 4. Dissolution of a species that binds with an ion on the way in.			!!
-	!! 6. Two gas phase species forming a solid.				!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Identify which we're dealing with and go from there.	(3 doesn't apply here)	!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-	!! If there are two gasphasechems
-	!IF(DissolutionData(WhichRxn,11) .EQ. 6 .AND. .NOT.PRESENT(GasPhaseBurden2)) &
-	!  CALL ERROR("When you call DissolutionEquilibriumConstantsRatio for a reaction that involves two gas phase chemicals, "// &
-	!			 "you must include the current burdens of both chems, the second of which is an optional argument and "//      &
-	!			 "was not found.")
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! There are several reactions types:				             !!
+!!									     !!
+!! 0. Water Condensation.						     !!
+!! 1. Direct dissolution of a single species not inclorporating dissociation.!!
+!! 2. Dissolution of a single species that then dissociates directly.	     !!
+!! 4. Dissolution of a species that binds with an ion on the way in.	     !!
+!! 6. Two gas phase species forming a solid.				     !!
+!! Identify which we're dealing with and go from there.(Type 3 doesn't apply.)!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! See if the reaction is empty !!
@@ -937,7 +885,7 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	CASE (1)
 		!WRITE(*,*) "Flag 1"
 		!! If there is none of the chemical to deal with
-		IF (InParticle%AqChems(DissolutionData(WhichRxn,3)) .EQ. 0. .AND.	&
+		IF (InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .EQ. 0. .AND.	&
 			GasPhaseBurden .EQ. 0) THEN
 			DissolutionEquilibriumConstantsRatio = 1.
 			RETURN
@@ -948,8 +896,8 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	CASE (2)
 		!WRITE(*,*) "Flag 1"
 		!! If there is none of the chemical to deal with
-		IF ((InParticle%AqChems(DissolutionData(WhichRxn,3)) .EQ. 0.  .OR.	  &
-			 InParticle%AqChems(DissolutionData(WhichRxn,4)) .EQ. 0.) .AND.  &
+		IF ((InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .EQ. 0.  .OR.	  &
+			 InParticle%AqChems(INT(DissolutionData(WhichRxn,4))) .EQ. 0.) .AND.  &
 			 GasPhaseBurden .EQ. 0.) THEN
 			DissolutionEquilibriumConstantsRatio = 1.
 			RETURN
@@ -960,8 +908,8 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 
 		!! If there is none of the chemical to deal with
 		!WRITE(*,*) "Flag 1", WhichRxn, AqPhaseChemicalNames(DissolutionData(WhichRxn,2)), GasPhaseBurden !InParticle%AqChems(DissolutionData(WhichRxn,2))
-		IF ( (InParticle%AqChems(DissolutionData(WhichRxn,3)) .EQ. 0.  .OR.	  &
-			 InParticle%AqChems(DissolutionData(WhichRxn,2)) .EQ. 0.) .AND.   &
+		IF ( (InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .EQ. 0.  .OR.	  &
+			 InParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .EQ. 0.) .AND.   &
 			 GasPhaseBurden .EQ. 0.) THEN
 			DissolutionEquilibriumConstantsRatio = 1.
 			!WRITE(*,*) "Flag 2"
@@ -971,7 +919,7 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	CASE (6)
 
 		!! If there is none of the chemical to deal with
-		IF ((InParticle%AqChems(DissolutionData(WhichRxn,3)) .EQ. 0.) .AND.   &
+		IF ((InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .EQ. 0.) .AND.   &
 			 (GasPhaseBurden .EQ. 0. .OR. GasPhaseBurden2 .EQ. 0)) THEN
 			DissolutionEquilibriumConstantsRatio = 1.
 			RETURN
@@ -985,7 +933,8 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!WRITE(*,*) "Flag 3"
-	!! Get the molality of the electrolyte and the equilibrium at this temperature
+	!! Get the molality of the electrolyte 
+        !! and the equilibrium at this temperature
 	Eq = HenrysLaw (Temperature, WhichRxn)
 
 	!! If the solution is set to blow up, then establish a large artificial value.
@@ -1006,12 +955,12 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	CASE (1)		
 		!WRITE(*,*) "Before Ratio", INT(DissolutionData(WhichRxn,3))
 
-		DissolutionEquilibriumConstantsRatio =											 &
-					SatVapPressRatio (InParticle, INT(DissolutionData(WhichRxn,3))) 	 &
-					* 1000. * InParticle%AqChems(DissolutionData(WhichRxn,3))			 &
-					/ Eq / RstarMB / Temperature										 &
-					/ InParticle%AqChems(1) / moles * grams / WaterMolecMass			 &
-					* Avogadro / GasPhaseBurden 
+		DissolutionEquilibriumConstantsRatio =			&
+	SatVapPressRatio (InParticle, INT(DissolutionData(WhichRxn,3))) &
+	* 1000. * InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	&
+	/ Eq / RstarMB / Temperature					&
+	/ InParticle%AqChems(1) / moles * grams / WaterMolecMass	&
+		* Avogadro / GasPhaseBurden 
 				
 		!WRITE(*,*) "Ratio", DissolutionEquilibriumConstantsRatio
 	CASE (2)
@@ -1027,9 +976,9 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 					* InParticle%AqChems(IonA)**ExpA * InParticle%AqChems(IonB)**ExpB				&
 					* (1000. * grams / moles / WaterMolecMass / InParticle%AqChems(1))**(ExpA+ExpB) &
 					/ Eq / RstarMB / Temperature													& 
-					*InParticle%GammaMixed(DissolutionData(WhichRxn,12))**							& ! 3 lines of
-					(AqEquilibriaList(DissolutionData(WhichRxn,12),4)+								& ! mean act
-					 AqEquilibriaList(DissolutionData(WhichRxn,12),5))								&
+					*InParticle%GammaMixed(INT(DissolutionData(WhichRxn,12)))**							& ! 3 lines of
+					(AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),4)+								& ! mean act
+					 AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),5))								&
 					 * Avogadro / GasPhaseBurden
 			
 	CASE (4)
@@ -1039,15 +988,15 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 		ExpA = ANINT(10000.*(DissolutionData(WhichRxn,8)-FLOOR(DissolutionData(WhichRxn,8))))
 		ExpB = ANINT(10000.*(DissolutionData(WhichRxn,9)-FLOOR(DissolutionData(WhichRxn,9))))
 
-		IF (InParticle%AqChems(DissolutionData(WhichRxn,2)) .LE. 0) THEN
+		IF (InParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .LE. 0) THEN
 			DissolutionEquilibriumConstantsRatio = 1.e12
-		ELSE  IF (InParticle%AqChems(DissolutionData(WhichRxn,3)) .LE. 0) THEN 
+		ELSE  IF (InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .LE. 0) THEN 
 			DissolutionEquilibriumConstantsRatio = 0.0000000001
 		ELSE
 			DissolutionEquilibriumConstantsRatio =										&
 					SatVapPressRatio (InParticle, INT(DissolutionData(WhichRxn,3))) *	&
-					InParticle%AqChems(DissolutionData(WhichRxn,3)) /					&
-					InParticle%AqChems(DissolutionData(WhichRxn,2))						&
+					InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) /					&
+					InParticle%AqChems(INT(DissolutionData(WhichRxn,2)))						&
 					*InParticle%GammaMixed(IonA)**ExpA									& 
 					/InParticle%GammaMixed(IonB)**ExpB									&
 					/ Eq / RstarMB / Temperature										&
@@ -1062,7 +1011,7 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	CASE (6)
 
 		!WRITE(*,*) "HenrysLaw", Eq
-		IF (InParticle%AqChems(DissolutionData(WhichRxn,3)) .EQ. 0.) THEN
+		IF (InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .EQ. 0.) THEN
 			DissolutionEquilibriumConstantsRatio = 1.e12
 		ELSE
 
@@ -1086,9 +1035,8 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	RETURN
 END FUNCTION DissolutionEquilibriumConstantsRatio
 
-SUBROUTINE EquilibrateSulfate(X, Y, Z)
+SUBROUTINE EquilibrateSulfate()
 
-!! Copyright Matt Alvarado, August 2005
 !! This subroutine pushes all of the H2SO4 in the gas-phase into
 !! the aerosol phase. The fraction of gas-phase sulfate added to each
 !! size bin is the ratio of the bin mass transfer coefficient
@@ -1099,71 +1047,68 @@ SUBROUTINE EquilibrateSulfate(X, Y, Z)
 !! routine. This routine should NOT be used to do kinetic 
 !! mass-transfer. 
 
-
-
 	!! Include modules
 	USE InfrastructuralCode, ONLY : SetFileHandleCounter, &
-									Transcript, &
-									ERROR, &
-									REAL2STR, &
-									INT2STR, &
-									GetFileHandle
-	USE Chemistry,			 ONLY : HowManyGasChems, &
-									HowManyEvolveGasChems, &
-									GasPhaseChemicalNames, &
-									HowManyAqChems, &
-									HowManyAqCations, &
-									HowManyAqAnions, &
-									AqPhaseChemicalNames, &	
-									AqCationNames, &
-									AqAnionNames, &
-									FindChem, &
-									MolecularDiffusionCoefficient
+					Transcript, &
+					ERROR, &
+					REAL2STR, &
+					INT2STR, &
+					GetFileHandle
+
+	USE Chemistry,		 ONLY : HowManyGasChems, &
+				        HowManyEvolveGasChems, &
+					GasPhaseChemicalNames, &
+					HowManyAqChems, &
+					HowManyAqCations, &
+					HowManyAqAnions, &
+					AqPhaseChemicalNames, &	
+					AqCationNames, &
+					AqAnionNames, &
+					FindChem, &
+					MolecularDiffusionCoefficient
+
 	USE GridPointFields,	 ONLY : GridGasChem, &
-									UpdateChemicalConcentrations, &
-									GetM, &
-									GetTemp, &
-									GasPhaseChemGridIndex, &
-									MeanFreePathofAir, &
-									GetDynamicViscosityofAir, &
-									GetAirDensity
-	USE Aerosols,			 ONLY : Particle, &
-									Particles,  &
-									FindAqElectrolyteEquilibriumForGridPoint, &
-									FindElectrolyteEquilibrium, &
-									EquilibriumWaterContent, &
-									KusikMeissner, &
-									UpdateWaterActivity, &
-									AerosolPH, &
-									SortAerosolAtGridPointForCoagulation, &
-									ParticleDensity, &
-									AerosolModes, &
-									ReynoldsNumber
+                                        UpdateChemicalConcentrations, &
+					GetM, &
+					GetTemp, &
+					MeanFreePathofAir, &
+					GetDynamicViscosityofAir, &
+					GetAirDensity
+
+	USE Aerosols,		 ONLY : Particle, &
+					Particles,  &
+				FindAqElectrolyteEquilibriumForGridPoint, &
+					FindElectrolyteEquilibrium, &
+					EquilibriumWaterContent, &
+					KusikMeissner, &
+					UpdateWaterActivity, &
+					AerosolPH, &
+					SortAerosolAtGridPointForCoagulation, &
+					ParticleDensity, &
+					AerosolModes, &
+					ReynoldsNumber
 	USE	ModelParameters
 		
 	IMPLICIT NONE
 
-	!! External Variables
-	INTEGER           :: X, Y, Z
-
 	!! Internal Variables
-	integer :: i, j, k, l, seedarray(2),q, r, OutFH(4), NumBins, A, S, HeteroBins, &
-	           Gas, Aq, H2SO4GasIndex, SO4AqIndex, HNO3GasIndex, NumAqChems, &
-			   NH3GasIndex, HAqIndex
+	integer :: i, j, k, l, seedarray(2),q, r, OutFH(4), NumBins, A, S, &
+                   HeteroBins, Gas, Aq, H2SO4GasIndex, SO4AqIndex,         &
+                   HNO3GasIndex, NumAqChems, &
+	           NH3GasIndex, HAqIndex
 	real*8  :: ii, jj, kk, Dum1, Dum2
 	real*8  ::  Mgas, Temp, H2SO4Conc, TransferSum, &
 	            FractionofSulfate, Knudsen, InvKn, AccomCoeff, &
 				omega, Re, GasMeanFreePath, DynamVisc, Dens, &
 				Dv, Sc, DumNum, VentFac, Total
 
-	REAL*8, ALLOCATABLE	::	Chem(:), NumConc(:), &
-							SulfTrans(:)
+	REAL*8, ALLOCATABLE	::	Chem(:), NumConc(:), SulfTrans(:)
 
 	TYPE(Particle), POINTER :: CurrentParticle
 
 
 		!Count # of bins, # of Aq. Chems
-			CurrentParticle => particles(X, Y, Z)%first
+			CurrentParticle => particles%first
 			NumBins = 0
 			8 if (associated(currentparticle)) then
 				NumBins = NumBins + 1
@@ -1182,12 +1127,12 @@ SUBROUTINE EquilibrateSulfate(X, Y, Z)
 			H2SO4GasIndex = FindChem("H2SO4", Gas)
 			SO4AqIndex = FindChem("SO4--", Aq)
 			HAqIndex = FindChem("H+", Aq)
-			write (*,*), SO4AqIndex
+			!write (*,*), SO4AqIndex
 		!Calculate gas conc of H2SO4 in mol/cm3
-			H2SO4Conc = GridGasChem(X,Y,Z,H2SO4GasIndex)/ Avogadro !mol/cm3
+			H2SO4Conc = GridGasChem(H2SO4GasIndex)/ Avogadro !mol/cm3
 			
 		!Calculate sum of the mass transfer coefficients for all particles
-			CurrentParticle => particles(X, Y, Z)%first
+			CurrentParticle => particles%first
 			TransferSum = 0				
 			I = 1
 			30 if (associated(currentparticle)) then
@@ -1196,17 +1141,17 @@ SUBROUTINE EquilibrateSulfate(X, Y, Z)
                                         
 					!Calculate correction for collision geometry 
 					!and sticking probability (omega)
-					GasMeanFreePath = MeanFreePathOfAir(CurrentParticle%Location(1), CurrentParticle%Location(2), CurrentParticle%Location(3))
+					GasMeanFreePath = MeanFreePathOfAir()
 					Knudsen = GasMeanFreePath / CurrentParticle%EffectiveRadius 
 					InvKn = 1.0/Knudsen
 					AccomCoeff = 0.65 !From Poschl et al.
 					omega = (1 + ((1.33 + 0.71*InvKn)/(1.0 + InvKn) + 4*(1-AccomCoeff)/3.0/AccomCoeff)*Knudsen)**(-1)
-                                        WRITE(*,*) CurrentParticle%EffectiveRadius, CurrentParticle%NumberofParticles
+                                       
 					!Calculate the Ventilation Factor
 					Re = ReynoldsNumber (CurrentParticle)
-					DynamVisc = GetDynamicViscosityOfAir(CurrentParticle%Location(1), CurrentParticle%Location(2), CurrentParticle%Location(3))
-					Dens = GetAirDensity(CurrentParticle%Location(1), CurrentParticle%Location(2), CurrentParticle%Location(3))
-					Dv = MolecularDiffusionCoefficient (CurrentParticle%Location(1), CurrentParticle%Location(2), CurrentParticle%Location(3), H2SO4GasIndex)						
+					DynamVisc = GetDynamicViscosityOfAir()
+					Dens = GetAirDensity()
+					Dv = MolecularDiffusionCoefficient (H2SO4GasIndex)						
 					Sc = DynamVisc/Dens/Dv
 					DumNum = (Re**(0.5))*(Sc**(0.33333333333))
 					IF (DumNum .LE. 1.4) THEN
@@ -1240,11 +1185,9 @@ SUBROUTINE EquilibrateSulfate(X, Y, Z)
 		Total = 0.0
 		DO I = 1, NumBins
 			FractionofSulfate = SulfTrans(I)/TransferSum
-                        write(*,*) I, SulfTrans(I), TransferSum
 			Total = Total + FractionofSulfate
 		END DO
 		IF(Total .LT. 0.999999999 .OR. Total .GT. 1.000000001) THEN
-                        WRITE(*,*) Total
 			CALL ERROR("Error in EquilibrateSulfate(). Fractions do not add to 1.")
 		END IF
 
@@ -1255,7 +1198,7 @@ SUBROUTINE EquilibrateSulfate(X, Y, Z)
 		!Here, all the sulfate is added as SO4-- so that
 		!it is dissociated when EquilibrateGridPoint is called
 	 
-		CurrentParticle => particles(X, Y, Z)%first
+		CurrentParticle => particles%first
 		I = 1
 		20 if (associated(currentparticle)) then
     								
@@ -1278,75 +1221,76 @@ SUBROUTINE EquilibrateSulfate(X, Y, Z)
 		!Update gas H2SO4 concentration by setting it equal to 0.
 		ALLOCATE(CHEM(HowManyGasChems))
 		DO q = 1, HowManyGasChems
-			Chem(q) = GridGasChem(X,Y,Z,q) !molecules/cm3
+			Chem(q) = GridGasChem(q) !molecules/cm3
 		END DO
 		
 		Chem(H2SO4GasIndex) = 0.0
-		CALL UpdateChemicalConcentrations(X, Y, Z, Chem(1:HowManyEvolveGasChems))
+		CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 		
 		RETURN
 END SUBROUTINE EquilibrateSulfate
 
-SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Temperature, ReturnType, &
-										   GasPhaseBurden2, OptErrorTolerance)
+SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, & 
+                   Temperature, ReturnType, &
+		   GasPhaseBurden2, OptErrorTolerance)
 
-!! Copyright Matt Alvarado, August 2005
 !! This subroutine calculates the bulk equilibrium of NH4Cl and NH4NO3 
 !! and then weights the mass transfer of those species by the surface area
 !! of the particle bins.
 
 	!! Include modules
 	USE InfrastructuralCode, ONLY : SetFileHandleCounter, &
-									Transcript, &
-									ERROR, &
-									REAL2STR, &
-									INT2STR, &
-									GetFileHandle
-	USE Chemistry,			 ONLY : HowManyGasChems, &
-									HowManyEvolveGasChems, &
-									GasPhaseChemicalNames, &
-									HowManyAqChems, &
-									HowManyAqCations, &
-									HowManyAqAnions, &
-									AqPhaseChemicalNames, &	
-									AqCationNames, &
-									AqAnionNames, &
-									FindChem, &
-									MolecularDiffusionCoefficient
+					Transcript, &
+					ERROR, &
+					REAL2STR, &
+					INT2STR, &
+					GetFileHandle
+
+	USE Chemistry,		 ONLY : HowManyGasChems, &
+					HowManyEvolveGasChems, &
+					GasPhaseChemicalNames, &
+					HowManyAqChems, &
+					HowManyAqCations, &
+					HowManyAqAnions, &
+					AqPhaseChemicalNames, &	
+					AqCationNames, &
+					AqAnionNames, &
+					FindChem, &
+					MolecularDiffusionCoefficient
+
 	USE GridPointFields,	 ONLY : GridGasChem, &
-									UpdateChemicalConcentrations, &
-									GetM, &
-									GetTemp, &
-									GasPhaseChemGridIndex, &
-									MeanFreePathofAir, &
-									GetDynamicViscosityofAir, &
-									GetAirDensity
-	USE Aerosols,			 ONLY : Particle, &
-									Particles,  &
-									FindAqElectrolyteEquilibriumForGridPoint, &
-									FindElectrolyteEquilibrium, &
-									EquilibriumWaterContent, &
-									KusikMeissner, &
-									UpdateWaterActivity, &
-									AerosolPH, &
-									SortAerosolAtGridPointForCoagulation, &
-									ParticleDensity, &
-									AerosolModes, &
-									ReynoldsNumber
+					UpdateChemicalConcentrations, &
+					GetM, &
+					GetTemp, &
+					MeanFreePathofAir, &
+					GetDynamicViscosityofAir, &
+					GetAirDensity
+
+	USE Aerosols,		 ONLY : Particle, &
+				        Particles,  &
+				FindAqElectrolyteEquilibriumForGridPoint, &
+					FindElectrolyteEquilibrium, &
+					EquilibriumWaterContent, &
+					KusikMeissner, &
+					UpdateWaterActivity, &
+					AerosolPH, &
+					SortAerosolAtGridPointForCoagulation, &
+					ParticleDensity, &
+					AerosolModes, &
+					ReynoldsNumber
 	USE	ModelParameters
 		
 	IMPLICIT NONE
 
 	!! External Variables
-	!! External Variables
-	INTEGER           :: XP, YP, ZP
 	INTEGER :: WhichRxn, ReturnType
 	REAL*8 :: GasPhaseBurden, Temperature
 	REAL*8 :: OptErrorTolerance, GasPhaseBurden2
 
 	!! Local Variables
 	INTEGER :: I
-	REAL*8  :: II, Qdenom, Qnumer, Z, dX, EqRatio, ActivityCoefficients, ErrorTolerance, DissociatedScaling, DissociatedExp
+	REAL*8  :: II, Qdenom, Qnumer, Z, dX, EqRatio, ActivityCoefficients, &
+                   ErrorTolerance, DissociatedScaling, DissociatedExp
 	LOGICAL :: WaterRxn
 
 	!! SCSCSCSCSC
@@ -1359,14 +1303,13 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 	            DeltaSolid, FractionofMass, ZeroCheck, &
 				RemainingSolidtoEvaporate
 
-	REAL*8, ALLOCATABLE	::	Chem(:), NumConc(:), &
-							SurfArea(:)
+	REAL*8, ALLOCATABLE	::	Chem(:), NumConc(:), SurfArea(:)
 
 	TYPE(Particle), POINTER :: CurrentParticle
 
 
 		!Count # of bins
-		CurrentParticle => particles(XP, YP, ZP)%first
+		CurrentParticle => particles%first
 		NumBins = 0
 		8 if (associated(currentparticle)) then
 			NumBins = NumBins + 1
@@ -1379,7 +1322,7 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 		ALLOCATE(SurfArea(NumBins))
 		
 		!Calculate total surface area and surface area of each bin		
-		CurrentParticle => particles(XP, YP, ZP)%first
+		CurrentParticle => particles%first
 		AreaSum = 0				
 		I = 1
 		30 if (associated(currentparticle)) then
@@ -1404,13 +1347,13 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 
 	!! Calculate the total ammount of the solid species initially
 	!! present in the aerosol.
-		CurrentParticle => particles(XP, YP, ZP)%first
+		CurrentParticle => particles%first
 		SolidSum = 0				
 		40 if (associated(currentparticle)) then
     								
 				!Units of mol/cm3
 				IF (CurrentParticle%NumberofParticles .GT. 0.) THEN
-					SolidSum = SolidSum + CurrentParticle%AqChems(DissolutionData(WhichRxn,3))*CurrentParticle%NumberofParticles
+					SolidSum = SolidSum + CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3)))*CurrentParticle%NumberofParticles
 					!WRITE(*,*) "SolidSum", WhichRxn, SolidSum
 				END IF
 				if (associated(currentparticle%next)) then
@@ -1430,27 +1373,14 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 	!! THIS IS NOT THE TOLERANCE FOR THE EQUILIBRATION
 	!! CHECK (WHICH USES THE GLOBAL VALUE), RATHER IT 
 	!! IS THE VALUE WE EQUILIBRATE TO IF THAT CHECK FAILS	
-	!IF (PRESENT(OptErrorTolerance)) THEN
-		ErrorTolerance = OptErrorTolerance
-	!ELSE
-	!	IF (WhichRxn .EQ. 1) THEN
-	!		ErrorTolerance = WaterContentPrecision
-	!	ELSE
-	!		ErrorTolerance = AqThermoEquilibriumError / 2.
-	!	END IF
-	!END IF
+	ErrorTolerance = OptErrorTolerance
 
 	IF (DissolutionData(WhichRxn,11) .NE. 6.)			   &
 		CALL ERROR("You can only call EquilibrateGasSolidReactions() for a reaction that involves two gas phase species (reaction "// &
 				   "type = 6)")
-
-	!IF (DissolutionData(WhichRxn,11) .EQ. 6. .AND. .NOT.PRESENT(GasPhaseBurden2))    &
-	!	CALL ERROR("If calling EquilibrateGasSolidReactions() for a reaction that involves two gas phase species (reaction "// &
-	!			   "type = 6), you must provide the second gas phase chemical's burden -- which is an optional argument -- "// &
-	!			   "and you have not.")
 		
-	!!Matt Alvarado added this to check for solid-gas reactions that are already in
-	!!Equilibrium, as the solid conc = 0.0 and the gas-phase is subsaturated	
+!!Matt Alvarado added this to check for solid-gas reactions that are already in
+!!Equilibrium, as the solid conc = 0.0 and the gas-phase is subsaturated	
 	IF (DissolutionData(WhichRxn,11) .EQ. 6.)  THEN
 		!WRITE(*,*) "Check Started for Reaction: ", WhichRxn
 		Eq = HenrysLaw (Temperature, WhichRxn)
@@ -1472,26 +1402,27 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 	ReturnType = 1
 	!WRITE(*,*) "Start EquilibrateDissolutionReaction for Reaction: ", WhichRxn
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! This routine generally follows the Mass Flux Iteration method reviewed in Jacobson,  !!
-	!! 1999 (the textbook) and reviewed earlier in Jacobson et al. 1996, and Villars 1959   !!
-	!!																						!!
-	!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium within aerosols !!
-	!!    and nonequilibrium between gases and aerosols, Journal of Geophysical Research,	!!
-	!!    101 (D4), 9079-9091, 1996.														!!
-	!!																						!!
-	!! Villars, D.S., A method of successive approximations for computing combustion		!!
-	!!    equilibria on a high speed digital computer, Journal of Physical Chemistry,		!!
-	!!    63, 521-5, 1959.																	!!
-	!!																						!!
-	!! STEP 1: Find the most aberrant ratio of concentration to stoicheometric coefficient  !!
-	!! (cf., Jacobson 1999, p.497)															!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This routine generally follows the Mass Flux Iteration method reviewed!! 
+!! in Jacobson, 1999 (the textbook) and reviewed earlier in              !!
+!! Jacobson et al. 1996, and Villars 1959                                !!
+!!                                                                       !!
+!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium  !!
+!!       within aerosols and nonequilibrium between gases and aerosols,  !!
+!!       Journal of Geophysical Research, 101 (D4), 9079-9091, 1996.     !!
+!!									 !!
+!! Villars, D.S., A method of successive approximations for computing    !!
+!!    combustion equilibria on a high speed digital computer,            !!
+!!    Journal of Physical Chemistry, 63, 521-5, 1959.			 !!
+!!									 !!
+!! STEP 1: Find the most aberrant ratio of concentration to              !!
+!!         stoicheometric coefficient  (cf., Jacobson 1999, p.497)	 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!! Check for already equilibrated (either by none of 
-	!! the species being present or explicit equilibrium)
-	!!
-	!! And then pre-calculate the Qnumer and Qdenomer
+!! Check for already equilibrated (either by none of 
+!! the species being present or explicit equilibrium)
+!!
+!! And then pre-calculate the Qnumer and Qdenomer
 
 	!WRITE(*,*) "Before Eq Ratio"
 	!Partial Pressures of gas-phase species in mbar
@@ -1501,7 +1432,7 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 
 	EqRatio = 1.0 / Eq / P1 / P2
 	
-	WRITE(*,*) "Initial EqRatio: ", EqRatio
+	!WRITE(*,*) "Initial EqRatio: ", EqRatio
 		
 	IF  ((ABS(EqRatio-1) .LT. 0.005)) THEN
 		ReturnType = 2
@@ -1528,7 +1459,7 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 	!WRITE(*,*) "Check 5"
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! STEP 3: Adjust Molalities: !!
-	!!							  !!
+	!!			      !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	NewSolidSum	= NewSolidSum + dX
@@ -1566,13 +1497,6 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 	!! Just exit if no convergence (MJA, 100507)
 	IF (I .GT. 1000) THEN
 		EXIT
-		!WRITE(*,*) EqRatio
-		!WRITE(*,*) GasPhaseBurden/ Avogadro 
-		!WRITE(*,*) GasPhaseBurden2/ Avogadro 
-		!CALL ERROR("Apparent Non Convergence in EquilibrateGasSolidReactions().  Trying to converge "// &
-		!		   "towards equilibrium in dissolution reaction number "//TRIM(INT2STR(WhichRxn))//       &
-		!		   " (where 1 is water dissolution and the rxns above that are as ordered in the input deck Dissolution.in).")
-
 	END IF
 
 	!WRITE(*,*) "Check 11"
@@ -1591,12 +1515,11 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 			Total = Total + SurfArea(I)/AreaSum
 		END DO
 		IF (Total .LT. 0.999999 .OR. Total .GT. 1.000001) THEN
-			WRITE(*,*) "Condensing Error."
 			CALL ERROR("Error in EquilibrateGasSolidReactions(). Area fractions do not sum to 1.")
 		END IF
 		
 		
-		CurrentParticle => particles(XP, YP, ZP)%first
+		CurrentParticle => particles%first
 		I = 1
 		20 if (associated(currentparticle)) then
     								
@@ -1604,7 +1527,7 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 
 			!Add solid
 			IF(CurrentParticle%NumberofParticles .GT. 0.0) THEN
-			CurrentParticle%AqChems(DissolutionData(WhichRxn,3)) = CurrentParticle%AqChems(DissolutionData(WhichRxn,3)) + DeltaSolid*FractionofMass/CurrentParticle%NumberofParticles
+			CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) + DeltaSolid*FractionofMass/CurrentParticle%NumberofParticles
 			END IF
 
 			I = I + 1
@@ -1619,12 +1542,12 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 
 		!Check if all solid is to evaporate
 		IF (NewSolidSum .LT. 1e-27) THEN
-			CurrentParticle => particles(XP, YP, ZP)%first
+			CurrentParticle => particles%first
 			I = 1
 			2 if (associated(currentparticle)) then
 
 				!Remove all solid
-				CurrentParticle%AqChems(DissolutionData(WhichRxn,3)) = 0.0
+				CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) = 0.0
 				I = I + 1
 
 				if (associated(currentparticle%next)) then
@@ -1647,13 +1570,13 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 
 			!Calculate the total surface area for the particles that still
 			!have the solid
-			CurrentParticle => particles(XP, YP, ZP)%first
+			CurrentParticle => particles%first
 			AreaSum = 0				
 			I = 1
 			3 if (associated(currentparticle)) then
     								
 				!Particle has some solid left
-				IF(CurrentParticle%AqChems(DissolutionData(WhichRxn,3)) .GT. 0.) THEN
+				IF(CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.) THEN
 					
 					AreaSum = AreaSum + SurfArea(I)
 
@@ -1669,11 +1592,11 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 			!Check to make sure fractions sum to 1
 			Total = 0.0
 			
-			CurrentParticle => particles(XP, YP, ZP)%first
+			CurrentParticle => particles%first
 			I = 1
 			111 if (associated(currentparticle)) then
 				
-				IF(CurrentParticle%AqChems(DissolutionData(WhichRxn,3)) .GT. 0.) THEN
+				IF(CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.) THEN
 					Total = Total + SurfArea(I)/AreaSum
 				END IF
 
@@ -1686,29 +1609,28 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 			end if 
 			
 			IF (Total .LT. 0.999999 .OR. Total .GT. 1.000001) THEN
-				WRITE(*,*) "Evaporate Error."
 				CALL ERROR("Error in EquilibrateGasSolidReactions(). Area fractions do not sum to 1.")		
 			END IF
 			
-			CurrentParticle => particles(XP, YP, ZP)%first
+			CurrentParticle => particles%first
 			I = 1
 			1 if (associated(currentparticle)) then
 
-				IF(CurrentParticle%AqChems(DissolutionData(WhichRxn,3)) .GT. 0.) THEN
+				IF(CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.) THEN
 					FractionofMass = SurfArea(I)/AreaSum
 				ELSE
 					FractionofMass = 0.0 !For particles with no solid
 				END IF
 				
 				!Evaporate solid, checking to make sure it does not go below 0
-				ZeroCheck = CurrentParticle%AqChems(DissolutionData(WhichRxn,3)) &
+				ZeroCheck = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) &
 																   - RemainingSolidtoEvaporate*FractionofMass/CurrentParticle%NumberofParticles
 				IF (ZeroCheck .GE. 0.0) THEN 
-					CurrentParticle%AqChems(DissolutionData(WhichRxn,3)) = ZeroCheck
+					CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) = ZeroCheck
 					RemainingSolidtoEvaporate = RemainingSolidtoEvaporate - RemainingSolidtoEvaporate*FractionofMass
 				ELSE
-					RemainingSolidtoEvaporate = RemainingSolidtoEvaporate - CurrentParticle%AqChems(DissolutionData(WhichRxn,3))*CurrentParticle%NumberofParticles 
-					CurrentParticle%AqChems(DissolutionData(WhichRxn,3)) = 0.0
+					RemainingSolidtoEvaporate = RemainingSolidtoEvaporate - CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3)))*CurrentParticle%NumberofParticles 
+					CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) = 0.0
 				END IF	 
 				
 				I = I + 1
@@ -1734,56 +1656,55 @@ SUBROUTINE EquilibrateGasSolidReactions(XP, YP, ZP, GasPhaseBurden, WhichRxn, Te
 END SUBROUTINE EquilibrateGasSolidReactions
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! EQUILIBRATE ALL OF THE PARTICLES AT A GRIDPOINT WITH THE	   !!
-!! GAS PHASE, INCLUDING ORGANICS.												   !!
-!!															   !!
-!! The default is to not include water equilibration in this   !!
-!! routine                                                     !!
-!!                                                             !!!!!!
+!! GAS PHASE, INCLUDING ORGANICS.				   !!
+!!								   !!
+!! The default is to not include water equilibration in this       !!
+!! routine                                                         !!
+!!                                                                 !!
 !! ForceWaterEquilibrium will make the routine use the equilibrium !!
 !! approach no matter whether the RH is above the threshold that   !!
 !! would tell the routine to use the integration approach.         !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibrium, WaterOpenSystem)
+SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
+                ForceWaterEquilibrium, WaterOpenSystem)
 
-	USE Aerosols, ONLY : Particles,							&
-						 Particle,							&
-						 ParticleArray,						&
-						 KusikMeissner,						&
-						 FindElectrolyteEquilibrium,		&
-						 ReformElectrolyte,					&
-						 RecalculateRadius,					&
-						 EquilibriumWaterContent,			&
-						 SurfaceTension,					&
-						 DumpParticleContentsAtError,		&
-						 SortAerosolAtGridPointForCondensation, &
-						 PrintAqEqReaction
+	USE Aerosols, ONLY :    Particles,		&
+			        Particle,		&
+				ParticleArray,		&
+				KusikMeissner,		&
+				FindElectrolyteEquilibrium,		&
+				ReformElectrolyte,	&
+				RecalculateRadius,	&
+				EquilibriumWaterContent,&
+				SurfaceTension,		&
+				DumpParticleContentsAtError,		&
+				SortAerosolAtGridPointForCondensation,  &
+				PrintAqEqReaction
 
 
-	USE GridPointFields, ONLY : GetTemp,					&
-								LocateGridPoint,			& 
-								GasPhaseChemGridIndex,		&
-								GetGridCellChemBurden,		&
-								ReplaceGridCellChemBurden,	&
-								GetRelativeHumidity, &
-                                                                GetSatVapBurden
+	USE GridPointFields, ONLY : GetTemp,		        &
+				    GetGridCellChemBurden,	&
+				    ReplaceGridCellChemBurden,	&
+				    GetRelativeHumidity,        &
+                                    GetSatVapBurden
 
-	USE Chemistry,		 ONLY : HowManyEvolveGasChems, &
-								HowManyAqEqReactions, &
-								AqEquilibriaList, &
-								HowManyAqChems, &
-								HowManyAqCations, &
-								HowManyAqAnions
+	USE Chemistry,	 ONLY : HowManyEvolveGasChems, &
+				HowManyAqEqReactions, &
+				AqEquilibriaList, &
+				HowManyAqChems, &
+				HowManyAqCations, &
+				HowManyAqAnions
 
 	USE ModelParameters, ONLY : AqThermoNumbAllowedIterations,	&
-								AqThermoEquilibriumError, &
-								ThermoBulkMode, &
-								WaterContentPrecision, &
-								DoDissolutionFlag, &
-								DoHydrophobicOrgDissolutionFlag, &
-								DoHydrophilicOrgDissolutionFlag, &
-								ZSROrgWater, Metastable
+					AqThermoEquilibriumError, &
+					ThermoBulkMode, &
+					WaterContentPrecision, &
+					DoDissolutionFlag, &
+					DoHydrophobicOrgDissolutionFlag, &
+					DoHydrophilicOrgDissolutionFlag, &
+					ZSROrgWater, Metastable
 
 	USE Time, ONLY : CurrentTime, BeginningTime
 
@@ -1792,44 +1713,33 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 	IMPLICIT NONE
 
 	!! External Variables
-	INTEGER           :: X, Y, Z
 	LOGICAL :: EquilibrateWater, ForceWaterEquilibrium, WaterOpenSystem
 
 	!! Internal Variables
 	LOGICAL :: Equilibrated, RxnEquilibrated, LocalEquilibrateWater
 	LOGICAL :: LocalForceWaterEquilibrium, LocalWaterOpenSystem
-	REAL*8  :: GasPhaseBurden, GasPhaseBurden2, Temperature, XX(3), II, TotalMoles, WaterSatBurden
+	REAL*8  :: GasPhaseBurden, GasPhaseBurden2, Temperature, &
+                   II, TotalMoles, WaterSatBurden
 	REAL*8  :: S1MassFracs(2), S2MassFracs(6), S3MassFracs(2), &
-				S4MassFracs(3), S5MassFracs(2), S6MassFracs(3), &
-				S7MassFracs(8), S8MassFracs(4), S9MassFracs(4), &
-				S10MassFracs(4), InitialBurden(10), OrgWaterContent, InitWater
-	INTEGER :: I, J, K, L, M, Q, HowManyLinks, ReturnType, OrgRxnIndex, AqRxnIndex, StoreReturn
+		S4MassFracs(3), S5MassFracs(2), S6MassFracs(3), &
+		S7MassFracs(8), S8MassFracs(4), S9MassFracs(4), &
+		S10MassFracs(4), InitialBurden(10), OrgWaterContent, InitWater
+	INTEGER :: I, J, K, L, M, Q, HowManyLinks, ReturnType, OrgRxnIndex, &
+                  AqRxnIndex, StoreReturn
 	TYPE(Particle),POINTER :: Current
 
-	!! Get optional arguments	
-	!IF (PRESENT(EquilibrateWater)) THEN
-		LocalEquilibrateWater = EquilibrateWater
-	!ELSE
-	!	LocalEquilibrateWater = .FALSE.
-	!END IF
+	LocalEquilibrateWater = EquilibrateWater
 
-	!IF (PRESENT(ForceWaterEquilibrium)) THEN
-		LocalForceWaterEquilibrium = ForceWaterEquilibrium
-	!ELSE
-	!	LocalForceWaterEquilibrium = .FALSE.
-	!END IF
+	LocalForceWaterEquilibrium = ForceWaterEquilibrium
 
-	!IF (PRESENT(WaterOpenSystem)) THEN
-		LocalWaterOpenSystem = WaterOpenSystem
-	!ELSE
-	!	LocalWaterOpenSystem = .FALSE.
-	!END IF
-	!! Sort the gridcell, pushing all empty sections to the end
-	CALL SortAerosolAtGridPointForCondensation (X, Y, Z)
+	LocalWaterOpenSystem = WaterOpenSystem
+
+	!! Sort the aerosol, pushing all empty sections to the end
+	CALL SortAerosolAtGridPointForCondensation ()
 
 	!! Count the number of links
 	HowManyLinks = 0
-	Current => Particles(X,Y,Z)%First
+	Current => Particles%First
 	IF (ASSOCIATED(Current)) THEN
 10		IF (Current%NumberOfParticles .GT. 1e-6 ) &
 			HowManyLinks = HowManyLinks + 1
@@ -1840,18 +1750,18 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 	END IF
 
 	!Equilibrate gas-phase sulfate (using mass-transfer rate to remove non-uniqueness)
-	IF(DoDissolutionFlag) CALL EquilibrateSulfate(X, Y, Z)
+	IF(DoDissolutionFlag) CALL EquilibrateSulfate()
 		
 	!Calculate surrogate concentrations and 
 	!mass fractions of organics contributing to surrogates, and
 	!Store initial surrogate gas phase burdens in a dummy vector
-	IF(DoHydrophobicOrgDissolutionFlag .OR. DoHydrophilicOrgDissolutionFlag) &
-		CALL CalculateSurrogateGasConc(X, Y, Z, S1MassFracs, S2MassFracs, &
+	IF(DoHydrophobicOrgDissolutionFlag.OR.DoHydrophilicOrgDissolutionFlag)&
+		CALL CalculateSurrogateGasConc(S1MassFracs, S2MassFracs, &
                 S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-				S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+		S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, &
+                InitialBurden)
 
-	XX = LocateGridPoint (X, Y, Z, GasPhaseChemGridIndex)
-	Temperature = GetTemp(XX(1),XX(2),XX(3))
+	Temperature = GetTemp()
 
 	Equilibrated = .FALSE.
 	K = 0
@@ -1875,12 +1785,12 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 				
 				!Get the gas phase concentration from the grid
 				IF (I .LE. HowManyDissolutionReactions) THEN
-					GasPhaseBurden = GetGridCellChemBurden (X, Y, Z, INT(DissolutionData(I,1)))
-					IF (DissolutionData(I,11) .EQ. 6.) GasPhaseBurden2 = GetGridCellChemBurden (X, Y, Z, INT(DissolutionData(I,2)))
+					GasPhaseBurden = GetGridCellChemBurden ( INT(DissolutionData(I,1)))
+					IF (DissolutionData(I,11) .EQ. 6.) GasPhaseBurden2 = GetGridCellChemBurden ( INT(DissolutionData(I,2)))
 				
 					!Equilibrate gas-solid reactions (Type 6) using surface area to remove non-uniqueness problem
 					IF (DissolutionData(I,11) .EQ. 6.) THEN
-						CALL EquilibrateGasSolidReactions(X, Y, Z, GasPhaseBurden, I, Temperature, ReturnType, &
+						CALL EquilibrateGasSolidReactions( GasPhaseBurden, I, Temperature, ReturnType, &
 										   GasPhaseBurden2 = GasPhaseBurden2, OptErrorTolerance=AqThermoEquilibriumError/2.)
 						IF (ReturnType .NE. 2) THEN
 							RxnEquilibrated = .FALSE.
@@ -1899,7 +1809,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 
 					RxnEquilibrated = .TRUE.
 
-					Current => Particles(X,Y,Z)%First
+					Current => Particles%First
 					DO J = 1, HowManyLinks
 									
 						!Skip bins with too few particles
@@ -1974,7 +1884,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 							ELSE
 								!Equilibrate the reaction for one particle
 								!WRITE(*,*) I, GasphaseBurden
-								WaterSatBurden = GetSatVapBurden (XX(1), XX(2), XX(3))
+								WaterSatBurden = GetSatVapBurden ()
                                                                 CALL EquilibrateDissolutionReaction (GasPhaseBurden, I, &
                                                                       Current, Temperature, ReturnType, &
                                                                       WaterSatBurden=WaterSatBurden, GasPhaseBurden2=0.0, OptErrorTolerance=AqThermoEquilibriumError/2.)				
@@ -1985,7 +1895,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 							!! Make a more refined guess if still equilibrating late in the game
 							!! (That is, force it to equilibrate much closer to 1 each time through)
 							IF ((K .GT. 25 .OR. L .GT. 10) .AND. ReturnType .NE. 2) THEN
-								WaterSatBurden = GetSatVapBurden (XX(1), XX(2), XX(3))
+								WaterSatBurden = GetSatVapBurden ()
                                                                 IF (DissolutionData(I,11) .EQ. 6.) THEN
 									CYCLE !Already equilibrated gas-solid reactions
 								ELSE
@@ -2034,7 +1944,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 				
 
 					IF (L .GT. AqThermoNumbAllowedIterations) THEN
-						CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, &
+						CALL DumpParticleContentsAtError(Particles%First, &
                                                      "UnEquilableParticle.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.)
@@ -2051,11 +1961,11 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 				IF (I .LE. HowManyDissolutionReactions) THEN
 					!! Replace the gas phase chemical concentrations
 					IF (INT(DissolutionData(I,1)) .LE. HowManyEvolveGasChems) THEN
-						CALL ReplaceGridCellChemBurden (X, Y, Z, INT(DissolutionData(I,1)), GasPhaseBurden)
+						CALL ReplaceGridCellChemBurden ( INT(DissolutionData(I,1)), GasPhaseBurden)
 					END IF
 
 					IF (INT(DissolutionData(I,2)) .LE. HowManyEvolveGasChems .AND. DissolutionData(I,11) .EQ. 6.)	&
-						CALL ReplaceGridCellChemBurden (X, Y, Z, INT(DissolutionData(I,2)), GasPhaseBurden2)
+						CALL ReplaceGridCellChemBurden ( INT(DissolutionData(I,2)), GasPhaseBurden2)
 				END IF
 						
 			!Second, equilibrate the hydrophobic organic reactions
@@ -2067,7 +1977,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 				!WRITE(*,*) "Org Rxn #: ", OrgRxnIndex
 
 				!Get the gas-phase concentrations from the grid
-				GasPhaseBurden = GetGridCellChemBurden (X, Y, Z, INT(OrganicDissolutionData(OrgRxnIndex,1)))
+				GasPhaseBurden = GetGridCellChemBurden ( INT(OrganicDissolutionData(OrgRxnIndex,1)))
 				
 				!! Loop over all of the particles until 
 				!! this particular reaction is happy
@@ -2075,7 +1985,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 
 					RxnEquilibrated = .TRUE.
 
-					Current => Particles(X,Y,Z)%First
+					Current => Particles%First
 					DO J = 1, HowManyLinks
 						
 						!Skip bins with too few particles
@@ -2108,7 +2018,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 					END DO
 
 					IF (L .GT. AqThermoNumbAllowedIterations) THEN
-						CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
+						CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
 						CALL ERROR ("EquilibrateGridPointAll() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
@@ -2121,13 +2031,13 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 			
 				!! Replace the surrogate gas phase chemical concentrations
 				IF (INT(OrganicDissolutionData(OrgRxnIndex,1)) .LE. HowManyEvolveGasChems)										&
-					CALL ReplaceGridCellChemBurden (X, Y, Z, INT(OrganicDissolutionData(OrgRxnIndex,1)), GasPhaseBurden)			
+					CALL ReplaceGridCellChemBurden ( INT(OrganicDissolutionData(OrgRxnIndex,1)), GasPhaseBurden)			
 		
 			ELSE IF (I .GT. HowManyDissolutionReactions+1+HowManyOrganicDissolutionReactions &
 					.AND. DoHydrophilicOrgDissolutionFlag) THEN
 
 				AqRxnIndex = I - (HowManyDissolutionReactions+1+HowManyOrganicDissolutionReactions)
-				GasPhaseBurden = GetGridCellChemBurden (X, Y, Z, INT(AqOrganicDissolutionData(AqRxnIndex,1)))
+				GasPhaseBurden = GetGridCellChemBurden ( INT(AqOrganicDissolutionData(AqRxnIndex,1)))
 
 				!WRITE(*,*) "Aq Org Rxn #: ", AqRxnIndex
 
@@ -2137,7 +2047,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 
 					RxnEquilibrated = .TRUE.
 
-					Current => Particles(X,Y,Z)%First
+					Current => Particles%First
 					DO J = 1, HowManyLinks
 						
 						!Skip bins with too few particles
@@ -2171,7 +2081,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 					END DO
 
 					IF (L .GT. AqThermoNumbAllowedIterations) THEN
-						CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
+						CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
 						CALL ERROR ("EquilibrateGridPointAll() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
@@ -2184,14 +2094,14 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 			
 				!! Replace the surrogate gas phase chemical concentrations
 				IF (INT(AqOrganicDissolutionData(AqRxnIndex,1)) .LE. HowManyEvolveGasChems)										&
-					CALL ReplaceGridCellChemBurden (X, Y, Z, INT(AqOrganicDissolutionData(AqRxnIndex,1)), GasPhaseBurden)			
+					CALL ReplaceGridCellChemBurden ( INT(AqOrganicDissolutionData(AqRxnIndex,1)), GasPhaseBurden)			
 					
 			END IF	 
 			
 		END DO !Rxn #
 			
 		IF (K .GT. AqThermoNumbAllowedIterations) THEN
-			CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle.txt", InRelativeHumidity=.TRUE., &
+			CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
 			CALL ERROR ("EquilibrateGridPoint() in CondensationRelatedFunctions.h tried to equilibrate all of the dissolution "// &
@@ -2205,7 +2115,7 @@ SUBROUTINE EquilibrateGridPointAll(X, Y, Z, EquilibrateWater, ForceWaterEquilibr
 
 	!Update Gas Phase Concentrations of individual organics
 	IF(DoHydrophobicOrgDissolutionFlag .OR. DoHydrophilicOrgDissolutionFlag) &
-		CALL UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
+		CALL UpdateGasPhaseOrganics( S1MassFracs, S2MassFracs, &
             S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
 			S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)	
 	
@@ -2217,30 +2127,26 @@ END SUBROUTINE EquilibrateGridPointAll
 !! (c) Matt Alvarado, 2006
 SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 
-	USE Aerosols, ONLY : Particles,							&
-						 Particle,							&
-						 ParticleArray,						&
-						 EquilibriumWaterContentAmount,     &
-						 DumpParticleContentsAtError, &
-						 FindElectrolyteEquilibrium
+	USE Aerosols, ONLY : Particles,					&
+				Particle,				&
+				ParticleArray,				&
+				EquilibriumWaterContentAmount,     &
+				DumpParticleContentsAtError, &
+				FindElectrolyteEquilibrium
 
 	USE ModelParameters, ONLY : AqThermoNumbAllowedIterations,	&
-								AqThermoEquilibriumError, &
-								WaterContentPrecision, &
-								Avogadro, &
-								MinimumWater
+					AqThermoEquilibriumError, &
+					WaterContentPrecision, &
+					Avogadro, &
+					MinimumWater
 
 	USE InfrastructuralCode, ONLY : ERROR, WARN, INT2STR, REAL2STR
 
-	USE GridPointFields, ONLY : GetTemp,					&
-								LocateGridPoint,			& 
-								GasPhaseChemGridIndex,		&
-								GetGridCellChemBurden,		&
-								ReplaceGridCellChemBurden, &
-								GetRelativeHumidity, &
-								GetGasBurden, &
-								ClosestGridPoint
-	
+	USE GridPointFields, ONLY : GetTemp,				&
+					GetGridCellChemBurden,		&
+					ReplaceGridCellChemBurden, &
+					GetRelativeHumidity, &
+					GetGasBurden	
 	IMPLICIT NONE
 
 	!! External Variables
@@ -2251,10 +2157,10 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 	!! Internal Variables
 	LOGICAL :: Equilibrated
 	REAL*8  :: OrgWaterContent, InorgWaterContent, CalcWater, EqRatio
-	REAL*8  :: GasWaterContent, XX(3), Temperature, RH, DeltaWater
+	REAL*8  :: GasWaterContent, Temperature, RH, DeltaWater
 	REAL*8  :: Qnumer, Qdenom, dX, Z_MFI, NewBurden, ErrorTolerance, &
 				Upper, Lower, Initial, Final
-	INTEGER :: I, X, Y, Z 
+	INTEGER :: I
 	LOGICAL :: ForceEquilibrium, Scaffolding
 
 	Scaffolding = .FALSE.
@@ -2265,10 +2171,8 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 		RETURN
 	END IF
 	
-	CALL ClosestGridPoint (Current%Location(1),Current%Location(2),Current%Location(3),GasPhaseChemGridIndex,X,Y,Z)
-	XX = LocateGridPoint (X, Y, Z, GasPhaseChemGridIndex)
-	Temperature = GetTemp(XX(1),XX(2),XX(3))
-	RH = GetRelativeHumidity(XX(1),XX(2),XX(3))
+	Temperature = GetTemp()
+	RH = GetRelativeHumidity()
 
 	IF(Scaffolding) WRITE(*,*) "Check 2"
 	!Calculate equilibrium orgabnic water content at this RH
@@ -2317,7 +2221,7 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 	ELSE 	
 		!! CLOSED SYSTEM
 		!Just make current water equal calc water and return
-			GasWaterContent = GetGasBurden (XX(1), XX(2), XX(3), 1)/Avogadro/Current%NumberofParticles		
+			GasWaterContent = GetGasBurden (1)/Avogadro/Current%NumberofParticles		
 			!Scaled to be mol H2O in gas phase per particle
 				
 			DeltaWater = CalcWater - Current%AqChems(1)
@@ -2327,10 +2231,10 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 			Current%AqChems(1) = Current%AqChems(1) + DeltaWater		
 			GasWaterContent = GasWaterContent - DeltaWater
 			NewBurden = GasWaterContent*Avogadro*Current%NumberofParticles
-			CALL ReplaceGridCellChemBurden (X, Y, Z, 1, NewBurden)
+			CALL ReplaceGridCellChemBurden ( 1, NewBurden)
 			
 			!Get new RH
-			RH = GetRelativeHumidity(XX(1),XX(2),XX(3))
+			RH = GetRelativeHumidity()
 
 			!Calculate equilibrium organic water content at this RH
 			OrgWaterContent = HydrophilicOrganicWaterContent(Current, Temperature, RH)
@@ -2348,7 +2252,7 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 		
 			!WRITE(*,*) "Water Content: ", Current%AqChems(1), I
 			!WRITE(*,*) "SOA1 Content: ", Current%AqOrgChems(9)
-			GasWaterContent = GetGasBurden (XX(1), XX(2), XX(3), 1)/Avogadro/Current%NumberofParticles		
+			GasWaterContent = GetGasBurden (1)/Avogadro/Current%NumberofParticles		
 			!WRITE(*,*) "Gas Water: ", GasWaterContent
 			!WRITE(*,*) "Eq Ratio: ", ABS(1.0-EqRatio), 5*WaterContentPrecision
 		
@@ -2359,12 +2263,12 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 
 END SUBROUTINE EqAllWater
 
-SUBROUTINE DryParticleQuickly(XP,YP,ZP,InParticle)
+SUBROUTINE DryParticleQuickly(InParticle)
 
-	USE Aerosols, ONLY : Particles,							&
-						 Particle,							&
-						 ParticleArray,						&
-						 FindElectrolyteEquilibrium
+	USE Aerosols,    ONLY : Particles,		&
+				Particle,		&
+				ParticleArray,		&
+				FindElectrolyteEquilibrium
 
 	USE ModelParameters
 	USE GridPointFields, ONLY : AddToGridCellChemBurden
@@ -2373,7 +2277,6 @@ SUBROUTINE DryParticleQuickly(XP,YP,ZP,InParticle)
 
 	!! External Variables
 	TYPE(Particle),POINTER :: InParticle
-	INTEGER				   :: XP, YP, ZP
 
 	!!Internal Variables
 	REAL*8 :: LostWater
@@ -2381,55 +2284,53 @@ SUBROUTINE DryParticleQuickly(XP,YP,ZP,InParticle)
 
 	LostWater = InParticle%AqChems(1) - 1.2*MinimumWater
 	InParticle%AqChems(1) = InParticle%AqChems(1) - LostWater
-	CALL AddToGridCellChemBurden (XP, YP, ZP,1, LostWater*Avogadro*InParticle%NumberofParticles)
+	CALL AddToGridCellChemBurden (1, LostWater*Avogadro*InParticle%NumberofParticles)
 	CALL FindElectrolyteEquilibrium(InParticle, .TRUE., FirstEquilibration=.FALSE., ReturnType=GG)
 	RETURN
 
 END SUBROUTINE DryParticleQuickly
 
-!! This subroutine only equilibrates all the particles at a grid point internally.
-!! In this routine, only water is allowed to go between the gas and particle phases.
+!! This subroutine only equilibrates all the particles internally.
+!! In this routine, only water is allowed to go between 
+!! the gas and particle phases.
 !! The default is not to equilibrate water, but this can be changed
 !! by setting "EquilibrateWater" to .TRUE.
 !! Matt Alvarado, 08/28/06
-SUBROUTINE EquilibrateInternallyatGridPoint(X, Y, Z, EquilibrateWater, WaterOpenSystem)
+SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 
-	USE Aerosols, ONLY : Particles,							&
-						 Particle,							&
-						 ParticleArray,						&
-						 KusikMeissner,						&
-						 FindElectrolyteEquilibrium,		&
-						 ReformElectrolyte,					&
-						 RecalculateRadius,					&
-						 EquilibriumWaterContent,			&
-						 SurfaceTension,					&
-						 DumpParticleContentsAtError,		&
-						 SortAerosolAtGridPointForCondensation, &
-						 PrintAqEqReaction
+	USE Aerosols,    ONLY : Particles,		&
+				Particle,		&
+				ParticleArray,		&
+				KusikMeissner,		&
+				FindElectrolyteEquilibrium,	&
+				ReformElectrolyte,	&
+				RecalculateRadius,	&
+				EquilibriumWaterContent,&
+				SurfaceTension,		&
+				DumpParticleContentsAtError,	&
+				SortAerosolAtGridPointForCondensation, &
+				PrintAqEqReaction
 
-
-	USE GridPointFields, ONLY : GetTemp,					&
-								LocateGridPoint,			& 
-								GasPhaseChemGridIndex,		&
-								GetGridCellChemBurden,		&
-								ReplaceGridCellChemBurden,	&
-								GetRelativeHumidity
+	USE GridPointFields, ONLY : GetTemp,		&
+				    GetGridCellChemBurden,	&
+				    ReplaceGridCellChemBurden,	&
+				    GetRelativeHumidity
 
 	USE Chemistry,		 ONLY : HowManyEvolveGasChems, &
-								HowManyAqEqReactions, &
-								AqEquilibriaList, &
-								HowManyAqChems, &
-								HowManyAqCations, &
-								HowManyAqAnions
+					HowManyAqEqReactions, &
+					AqEquilibriaList, &
+					HowManyAqChems, &
+					HowManyAqCations, &
+					HowManyAqAnions
 
 	USE ModelParameters, ONLY : AqThermoNumbAllowedIterations,	&
-								AqThermoEquilibriumError, &
-								ThermoBulkMode, &
-								WaterContentPrecision, &
-								DoDissolutionFlag, &
-								DoHydrophobicOrgDissolutionFlag, &
-								DoHydrophilicOrgDissolutionFlag, &
-								ZSROrgWater
+					AqThermoEquilibriumError, &
+					ThermoBulkMode, &
+					WaterContentPrecision, &
+					DoDissolutionFlag, &
+					DoHydrophobicOrgDissolutionFlag, &
+					DoHydrophilicOrgDissolutionFlag, &
+					ZSROrgWater
 
 	USE Time, ONLY : CurrentTime, BeginningTime
 
@@ -2438,13 +2339,12 @@ SUBROUTINE EquilibrateInternallyatGridPoint(X, Y, Z, EquilibrateWater, WaterOpen
 	IMPLICIT NONE
 
 	!! External Variables
-	INTEGER           :: X, Y, Z
 	LOGICAL :: EquilibrateWater, WaterOpenSystem
 
 	!! Internal Variables
 	LOGICAL :: Equilibrated, RxnEquilibrated, LocalEquilibrateWater
 	LOGICAL :: LocalWaterOpenSystem, ParticleEquilibrated
-	REAL*8  :: Temperature, XX(3)
+	REAL*8  :: Temperature
 	INTEGER :: I, K, HowManyLinks, ReturnType
 	TYPE(Particle),POINTER :: Current
 
@@ -2463,10 +2363,10 @@ SUBROUTINE EquilibrateInternallyatGridPoint(X, Y, Z, EquilibrateWater, WaterOpen
 
 
 	!! Sort the gridcell, pushing all empty sections to the end
-	CALL SortAerosolAtGridPointForCondensation (X, Y, Z)
+	CALL SortAerosolAtGridPointForCondensation ()
 	!! Count the number of links
 	HowManyLinks = 0
-	Current => Particles(X,Y,Z)%First
+	Current => Particles%First
 	IF (ASSOCIATED(Current)) THEN
 10		IF (Current%NumberOfParticles .GT. 0. ) &
 			HowManyLinks = HowManyLinks + 1
@@ -2476,8 +2376,7 @@ SUBROUTINE EquilibrateInternallyatGridPoint(X, Y, Z, EquilibrateWater, WaterOpen
 			END IF
 	END IF
 
-	XX = LocateGridPoint (X, Y, Z, GasPhaseChemGridIndex)
-	Temperature = GetTemp(XX(1),XX(2),XX(3))
+	Temperature = GetTemp()
 
 	Equilibrated = .FALSE.
 	K = 0
@@ -2489,7 +2388,7 @@ SUBROUTINE EquilibrateInternallyatGridPoint(X, Y, Z, EquilibrateWater, WaterOpen
 		K = K + 1
 		Equilibrated = .TRUE.
 
-		Current => particles(X,Y,Z)%first
+		Current => particles%first
 		ParticleEquilibrated = .TRUE.
 		DO I = 1, HowManyLinks
 			IF(ZSROrgWater) THEN
@@ -2516,9 +2415,9 @@ SUBROUTINE EquilibrateInternallyatGridPoint(X, Y, Z, EquilibrateWater, WaterOpen
 				current => current%next
 			end if
 		END DO
-		WRITE(*,*) "Internal iterations", K	
+		
 		IF (K .GT. 200) THEN
-			CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle.txt", InRelativeHumidity=.TRUE., &
+			CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
 			CALL ERROR ("EquilibrateInternallyatGridPoint() in CondensationRelatedFunctions.h tried to equilibrate "// &
@@ -2531,7 +2430,7 @@ SUBROUTINE EquilibrateInternallyatGridPoint(X, Y, Z, EquilibrateWater, WaterOpen
 	END DO !NotinEq
 
 	!Recalculate Radii of particles (including empty ones)
-	Current => particles(X,Y,Z)%first
+	Current => particles%first
 	DO WHILE (associated(current))
 		CALL RecalculateRadius(Current)
 		current => current%next
@@ -2605,80 +2504,63 @@ REAL*8 FUNCTION RidderMethod(func,x1,x2,xacc)
 
 END FUNCTION RidderMethod
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Use Bisection to Match the ambient relative humidity !!
-!! to the local water activity.	Includes organics.							  !!
-!!															  !!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Use Bisection to Match the ambient relative humidity            !!
+!! to the local water activity.	Includes organics.		   !!
+!!							           !!
 !! ForceWaterEquilibrium will make the routine use the equilibrium !!
 !! approach no matter whether the RH is above the threshold that   !!
 !! would tell the routine to use the integration approach.         !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE EquilibriumWaterContentAll (InParticle, OpenSystem, ReturnType, ForceEquilibrium)
+SUBROUTINE EquilibriumWaterContentAll (InParticle, OpenSystem, &
+                 ReturnType, ForceEquilibrium)
 
-	USE Chemistry,			 ONLY : HowManyAqCations, HowManyAqAnions, HowManyAqChems
+	USE Chemistry,	ONLY : HowManyAqCations, HowManyAqAnions, & 
+	                       HowManyAqChems
 
-	USE ModelParameters,     ONLY : AqThermoNumbAllowedIterations,		 &
-									WaterContentPrecision,				 &
-									AerosolWaterEquilibriumRHThreshold,  &
-									OpenSystemForCondensation, Avogadro, &
-									SmallestAerosolPossible, MinimumWater
+	USE ModelParameters,     ONLY : AqThermoNumbAllowedIterations,	&
+					WaterContentPrecision,		&
+					AerosolWaterEquilibriumRHThreshold,  &
+					OpenSystemForCondensation, Avogadro, &
+					SmallestAerosolPossible, MinimumWater
 
 	USE InfrastructuralCode, ONLY : Error
 
-	USE GridPointFields,	 ONLY : GetRelativeHumidity, ClosestGridPoint,		&
-									GasPhaseChemGridIndex, GetGasBurden,		&
-									ReplaceGridCellChemBurden, LocateGridPoint
+	USE GridPointFields,	 ONLY : GetRelativeHumidity, &
+					GetGasBurden, &
+				        ReplaceGridCellChemBurden
 
-	USE Time,				 ONLY : CurrentTime, BeginningTime
+	USE Time,		ONLY : CurrentTime, BeginningTime
 
 	USE Aerosols
 	IMPLICIT NONE
 
 	!! External Variables
 	TYPE(PARTICLE),POINTER :: InParticle
-	LOGICAL      :: OpenSystem, ForceEquilibrium
+	LOGICAL     :: OpenSystem, ForceEquilibrium
 	INTEGER     :: ReturnType
 
 	!! Internal Variables 
-	REAL*8  :: InitialWaterContent, Residual, Change, ChangeFac, II, XX(3), RH
-	INTEGER :: I, N, Direction, X, Y, Z
+	REAL*8  :: InitialWaterContent, Residual, Change, ChangeFac, II, RH
+	INTEGER :: I, N, Direction
 	LOGICAL :: InternalOpenSystem, InternalForceEquilibrium
 
 	!! If this is an empty section, we have no truck with it
 	IF (InParticle%NumberOfParticles .EQ. 0 .OR. InParticle%Dry) RETURN
 
-	!IF (PRESENT(ReturnType)) 
         ReturnType = 2
 
-	!IF (PRESENT(EquilibToTHisRH)) THEN
-	!	IF(.NOT.OpenSystem) CALL ERROR("In SUBROUTINE EquilibriumWaterContent(), can't specify an externally imposed RH "// &
-	!								   "and ask for a closed system.  It isn't allowed.")
-	!	RH = EquilibToThisRH
-	!ELSE
-		RH = -1. ! Tell everyone to find it on their own
-	!END IF
+	RH = -1. ! Tell everyone to find it on their own
 
-	!! Check optional argument
-	!IF (.NOT.PRESENT(ForceEquilibrium)) THEN
-	!	InternalForceEquilibrium = .FALSE.
-	!ELSE
-		InternalForceEquilibrium = ForceEquilibrium
-	!END IF
+	InternalForceEquilibrium = ForceEquilibrium
 
 	IF (InternalForceEquilibrium .OR. &
 	    RH .LT. AerosolWaterEquilibriumRHThreshold) THEN
 
-	!! Check optional argument
-	!IF (.NOT.PRESENT(OpenSystem)) THEN
-	!	InternalOpenSystem = .FALSE.
-	!ELSE
-		InternalOpenSystem = OpenSystem
-	!END IF
+	InternalOpenSystem = OpenSystem
 
 	IF (.NOT.InternalOpenSystem .OR. .NOT.OpenSystemForCondensation) THEN
 		InitialWaterContent = InParticle%AqChems(1)
-		CALL ClosestGridPoint (InParticle%Location(1),InParticle%Location(2),InParticle%Location(3),GasPhaseChemGridIndex,X,Y,Z)
-		XX = LocateGridPoint(X, Y, Z, GasPhaseChemGridIndex)
 	END IF
 
 
@@ -2746,13 +2628,13 @@ SUBROUTINE EquilibriumWaterContentAll (InParticle, OpenSystem, ReturnType, Force
 	END DO
 	!WRITE(*,*) "Number of Search Iterations in EquilibriumWaterContentAll", N
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Move on to a seconary loop that refines our search !!!!!!!!!!!!!!!!!!!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Define Change initially as something that will retreat a full step   !!
-	!! in less than infinite steps of dividing in half and walking (as      !!
-	!! simply dividing the last step by two would)							!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Move on to a seconary loop that refines our search !!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Define Change initially as something that will retreat a full step   !!
+!! in less than infinite steps of dividing in half and walking (as      !!
+!! simply dividing the last step by two would)				!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	IF (ChangeFac .EQ. 0.5) THEN 
 		Change = InParticle%AqChems(1)
 	ELSE 
@@ -2764,9 +2646,9 @@ SUBROUTINE EquilibriumWaterContentAll (InParticle, OpenSystem, ReturnType, Force
 	DO
 		!! If it is a closed system, then we must hold it to account
 		IF (.NOT.InternalOpenSystem .AND. .NOT.OpenSystemForCondensation) THEN
-			InitialWaterContent = GetGasBurden (XX(1), XX(2), XX(3), 1) + InParticle%NumberOfParticles * (InitialWaterContent - &
+			InitialWaterContent = GetGasBurden (1) + InParticle%NumberOfParticles * (InitialWaterContent - &
 								  InParticle%AqChems(1)) * Avogadro
-			CALL ReplaceGridCellChemBurden (X, Y, Z, 1, InitialWaterContent)
+			CALL ReplaceGridCellChemBurden ( 1, InitialWaterContent)
 			InitialWaterContent = InParticle%AqChems(1)
 		END IF
 
@@ -2816,9 +2698,9 @@ SUBROUTINE EquilibriumWaterContentAll (InParticle, OpenSystem, ReturnType, Force
 
 		!! If it is a closed system, then we must hold it to account
 		IF(.NOT.OpenSystemForCondensation .AND. .NOT.InternalOpenSystem) THEN
-			InitialWaterContent = GetGasBurden (XX(1), XX(2), XX(3), 1) + InParticle%NumberOfParticles * (InitialWaterContent - &
+			InitialWaterContent = GetGasBurden (1) + InParticle%NumberOfParticles * (InitialWaterContent - &
 								  InParticle%AqChems(1)) * Avogadro
-			CALL ReplaceGridCellChemBurden (X, Y, Z, 1, InitialWaterContent)
+			CALL ReplaceGridCellChemBurden ( 1, InitialWaterContent)
 			InitialWaterContent = InParticle%AqChems(1)
 		END IF
 
@@ -2831,28 +2713,31 @@ END SUBROUTINE EquilibriumWaterContentAll
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Calculate the Water Activity of a Particular Aerosol Droplet !!
-!! of mixed electrolyte and organic composition.						    !!
-!!																!!
+!! of mixed electrolyte and organic composition.		!!
+!!								!!
 !! The PerturbWater input adds that amount of water (a multiple !!
 !! to the  particle, and is used to get a sense of the derivate !!
-!! of the residual water activity.								!!
+!! of the residual water activity.				!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE UpdateWaterActivityAll (InParticle) 
 
-	USE Chemistry,				ONLY : HowManyAqEqReactions, &
-									   HowManyAqChems,		 &
-									   HowManyAqCations,	 &
-									   HowManyAqAnions,		 &
-									   AqCationCharge,		 &
-									   AqAnionCharge,		 &
-									   AqEquilibriaList,	 &
-									   KMRef
-	USE ModelParameters,		ONLY : WaterContentPrecision, &
-									   MaxIonicStrKm,			&
-									   DoHydrophilicOrgDissolutionFlag
-	USE InfrastructuralCode,	ONLY : WARN, ERROR
-	USE Aerosols,				ONLY : GetPatwardhandAndKumarWeightings, &
-										CalcQ, CalculateIonicStrength
+	USE Chemistry,	 ONLY : HowManyAqEqReactions, &
+				HowManyAqChems,		 &
+				HowManyAqCations,	 &
+				HowManyAqAnions,	 &
+				AqCationCharge,		 &
+				AqAnionCharge,		 &
+				AqEquilibriaList,	 &
+				KMRef
+
+	USE ModelParameters,	ONLY : WaterContentPrecision,   &
+					MaxIonicStrKm,		&
+					DoHydrophilicOrgDissolutionFlag
+
+	USE InfrastructuralCode, ONLY : WARN, ERROR
+
+	USE Aerosols,		ONLY : GetPatwardhandAndKumarWeightings, &
+					CalcQ, CalculateIonicStrength
 
 	IMPLICIT NONE
 
@@ -2862,10 +2747,10 @@ SUBROUTINE UpdateWaterActivityAll (InParticle)
 	!! Internal Variables
 	INTEGER :: I, K, IERR, CatIndex, AnIndex
 	REAL*8  :: LogAw, Q(3),	Stoich(4), Charges(4),	&
-			   InorganicIntegral,					&	! The Value of the Integrated Value of the Inorganic Portion
-			   II, JJ,								&
-			   PatKumWeights(HowManyAqEqReactions,3), &
-			   IonicStrength, TempWaterAct
+		   InorganicIntegral,	&	
+		   II, JJ,		&
+		   PatKumWeights(HowManyAqEqReactions,3), &
+		   IonicStrength, TempWaterAct
 
 	EXTERNAL EvalIdLogGamma
 
@@ -2875,7 +2760,8 @@ SUBROUTINE UpdateWaterActivityAll (InParticle)
 	!! Update the ionic strength
 	CALL CalculateIonicStrength(InParticle)
 
-	!! This is the counter for the logorhythm of the Water Activity, to be added to within the loop
+	!! This is the counter for the logorhythm of the Water Activity, 
+        !! to be added to within the loop
 	LogAw = 0.
 
 	!! Get the weightings for the Patwardhan and Kumar mixing rule
@@ -2891,10 +2777,10 @@ SUBROUTINE UpdateWaterActivityAll (InParticle)
 		END IF
 		
 		
-		!! The integrated form of the Gibbs Duhem equation depends on q.  Compute
-		!! the temperature-corrected value now.
+		!! The integrated form of the Gibbs Duhem equation depends on q
+		!! Compute the temperature-corrected value now.
 		IF (AqEquilibriaList(K,18) .EQ. 0) THEN	
-			IF (AqEquilibriaList(K,17) .EQ. 0) THEN			! a simple reaction
+			IF (AqEquilibriaList(K,17) .EQ. 0) THEN	! simple reaction
 				Q(1) = CalcQ(FLOOR(AqEquilibriaList(K,16)), InParticle)
 				Q(2) = 0 ; Q(3) = 0
 				Stoich(1)  = 0 ; Stoich(2)  = 0 ; Stoich(3)  = 0 ; Stoich(4)  = 0
@@ -2918,19 +2804,15 @@ SUBROUTINE UpdateWaterActivityAll (InParticle)
 			Stoich(3) = ANINT((AqEquilibriaList(K,17) - FLOOR(AqEquilibriaList(K,17))) * 100000000.)/10000.
 			Stoich(4) = AqEquilibriaList(K,4) + AqEquilibriaList(K,5)
 
-			Charges(1) = AqCationCharge(KMRef(FLOOR(AqEquilibriaList(K,16)),2)) * &
-										abs(AqAnionCharge(KMRef(FLOOR(AqEquilibriaList(K,16)),3)))
-			Charges(2) = AqCationCharge(KMRef(FLOOR(AqEquilibriaList(K,18)),2)) * &
-										abs(AqAnionCharge(KMRef(FLOOR(AqEquilibriaList(K,18)),3)))
-			Charges(3) = AqCationCharge(KMRef(FLOOR(AqEquilibriaList(K,17)),2)) * &
-										abs(AqAnionCharge(KMRef(FLOOR(AqEquilibriaList(K,17)),3)))
+			Charges(1) = AqCationCharge(INT(KMRef(FLOOR(AqEquilibriaList(K,16)),2))) * &
+										abs(AqAnionCharge(INT(KMRef(FLOOR(AqEquilibriaList(K,16)),3))))
+			Charges(2) = AqCationCharge(INT(KMRef(FLOOR(AqEquilibriaList(K,18)),2))) * &
+										abs(AqAnionCharge(INT(KMRef(FLOOR(AqEquilibriaList(K,18)),3))))
+			Charges(3) = AqCationCharge(INT(KMRef(FLOOR(AqEquilibriaList(K,17)),2))) * &
+										abs(AqAnionCharge(INT(KMRef(FLOOR(AqEquilibriaList(K,17)),3))))
 			Charges(4) = AqCationCharge(FLOOR(AqEquilibriaList(K,2))) * &
 										abs(AqAnionCharge(FLOOR(AqEquilibriaList(K,3))))
-			!IF(K .EQ. 30) THEN
-				!WRITE(*,*) Stoich(1), Stoich(2), Stoich(3), Stoich(4)
-				!WRITE(*,*) Charges(1), Charges(2), Charges(3), Charges(4)
-				!WRITE(*,*) PatKumWeights(K,1), PatKumWeights(K,2), PatKumWeights(K,3) 
-			!END IF
+		
 		END IF
 
 		!!If the electrolyte is not present, cycle (Matt Alvarado, 6/30/06)
@@ -2947,11 +2829,11 @@ SUBROUTINE UpdateWaterActivityAll (InParticle)
 		
 		!! This routine is housed in DGAUS8.f.  It's an adaptive time step integrator, modified to pass dummy arguments to FUN.
 	    CALL DGAUS8 (EvalIdLogGamma,			&
-					 0., IonicStrength,	& ! Integration Limits
-					 Q, Stoich, Charges,		& ! Pass-Along Argument to EvalIdLogGamma
-					 WaterContentPrecision,	    & ! An error tolerance
-					 InorganicIntegral,			& ! The Result
-					 IERR)
+			0., IonicStrength,	& ! Integration Limits
+            Q, Stoich, Charges,	& ! Pass-Along Argument to EvalIdLogGamma
+	WaterContentPrecision,	    & ! An error tolerance
+		InorganicIntegral,			& ! The Result
+			IERR)
 
 
 		!! Consider the Flagged Result of the Integration
@@ -2991,14 +2873,14 @@ END SUBROUTINE UpdateWaterActivityAll
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Calculate the Residual Between the Ambient RH and the Local	!!
-!! Water Activity corrected for curvature effects				!!
-!! This version includes organics.								!!
+!! Water Activity corrected for curvature effects		!!
+!! This version includes organics.				!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION WaterResidualAll (InParticle, SpecifiedRH)
 
 	USE GridPointFields,     ONLY : GetRelativeHumidity
 	USE infrastructuralcode, ONLY : ERROR
-	USE Aerosols,			 ONLY : CurvatureCorrection
+	USE Aerosols,		 ONLY : CurvatureCorrection
 
 	IMPLICIT NONE
 
@@ -3011,74 +2893,69 @@ REAL*8 FUNCTION WaterResidualAll (InParticle, SpecifiedRH)
 
 	CALL UpdateWaterActivityAll(InParticle)
 
-	!IF (PRESENT(SpecifiedRH) .AND. SpecifiedRH .NE. -1.) THEN
 	IF (SpecifiedRH .NE. -1.) THEN
 		RH = SpecifiedRH
 	ELSE
-		RH = GetRelativeHumidity (InParticle%location(1),InParticle%location(2),InParticle%location(3))
+		RH = GetRelativeHumidity ()
 	END IF
 
 	!! The curvature effects are proscribed by a simple equation from 
 	!! Pruppacher and Klett:
 	!!  RH = a_w * exp(2 Mw surftens_s/a / RT density r)
-	WaterResidualAll = InParticle%WaterActivity*CurvatureCorrection(InParticle) &
+	WaterResidualAll = InParticle%WaterActivity* &
+                            CurvatureCorrection(InParticle) &
 					- RH
 
 	RETURN
 END FUNCTION WaterResidualAll
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! EQUILIBRATE ALL OF THE PARTICLES AT A GRIDPOINT WITH THE	   !!
-!! GAS PHASE, NH3, HNO3 and HCl only, no water or H2SO4.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
+!! EQUILIBRATE ALL OF THE PARTICLES AT A GRIDPOINT WITH THE    !!
+!! GAS PHASE, NH3, HNO3 and HCl only, no water or H2SO4.       !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE EquilibrateInorgGridPoint()
 
-	USE Aerosols, ONLY : Particles,							&
-						 Particle,							&
-						 ParticleArray,						&
-						 KusikMeissner,						&
-						 FindElectrolyteEquilibrium,		&
-						 ReformElectrolyte,					&
-						 RecalculateRadius,					&
-						 EquilibriumWaterContent,			&
-						 SurfaceTension,					&
-						 DumpParticleContentsAtError,		&
-						 SortAerosolAtGridPointForCondensation, &
-						 PrintAqEqReaction
+	USE Aerosols,    ONLY : Particles,		&
+			        Particle,		&
+				ParticleArray,		&
+				KusikMeissner,		&
+				FindElectrolyteEquilibrium,	&
+				ReformElectrolyte,	&
+				RecalculateRadius,	&
+				EquilibriumWaterContent,	&
+				SurfaceTension,			&
+				DumpParticleContentsAtError,	&
+				SortAerosolAtGridPointForCondensation, &
+				PrintAqEqReaction
 
 
-	USE GridPointFields, ONLY : GetTemp,					&
-								LocateGridPoint,			& 
-								GasPhaseChemGridIndex,		&
-								GetGridCellChemBurden,		&
-								ReplaceGridCellChemBurden,	&
-								GetRelativeHumidity, &
-                                                                GetSatVapBurden
+	USE GridPointFields, ONLY : GetTemp,		&
+				    GetGridCellChemBurden,		&
+				    ReplaceGridCellChemBurden,	&
+				    GetRelativeHumidity, &
+                                    GetSatVapBurden
 
 	USE Chemistry,		 ONLY : HowManyEvolveGasChems, &
-								HowManyAqEqReactions, &
-								AqEquilibriaList, &
-								HowManyAqChems, &
-								HowManyAqCations, &
-								HowManyAqAnions
+					HowManyAqEqReactions, &
+					AqEquilibriaList, &
+					HowManyAqChems, &
+					HowManyAqCations, &
+					HowManyAqAnions
 
 	USE ModelParameters, ONLY : AqThermoNumbAllowedIterations,	&
-								AqThermoEquilibriumError, &
-								ThermoBulkMode, &
-								WaterContentPrecision, &
-								DoDissolutionFlag, &
-								DoHydrophobicOrgDissolutionFlag, &
-								DoHydrophilicOrgDissolutionFlag, &
-								ZSROrgWater, Metastable
+					AqThermoEquilibriumError, &
+					ThermoBulkMode, &
+					WaterContentPrecision, &
+					DoDissolutionFlag, &
+					DoHydrophobicOrgDissolutionFlag, &
+					DoHydrophilicOrgDissolutionFlag, &
+					ZSROrgWater, Metastable
 
 	USE Time, ONLY : CurrentTime, BeginningTime
 
 	USE InfrastructuralCode, ONLY : ERROR, WARN, INT2STR, REAL2STR
 
 	IMPLICIT NONE
-
-	!! External Variables
-	INTEGER           :: X, Y, Z
 
 	!! Internal Variables
 	LOGICAL :: Equilibrated, RxnEquilibrated, LocalEquilibrateWater
@@ -3088,11 +2965,11 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 	TYPE(Particle),POINTER :: Current
 
 	!! Sort the gridcell, pushing all empty sections to the end
-	CALL SortAerosolAtGridPointForCondensation (X, Y, Z)
+	CALL SortAerosolAtGridPointForCondensation ()
 
 	!! Count the number of links
 	HowManyLinks = 0
-	Current => Particles(X,Y,Z)%First
+	Current => Particles%First
 	IF (ASSOCIATED(Current)) THEN
 10		IF (Current%NumberOfParticles .GT. 1e-6 ) &
 			HowManyLinks = HowManyLinks + 1
@@ -3102,8 +2979,7 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 			END IF
 	END IF
 		
-	XX = LocateGridPoint (X, Y, Z, GasPhaseChemGridIndex)
-	Temperature = GetTemp(XX(1),XX(2),XX(3))
+	Temperature = GetTemp()
 
 	Equilibrated = .FALSE.
 	K = 0
@@ -3112,13 +2988,11 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 	DO WHILE (.NOT.Equilibrated)
 
 		K = K + 1
-		WRITE(*,*) "Number of Interations of EquilibrateInorgGridPoint", K
+		
 		Equilibrated = .TRUE.
 
 		!! Loop over the reactions
-		DO I = 3, HowManyDissolutionReactions+1				 
-					
-			WRITE(*,*) "Rxn: ", I
+		DO I = 3, HowManyDissolutionReactions+1			
 			L = 0
 			RxnEquilibrated = .FALSE.
 			
@@ -3127,13 +3001,13 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 				
 				!Get the gas phase concentration from the grid
 				IF (I .LE. HowManyDissolutionReactions) THEN
-					GasPhaseBurden = GetGridCellChemBurden (X, Y, Z, INT(DissolutionData(I,1)))
-					IF (DissolutionData(I,11) .EQ. 6.) GasPhaseBurden2 = GetGridCellChemBurden (X, Y, Z, INT(DissolutionData(I,2)))
+					GasPhaseBurden = GetGridCellChemBurden ( INT(DissolutionData(I,1)))
+					IF (DissolutionData(I,11) .EQ. 6.) GasPhaseBurden2 = GetGridCellChemBurden ( INT(DissolutionData(I,2)))
 				
 					!Equilibrate gas-solid reactions (Type 6) using surface area to remove non-uniqueness problem
 					IF (DissolutionData(I,11) .EQ. 6.) THEN
-						WaterSatBurden = GetSatVapBurden (XX(1), XX(2), XX(3))
-                                                CALL EquilibrateGasSolidReactions(X, Y, Z, GasPhaseBurden, I, Temperature, ReturnType, &
+						WaterSatBurden = GetSatVapBurden ()
+                                                CALL EquilibrateGasSolidReactions( GasPhaseBurden, I, Temperature, ReturnType, &
 										   OptErrorTolerance=AqThermoEquilibriumError/10., &
 										   GasPhaseBurden2 = GasPhaseBurden2)
 						IF (ReturnType .NE. 2) THEN
@@ -3151,7 +3025,7 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 
 					RxnEquilibrated = .TRUE.
 
-					Current => Particles(X,Y,Z)%First
+					Current => Particles%First
 					DO J = 1, HowManyLinks
 									
 						!Skip bins with too few particles
@@ -3159,7 +3033,7 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 							Current => Current%Next
 						END DO
 
-						WRITE(*,*) "Particle: ", J
+						!WRITE(*,*) "Particle: ", J
 						!Count total moles of water soluble material in particle
 						TotalMoles = 0.0
 						DO Q = 1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
@@ -3194,7 +3068,7 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 							ELSE
 								!Equilibrate the reaction for one particle
 								!WRITE(*,*) I, GasphaseBurden
-								WaterSatBurden = GetSatVapBurden (XX(1), XX(2), XX(3)) 
+								WaterSatBurden = GetSatVapBurden () 
                                                                 CALL EquilibrateDissolutionReaction (GasPhaseBurden, I, &
                                                                       Current, Temperature, ReturnType, &
                                                                       WaterSatBurden=WaterSatBurden, GasPhaseBurden2=0.0, OptErrorTolerance=AqThermoEquilibriumError/2.)							
@@ -3207,7 +3081,7 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 								IF (DissolutionData(I,11) .EQ. 6.) THEN
 									CYCLE !Already equilibrated gas-solid reactions
 								ELSE
-									WaterSatBurden = GetSatVapBurden (XX(1), XX(2), XX(3)) 
+									WaterSatBurden = GetSatVapBurden () 
                                                                         CALL EquilibrateDissolutionReaction (GasPhaseBurden, I, Current, Temperature, ReturnType, &
 									WaterSatBurden=WaterSatBurden, GasPhaseBurden2=0.0, OptErrorTolerance=AqThermoEquilibriumError/10.)
 								END IF
@@ -3253,7 +3127,7 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 					IF (L .GT. AqThermoNumbAllowedIterations) THEN
 						!Just exit after max iterations
 						RxnEquilibrated = .TRUE.
-						!CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle.txt") 
+						!CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle.txt") 
 
 						!CALL ERROR ("EquilibrateInorgGridPoint() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
 					    !       "of the particles (stored as "//TRIM(INT2STR(HowManyLinks))//" links) at a grid point "  // &
@@ -3271,21 +3145,21 @@ SUBROUTINE EquilibrateInorgGridPoint(X, Y, Z)
 					
 					!! Replace the gas phase chemical concentrations
 					IF (INT(DissolutionData(I,1)) .LE. HowManyEvolveGasChems) THEN
-						CALL ReplaceGridCellChemBurden (X, Y, Z, INT(DissolutionData(I,1)), GasPhaseBurden)
+						CALL ReplaceGridCellChemBurden ( INT(DissolutionData(I,1)), GasPhaseBurden)
 					END IF
 
 					IF (INT(DissolutionData(I,2)) .LE. HowManyEvolveGasChems .AND. DissolutionData(I,11) .EQ. 6.)	&
-						CALL ReplaceGridCellChemBurden (X, Y, Z, INT(DissolutionData(I,2)), GasPhaseBurden2)
+						CALL ReplaceGridCellChemBurden ( INT(DissolutionData(I,2)), GasPhaseBurden2)
 				END IF	 
 			END IF
 		
-			WRITE(*,*) I, RxnEquilibrated, Equilibrated
+			!WRITE(*,*) I, RxnEquilibrated, Equilibrated
 		END DO !Rxn #
 			
 		!Just exit after 500 iterations
 		IF (K .GT. 500) THEN
 			Equilibrated = .TRUE.
-			!CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle.txt") 
+			!CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle.txt") 
 			!CALL ERROR ("EquilibrateInorgGridPoint() in CondensationRelatedFunctions.h tried to equilibrate all of the dissolution "// &
 			!		    "reactions, aerosol water content, and aerosol ionic content and failed.  Usually this implies an "// &
 			!			"unrealistic starting condition.  You may try to fix this by increasing AqThermoNumbAllowedIterations,"// &

@@ -1,7 +1,7 @@
 SUBROUTINE EulerianBox()
-		!! Include modules
+	!! Include modules
 	USE DFPORT,				 ONLY : RTC, ETIME
-	USE	ModelParameters
+	USE ModelParameters
 	USE InfrastructuralCode	
 	USE GridPointFields
 	USE Chemistry
@@ -102,7 +102,7 @@ SUBROUTINE EulerianBox()
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
-		CALL SetDomainSize (1*cm, 1*cm, 1*cm)
+		CALL SetDomainSize () !Always 1 cm^3
 	
 		!! Call subroutines to set module data
 		CALL SetFileHandleCounter(12)
@@ -126,27 +126,25 @@ SUBROUTINE EulerianBox()
 
 		!! INITIALIZE the PARTICLES	
 		CALL InitializeParticlesSectional
-		CALL RegridAerosol (1, 1, 1)
-		CALL SpillBeans(1,1,1)
-		!WRITE(*,*) "AOD: ", AerosolOpticalDepth (1, 1, 1)
+		CALL RegridAerosol ()
+		CALL SpillBeans()
+		!WRITE(*,*) "AOD: ", AerosolOpticalDepth ()
 
 		!! Call Boundary distributions
 		CALL ReadBoundaryDistributionsOrganic
 		CALL PopBoundaryPart
 		CALL SortBoundaryPart
-		CALL SpillBeans(1,1,1,Env=.TRUE.)
+		CALL SpillBeans(Env=.TRUE.)
 		
 		!!WARNING Force initial water equilibrium between gas and aerosol
 		!!(Uses open system for water eq.)
-		CALL EquilibrateInternallyAtGridPoint(1,1,1, EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
-		!CALL EquilibrateGridPointAll(1, 1, 1, EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
-		CALL RegridAerosol (1, 1, 1)
-		CALL SpillBeans(1,1,1)
-	
-	
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+		CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+		!CALL EquilibrateGridPointAll(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+		CALL RegridAerosol ()
+		CALL SpillBeans()
+		
+		TEMP = GetTemp()
+		Mgas = GetM   ()
 		
 		!Find chemical indices for later
 		PotassiumIndex = FindChem("K+", 1)
@@ -175,7 +173,7 @@ SUBROUTINE EulerianBox()
 		HSO4i = FindChem("HSO4-", 1)
 
 		!Count # of bins, # of Aq. Chems
-		current => particles(1,1,1)%first
+		current => particles()%first
 		Env => BoundaryParticles%first
 		NumBins = 0
 		Potassium = 0
@@ -317,7 +315,7 @@ SUBROUTINE EulerianBox()
 			Chem(q) = GasPhaseBackground(q)
 		END DO
 		!Update chemical concentrations
-		CALL UpdateChemicalConcentrations(1, 1, 1, Chem(1:HowManyEvolveGasChems))
+		CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 
 		ALLOCATE(sourcenumconc(NumBins))
 		ALLOCATE(sourcemassconc(NumBins, 44))
@@ -359,8 +357,8 @@ SUBROUTINE EulerianBox()
 
 		
 		!Set Initial Aerosol Concentrations to background
-		CALL SortAerosolAtGridPointForCoagulation (1, 1, 1) 
-		current => particles(1,1,1)%first
+		CALL SortAerosolAtGridPointForCoagulation () 
+		current => particles()%first
 		Env => BoundaryParticles%first
 		I = 1
 		DO WHILE(associated(current))
@@ -387,13 +385,11 @@ SUBROUTINE EulerianBox()
 			current => current%next
 			Env => Env%next	
 		END DO
-
-		
-		X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-		TEMP = GetTemp(X(1),X(2),X(3))
-		Mgas = GetM   (X(1),X(2),X(3))
+	
+		TEMP = GetTemp()
+		Mgas = GetM   ()
 		deltaCO = FireCO/Xlength/Ylength
-	    deltaCO = 1.0e9*deltaCO/(GetAirDensity(X(1),X(2),X(3))*1000) !ppbm CO*m/s
+	    deltaCO = 1.0e9*deltaCO/(GetAirDensity()*1000) !ppbm CO*m/s
 
 		ALLOCATE(NumFlux(NumBins))
 		DO q = 1, NumBins
@@ -476,7 +472,7 @@ SUBROUTINE EulerianBox()
 		END DO
 
 		!Get particle number conc. and radii for hetero. rate calculation
-		current => particles(1,1,1)%first
+		current => particles()%first
 		I = 1
 		DO WHILE(associated(current))
 			HeteroNumberConc(I) = current%NumberofParticles
@@ -563,7 +559,7 @@ SUBROUTINE EulerianBox()
 		!Write gas phase concentrations in ppb
 		DO q = 1, HowManyGasChems
 		
-			Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+			Chem(q) = GridGasChem(q) !molecules/cm3
 
 			IF (q .LE. 70) THEN
 				WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas
@@ -582,7 +578,7 @@ SUBROUTINE EulerianBox()
 		WRITE(OutFH(2), FMT='(A1)') ""
 		WRITE(OutFH(3), FMT='(A1)') ""
 			
-		current => particles(1,1,1)%first
+		current => particles()%first
 		DO I = 4, 3+NumBins
 			WRITE(OutFH(I),FMT='(7ES13.5E2)', ADVANCE='NO') t/60
 				
@@ -713,7 +709,7 @@ SUBROUTINE EulerianBox()
 		END DO
 		
 		!Output size distribution
-		CALL SizeDistOutput(1,1,1,t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
+		CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 			
 		ChemTimestep = 1.
 		MixTimestep = 1*ChemTimestep !Should always be an integer multiple!
@@ -728,8 +724,7 @@ SUBROUTINE EulerianBox()
 			IF (r .GT. INT(60/Mixtimestep)) CondTimeStep = 20. 
 			
 			!Calculate Temperature
-			X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-			TEMP = GetTemp(X(1),X(2),X(3))
+			TEMP = GetTemp()
 
 			!NOTE: Right now, pressure and temperature are assumed to be 
 			!constant, so we don't have to recalculate the rest of the reaction rates
@@ -742,7 +737,7 @@ SUBROUTINE EulerianBox()
 			!WRITE(*,*) "Photo Okay"
 
 			!Get particle number conc. and radii for hetero. rate calculation
-			current => particles(1,1,1)%first
+			current => particles()%first
 			I = 1
 			DO WHILE(associated(current))
 				HeteroNumberConc(I) = current%NumberofParticles
@@ -757,16 +752,16 @@ SUBROUTINE EulerianBox()
 			!WRITE(*,*) "Hetero Okay"
 						
 			!Step Gas Chemistry
-			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep),1,1,1)
+			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep))
 			!WRITE(*,*) "StepGasChem Okay"
 			
 			!Step Condensation
 			IF (MOD(t,CondTimeStep) .LT. 0.01 .AND. t .NE. 0.0) THEN
 				!Step Condensation, if desired
 				IF(.TRUE.) THEN
-					CALL RegridAerosol (1, 1, 1)
-					CALL FindAqElectrolyteEquilibriumForGridPoint (1, 1, 1, UpdateThermo = .TRUE.) 
-					CALL StepCondensationAll (CondTimeStep, 1, 1, 1, 1)
+					CALL RegridAerosol ()
+					CALL FindAqElectrolyteEquilibriumForGridPoint (UpdateThermo = .TRUE.) 
+					CALL StepCondensationAll (CondTimeStep, 1)
 					!Note above calls RegridAerosol automatically
 					!WRITE(*,*) t, "Cond Okay"
 				END IF
@@ -778,7 +773,7 @@ SUBROUTINE EulerianBox()
 				!Step Coagulation, if desired
 				DoTestCoagulation = .TRUE.
 				IF (DoTestCoagulation) THEN	
-					CALL StepSectionalCoagulationJacobson(1,1,1,CoagTimeStep)
+					CALL StepSectionalCoagulationJacobson(CoagTimeStep)
 					!Note that above already calls RegridAerosol
 					!WRITE(*,*) t, "Coag Okay"
 				END IF
@@ -789,7 +784,7 @@ SUBROUTINE EulerianBox()
 			!Step Dilution of Chems
 			!Flux should have units of molecules/m2/s
 			DO q = 1, HowManyGasChems
-				Chem(q) = GridGasChem(1,1,1,q)
+				Chem(q) = GridGasChem(q)
 				IF(t .LT. spinup) THEN
 					Chem(q) = (Chem(q) + (WindSpeed*GasPhaseBackground(q)*MixTimestep/Xlength)) &
 				          /(1+ (MixTimestep*GasPhaseDepVel(q)/(Height*100)) + (MixTimestep*Windspeed/Xlength))
@@ -800,11 +795,11 @@ SUBROUTINE EulerianBox()
 				END IF
 			END DO	
 			!Update chemical concentrations
-			CALL UpdateChemicalConcentrations(1, 1, 1, Chem(1:HowManyEvolveGasChems))
+			CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 
 			!Step Dilution and Deposition of Particles
-			CALL SortAerosolAtGridPointForCoagulation (1, 1, 1) 
-			current => particles(1,1,1)%first
+			CALL SortAerosolAtGridPointForCoagulation () 
+			current => particles()%first
 			Env => BoundaryParticles%first
 			I = 1
 			DO WHILE(associated(current))
@@ -908,10 +903,10 @@ SUBROUTINE EulerianBox()
 				
 			END DO !END STEP PARTICLE DILUTION
 			!WRITE(*,*) "Before AOD"
-			!WRITE(*,*) "AOD: ", AerosolOpticalDepth (1, 1, 1)	
+			!WRITE(*,*) "AOD: ", AerosolOpticalDepth ()	
 			!WRITE(*,*) "Dilution Okay"	
-			!CALL SpillBeans(1,1,1)
-			CALL AerosolOptProp (1, 1, 1, ExtCoeff, SingScat, Assym)
+			!CALL SpillBeans()
+			CALL AerosolOptProp (ExtCoeff, SingScat, Assym)
 			
 			!Write Output to file every minute 
 			IF (MOD(t,10.0) .LT. 0.01) THEN
@@ -924,7 +919,7 @@ SUBROUTINE EulerianBox()
 				!Write gas phase concentrations in ppb
 				DO q = 1, HowManyGasChems
 		
-					Chem(q) = GridGasChem(1,1,1,q) !molecules/cm3
+					Chem(q) = GridGasChem(q) !molecules/cm3
 
 					IF (q .LE. 70) THEN
 						WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') Chem(q)*1e9/Mgas
@@ -944,7 +939,7 @@ SUBROUTINE EulerianBox()
 				WRITE(OutFH(3), FMT='(A1)') ""
 			
 				GridTotalSOA = 0.0
-				current => particles(1,1,1)%first
+				current => particles()%first
 				DO I = 4, 3+NumBins
 					WRITE(OutFH(I),FMT='(7ES13.5E2)', ADVANCE='NO') t/60
 				
@@ -1076,7 +1071,7 @@ SUBROUTINE EulerianBox()
 
 			IF (MOD(t,600.0)<=0.05 .OR. ABS(t-540) <=0.05 .OR. ABS(t-2820) <=0.05) THEN
 				IF(INT(t) .NE. 0.) THEN
-					CALL SizeDistOutput(1,1,1,t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
+					CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 				END IF
 			END IF
 			

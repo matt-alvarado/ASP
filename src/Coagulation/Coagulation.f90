@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -6,34 +6,37 @@
 !! This file contains the coagulation numerical integration routine 
 !! for the internally mixed, moving-center size distribution
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!! 08/26  2006   Matt Alvarado     Fixed bug in CollisionEfficiency	
-!! 07/26  2007   Matt Alvarado     Added RecalculateRadius to monodisperse coag	!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 08/26  2006   Matt Alvarado     Fixed bug in CollisionEfficiency          !!
+!! 07/26  2007   Matt Alvarado     Added RecalculateRadius to                !!
+!!                                  monodisperse coag	                     !!
+!! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! DEPENDENCIES						        !!
-!! 1. ModelParameters						!!
-!! 2. InfrastructuralCode					!!
-!! 3. GridPointFields						!!
-!! 4. Chemistry								!!
-!! 5. Aerosols								!!
-!! 6. OutputRoutines						!!
+!! DEPENDENCIES				    !!
+!! 1. ModelParameters			    !!
+!! 2. InfrastructuralCode		    !!
+!! 3. GridPointFields			    !!
+!! 4. Chemistry				    !!
+!! 5. Aerosols				    !!
+!! 6. OutputRoutines			    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! LINKED HEADER FILES												!!
-!! 1. CoagulationKernels.h											!!
+!! LINKED HEADER FILES						    !!
+!! 1. CoagulationKernels.h					    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:			!!	
-!! 1. REAL*8 FUNCTION CollisionEfficiency (Particle1, Particle2)		!!
-!! 2. SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)!!
+!! This file contains the following functions and subroutines:		!!
+!! 1. REAL*8 FUNCTION CollisionEfficiency (Particle1, Particle2)	!!
+!! 2. SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)            !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -42,8 +45,8 @@ MODULE Coagulation
 	PRIVATE
 
 	REAL*8, PARAMETER :: CE = 1.0 !Coagulation Efficiency
-								  !(fraction of collisions where
-								  !particles stick together)
+					!(fraction of collisions where
+					!particles stick together)
 	
 	PUBLIC :: StepSectionalCoagulationJacobson
 			  
@@ -57,7 +60,7 @@ INCLUDE "CoagulationKernels.h"
 !! , 2nd ed., p. 510 (2005)
 REAL*8 FUNCTION CollisionEfficiency (Particle1, Particle2)
 
-	USE Aerosols,		 ONLY : Particle, TerminalVelocity, ReynoldsNumber
+	USE Aerosols,	ONLY : Particle, TerminalVelocity, ReynoldsNumber
 
 	USE ModelParameters, ONLY : g
 	USE InfrastructuralCode, ONLY : Error
@@ -103,7 +106,7 @@ REAL*8 FUNCTION CollisionEfficiency (Particle1, Particle2)
 	END IF
 END FUNCTION CollisionEfficiency 
 
-SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !! Matt Alvarado created this by simplifying StepCoagulation to only 
 !! work for a sectional distribution and to always use mean values.
@@ -113,40 +116,38 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 
 	USE InfrastructuralCode, ONLY : INT2STR, REAL2STR, ERROR
 
-	USE Aerosols,            ONLY : Particles, Particle,					&
-									SortAerosolAtGridPointForCoagulation,	&
-									RecalculateRadius,						&
-									ParticleMass,							&
-									HowManyAerosolModes,					&
-									TerminalVelocity, &
-									FindAqElectrolyteEquilibriumForGridPoint, &
-									RegridAerosol
-
-	USE GridPointFields,	 ONLY : GasPhaseChemGridIndex
+	USE Aerosols,            ONLY : Particles, Particle,		&
+				SortAerosolAtGridPointForCoagulation,	&
+					RecalculateRadius,		&
+					ParticleMass,			&
+					HowManyAerosolModes,		&
+					TerminalVelocity, &
+				FindAqElectrolyteEquilibriumForGridPoint, &
+					RegridAerosol
 
 	USE ModelParameters,	 ONLY : ThermoBulkMode,		  &
-									StochasticOrNot,	  &
-									HowManyBins,		  &
-									BinEdges,			  &
-									micron, &
-									Pi, &
-									ConstantKernel, &
-									DoCoagulationFlag, &
-									Monodisperse, &
-									CoagKernel
+					StochasticOrNot,	  &
+					HowManyBins,		  &
+					BinEdges,		&
+					micron, &
+					Pi, &
+					ConstantKernel, &
+					DoCoagulationFlag, &
+					Monodisperse, &
+					CoagKernel
 
 	USE Chemistry,			 ONLY : HowManyAqChems,		&
-									HowManyAqCations,	&
-									HowManyAqAnions, &
-									AqMolecularMass, &
-									HowManyOrgChems, &
-									OrgMolecularMass, &
-									OrgDensity, &
-									HowManyAqOrgChems, &
-									AqOrgMolecularMass, &
-									AqOrgDensity, &
-									SolidSaltDensity, &
-									AqPhaseChemicalNames
+					        HowManyAqCations,	&
+						HowManyAqAnions, &
+						AqMolecularMass, &
+						HowManyOrgChems, &
+						OrgMolecularMass, &
+						OrgDensity, &
+						HowManyAqOrgChems, &
+						AqOrgMolecularMass, &
+						AqOrgDensity, &
+						SolidSaltDensity, &
+						AqPhaseChemicalNames
 
 
 	USE OutputRoutines,		 ONLY : SpillBeans
@@ -154,20 +155,28 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 	IMPLICIT NONE
 
 	!! External Variables
-	INTEGER :: XP, YP, ZP
 	REAL*8  :: TimeStep
 
 	!! Internal Variables
-	INTEGER					:: HowManyLinks, I, J, K, L, M, Q, Count
-	REAL*8					:: AA, BB, II, JJ, LL, Kfac, &
-							   BigV, LowerSum, UpperSum, InnerSum, TotalAqOrgVolConc, TotalOrgVolConc, TotalAqVolConc, &
-							   InVolConc, OutVolConc, SolnSum, AvgSolutionDensity, OutSumVolumeConc, InSumVolumeConc, StoreDensity, Monokernel
-	REAL*8, ALLOCATABLE		:: CoagArray(:,:), SingleParticleVolume(:), VolumeConc(:), &
-							   VolumeFractions(:,:,:), NumConc(:), AqVolConc(:,:), &
-							   OrgVolConc(:,:), AqOrgVolConc(:,:), InitNumConc(:), SumVolConc(:)
-	TYPE(Particle), POINTER :: Particle1, Particle2, ParticleK, Runner, ReplicaPlaceholder, &
-							   DifferenceParticle1, DifferenceParticle2, DifferenceRunner , &
-							   ParticleI, ParticleJ
+	INTEGER	:: HowManyLinks, I, J, K, L, M, Q, Count, JJ
+
+	REAL*8	:: AA, BB, II, LL, Kfac, &
+		   BigV, LowerSum, UpperSum, InnerSum, TotalAqOrgVolConc, & 
+                   TotalOrgVolConc, TotalAqVolConc, &
+		   InVolConc, OutVolConc, SolnSum, AvgSolutionDensity, & 
+                   OutSumVolumeConc, InSumVolumeConc, StoreDensity, Monokernel
+
+	REAL*8, ALLOCATABLE	:: CoagArray(:,:), SingleParticleVolume(:), &
+                                   VolumeConc(:), &
+				   VolumeFractions(:,:,:), NumConc(:), &
+                                   AqVolConc(:,:), &
+				   OrgVolConc(:,:), AqOrgVolConc(:,:), &
+                                   InitNumConc(:), SumVolConc(:)
+
+	TYPE(Particle), POINTER :: Particle1, Particle2, ParticleK, & 
+                                   Runner, ReplicaPlaceholder, &
+		DifferenceParticle1, DifferenceParticle2, DifferenceRunner , &
+			           ParticleI, ParticleJ
 
 	!IF main input deck said to skip coagulation, skip it
 	IF(.NOT.DoCoagulationFlag) RETURN
@@ -176,12 +185,12 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 	IF (ThermoBulkMode) RETURN
 
 	!! Sort the gridcell, sections in order and first
-	CALL SortAerosolAtGridPointForCoagulation (XP, YP, ZP)
+	CALL SortAerosolAtGridPointForCoagulation ()
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! If there are no aerosol at the gridcell, !!
 	!! then there is nothing to do.  Return.    !!
-	Particle1 => Particles(XP,YP,ZP)%First !!!!!!!
+	Particle1 => Particles%First !!!!!!!
 
 5	IF (Particle1%NumberOfParticles .EQ. 0.) THEN
 		IF (ASSOCIATED(Particle1%Next)) THEN
@@ -194,7 +203,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Everything should now be sorted           !!
 	!! Back up to the head of the aerosol list   !!
-	Particle1 => Particles(XP,YP,ZP)%First !!!!!!!!
+	Particle1 => Particles%First !!!!!!!!
 	Particle2 => Particle1
 	Runner    => Particle1 !! In the second pass, this may need an initial position
 
@@ -261,7 +270,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 
 	!! If we're in monodisperse mode, do monodisperse coag
 	IF (Monodisperse) THEN
-		Particle1 => Particles(XP,YP,ZP)%First
+		Particle1 => Particles%First
 		Particle2 => Particle1
 		IF(ConstantKernel) THEN
 			MonoKernel = CoagKernel	
@@ -343,7 +352,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 
 		!! Advance the larger particle and reset the smaller
 		Particle1 => Particle1%Next
-		Particle2 => Particles(XP,YP,ZP)%First
+		Particle2 => Particles%First
 
 	END DO
 
@@ -352,7 +361,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 
 	!! Get average solution density
 	!! Use this so that mass is conserved in transfers between particles
-	Particle1 => Particles(XP,YP,ZP)%First
+	Particle1 => Particles%First
 	SolnSum =  0
 	Count = 0
 22	IF(Particle1%Numberofparticles .NE. 0.0) THEN
@@ -368,7 +377,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 	
 	!! Calculate single particle volume
 	!!and volume concentrations for each component
-	Particle1 => Particles(XP,YP,ZP)%First
+	Particle1 => Particles%First
 	JJ = 1
 	InSumVolumeConc = 0.0
 45	IF (Particle1%numberofparticles .GT. 0.0) THEN
@@ -684,7 +693,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 	!Save adjustments back to particle list
 	!!Calculate single particle volume
 	!!and volume concentrations for each component
-	Particle1 => Particles(XP,YP,ZP)%First
+	Particle1 => Particles%First
 	JJ = 1
 55	IF (NumConc(JJ) .GT. 0) THEN
 !		WRITE(*,*) Particle1%numberofparticles
@@ -744,7 +753,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (XP, YP, ZP, TimeStep)  !!!!!!!!!!!!
 
 	!Regrid the aerosol to make sure sizes work out correctly
 	!(Also calls aqueous equilibrium, and resets temperature)
-	CALL RegridAerosol(XP, YP, ZP)
+	CALL RegridAerosol()
 	
 	!! Houseclean memory
 	DEALLOCATE(CoagArray)

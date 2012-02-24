@@ -1,25 +1,27 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
 !! CondensationInitialization.h
-!! Reads dissolution and gas-aerosol thermodynamic information from	input decks, 
-!! and stores it in the appropriate arrays.
+!! Reads dissolution and gas-aerosol thermodynamic information from	
+!! input decks, and stores it in the appropriate arrays.
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!! 06/27  2007   Matt Alvarado     Initially zero out DissolutionData
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!								             !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 06/27  2007   Matt Alvarado     Initially zero out DissolutionData        !!
+!! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:		!!
-!! 1. SUBROUTINE SetAllDissolution()
-!! 2. SUBROUTINE SetDissolution ()
-!! 3. SUBROUTINE SetOrganicDissolution()
-!! 4. SUBROUTINE SetHydrophilicOrganicDissolution()							!!
+!! This file contains the following functions and subroutines:	    !!
+!! 1. SUBROUTINE SetAllDissolution()                                !!
+!! 2. SUBROUTINE SetDissolution ()                                  !!
+!! 3. SUBROUTINE SetOrganicDissolution()                            !!
+!! 4. SUBROUTINE SetHydrophilicOrganicDissolution()		    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
 
 !! This allows all the intitialization routines to be called
@@ -34,42 +36,45 @@ SUBROUTINE SetAllDissolution()
 
 END SUBROUTINE SetAllDissolution
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Read Aq Phase Chemical Information from									!!
-	!! input decks, defines the appropriate chemical arrays in this module,	!!
-	!! and calls the appropriate eulerian grid subroutines to establich the		!!
-	!! chemical fields															!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Read Aq Phase Chemical Information from				    !!
+!! input decks, defines the appropriate chemical arrays in this module,	    !!
+!! and calls the appropriate eulerian grid subroutines to establich the	    !!
+!! chemical fields							    !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	SUBROUTINE SetDissolution ()
 
-		USE ModelParameters, ONLY : AqChemScale, Atmospheres,		 &
-									SetDissolutionEquilibriumOrFlux, &
-									DissolutionEquilibriumOrFlux,	 &
-									ThermoBulkMode, &
-									TranscriptFH, InputDeckSubDir, DoDissolutionFlag
+		USE ModelParameters, ONLY : AqChemScale, Atmospheres,	&
+					SetDissolutionEquilibriumOrFlux,&
+					DissolutionEquilibriumOrFlux,	&
+					ThermoBulkMode,                 &
+					TranscriptFH, InputDeckSubDir,  &
+                                        DoDissolutionFlag
 
 		USE InfrastructuralCode
-		USE Chemistry,       ONLY : GasPhase, AqPhase,			&
-									FindChem, FindIon,			&
-									GasPhaseChemicalNames,		&
-									AqPhaseChemicalNames,		&
-									AqCationNames,AqAnionNames,	&
-									GasMolecularMass,			&
-									AqMolecularMass,			&
-									AqCationMass, AqAnionMass,	&
-									AqEquilibriaList,			&
-									HowManyAqChems,				&
-									HowManyAqCations,			&
-									HowManyAqEqReactions,		&
-									AqWaterDissociationReaction,&
-									GetAqCharge
+
+		USE Chemistry,   ONLY : GasPhase, AqPhase,		&
+					FindChem, FindIon,		&
+					GasPhaseChemicalNames,		&
+					AqPhaseChemicalNames,		&
+					AqCationNames,AqAnionNames,	&
+					GasMolecularMass,		&
+					AqMolecularMass,		&
+					AqCationMass, AqAnionMass,	&
+					AqEquilibriaList,		&
+					HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqEqReactions,		&
+					AqWaterDissociationReaction,&
+					GetAqCharge
 
 		IMPLICIT NONE
 
 		!! Local Infrastructural Variables
-		INTEGER				:: I, J, K, allocation_error,IonIndex(2)
-		REAL*8				:: MassTally, H2SO4GasIndex, SO4AqIndex, HAqIndex
-		CHARACTER(len=512)	:: CurrLine, Token, GasChem1, GasChem2, AqIon1, AqIon2
+		INTEGER	:: I, J, K, allocation_error,IonIndex(2)
+		REAL*8	:: MassTally, H2SO4GasIndex, SO4AqIndex, HAqIndex
+		CHARACTER(len=512)	:: CurrLine, Token, GasChem1, &
+                                           GasChem2, AqIon1, AqIon2
 		CHARACTER (len=12)	:: Numbers = "0123456789+-"
 
 		!! Transcribe?  Use Scaffolding Code?
@@ -116,41 +121,41 @@ END SUBROUTINE SetAllDissolution
 		IF (Transcribe) CALL TRANSCRIPT("")
 		IF (Transcribe) CALL TRANSCRIPT("_The_Following_Dissolution_Reactions_Are_Defined_")
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! Allocation the key DISSOLUTION Arrays									!!
-		!!																			!!
-		!! The primary one is DissolutionData(i,j), in which i is the				!!
-		!! reaction and j is some data:												!!
-		!!																			!!
-		!! DissolutionData(i,1)  : Index in Gas Phase of Primay Chemical			!!
-		!! DissolutionData(i,2)  : Index in Gas Phase of Secondary Chemical			!!
-		!! DissolutionData(i,3)  : Index in Aqueous Phase of Primary Chemical		!!
-		!! DissolutionData(i,4)  : Index in Aqueous Phase of Secondary Chemical		!!
-		!! DissolutionData(i,5)  : Henrys Law Coefficient (H_298)					!!
-		!! DissolutionData(i,6)  : Henrys Law Coefficient (Delta H / R)				!!
-		!! DissolutionData(i,7)  : Henrys Law Coefficient (c_p / R)					!!
-		!! DissolutionData(i,8)  : For (i,2) is an ion, Numerator mean activity		!!
-		!!						   coefficient + Exponent / 10000					!!
-		!! DissolutionData(i,9)  : For (i,2) is an ion, Denominator mean activity	!!
-		!!						   coefficient + Exponent / 10000					!!
-		!! DissolutionData(i,10) : Mass Accommodation Coefficient					!!
-		!! DissolutionData(i,11) : Reaction Type									!!
-		!! DissolutionData(i,12) : Index of AqEquilibriaList for related Aq reaction!!
-		!! DissolutionData(i,13) : Stoicheometry of r.h.s. slot 1					!!
-		!! DissolutionData(i,14) : Stoicheometry of r.h.s. slot 2 for type 2 or     !!
-		!!                                          l.h.s. slot 2 if  type 4		!!!
-		!! DissolutionData(i,15) : Reaction I is coupled to through gas phase species !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! There are several reactions types:											!!
-		!!																				!!
-		!! 0. Water Condensation.														!!
-		!! 1. Direct dissolution of a single species not incorporating dissociation.	!!
-		!! 2. Dissolution of a single species that then dissociates directly.			!!
-		!! 4. Dissolution of a species that binds with an ion on the way in.			!!
-		!! 6. Dissociation of two gas phase species to form 1 or 2 aqueous species.	    !!
-		!! 7. Condensation of gas-phase H2SO4 to make 2 H+ and SO4--
-		!! Type 3 and 5 are reserved for coupled dissolution/dissociation
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Allocation the key DISSOLUTION Arrays				!!
+!!									!!
+!! The primary one is DissolutionData(i,j), in which i is the		!!
+!! reaction and j is some data:						!!
+!!							                !!
+!! DissolutionData(i,1)  : Index in Gas Phase of Primay Chemical	!!
+!! DissolutionData(i,2)  : Index in Gas Phase of Secondary Chemical	!!
+!! DissolutionData(i,3)  : Index in Aqueous Phase of Primary Chemical	!!
+!! DissolutionData(i,4)  : Index in Aqueous Phase of Secondary Chemical	!!
+!! DissolutionData(i,5)  : Henrys Law Coefficient (H_298)		!!
+!! DissolutionData(i,6)  : Henrys Law Coefficient (Delta H / R)		!!
+!! DissolutionData(i,7)  : Henrys Law Coefficient (c_p / R)		!!
+!! DissolutionData(i,8)  : For (i,2) is an ion, Numerator mean activity	!!
+!!			   coefficient + Exponent / 10000		!!
+!! DissolutionData(i,9)  : For (i,2) is an ion, Denominator mean activity!!
+!!			   coefficient + Exponent / 10000		!!
+!! DissolutionData(i,10) : Mass Accommodation Coefficient		!!
+!! DissolutionData(i,11) : Reaction Type				!!
+!! DissolutionData(i,12) : Index of AqEquilibriaList for related Aq reaction!!
+!! DissolutionData(i,13) : Stoicheometry of r.h.s. slot 1		!!
+!! DissolutionData(i,14) : Stoicheometry of r.h.s. slot 2 for type 2 or     !!
+!!                                          l.h.s. slot 2 if  type 4	!!
+!! DissolutionData(i,15) : Reaction I is coupled to through gas phase species !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! There are several reactions types:					     !!
+!!									     !!
+!! 0. Water Condensation.						     !!
+!! 1. Direct dissolution of a single species not incorporating dissociation. !!
+!! 2. Dissolution of a single species that then dissociates directly.	     !!
+!! 4. Dissolution of a species that binds with an ion on the way in.	     !!
+!! 6. Dissociation of two gas phase species to form 1 or 2 aqueous species.  !!
+!! 7. Condensation of gas-phase H2SO4 to make 2 H+ and SO4--                 !!
+!! Type 3 and 5 are reserved for coupled dissolution/dissociation            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		ALLOCATE (DissolutionData(HowManyDissolutionReactions,15), stat = allocation_error)
 		if (allocation_error > 0) CALL ERROR("Allocation of NumbReactions could not proceed in SetDissolution()")
 
@@ -363,11 +368,11 @@ END SUBROUTINE SetAllDissolution
 			!! ---	2. Mass Accommodation Coefficient
 			CALL GetToken(CurrLine,";",Token) 
 			DissolutionData(i,10) = STR2REAL (Token)
-			IF (DissolutionData(i,10) .LT. 0. .OR. DissolutionData(i,10.) .GT. 1.) THEN
-				Token = TRIM(GasPhaseChemicalNames(DissolutionData(i,1))) // " (g)"
+			IF (DissolutionData(i,10) .LT. 0. .OR. DissolutionData(i,10) .GT. 1.) THEN
+				Token = TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1)))) // " (g)"
 				IF (DissolutionData(i,2) .GT. 0) &
-					Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(DissolutionData(i,2))) // " (g)"
-				Token = TRIM(Token) // " <=> " // TRIM(AqPhaseChemicalNames(DissolutionData(i,3))) // " (aq)"
+					Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,2)))) // " (g)"
+				Token = TRIM(Token) // " <=> " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,3)))) // " (aq)"
 				CALL ERROR ("Specified an out of range mass accommodation coefficient in Dissolution.in for the reaction "// &
 							TRIM(Token)//".  It should be between zero and unity.")
 			END IF
@@ -389,22 +394,22 @@ END SUBROUTINE SetAllDissolution
 
 
 			!! Report the particular reaction
-			Token = TRIM(GasPhaseChemicalNames(DissolutionData(i,1))) // " (g)"
+			Token = TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1)))) // " (g)"
 
 			IF (DissolutionData(i,2) .GT. 0 .AND. DissolutionData(i,11) .EQ. 4.) &
-				Token = TRIM(Token) // " + " //TRIM(AqPhaseChemicalNames(DissolutionData(i,2))) // " (aq)"
+				Token = TRIM(Token) // " + " //TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,2)))) // " (aq)"
 			IF (DissolutionData(i,2) .GT. 0 .AND. DissolutionData(i,11) .EQ. 6.) &
-				Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(DissolutionData(i,2))) // " (g)"
+				Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,2)))) // " (g)"
 			Token = TRIM(Token) // " <=> " 
 
 			IF (DissolutionData(i,13) .GT. 1) Token = TRIM(Token) // " " //TRIM(REAL2STR(DissolutionData(i,13)))
-			Token = TRIM(Token) // " " // TRIM(AqPhaseChemicalNames(DissolutionData(i,3))) // " (aq)"
+			Token = TRIM(Token) // " " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,3)))) // " (aq)"
 			
 			IF (INT(DissolutionData(i,4)) .GT. 0) THEN
-				WRITE(*,*) DissolutionData(i,4)
+				!WRITE(*,*) DissolutionData(i,4)
 				Token = TRIM(Token) // " + " 
 				IF (DissolutionData(i,14) .GT. 1) Token = TRIM(Token) // " " //TRIM(REAL2STR(DissolutionData(i,13)))
-				Token = TRIM(Token) // " " // TRIM(AqPhaseChemicalNames(DissolutionData(i,4))) // " (aq)"
+				Token = TRIM(Token) // " " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,4)))) // " (aq)"
 			END IF
 
 			CALL TRANSCRIPT(TRIM(Token))			
@@ -431,18 +436,18 @@ END SUBROUTINE SetAllDissolution
 
 						IF (DissolutionData(J,11) .EQ. 5.) THEN
 						   CALL WARN("It seems you specified one dissolution reaction in Dissolution.in that dissolves " &
-						   // TRIM(GasPhaseChemicalNames(DissolutionData(i,1))) //										 &
+						   // TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1)))) //										 &
 						   " (g) directly and one  that dissolves it in combination with another gas phase species.  "// &
 						   "This may lead to an unequilatable system depending on contents and the relative equilibria " &
 						   //"of these reactions.  You should revisit this if problems occur, and possibly otherwise as well.")
 
 						ELSE IF (DissolutionData(I,11) .EQ. 4. .AND. DissolutionData(J,11) .EQ. 1.) THEN
 							
-						   Token = TRIM(AqPhaseChemicalNames(DissolutionData(i,2)))
+						   Token = TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,2))))
 						   CALL WARN("It seems you specified a dissolution reaction in Dissolution.in that dissolves "			&
-						   //TRIM(GasPhaseChemicalNames(DissolutionData(i,1))) // "(g)  in combination with " // TRIM(Token) // &
+						   //TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1)))) // "(g)  in combination with " // TRIM(Token) // &
 						   " (aq)" //	&
-						   " and one  that dissolves  "//TRIM(GasPhaseChemicalNames(DissolutionData(i,1))) // " directly. " //	&
+						   " and one  that dissolves  "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1)))) // " directly. " //	&
 						   "This is necessary (good job), but make sure the equilibria are consistent with eachother and an " // &
 						   "aqueous equilibrium reaction that exchanges the forms.")
 
@@ -456,7 +461,7 @@ END SUBROUTINE SetAllDissolution
 						ELSE IF (DissolutionData(I,11) .EQ. 2. .AND. DissolutionData(J,11) .EQ. 1.) THEN
 
 						   CALL WARN("It seems you specified a dissolution reaction in Dissolution.in that dissolves "			&
-						   //TRIM(GasPhaseChemicalNames(DissolutionData(i,1))) // "(g)  directly and one that dissociates it. "// &
+						   //TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1)))) // "(g)  directly and one that dissociates it. "// &
 						   "This is necessary (good job), but make sure the equilibria are consistent with eachother and an " // &
 						   "aqueous equilibrium reaction that exchanges the forms.")
 
@@ -469,16 +474,16 @@ END SUBROUTINE SetAllDissolution
 				END IF
 			END DO
 			IF (.NOT.MATCH) CALL WARN("In dissolution.in, you only specified one direct dissolution reaction for "//	&
-									  TRIM(GasPhaseChemicalNames(DissolutionData(i,1)))//".  You should specify reactions "// &
+									  TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1))))//".  You should specify reactions "// &
 									  "that lead to both the associated and dissociated forms of the electrolyte unless: a). "// &
 									  "it does not dissociate or b). only its dissociated form is allowed.")
 
 		CASE (6)
 
 			IF (DissolutionData(I,11) .EQ. 6) &
-			CALL WARN ("The reaction "//TRIM(GasPhaseChemicalNames(DissolutionData(i,1)))//" (g) + "//					&
-									    TRIM(GasPhaseChemicalNames(DissolutionData(i,2)))//" (g) <=> "//				&
-			TRIM(REAL2STR(DissolutionData(i,13)))//" "//TRIM(AqPhaseChemicalNames(DissolutionData(i,3)))//" (s) "//	&
+			CALL WARN ("The reaction "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1))))//" (g) + "//					&
+									    TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,2))))//" (g) <=> "//				&
+			TRIM(REAL2STR(DissolutionData(i,13)))//" "//TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,3))))//" (s) "//	&
 			"is a gas to solid reaction. No activity coefficients are necessary.")
 		END SELECT
 
@@ -513,18 +518,18 @@ END SUBROUTINE SetAllDissolution
 
 			!! err if it is not within 0.1% (which I arbitrarily set as a rounding error
 			IF (MassTally .GT. 1.001 .OR. MassTally .LT. 0.999) THEN
-				Token = TRIM(GasPhaseChemicalNames(DissolutionData(i,1))) // " (g)"
+				Token = TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1)))) // " (g)"
 				IF (DissolutionData(i,2) .GT. 0) THEN
 					IF (DissolutionData(i,11) .EQ. 4.) &
-					    Token = TRIM(Token) // " + " // TRIM(AqPhaseChemicalNames(DissolutionData(i,2))) // " (aq)"
+					    Token = TRIM(Token) // " + " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,2)))) // " (aq)"
 					IF (DissolutionData(i,11) .EQ. 6.) &
-					    Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(DissolutionData(i,2))) // " (g)"
+					    Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,2)))) // " (g)"
 				END IF
 				Token = TRIM(Token) // " <=> " // TRIM(REAL2STR(DissolutionData(i,13))) // " " // &
-						TRIM(AqPhaseChemicalNames(DissolutionData(i,3))) // " (aq)"
+						TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,3)))) // " (aq)"
 				IF (DissolutionData(i,4) .GT. 0) &
 					Token = TRIM(Token) // " " // TRIM(REAL2STR(DissolutionData(i,14))) // " " // &
-						    TRIM(AqPhaseChemicalNames(DissolutionData(i,4))) // " (aq)"
+						    TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,4)))) // " (aq)"
 
 				CALL ERROR("It seems that the mass balance is out of whack in dissolution reaction "//TRIM(Token)// &
 				           " in Dissolution.in.  This is a problem.")
@@ -537,8 +542,8 @@ END SUBROUTINE SetAllDissolution
 			CASE (1)
 				J = GetAqCharge(INT(DissolutionData(i,3)))
 				IF (J .NE. 0) &
-				CALL ERROR("While checking dissolution reactions, "//TRIM(GasPhaseChemicalNames(DissolutionData(i,1)))// &
-						   " (g) <=> "//TRIM(AqPhaseChemicalNames(DissolutionData(i,3))) // " (aq) is not in charge balance.")
+				CALL ERROR("While checking dissolution reactions, "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1))))// &
+						   " (g) <=> "//TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,3)))) // " (aq) is not in charge balance.")
 
 				!! Match Gas phase reaction to the appropriate aqueous phase reaction,
 				!! if there is one (and the dissociation constant is high enough)
@@ -550,7 +555,7 @@ END SUBROUTINE SetAllDissolution
 						!! Error check this matchup.  Can't infinitely dissociate...
 						IF (DissolutionData(I,11) .EQ. 1 .AND.	&
 						    AqEquilibriaList(J,9) .EQ. -1)		&
-							CALL ERROR ("Dissolution.in specifies that "//TRIM(GasPhaseChemicalNames(DissolutionData(I,1)))// &
+							CALL ERROR ("Dissolution.in specifies that "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,1))))// &
 							            " dissolve directly and AqEquilibriumReactions.in states that it dissociate "//       &
 										"immediately and infinitely once in solution.  This system is not equilabratable.  "// &
 										"Please pick another setup.")
@@ -562,10 +567,10 @@ END SUBROUTINE SetAllDissolution
 				J = DissolutionData(i,13)*GetAqCharge(INT(DissolutionData(i,3))) + &
 				    DissolutionData(i,14)*GetAqCharge(INT(DissolutionData(i,4)))
 				IF (J .NE. 0) &
-				CALL ERROR("While checking dissolution reactions, "//TRIM(GasPhaseChemicalNames(DissolutionData(i,1)))//   &
+				CALL ERROR("While checking dissolution reactions, "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1))))//   &
 				           " (g) <=> "//TRIM(REAL2STR(DissolutionData(I,13))) // " " // &
-						   TRIM(AqPhaseChemicalNames(DissolutionData(i,3))) // " + "//TRIM(REAL2STR(DissolutionData(I,14))) &
-						   // " " // TRIM(AqPhaseChemicalNames(DissolutionData(i,4)))//" (aq) is not in charge balance.")
+						   TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,3)))) // " + "//TRIM(REAL2STR(DissolutionData(I,14))) &
+						   // " " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,4))))//" (aq) is not in charge balance.")
 
 				!! Match Gas phase reaction to the appropriate aqueous phase reaction,
 				!! if there is one (and the dissociation constant is high enough)
@@ -590,21 +595,21 @@ END SUBROUTINE SetAllDissolution
 				           "there must also be an aqueous dissociation reaction with the same constituent ions forming an " // &
 						   "aqueous electrolyte for which thermodynamic quantities are supplied.  You may make this an "    // &
 						   "infinitely dissociating reaction, in which case there will be none of it present in aqueous "   // &
-						   "associated form.  The problematic reaction is: "//TRIM(GasPhaseChemicalNames(DissolutionData(i,1))) &
+						   "associated form.  The problematic reaction is: "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1)))) &
 						   // " (g) <=> " // TRIM(REAL2STR(DissolutionData(i,13))) // " " // &
-						   TRIM(AqPhaseChemicalNames(DissolutionData(i,3))) // " (aq)" // TRIM(REAL2STR(DissolutionData(i,14))) &
-						   // " " // TRIM(AqPhaseChemicalNames(DissolutionData(i,4))) // " (aq)")
+						   TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,3)))) // " (aq)" // TRIM(REAL2STR(DissolutionData(i,14))) &
+						   // " " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,4)))) // " (aq)")
 
 			CASE (4)
 				J = DissolutionData(i,13)*GetAqCharge(INT(DissolutionData(i,3))) + DissolutionData(i,14)*  &
 				    GetAqCharge(INT(DissolutionData(i,4))) - GetAqCharge(INT(DissolutionData(i,2)))
 
 				IF (J .NE. 0) THEN
-					Token = "While checking dissolution reactions, "//TRIM(GasPhaseChemicalNames(DissolutionData(i,1)))// &
-					        " (g) "//TRIM(AqPhaseChemicalNames(DissolutionData(i,2))) // "(aq) <=> "//  &
-							TRIM(REAL2STR(DissolutionData(I,13))) // " " // TRIM(AqPhaseChemicalNames(DissolutionData(i,3))) 
+					Token = "While checking dissolution reactions, "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1))))// &
+					        " (g) "//TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,2)))) // "(aq) <=> "//  &
+							TRIM(REAL2STR(DissolutionData(I,13))) // " " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,3)))) 
 					IF(DissolutionData(i,4) .GT. 0) Token = TRIM(Token) // " + "//TRIM(REAL2STR(DissolutionData(I,14))) // &
-					                                        " " // TRIM(AqPhaseChemicalNames(DissolutionData(i,4)))
+					                                        " " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,4))))
 					Token = TRIM(Token) //" (aq) is not in charge balance."
 					CALL ERROR(Token)
 				END IF
@@ -614,11 +619,11 @@ END SUBROUTINE SetAllDissolution
 				    DissolutionData(i,14)*GetAqCharge(INT(DissolutionData(i,4)))
 
 				IF (J .NE. 0) THEN
-					Token = "While checking dissolution reactions, "//TRIM(GasPhaseChemicalNames(DissolutionData(i,1)))// &
-					        " (g) "//TRIM(GasPhaseChemicalNames(DissolutionData(i,2))) // "(g) <=> "//                    &
-							TRIM(REAL2STR(DissolutionData(I,13))) // " " // TRIM(AqPhaseChemicalNames(DissolutionData(i,3))) 
+					Token = "While checking dissolution reactions, "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,1))))// &
+					        " (g) "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(i,2)))) // "(g) <=> "//                    &
+							TRIM(REAL2STR(DissolutionData(I,13))) // " " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,3)))) 
 					IF(DissolutionData(i,4) .GT. 0) Token = TRIM(Token) // " + "//TRIM(REAL2STR(DissolutionData(I,14))) // &
-					                                        " " // TRIM(AqPhaseChemicalNames(DissolutionData(i,4)))
+					                                        " " // TRIM(AqPhaseChemicalNames(INT(DissolutionData(i,4))))
 					Token = TRIM(Token) //" (aq) is not in charge balance."
 					CALL ERROR(Token)
 				END IF
@@ -653,16 +658,16 @@ END SUBROUTINE SetAllDissolution
 									CALL TRANSCRIPT ("")
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("Found a thermodynamic treatment for the dissolution reaction: ")
-									CALL TRANSCRIPT ("      "//TRIM(GasPhaseChemicalNames(DissolutionData(I,1)))//" + " &
-									                 //TRIM(AqCationNames(DissolutionData(I,2)-HowManyAqChems))//" <=> " &
-													 //TRIM(AqCationNames(DissolutionData(I,3)-HowManyAqChems)))
+									CALL TRANSCRIPT ("      "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,1))))//" + " &
+									                 //TRIM(AqCationNames(INT(DissolutionData(I,2))-HowManyAqChems))//" <=> " &
+													 //TRIM(AqCationNames(INT(DissolutionData(I,3))-HowManyAqChems)))
 									CALL TRANSCRIPT ("")
-									CALL TRANSCRIPT ("  g("//TRIM(AqCationNames(DissolutionData(I,2)-HowManyAqChems))//") / g("// &
-									                 TRIM(AqCationNames(DissolutionData(I,3)-HowManyAqChems))//") =")
-									CALL TRANSCRIPT ("  g("//TRIM(AqCationNames(AqEquilibriaList(J,2)))//"/"//  &
-									                 TRIM(AqAnionNames(AqEquilibriaList(J,3)))//")^2 / g("//    &
-													 TRIM(AqCationNames(AqEquilibriaList(K,2)))//"/"//          &
-													 TRIM(AqAnionNames(AqEquilibriaList(K,3)))//")^2")
+									CALL TRANSCRIPT ("  g("//TRIM(AqCationNames(INT(DissolutionData(I,2))-HowManyAqChems))//") / g("// &
+									                 TRIM(AqCationNames(INT(DissolutionData(I,3))-HowManyAqChems))//") =")
+									CALL TRANSCRIPT ("  g("//TRIM(AqCationNames(INT(AqEquilibriaList(J,2))))//"/"//  &
+									                 TRIM(AqAnionNames(INT(AqEquilibriaList(J,3))))//")^2 / g("//    &
+													 TRIM(AqCationNames(INT(AqEquilibriaList(K,2))))//"/"//          &
+													 TRIM(AqAnionNames(INT(AqEquilibriaList(K,3))))//")^2")
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("")
 
@@ -677,11 +682,11 @@ END SUBROUTINE SetAllDissolution
 
 20					IF (DissolutionData(I,8) .EQ. 0) &
 							CALL ERROR("Couldn't find a thermodynamic treatment for the dissolution reaction "//	&
-							TRIM(GasPhaseChemicalNames(DissolutionData(I,1)))//" + "//TRIM(AqCationNames			&
-							(DissolutionData(I,2)-HowManyAqChems))//" <=> "//TRIM(AqCationNames(DissolutionData(I,3)- &
+							TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,1))))//" + "//TRIM(AqCationNames			&
+							(INT(DissolutionData(I,2))-HowManyAqChems))//" <=> "//TRIM(AqCationNames(INT(DissolutionData(I,3))- &
 							HowManyAqChems))//" for which we wanted to match some mean activities to: g("//			&
-							TRIM(AqCationNames(DissolutionData(I,2)-HowManyAqChems))//") / g("//					&
-							TRIM(AqCationNames(DissolutionData(I,3)-HowManyAqChems))//") = ???.  You should have reactions "// &
+							TRIM(AqCationNames(INT(DissolutionData(I,2))-HowManyAqChems))//") / g("//					&
+							TRIM(AqCationNames(INT(DissolutionData(I,3))-HowManyAqChems))//") = ???.  You should have reactions "// &
 							"in AqEquilibriaReactions.in that will provide correct fodder.")
 			
 				!! If the Ions are both Anions
@@ -704,17 +709,17 @@ END SUBROUTINE SetAllDissolution
 									CALL TRANSCRIPT ("")
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("Found a thermodynamic treatment for the dissolution reaction: ")
-									CALL TRANSCRIPT ("      "//TRIM(GasPhaseChemicalNames(DissolutionData(I,1)))//" + "// &
-													 TRIM(AqCationNames(DissolutionData(I,2)-HowManyAqChems))//" <=> "//  &
-													 TRIM(AqCationNames(DissolutionData(I,3)-HowManyAqChems)))
+									CALL TRANSCRIPT ("      "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,1))))//" + "// &
+													 TRIM(AqCationNames(INT(DissolutionData(I,2))-HowManyAqChems))//" <=> "//  &
+													 TRIM(AqCationNames(INT(DissolutionData(I,3))-HowManyAqChems)))
 									CALL TRANSCRIPT ("")
-									CALL TRANSCRIPT ("  g("//TRIM(AqAnionNames(DissolutionData(I,2)-HowManyAqChems-	&
-													 HowManyAqCations))//") / g("//TRIM(AqAnionNames(DissolutionData(I,3)- &
+									CALL TRANSCRIPT ("  g("//TRIM(AqAnionNames(INT(DissolutionData(I,2))-HowManyAqChems-	&
+													 HowManyAqCations))//") / g("//TRIM(AqAnionNames(INT(DissolutionData(I,3))- &
 													 HowManyAqChems-HowManyAqCations))//") =")
-									CALL TRANSCRIPT ("  g("//TRIM(AqCationNames(AqEquilibriaList(K,2)))//"/"//TRIM(  &
-													 AqAnionNames(AqEquilibriaList(K,3)))//")^2 / g("//TRIM(         &
-													 AqCationNames(AqEquilibriaList(J,2)))//"/"//TRIM(               &
-													 AqAnionNames(AqEquilibriaList(J,3)))//")^2")
+									CALL TRANSCRIPT ("  g("//TRIM(AqCationNames(INT(AqEquilibriaList(K,2))))//"/"//TRIM(  &
+													 AqAnionNames(INT(AqEquilibriaList(K,3))))//")^2 / g("//TRIM(         &
+													 AqCationNames(INT(AqEquilibriaList(J,2))))//"/"//TRIM(               &
+													 AqAnionNames(INT(AqEquilibriaList(J,3))))//")^2")
 									CALL TRANSCRIPT ("")
 									CALL TRANSCRIPT ("This may be buggy -- the anion matching part of this.")
 									CALL TRANSCRIPT ("If it doesn't work well check CondensationInitialization.h")
@@ -734,12 +739,12 @@ END SUBROUTINE SetAllDissolution
 
 25				IF (DissolutionData(I,8) .EQ. 0) &
 					CALL ERROR("Couldn't find a thermodynamic treatment for the dissolution reaction "//	&
-							 TRIM(GasPhaseChemicalNames(DissolutionData(I,1)))//" + "//                   &
-							 TRIM(AqAnionNames(DissolutionData(I,2)-HowManyAqChems-HowManyAqCations))//   &
-							 " <=> "//TRIM(AqAnionNames(DissolutionData(I,3)-HowManyAqChems-HowManyAqCations))// &
+							 TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,1))))//" + "//                   &
+							 TRIM(AqAnionNames(INT(DissolutionData(I,2))-HowManyAqChems-HowManyAqCations))//   &
+							 " <=> "//TRIM(AqAnionNames(INT(DissolutionData(I,3))-HowManyAqChems-HowManyAqCations))// &
 							 " for which we wanted to match some mean activities to: g("//                &
-							 TRIM(AqAnionNames(DissolutionData(I,2)-HowManyAqChems-HowManyAqCations))// &
-							 ") / g("//TRIM(AqAnionNames(DissolutionData(I,3)-HowManyAqChems-HowManyAqCations))// &
+							 TRIM(AqAnionNames(INT(DissolutionData(I,2))-HowManyAqChems-HowManyAqCations))// &
+							 ") / g("//TRIM(AqAnionNames(INT(DissolutionData(I,3))-HowManyAqChems-HowManyAqCations))// &
 							 ") = ???.  You should have reactions in AqEquilibriaReactions.in that will provide correct fodder.")
 
 			END IF
@@ -780,10 +785,10 @@ END SUBROUTINE SetAllDissolution
 									CALL TRANSCRIPT ("")
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("Found a thermodynamic treatment for the dissolution reaction: ")
-									CALL TRANSCRIPT ("      "//TRIM(GasPhaseChemicalNames(DissolutionData(I,1)))//" + " &
-									                 //TRIM(GasPhaseChemicalNames(DissolutionData(I,2)))//" <=> " &
-													 //TRIM(AqCationNames(DissolutionData(I,3)-HowManyAqChems))//" + " &
-													 //TRIM(AqAnionNames(DissolutionData(I,4)-HowManyAqChems-HowManyAqCations)))
+									CALL TRANSCRIPT ("      "//TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,1))))//" + " &
+									                 //TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,2))))//" <=> " &
+													 //TRIM(AqCationNames(INT(DissolutionData(I,3))-HowManyAqChems))//" + " &
+													 //TRIM(AqAnionNames(INT(DissolutionData(I,4))-HowManyAqChems-HowManyAqCations)))
 									CALL TRANSCRIPT ("")
 									CALL TRANSCRIPT ("Will use Dissolution Reaction #"//TRIM(INT2STR(K))//" to calculate mean activity.")
 									CALL TRANSCRIPT ("*********************************************************")
@@ -800,17 +805,17 @@ END SUBROUTINE SetAllDissolution
 
 30					IF (DissolutionData(I,12) .EQ. 0) &
 							CALL ERROR("Couldn't find a thermodynamic treatment for the dissolution reaction "//	&
-										TRIM(GasPhaseChemicalNames(DissolutionData(I,1)))//" + " &
-									    //TRIM(GasPhaseChemicalNames(DissolutionData(I,2)))//" <=> " &
-										//TRIM(AqCationNames(DissolutionData(I,3)-HowManyAqChems))// " + " &
-										//TRIM(AqAnionNames(DissolutionData(I,4)-HowManyAqChems-HowManyAqCations)))
+										TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,1))))//" + " &
+									    //TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,2))))//" <=> " &
+										//TRIM(AqCationNames(INT(DissolutionData(I,3))-HowManyAqChems))// " + " &
+										//TRIM(AqAnionNames(INT(DissolutionData(I,4))-HowManyAqChems-HowManyAqCations)))
 								
 				ELSE	!Anion Listed First
 					CALL ERROR("Couldn't find a thermodynamic treatment for the dissolution reaction "//	&
-										TRIM(GasPhaseChemicalNames(DissolutionData(I,1)))//" + " &
-									    //TRIM(GasPhaseChemicalNames(DissolutionData(I,2)))//" <=> " &
-										//TRIM(AqCationNames(DissolutionData(I,3)-HowManyAqChems))// " + " &
-										//TRIM(AqAnionNames(DissolutionData(I,4)-HowManyAqChems-HowManyAqCations))//". "// &
+										TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,1))))//" + " &
+									    //TRIM(GasPhaseChemicalNames(INT(DissolutionData(I,2))))//" <=> " &
+										//TRIM(AqCationNames(INT(DissolutionData(I,3))-HowManyAqChems))// " + " &
+										//TRIM(AqAnionNames(INT(DissolutionData(I,4))-HowManyAqChems-HowManyAqCations))//". "// &
 										"Please list the cation first on the right hand side.")
 							
 				
@@ -829,35 +834,38 @@ END SUBROUTINE SetAllDissolution
 		RETURN
 	END SUBROUTINE SetDissolution
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Read Hydrophobic Phase Chemical Information from									!!
-	!! input decks, defines the appropriate chemical arrays in this module,	!!
-	!! and calls the appropriate eulerian grid subroutines to establich the		!!
-	!! chemical fields															!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Read Hydrophobic Phase Chemical Information from			    !!
+!! input decks, defines the appropriate chemical arrays in this module,	    !!
+!! and calls the appropriate subroutines to establish the	            !!
+!! chemical fields							    !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	SUBROUTINE SetOrganicDissolution ()
 
-		USE ModelParameters, ONLY : AqChemScale, Atmospheres,		 &
-									SetDissolutionEquilibriumOrFlux, &
-									DissolutionEquilibriumOrFlux,	 &
-									ThermoBulkMode, &
-									TranscriptFH, InputDeckSubDir, &
-									DoHydrophobicOrgDissolutionFlag
+		USE ModelParameters, ONLY : AqChemScale, Atmospheres,	&
+					SetDissolutionEquilibriumOrFlux, &
+					DissolutionEquilibriumOrFlux,	 &
+					ThermoBulkMode, &
+					TranscriptFH, InputDeckSubDir, &
+					DoHydrophobicOrgDissolutionFlag
+
 		USE InfrastructuralCode
-		USE Chemistry,       ONLY : GasPhase, AqPhase,			&
-									FindChem, FindIon,			&
-									GasPhaseChemicalNames,		&
-									OrgPhaseChemicalNames,		&
-									OrgMolecularMass, &
-									GasMolecularMass 
+
+		USE Chemistry,       ONLY : GasPhase, AqPhase,		&
+					FindChem, FindIon,		&
+					GasPhaseChemicalNames,		&
+					OrgPhaseChemicalNames,		&
+					OrgMolecularMass, &
+					GasMolecularMass 
 
 
 		IMPLICIT NONE
 
 		!! Local Infrastructural Variables
-		INTEGER				:: I, J, K, allocation_error,IonIndex(2)
-		REAL*8				:: MassTally, H2SO4GasIndex, HSO4AqIndex, HAqIndex
-		CHARACTER(len=512)	:: CurrLine, Token, GasChem1, GasChem2, AqIon1, AqIon2
+		INTEGER	:: I, J, K, allocation_error,IonIndex(2)
+		REAL*8	:: MassTally, H2SO4GasIndex, HSO4AqIndex, HAqIndex
+		CHARACTER(len=512)	:: CurrLine, Token, GasChem1, &
+                                           GasChem2, AqIon1, AqIon2
 		CHARACTER (len=12)	:: Numbers = "0123456789+-"
 
 		!! Transcribe?  Use Scaffolding Code?
@@ -998,11 +1006,11 @@ END SUBROUTINE SetAllDissolution
 			!! ---	2. Mass Accommodation Coefficient
 			CALL GetToken(CurrLine,";",Token) 
 			OrganicDissolutionData(i,10) = STR2REAL (Token)
-			IF (OrganicDissolutionData(i,10) .LT. 0. .OR. OrganicDissolutionData(i,10.) .GT. 1.) THEN
-				Token = TRIM(GasPhaseChemicalNames(OrganicDissolutionData(i,1))) // " (g)"
+			IF (OrganicDissolutionData(i,10) .LT. 0. .OR. OrganicDissolutionData(i,10) .GT. 1.) THEN
+				Token = TRIM(GasPhaseChemicalNames(INT(OrganicDissolutionData(i,1)))) // " (g)"
 				IF (OrganicDissolutionData(i,2) .GT. 0) &
-					Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(OrganicDissolutionData(i,2))) // " (g)"
-				Token = TRIM(Token) // " <=> " // TRIM(OrgPhaseChemicalNames(OrganicDissolutionData(i,3))) // " (aq)"
+					Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(INT(OrganicDissolutionData(i,2)))) // " (g)"
+				Token = TRIM(Token) // " <=> " // TRIM(OrgPhaseChemicalNames(INT(OrganicDissolutionData(i,3)))) // " (aq)"
 				CALL ERROR ("Specified an out of range mass accommodation coefficient in OrganicDissolution.in for the reaction "// &
 							TRIM(Token)//".  It should be between zero and unity.")
 			END IF
@@ -1027,11 +1035,11 @@ END SUBROUTINE SetAllDissolution
 			OrganicDissolutionData(i,8) = STR2REAL (Token)
 
 			!! Report the particular reaction
-			Token = TRIM(GasPhaseChemicalNames(OrganicDissolutionData(i,1))) // " (g)"
+			Token = TRIM(GasPhaseChemicalNames(INT(OrganicDissolutionData(i,1)))) // " (g)"
 
 			Token = TRIM(Token) // " <=> " 
 
-			Token = TRIM(Token) // " " // TRIM(OrgPhaseChemicalNames(OrganicDissolutionData(i,3))) // " (org)"
+			Token = TRIM(Token) // " " // TRIM(OrgPhaseChemicalNames(INT(OrganicDissolutionData(i,3)))) // " (org)"
 
 			CALL TRANSCRIPT(TRIM(Token))			
 
@@ -1071,9 +1079,9 @@ END SUBROUTINE SetAllDissolution
 
 			!! err if it is not within 0.1% (which I arbitrarily set as a rounding error
 			IF (MassTally .GT. 1.001 .OR. MassTally .LT. 0.999) THEN
-				Token = TRIM(GasPhaseChemicalNames(OrganicDissolutionData(i,1))) // " (g)"
+				Token = TRIM(GasPhaseChemicalNames(INT(OrganicDissolutionData(i,1)))) // " (g)"
 				Token = TRIM(Token) // " <=> " // TRIM(REAL2STR(OrganicDissolutionData(i,13))) // " " // &
-						TRIM(OrgPhaseChemicalNames(OrganicDissolutionData(i,3))) // " (org)"
+						TRIM(OrgPhaseChemicalNames(INT(OrganicDissolutionData(i,3)))) // " (org)"
 				CALL ERROR("It seems that the mass balance is out of whack in OrganicDissolution reaction "//TRIM(Token)// &
 				           " in OrganicDissolution.in.  This is a problem.")
 			END IF
@@ -1091,34 +1099,37 @@ END SUBROUTINE SetAllDissolution
 	END SUBROUTINE SetOrganicDissolution
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Read Hydrophilic Phase Chemical Information from									!!
-	!! input decks, defines the appropriate chemical arrays in this module,	!!
-	!! and calls the appropriate eulerian grid subroutines to establich the		!!
-	!! chemical fields															!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Read Hydrophilic Phase Chemical Information from			    !!
+!! input decks, defines the appropriate chemical arrays in this module,	    !!
+!! and calls the appropriate eulerian grid subroutines to establich the	    !!
+!! chemical fields							    !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	SUBROUTINE SetHydrophilicOrganicDissolution ()
 
-		USE ModelParameters, ONLY : AqChemScale, Atmospheres,		 &
-									SetDissolutionEquilibriumOrFlux, &
-									DissolutionEquilibriumOrFlux,	 &
-									ThermoBulkMode, &
-									TranscriptFH, InputDeckSubDir, &
-									DoHydrophilicOrgDissolutionFlag
+		USE ModelParameters, ONLY : AqChemScale, Atmospheres,	&
+					SetDissolutionEquilibriumOrFlux, &
+					DissolutionEquilibriumOrFlux,	 &
+					ThermoBulkMode, &
+					TranscriptFH, InputDeckSubDir, &
+					DoHydrophilicOrgDissolutionFlag
+
 		USE InfrastructuralCode
-		USE Chemistry,       ONLY : GasPhase, AqPhase,			&
-									FindChem, FindIon,			&
-									GasPhaseChemicalNames,		&
-									AqOrgPhaseChemicalNames,		&
-									AqOrgMolecularMass, &
-									GasMolecularMass 
+
+		USE Chemistry,   ONLY : GasPhase, AqPhase,		&
+				        FindChem, FindIon,		&
+					GasPhaseChemicalNames,		&
+					AqOrgPhaseChemicalNames,	&
+					AqOrgMolecularMass, &
+					GasMolecularMass 
 
 
 		IMPLICIT NONE
 
 		!! Local Infrastructural Variables
-		INTEGER				:: I, J, K, allocation_error,IonIndex(2)
-		REAL*8				:: MassTally, H2SO4GasIndex, HSO4AqIndex, HAqIndex
-		CHARACTER(len=512)	:: CurrLine, Token, GasChem1, GasChem2, AqIon1, AqIon2
+		INTEGER	:: I, J, K, allocation_error,IonIndex(2)
+		REAL*8	:: MassTally, H2SO4GasIndex, HSO4AqIndex, HAqIndex
+		CHARACTER(len=512)	:: CurrLine, Token, GasChem1, &
+                                           GasChem2, AqIon1, AqIon2
 		CHARACTER (len=12)	:: Numbers = "0123456789+-"
 
 		!! Transcribe?  Use Scaffolding Code?
@@ -1260,11 +1271,11 @@ END SUBROUTINE SetAllDissolution
 			!! ---	2. Mass Accommodation Coefficient
 			CALL GetToken(CurrLine,";",Token) 
 			AqOrganicDissolutionData(i,10) = STR2REAL (Token)
-			IF (AqOrganicDissolutionData(i,10) .LT. 0. .OR. AqOrganicDissolutionData(i,10.) .GT. 1.) THEN
-				Token = TRIM(GasPhaseChemicalNames(AqOrganicDissolutionData(i,1))) // " (g)"
+			IF (AqOrganicDissolutionData(i,10) .LT. 0. .OR. AqOrganicDissolutionData(i,10) .GT. 1.) THEN
+				Token = TRIM(GasPhaseChemicalNames(INT(AqOrganicDissolutionData(i,1)))) // " (g)"
 				IF (AqOrganicDissolutionData(i,2) .GT. 0) &
-					Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(AqOrganicDissolutionData(i,2))) // " (g)"
-				Token = TRIM(Token) // " <=> " // TRIM(AqOrgPhaseChemicalNames(AqOrganicDissolutionData(i,3))) // " (aq)"
+					Token = TRIM(Token) // " + " // TRIM(GasPhaseChemicalNames(INT(AqOrganicDissolutionData(i,2)))) // " (g)"
+				Token = TRIM(Token) // " <=> " // TRIM(AqOrgPhaseChemicalNames(INT(AqOrganicDissolutionData(i,3)))) // " (aq)"
 				CALL ERROR ("Specified an out of range mass accommodation coefficient in HydrophilicOrganicDissolution.in for the reaction "// &
 							TRIM(Token)//".  It should be between zero and unity.")
 			END IF
@@ -1297,11 +1308,11 @@ END SUBROUTINE SetAllDissolution
 			AqOrganicDissolutionData(i,12) = STR2REAL (Token)
 			
 			!! Report the particular reaction
-			Token = TRIM(GasPhaseChemicalNames(AqOrganicDissolutionData(i,1))) // " (g)"
+			Token = TRIM(GasPhaseChemicalNames(INT(AqOrganicDissolutionData(i,1)))) // " (g)"
 
 			Token = TRIM(Token) // " <=> " 
 
-			Token = TRIM(Token) // " " // TRIM(AqOrgPhaseChemicalNames(AqOrganicDissolutionData(i,3))) // " (aq)"
+			Token = TRIM(Token) // " " // TRIM(AqOrgPhaseChemicalNames(INT(AqOrganicDissolutionData(i,3)))) // " (aq)"
 
 			CALL TRANSCRIPT(TRIM(Token))			
 
@@ -1341,9 +1352,9 @@ END SUBROUTINE SetAllDissolution
 
 			!! err if it is not within 0.1% (which I arbitrarily set as a rounding error
 			IF (MassTally .GT. 1.001 .OR. MassTally .LT. 0.999) THEN
-				Token = TRIM(GasPhaseChemicalNames(AqOrganicDissolutionData(i,1))) // " (g)"
+				Token = TRIM(GasPhaseChemicalNames(INT(AqOrganicDissolutionData(i,1)))) // " (g)"
 				Token = TRIM(Token) // " <=> " // TRIM(REAL2STR(AqOrganicDissolutionData(i,13))) // " " // &
-						TRIM(AqOrgPhaseChemicalNames(AqOrganicDissolutionData(i,3))) // " (org)"
+						TRIM(AqOrgPhaseChemicalNames(INT(AqOrganicDissolutionData(i,3)))) // " (org)"
 				CALL ERROR("It seems that the mass balance is out of whack in AqOrganicDissolution reaction "//TRIM(Token)// &
 				           " in HydrophilicOrganicDissolution.in.  This is a problem.")
 			END IF

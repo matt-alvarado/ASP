@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -6,12 +6,13 @@
 !! This module contains subroutines that deal with	
 !! string parsing, tokenizing, stripping, etcetera.	
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY								!!
-!!										!!
-!! Month  Year   Name              Description					!!
-!! 07     2006   Matt Alvarado     Began Update History			        !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY						            !!
+!!									    !!
+!! Month  Year   Name              Description				    !!
+!! 07     2006   Matt Alvarado     Began Update History			    !!
+!! 02/15  2012   Matt Alvarado     Removed Eulerian grids.                  !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:		    !!
@@ -26,170 +27,169 @@
 !! 9. FUNCTION IsReal( InString ) RESULT ( Flag )			    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!!!!!!!!! This Strips leading and trailing whitespace from a string !!!!!!!!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	CHARACTER (len = 512) FUNCTION StripToken (InLine) RESULT (OutLine)
-		CHARACTER*(*) :: InLine
-		INTEGER       :: i, j
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!! This Strips leading and trailing whitespace from a string !!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ CHARACTER (len = 512) FUNCTION StripToken (InLine) RESULT (OutLine)
+	CHARACTER*(*) :: InLine
+	INTEGER       :: i, j
 
-		!! String might be an empty string
-		IF (LEN_TRIM(Inline) .EQ. 0) THEN
-			OutLine = ""
-			RETURN
-		END IF
+	!! String might be an empty string
+	IF (LEN_TRIM(Inline) .EQ. 0) THEN
+		OutLine = ""
+		RETURN
+	END IF
 
                 
 
-		!! Strip Leading Whitespace
-		i=1
-		DO WHILE (InLine(i:i) == " " .or. InLine(i:i) == "	") ! The second option has a tab character in it
-			IF (i == len(InLine)) EXIT			   ! This is a blank line with tabs in it
-			i = i+1						   ! Look for first nonblank character
-			IF (i==len(InLine)) THEN								
-				OutLine = ""										
-			END IF													
-		END DO														
-																	
-		!! Strip Trailing Whitespace								
-		j=LEN(InLine)												
-		DO WHILE (InLine(j:j) == " " .or. InLine(j:j) == "	") ! The second option has a tab character in it
-			IF (j .le. 1) EXIT				   ! Trip trailing spaces / tabs off
-			j = j-1						   ! 
-		END DO							   
-																	
-		OutLine = InLine(i:j)					   ! Trim Whitespace
+	!! Strip Leading Whitespace
+	i=1
+	DO WHILE (InLine(i:i) == " " .or. InLine(i:i) == "	") 
+        ! The second option has a tab character in it
+		IF (i == len(InLine)) EXIT			   
+                ! This is a blank line with tabs in it
+		i = i+1						   
+                ! Look for first nonblank character
+		IF (i==len(InLine)) THEN				
+		   OutLine = ""					
+		END IF							
+	END DO								
 
+	!! Strip Trailing Whitespace					
+	j=LEN(InLine)
+	DO WHILE (InLine(j:j) == " " .or. InLine(j:j) == "	") 
+        ! The second option has a tab character in it
+		IF (j .le. 1) EXIT ! Trip trailing spaces / tabs off
+		j = j-1						   ! 
+	END DO	
+	OutLine = InLine(i:j)	! Trim Whitespace
+
+	RETURN
+ END FUNCTION StripToken
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Create a String from an Integer !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ CHARACTER (len = 512) FUNCTION INT2STR ( InInt ) RESULT ( OutString )
+
+	IMPLICIT NONE
+
+	!! External Variables
+	INTEGER :: InInt
+
+	!! Internal Variables
+	INTEGER :: Digits, I, J, K, L, WorkInt
+
+	!! Initialize 
+	OutString = ""
+	WorkInt = InInt
+
+	!! Zero is a special case, given that we're playing with LOG's.
+	IF (InInt .EQ. 0) THEN
+		OutString = "0"
 		RETURN
-	END FUNCTION StripToken
+	END IF
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Create a String from an Integer !!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	CHARACTER (len = 512) FUNCTION INT2STR ( InInt ) RESULT ( OutString )
+	!! Calculate Number of Digits in String
+	IF (InInt < 0) WorkInt = -1*WorkInt
+	Digits = CountDigits(WorkInt)
 
-		IMPLICIT NONE
+	!! Loop Over the Digits to FILL OutString
+	DO I = DIGITS-1, 0, -1
+		K = Digits - I
+		J = FLOOR(WorkInt/10.**I)
+		OutString(K:K) = CHAR(J+48)
+		WorkInt = WorkInt - J*10.**I
+	END DO
 
-		!! External Variables
-		INTEGER :: InInt
+	IF (InInt < 0.) OutString = "-"//TRIM(OutString)
 
-		!! Internal Variables
-		INTEGER :: Digits, I, J, K, L, WorkInt
+	RETURN
+END FUNCTION INT2STR
 
-		!! Initialize 
-		OutString = ""
-		WorkInt = InInt
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Count the number of digits in an integer !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+INTEGER FUNCTION CountDigits ( InInt ) RESULT ( Digits )
 
-		!! Zero is a special case, given that we're playing with LOG's.
-		IF (InInt .EQ. 0) THEN
-			OutString = "0"
-			RETURN
-		END IF
+	IMPLICIT NONE
 
-		!! Calculate Number of Digits in String
-		IF (InInt < 0) WorkInt = -1*WorkInt
-		Digits = CountDigits(WorkInt)
+	INTEGER :: InInt
+		
+	IF (InInt .EQ. 0 .OR. InInt .EQ. 1) THEN
+		Digits = 1
+		GOTO 20
+	END IF
 
-		!! Loop Over the Digits to FILL OutString
-		DO I = DIGITS-1, 0, -1
-			K = Digits - I
-			J = FLOOR(WorkInt/10.**I)
-			OutString(K:K) = CHAR(J+48)
-			WorkInt = WorkInt - J*10.**I
-		END DO
+	Digits = CEILING(DLog10(ABS(DFLOAT(InInt))))
+	IF (MODULO(InInt,10) .EQ. 0 .AND. Digits .NE. CEILING(dlog10(DFLOAT(InInt+1)))) Digits = Digits + 1
 
-		IF (InInt < 0.) OutString = "-"//TRIM(OutString)
+20	RETURN
+END FUNCTION CountDigits
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Create a String from an Real !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ CHARACTER (len = 512) FUNCTION REAL2STR ( InReal, inDecimalPlaces ) RESULT ( OutString )
+
+	IMPLICIT NONE
+
+	!! External Variables
+	REAL*8			  :: InReal
+	INTEGER, OPTIONAL :: inDecimalPlaces
+
+	!! Internal Variables
+	INTEGER :: I,LenDec,DecimalPlaces, e
+	REAL*8  :: WorkReal
+	CHARACTER (len=64) :: Decimals, IntDecimalPlaces
+
+	!! the minimum dlog10(InReal) before correcting using scientific notation
+	REAL*8, PARAMETER :: MinUnSci = -2.
+
+	!! Initialize 
+	OutString = ""
+
+	!! See if Number of Digits is Passed
+	!! If Not, Install Default Value
+	IF (PRESENT(inDecimalPlaces)) THEN
+		DecimalPlaces = inDecimalPlaces
+	ELSE
+		DecimalPlaces = 3
+	END IF
+	IF (DecimalPlaces < 0) CALL ERROR ("Negative Number of Decimal Places Passed "//&
+	"to Real2Str, Which Makes Me Very Unhappy!!! Stopping.")
+
+	IF (DecimalPlaces > 12) CALL ERROR ("Ridiculously Large Number of Decimal Places Suggested "//&
+	"to Real2Str, Which Makes Me Very Unhappy!!! Stopping.")
+
+	IF (InReal .LT. 0.0) THEN
+		WorkReal = -1.*InReal
+	ELSE
+		WorkReal = InReal
+	END IF
+		
+	!! Deal with zero or very near zero
+	IF (WorkReal .LT. 1.e-40) WorkReal = 0.
+	IF (WorkReal .EQ. 0.) THEN
+		OutString = "0."
 		RETURN
-	END FUNCTION INT2STR
+	END IF
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Count the number of digits in an integer !!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	INTEGER FUNCTION CountDigits ( InInt ) RESULT ( Digits )
+	!! Determine if should print in scientific notation on the big end
+	e = CountDigits(Floor(WorkReal)) - 1
+	IF (e .GT. 1) THEN
+		WorkReal = WorkReal / 10.**e
 
-		IMPLICIT NONE
-
-		INTEGER :: InInt
-		
-		IF (InInt .EQ. 0 .OR. InInt .EQ. 1) THEN
-			Digits = 1
-			GOTO 20
-		END IF
-
-		Digits = CEILING(DLog10(ABS(DFLOAT(InInt))))
-		IF (MODULO(InInt,10) .EQ. 0 .AND. Digits .NE. CEILING(dlog10(DFLOAT(InInt+1)))) Digits = Digits + 1
-
-20		RETURN
-	END FUNCTION CountDigits
-
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Create a String from an Real !!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	CHARACTER (len = 512) FUNCTION REAL2STR ( InReal, inDecimalPlaces ) RESULT ( OutString )
-
-		IMPLICIT NONE
-
-		!! External Variables
-		REAL*8			  :: InReal
-		INTEGER, OPTIONAL :: inDecimalPlaces
-
-		!! Internal Variables
-		INTEGER :: I,LenDec,DecimalPlaces, e
-		REAL*8  :: WorkReal
-		CHARACTER (len=64) :: Decimals, IntDecimalPlaces
-
-	    !! the minimum dlog10(InReal) before correcting using scientific notation
-		REAL*8, PARAMETER :: MinUnSci = -2.
-
-		!! Initialize 
-		OutString = ""
-
-		!! See if Number of Digits is Passed
-		!! If Not, Install Default Value
-		IF (PRESENT(inDecimalPlaces)) THEN
-			DecimalPlaces = inDecimalPlaces
-		ELSE
-			DecimalPlaces = 3
-		END IF
-
-		IF (DecimalPlaces < 0) CALL ERROR ("Negative Number of Decimal Places Passed "//&
-								"to Real2Str, Which Makes Me Very Unhappy!!! Stopping.")
-
-		IF (DecimalPlaces > 12) CALL ERROR ("Ridiculously Large Number of Decimal Places Suggested "//&
-								"to Real2Str, Which Makes Me Very Unhappy!!! Stopping.")
-
-		IF (InReal .LT. 0.0) THEN
-			WorkReal = -1.*InReal
-		ELSE
-			WorkReal = InReal
-		END IF
-		
-		!! Deal with zero or very near zero
-		IF (WorkReal .LT. 1.e-40) WorkReal = 0.
-		IF (WorkReal .EQ. 0.) THEN
-			OutString = "0."
-			RETURN
-		END IF
-
-		!! Determine if should print in scientific notation on the big end
-		e = CountDigits(Floor(WorkReal)) - 1
-		IF (e .GT. 1) THEN
+	!! Now check to see if it's really small
+	ELSE
+		IF (WorkReal .LT. 1 ) THEN
+		e = FLOOR(dlog10(WorkReal))
+		   IF (e .LT. MinUnSci) THEN
 			WorkReal = WorkReal / 10.**e
-
-!print *, "DING2",e,WorkReal
-
-		!! Now check to see if it's really small
-		ELSE
-
-			IF (WorkReal .LT. 1 ) THEN
-			e = FLOOR(dlog10(WorkReal))
-			IF (e .LT. MinUnSci) THEN
-				WorkReal = WorkReal / 10.**e
-			END IF
-			END IF
-
+		   END IF
 		END IF
+
+	END IF
 
 		!! See if the decimal representation is too big
 		LenDec = LEN_TRIM(INT2STR(INT(ANINT((WorkReal-FLOOR(WorkReal))*10.**DecimalPlaces))))

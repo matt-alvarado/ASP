@@ -1,4 +1,8 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!     path:      $HeadURL: https://svn.aer.com/svn/aer/project/RD/ASP/branches/remove-eulerian-coords/src/Time.f90 $
+!     author:    $Author: malvarad $
+!     revision:  $Revision: 10800 $
+!     created:   $Date: 2011-10-31 09:20:57 -0400 (Mon, 31 Oct 2011) $
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:

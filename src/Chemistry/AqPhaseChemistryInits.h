@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -7,36 +7,41 @@
 !! aqueous phase kinetic reactions, and aqueous phase 
 !! inorganic equilibrium reactions.
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!! 07/24  2006   Matt Alvarado     Change "Pointer => NULL()" to				!!
-!!									NULLIFY(POINTER) to fit pgf90							!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 07/24  2006   Matt Alvarado     Change "Pointer => NULL()" to	     !!
+!!					NULLIFY(POINTER) to fit pgf90	     !!
+!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!                                 Also fixed type-conversion errors         !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:  !!
-!! 1. SUBROUTINE SetAqPhaseChemistry ()							!!
-!! 2. SUBROUTINE SetAqPhaseODEandJacobian ()					!!
-!! 3. SUBROUTINE SetAqPhaseEquilibriumReactions ()				!!
+!! 1. SUBROUTINE SetAqPhaseChemistry ()				!!
+!! 2. SUBROUTINE SetAqPhaseODEandJacobian ()			!!
+!! 3. SUBROUTINE SetAqPhaseEquilibriumReactions ()		!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 	
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Read Aq Phase Chemical Information from 'AqPhaseChemistryInputDeck.in',	!!
-	!! an input deck, defines the appropriate chemical arrays in this module,	!!
-	!! and calls the appropriate eulerian grid subroutines to establich the		!!
-	!! chemical fields															!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	SUBROUTINE SetAqPhaseChemistry ()
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Read Aq Phase Chemical Information from 'AqPhaseChemistryInputDeck.in',  !!
+!! an input deck, defines the appropriate chemical arrays in this module,   !!
+!! and calls the appropriate eulerian grid subroutines to establich the	    !!
+!! chemical fields							    !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE SetAqPhaseChemistry ()
 
-		USE ModelParameters, ONLY : SetHowManyVariousAqChems, SetProtonIndex, SetHydroxyIndex, cm, &
-									grams, moles, WaterMolecMass, InputDeckSubDir, TranscriptFH,   &
-									AqChemScale, Atmospheres
-		USE InfrastructuralCode
+	USE ModelParameters, ONLY : SetHowManyVariousAqChems, &
+                                    SetProtonIndex, SetHydroxyIndex, cm, &
+				    grams, moles, WaterMolecMass, & 
+                                    InputDeckSubDir, TranscriptFH,   &
+				    AqChemScale, Atmospheres
+	USE InfrastructuralCode
 
-		IMPLICIT NONE
+	IMPLICIT NONE
 
 		!! Local Infrastructural Variables
 		INTEGER				:: i, j, k,			 &
@@ -917,7 +922,7 @@
 		DO ElectrolyteRxn = 1, HowManyAqEqReactions !!!!!!!!!!!!!!!!
 
 			IF (Transcribe .AND. AqEquilibriaList(ElectrolyteRxn,9) .EQ. -1.) THEN
-				CALL Transcript ("") ; CALL Transcript(TRIM(AqPhaseChemicalNames(AqEquilibriaList(ElectrolyteRxn,1)))//  &
+				CALL Transcript ("") ; CALL Transcript(TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(ElectrolyteRxn,1))))//  &
 				" is set to condense directly into its dissociated form, and will remain fully dissociated while in solution.")
 			END IF
 
@@ -927,8 +932,8 @@
 					AqEquilibriaList(ElectrolyteRxn,3) .EQ. AqEquilibriaList(I,3))			&
 					CALL ERROR ("It looks like the user double specied the following reaction: <<"//TRIM(AqPhaseChemicalNames(  &
 					            INT(AqEquilibriaList(I,1))))//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4)))//" "//             &
-								TRIM(AqCationNames(AqEquilibriaList(I,2)))//" + "//TRIM(REAL2STR(AqEquilibriaList(I,5)))//" "// &
-								TRIM(AqAnionNames(AqEquilibriaList(I,3)))//">> as specified in AqEquilibriumReactions.in.  "//  &
+								TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//" + "//TRIM(REAL2STR(AqEquilibriaList(I,5)))//" "// &
+								TRIM(AqAnionNames(INT(AqEquilibriaList(I,3))))//">> as specified in AqEquilibriumReactions.in.  "//  &
 								"This is a problem worthy of stopping the program.")
 			END DO
 		END DO
@@ -976,54 +981,54 @@
 			
 			IF (AqEquilibriaList(I,22) .NE. 0 .AND. AqEquilibriaList(I,24) .EQ. 0) THEN
 				!!(Levitocite)
-				JJ = AqEquilibriaList(I,4) * AqCationMass(AqEquilibriaList(I,2)) + AqEquilibriaList(I,5) * &
-					AqAnionMass(AqEquilibriaList(I,3)) + AqEquilibriaList(I,23) * AqAnionMass(AqEquilibriaList(I,22))
+				JJ = AqEquilibriaList(I,4) * AqCationMass(INT(AqEquilibriaList(I,2))) + AqEquilibriaList(I,5) * &
+					AqAnionMass(INT(AqEquilibriaList(I,3))) + AqEquilibriaList(I,23) * AqAnionMass(INT(AqEquilibriaList(I,22)))
 			ELSE IF (AqEquilibriaList(I,22) .EQ. 0 .AND. AqEquilibriaList(I,24) .NE. 0) THEN
 				!!Hydrates
-					JJ = AqEquilibriaList(I,4) * AqCationMass(AqEquilibriaList(I,2)) + AqEquilibriaList(I,5) * &
-					AqAnionMass(AqEquilibriaList(I,3)) + AqEquilibriaList(I,25) * AqMolecularMass(AqEquilibriaList(I,24))			
+					JJ = AqEquilibriaList(I,4) * AqCationMass(INT(AqEquilibriaList(I,2))) + AqEquilibriaList(I,5) * &
+					AqAnionMass(INT(AqEquilibriaList(I,3))) + AqEquilibriaList(I,25) * AqMolecularMass(INT(AqEquilibriaList(I,24)))			
 			ELSE
 				!!Simple salts
-				JJ = AqEquilibriaList(I,4) * AqCationMass(AqEquilibriaList(I,2)) + AqEquilibriaList(I,5) * &
-					AqAnionMass(AqEquilibriaList(I,3))
+				JJ = AqEquilibriaList(I,4) * AqCationMass(INT(AqEquilibriaList(I,2))) + AqEquilibriaList(I,5) * &
+					AqAnionMass(INT(AqEquilibriaList(I,3)))
 			END IF		 
 			
 			!! Err if More Egregious
 			IF (II/JJ .GT. 1.001 .OR. II/JJ .LT. 0.999) THEN
 				!write(*,*) II, JJ
 				CALL ERROR("Mass More than 0.1% Out of Balance for the Reaction "//TRIM(AqPhaseChemicalNames(  &
-							AqEquilibriaList(I,1)))//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))//" "//   &
-							TRIM(AqCationNames(AqEquilibriaList(I,2)))//" & "//TRIM(REAL2STR(AqEquilibriaList(I,5),1))// &
-							" "//TRIM(AqAnionNames(AqEquilibriaList(I,3)))//" Aqueous Phase Equilibrium Reacion.  This is "// &
+							INT(AqEquilibriaList(I,1))))//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))//" "//   &
+							TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//" & "//TRIM(REAL2STR(AqEquilibriaList(I,5),1))// &
+							" "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,3))))//" Aqueous Phase Equilibrium Reacion.  This is "// &
 							"more than is acceptable; please rectify.")
 			END IF
 
 			!! Warn if Only Slightly Out of Balance
 			IF (II/JJ .GT. 1.0001 .OR. II/JJ .LT. 0.9999) THEN
 				CALL WARN("Mass More than 0.01% Out of Balance (but less than 0.5% Out of Balance) for the "//  &
-						  TRIM(AqPhaseChemicalNames(AqEquilibriaList(I,1)))//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))// &
-						  " "//TRIM(AqCationNames(AqEquilibriaList(I,2)))//" & "//TRIM(REAL2STR(AqEquilibriaList(I,5),1))//" "// &
-						  TRIM(AqAnionNames(AqEquilibriaList(I,3)))//  &
+						  TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))))//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))// &
+						  " "//TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//" & "//TRIM(REAL2STR(AqEquilibriaList(I,5),1))//" "// &
+						  TRIM(AqAnionNames(INT(AqEquilibriaList(I,3))))//  &
 						  " Aqueous Phase Equilibrium Reacion.  Make sure you are aware of this.")
 			END IF
 
 			!! Calculate the net charge of the reaction
 			IF (AqEquilibriaList(I,22) .NE. 0) THEN
 				!!Note that this formula assumes that only 1 cation and 2 anions are allowed! (Levitocite)
-				II = AqEquilibriaList(I,4) * AqCationCharge(AqEquilibriaList(I,2)) + AqEquilibriaList(I,5) * &
-					 AqAnionCharge(AqEquilibriaList(I,3)) + AqEquilibriaList(I,23) * AqAnionCharge(AqEquilibriaList(I,22))
+				II = AqEquilibriaList(I,4) * AqCationCharge(INT(AqEquilibriaList(I,2))) + AqEquilibriaList(I,5) * &
+					 AqAnionCharge(INT(AqEquilibriaList(I,3))) + AqEquilibriaList(I,23) * AqAnionCharge(INT(AqEquilibriaList(I,22)))
 			ELSE
 				!Simple salts and their hydrates
-				II = AqEquilibriaList(I,4) * AqCationCharge(AqEquilibriaList(I,2)) + AqEquilibriaList(I,5) * &
-					 AqAnionCharge(AqEquilibriaList(I,3))
+				II = AqEquilibriaList(I,4) * AqCationCharge(INT(AqEquilibriaList(I,2))) + AqEquilibriaList(I,5) * &
+					 AqAnionCharge(INT(AqEquilibriaList(I,3)))
 			END IF
 			IF (AqEquilibriaList(I,1) .GT. 0) II = II - AqChemicalCharge(INT(AqEquilibriaList(I,1)))
 
 			!! Charge Balance
 			IF (II .NE. 0) THEN
 				CALL ERROR ("Charge out of balance for the reaction: <<"//TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(I,1)))) &
-							//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4)))//" "//TRIM(AqCationNames(AqEquilibriaList(I,2)))//  &
-							" + "//TRIM(REAL2STR(AqEquilibriaList(I,5)))//" "//TRIM(AqAnionNames(AqEquilibriaList(I,3)))//       &
+							//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4)))//" "//TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//  &
+							" + "//TRIM(REAL2STR(AqEquilibriaList(I,5)))//" "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,3))))//       &
 							">> as specified in AqEquilibriumReactions.in.  This is a problem worthy of stopping the program.")
 			END IF
 		END DO
@@ -1269,9 +1274,9 @@
 					KMRef(ElectrolyteRxn,2) .EQ. KMRef(I,2) .AND.		&
 					KMRef(ElectrolyteRxn,3) .EQ. KMRef(I,3))			&
 					CALL ERROR ("It looks like the user double specied the following reaction: <<"//	&
-								TRIM(AqPhaseChemicalNames(KMRef(I,1)))//" <=> "//TRIM(REAL2STR(KMRef(I,4),1))// &
-								" "//TRIM(AqCationNames(KMRef(I,2)))//" & "//TRIM(REAL2STR(KMRef(I,5),1))//" "// &
-								TRIM(AqAnionNames(KMRef(I,3)))//">> as specified in AerosolThermoKusikMeissner.in.  "// &
+								TRIM(AqPhaseChemicalNames(INT(KMRef(I,1))))//" <=> "//TRIM(REAL2STR(KMRef(I,4),1))// &
+								" "//TRIM(AqCationNames(INT(KMRef(I,2))))//" & "//TRIM(REAL2STR(KMRef(I,5),1))//" "// &
+								TRIM(AqAnionNames(INT(KMRef(I,3))))//">> as specified in AerosolThermoKusikMeissner.in.  "// &
 								"This is a problem worthy of stopping the program.")
 			END DO
 		END DO
@@ -1287,15 +1292,15 @@
 				II = AqMolecularMass(1) * KMRef(I,8)
 			END IF
 
-			JJ = KMRef(I,4) * AqCationMass(KMRef(I,2)) + KMRef(I,5) * AqAnionMass(KMRef(I,3))
+			JJ = KMRef(I,4) * AqCationMass(INT(KMRef(I,2))) + KMRef(I,5) * AqAnionMass(INT(KMRef(I,3)))
 
 			!! Err if More Egregious
 			IF (II/JJ .GT. 1.001 .OR. II/JJ .LT. 0.999) THEN
 				!WRITE(*,*) II, JJ
 				CALL ERROR("Mass More than 0.1% Out of Balance for the Thermodynamic Specification for Reaction "// &
-						   TRIM(AqPhaseChemicalNames(KMRef(I,1)))//" <=> "//TRIM(REAL2STR(KMRef(I,4),1))//" "//     &
-						   TRIM(AqCationNames(KMRef(I,2)))//" & "//TRIM(REAL2STR(KMRef(I,5),1))//" "//              &
-						   TRIM(AqAnionNames(KMRef(I,3)))//" Aqueous Phase Equilibrium Reacion in "// &
+						   TRIM(AqPhaseChemicalNames(INT(KMRef(I,1))))//" <=> "//TRIM(REAL2STR(KMRef(I,4),1))//" "//     &
+						   TRIM(AqCationNames(INT(KMRef(I,2))))//" & "//TRIM(REAL2STR(KMRef(I,5),1))//" "//              &
+						   TRIM(AqAnionNames(INT(KMRef(I,3))))//" Aqueous Phase Equilibrium Reacion in "// &
 						   "AerosolThermoKusikMeissner.in.  This is more than is acceptable; please rectify.")
 			END IF
 
@@ -1303,21 +1308,21 @@
 			IF (II/JJ .GT. 1.0001 .OR. II/JJ .LT. 0.9999) THEN
 				!WRITE(*,*) II, JJ
 				CALL WARN("Mass More than 0.01% Out of Balance for the Thermodynamic Specification for Reaction "// &
-						  TRIM(AqPhaseChemicalNames(KMRef(I,1)))//" <=> "//TRIM(REAL2STR(KMRef(I,4),1))//" "//      &
-						  TRIM(AqCationNames(KMRef(I,2)))//" & "//TRIM(REAL2STR(KMRef(I,5),1))//" "//               &
-						  TRIM(AqAnionNames(KMRef(I,3)))//" in AerosolThermoKusikMeissner.in.  This is more than "// &
+						  TRIM(AqPhaseChemicalNames(INT(KMRef(I,1))))//" <=> "//TRIM(REAL2STR(KMRef(I,4),1))//" "//      &
+						  TRIM(AqCationNames(INT(KMRef(I,2))))//" & "//TRIM(REAL2STR(KMRef(I,5),1))//" "//               &
+						  TRIM(AqAnionNames(INT(KMRef(I,3))))//" in AerosolThermoKusikMeissner.in.  This is more than "// &
 						  "is acceptable; please rectify.")
 			END IF
 
 			!! Calculate the net charge of the reaction
-			II = KMRef(I,4) * AqCationCharge(KMRef(I,2)) + KMRef(I,5) * AqAnionCharge(KMRef(I,3))
+			II = KMRef(I,4) * AqCationCharge(INT(KMRef(I,2))) + KMRef(I,5) * AqAnionCharge(INT(KMRef(I,3)))
 			IF (KMRef(I,1) .GT. 0) II = II - AqChemicalCharge(INT(KMRef(I,1)))
 
 			!! Charge Balance
 			IF (II .NE. 0) THEN
 				CALL ERROR ("Charge out of balance for the reaction: <<"//TRIM(AqPhaseChemicalNames(INT(KMRef(I,1))))// &
-							" <=> "//TRIM(REAL2STR(KMRef(I,4)))//" "//TRIM(AqCationNames(KMRef(I,2)))//" + "//          &
-							TRIM(REAL2STR(KMRef(I,5)))//" "//TRIM(AqAnionNames(KMRef(I,3)))//">> as specified in "//    &
+							" <=> "//TRIM(REAL2STR(KMRef(I,4)))//" "//TRIM(AqCationNames(INT(KMRef(I,2))))//" + "//          &
+							TRIM(REAL2STR(KMRef(I,5)))//" "//TRIM(AqAnionNames(INT(KMRef(I,3))))//">> as specified in "//    &
 							"AerosolThermoKusikMeissner.in.  This is a problem worthy of stopping the program.")
 			END IF
 		END DO
@@ -1383,7 +1388,7 @@
 					  AqEquilibriaList(I,18) = AqEquilibriaList(J,18)
 					  AqEquilibriaList(I,19) = J
 					  CALL TRANSCRIPT ("*********************************************************")
-					  CALL TRANSCRIPT ("For the dissociation of "//TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems))// &
+					  CALL TRANSCRIPT ("For the dissociation of "//TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems))// &
 									   ", MELAM is using the post-mixing thermodynamics for the dissociation of the fully "//  &
 									   "associated species into that ion, following San Martini (2004), Kim et al (1993) "//   &
 									   "and others.")
@@ -1404,7 +1409,7 @@
 					  AqEquilibriaList(I,18) = AqEquilibriaList(J,18)
 					  AqEquilibriaList(I,19) = J
 					  CALL TRANSCRIPT ("*********************************************************")
-					  CALL TRANSCRIPT ("For the dissociation of "//TRIM(AqAnionNames(AqEquilibriaList(I,1)-  &
+					  CALL TRANSCRIPT ("For the dissociation of "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,1))-  &
 									   HowManyAqChems-HowManyAqCations))//", MELAM is using the post-mixing "// &
 									   "thermodynamics for the dissociation of the fully associated species "// &
 									   "into that ion, following San Martini (2004), Kim et al (1993) and others.")
@@ -1456,17 +1461,17 @@
 
 			!! Check for Levitocite
 			IF (AqEquilibriaList(I,22) .NE. 0) THEN
-				IF (AqPhaseChemicalNames(AqEquilibriaList(I,1)) .EQ. "(NH4)3H(SO4)2") THEN
+				IF (AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))) .EQ. "(NH4)3H(SO4)2") THEN
 					DO J = 1, HowManyAqEqReactions
 						IF (AqEquilibriaList(J,1) .GT. 0) THEN !Exclude water as electrolyte
 							
 							!Find Ammonium Sulfate
-							IF(AqPhaseChemicalNames(AqEquilibriaList(J,1)) .EQ. "(NH4)2SO4") THEN
+							IF(AqPhaseChemicalNames(INT(AqEquilibriaList(J,1))) .EQ. "(NH4)2SO4") THEN
 								AqEquilibriaList(I,16) = J
 							END IF
 
 							!Find Sulfuric Acid (H2SO4 <=> 2 H+ & SO4--)
-							IF(AqPhaseChemicalNames(AqEquilibriaList(J,1)) .EQ. "H2SO4") THEN
+							IF(AqPhaseChemicalNames(INT(AqEquilibriaList(J,1))) .EQ. "H2SO4") THEN
 								AqEquilibriaList(I,17) = J
 							END IF							
 						END IF
@@ -1517,11 +1522,11 @@
 									!! Get the name of the electrolyte
 									IF (AqEquilibriaList(I,1) .GT. 0) THEN
 										IF (AqEquilibriaList(I,1) .LE. HowManyAqChems) THEN
-											CurrLine = TRIM(AqPhaseChemicalNames(AqEquilibriaList(I,1)))
+											CurrLine = TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))))
 										ELSE IF (AqEquilibriaList(I,1) .LE. HowManyAqChems+HowManyAqCations) THEN
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems))
 										ELSE
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems-HowManyAqCations))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems-HowManyAqCations))
 										END IF
 									ELSE
 										IF (AqEquilibriaList(I,8) .GT. 0) CurrLine = "H2O"
@@ -1530,17 +1535,17 @@
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("The electrolyte reaction: ")
 									CALL TRANSCRIPT ("      "//TRIM(CurrLine)//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))//" " &
-												 //TRIM(AqCationNames(AqEquilibriaList(I,2)))//" + "//TRIM(REAL2STR  &
-												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(AqEquilibriaList(I,3))))
+												 //TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//" + "//TRIM(REAL2STR  &
+												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,3)))))
 									CALL TRANSCRIPT ("Has no thermo defined for it.  But MELAM found an ")
 									CALL TRANSCRIPT ("appropriate derivative form:")
 									CALL TRANSCRIPT ("  g("//TRIM(CurrLine)//")^"//TRIM(REAL2STR((AqEquilibriaList(I,4)+  &
 								                 AqEquilibriaList(I,5)),1))//" = ("//  &
-												 "g("//TRIM(AqPhaseChemicalNames(KMRef(J,1)))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
+												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(J,1))))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
 												 KMRef(J,5)),1))//" * "//   &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(K,1)))//")^"//TRIM(REAL2STR((KMRef(K,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(K,1))))//")^"//TRIM(REAL2STR((KMRef(K,4)+ &
 												 KMRef(K,5)),1))//") / "//  &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(L,1)))//")^"//TRIM(REAL2STR((KMRef(L,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(L,1))))//")^"//TRIM(REAL2STR((KMRef(L,4)+ &
 													 KMRef(L,5)),1)))
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("")
@@ -1567,11 +1572,11 @@
 									!! Get the name of the electrolyte
 									IF (AqEquilibriaList(I,1) .GT. 0) THEN
 										IF (AqEquilibriaList(I,1) .LE. HowManyAqChems) THEN
-											CurrLine = TRIM(AqPhaseChemicalNames(AqEquilibriaList(I,1)))
+											CurrLine = TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))))
 										ELSE IF (AqEquilibriaList(I,1) .LE. HowManyAqChems+HowManyAqCations) THEN
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems))
 										ELSE
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems-HowManyAqCations))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems-HowManyAqCations))
 										END IF
 									ELSE
 										IF (AqEquilibriaList(I,8) .GT. 0) CurrLine = "H2O"
@@ -1580,17 +1585,17 @@
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("The electrolyte reaction: ")
 									CALL TRANSCRIPT ("      "//TRIM(CurrLine)//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))//" " &
-												 //TRIM(AqCationNames(AqEquilibriaList(I,2)))//" + "//TRIM(REAL2STR  &
-												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(AqEquilibriaList(I,3))))
+												 //TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//" + "//TRIM(REAL2STR  &
+												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,3)))))
 									CALL TRANSCRIPT ("Has no thermo defined for it.  But MELAM found an ")
 									CALL TRANSCRIPT ("appropriate derivative form:")
 									CALL TRANSCRIPT ("  g("//TRIM(CurrLine)//")^"//TRIM(REAL2STR((AqEquilibriaList(I,4)+  &
 								                 AqEquilibriaList(I,5)),1))//" = ("//  &
-												 "g("//TRIM(AqPhaseChemicalNames(KMRef(J,1)))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
+												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(J,1))))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
 												 KMRef(J,5)),1))//" * "//   &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(K,1)))//")^"//TRIM(REAL2STR((KMRef(K,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(K,1))))//")^"//TRIM(REAL2STR((KMRef(K,4)+ &
 												 KMRef(K,5)),1))//") / "//  &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(L,1)))//")^"//TRIM(REAL2STR((KMRef(L,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(L,1))))//")^"//TRIM(REAL2STR((KMRef(L,4)+ &
 													 KMRef(L,5)),1)))
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("")
@@ -1619,11 +1624,11 @@
 									!! Get the name of the electrolyte
 									IF (AqEquilibriaList(I,1) .GT. 0) THEN
 										IF (AqEquilibriaList(I,1) .LE. HowManyAqChems) THEN
-											CurrLine = TRIM(AqPhaseChemicalNames(AqEquilibriaList(I,1)))
+											CurrLine = TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))))
 										ELSE IF (AqEquilibriaList(I,1) .LE. HowManyAqChems+HowManyAqCations) THEN
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems))
 										ELSE
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems-HowManyAqCations))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems-HowManyAqCations))
 										END IF
 									ELSE
 										IF (AqEquilibriaList(I,8) .GT. 0) CurrLine = "H2O"
@@ -1632,17 +1637,17 @@
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("The electrolyte reaction: ")
 									CALL TRANSCRIPT ("      "//TRIM(CurrLine)//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))//" " &
-												 //TRIM(AqCationNames(AqEquilibriaList(I,2)))//" + "//TRIM(REAL2STR  &
-												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(AqEquilibriaList(I,3))))
+												 //TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//" + "//TRIM(REAL2STR  &
+												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,3)))))
 									CALL TRANSCRIPT ("Has no thermo defined for it.  But MELAM found an ")
 									CALL TRANSCRIPT ("appropriate derivative form:")
 									CALL TRANSCRIPT ("  g("//TRIM(CurrLine)//")^"//TRIM(REAL2STR((AqEquilibriaList(I,4)+  &
 								                 AqEquilibriaList(I,5)),1))//" = ("//  &
-												 "g("//TRIM(AqPhaseChemicalNames(KMRef(J,1)))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
+												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(J,1))))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
 												 KMRef(J,5)),1))//" * "//   &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(K,1)))//")^"//TRIM(REAL2STR((KMRef(K,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(K,1))))//")^"//TRIM(REAL2STR((KMRef(K,4)+ &
 												 KMRef(K,5)),1))//") / "//  &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(L,1)))//")^"//TRIM(REAL2STR((KMRef(L,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(L,1))))//")^"//TRIM(REAL2STR((KMRef(L,4)+ &
 													 KMRef(L,5)),1)))
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("") 
@@ -1665,20 +1670,20 @@
 									(KMRef(J,5)			   .EQ. 2*KMRef(L,5)) .AND. & !Anion Stoich Half Original
 									(AqEquilibriaList(I,22) .EQ. 0) .AND. &    !Not Levitocite
 										(AqEquilibriaList(I,24) .EQ. 0) .AND. & !Not CaSO4*2H2O 
-										(AqCationNames(AqEquilibriaList(I,2)) .NE. "Mg++")) THEN !Not a Mg salt
+										(AqCationNames(INT(AqEquilibriaList(I,2))) .NE. "Mg++")) THEN !Not a Mg salt
 									
 									!WRITE(*,*) AqCationNames(AqEquilibriaList(I,2)), AqAnionNames(AqEquilibriaList(I,3)), "Hi!"
-									IF (AqPhaseChemicalNames(KMRef(K,1)) .EQ. "HCO3-") CYCLE
+									IF (AqPhaseChemicalNames(INT(KMRef(K,1))) .EQ. "HCO3-") CYCLE
 									CALL TRANSCRIPT ("")
 
 									!! Get the name of the electrolyte
 									IF (AqEquilibriaList(I,1) .GT. 0) THEN
 										IF (AqEquilibriaList(I,1) .LE. HowManyAqChems) THEN
-											CurrLine = TRIM(AqPhaseChemicalNames(AqEquilibriaList(I,1)))
+											CurrLine = TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))))
 										ELSE IF (AqEquilibriaList(I,1) .LE. HowManyAqChems+HowManyAqCations) THEN
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems))
 										ELSE
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems-HowManyAqCations))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems-HowManyAqCations))
 										END IF
 									ELSE
 										IF (AqEquilibriaList(I,8) .GT. 0) CurrLine = "H2O"
@@ -1687,17 +1692,17 @@
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("The electrolyte reaction: ")
 									CALL TRANSCRIPT ("      "//TRIM(CurrLine)//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))//" " &
-												 //TRIM(AqCationNames(AqEquilibriaList(I,2)))//" + "//TRIM(REAL2STR  &
-												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(AqEquilibriaList(I,3))))
+												 //TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//" + "//TRIM(REAL2STR  &
+												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,3)))))
 									CALL TRANSCRIPT ("Has no thermo defined for it.  But MELAM found an ")
 									CALL TRANSCRIPT ("appropriate derivative form:")
 									CALL TRANSCRIPT ("  g("//TRIM(CurrLine)//")^"//TRIM(REAL2STR((AqEquilibriaList(I,4)+  &
 								                 AqEquilibriaList(I,5)),1))//" = ("//  &
-												 "g("//TRIM(AqPhaseChemicalNames(KMRef(J,1)))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
+												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(J,1))))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
 												 KMRef(J,5)),1))//" * "//   &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(K,1)))//")^"//TRIM(REAL2STR((KMRef(K,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(K,1))))//")^"//TRIM(REAL2STR((KMRef(K,4)+ &
 												 KMRef(K,5)),1))//") / "//  &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(L,1)))//")^"//TRIM(REAL2STR(2*(KMRef(L,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(L,1))))//")^"//TRIM(REAL2STR(2*(KMRef(L,4)+ &
 													 KMRef(L,5)),1)))
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("") 
@@ -1720,20 +1725,20 @@
 									(KMRef(J,5)			   .EQ. 2*KMRef(L,5)) .AND. & !Anion Stoich Half Original
 									(AqEquilibriaList(I,22) .EQ. 0) .AND. &    !Not Levitocite
 										(AqEquilibriaList(I,24) .EQ. 0) .AND. & !Not CaSO4*2H2O 
-										(AqCationNames(AqEquilibriaList(I,2)) .NE. "Mg++")) THEN !Not a Mg salt
+										(AqCationNames(INT(AqEquilibriaList(I,2))) .NE. "Mg++")) THEN !Not a Mg salt
 									
 									!WRITE(*,*) AqCationNames(AqEquilibriaList(I,2)), AqAnionNames(AqEquilibriaList(I,3)), "Hi!"
-									IF (AqPhaseChemicalNames(KMRef(K,1)) .EQ. "HCO3-") CYCLE
+									IF (AqPhaseChemicalNames(INT(KMRef(K,1))) .EQ. "HCO3-") CYCLE
 									CALL TRANSCRIPT ("")
 
 									!! Get the name of the electrolyte
 									IF (AqEquilibriaList(I,1) .GT. 0) THEN
 										IF (AqEquilibriaList(I,1) .LE. HowManyAqChems) THEN
-											CurrLine = TRIM(AqPhaseChemicalNames(AqEquilibriaList(I,1)))
+											CurrLine = TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))))
 										ELSE IF (AqEquilibriaList(I,1) .LE. HowManyAqChems+HowManyAqCations) THEN
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems))
 										ELSE
-											CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems-HowManyAqCations))
+											CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems-HowManyAqCations))
 										END IF
 									ELSE
 										IF (AqEquilibriaList(I,8) .GT. 0) CurrLine = "H2O"
@@ -1742,17 +1747,17 @@
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("The electrolyte reaction: ")
 									CALL TRANSCRIPT ("      "//TRIM(CurrLine)//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))//" " &
-												 //TRIM(AqCationNames(AqEquilibriaList(I,2)))//" + "//TRIM(REAL2STR  &
-												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(AqEquilibriaList(I,3))))
+												 //TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//" + "//TRIM(REAL2STR  &
+												 (AqEquilibriaList(I,5),1))//" "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,3)))))
 									CALL TRANSCRIPT ("Has no thermo defined for it.  But MELAM found an ")
 									CALL TRANSCRIPT ("appropriate derivative form:")
 									CALL TRANSCRIPT ("  g("//TRIM(CurrLine)//")^"//TRIM(REAL2STR((AqEquilibriaList(I,4)+  &
 								                 AqEquilibriaList(I,5)),1))//" = ("//  &
-												 "g("//TRIM(AqPhaseChemicalNames(KMRef(J,1)))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
+												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(J,1))))//")^"//TRIM(REAL2STR((KMRef(J,4)+ &
 												 KMRef(J,5)),1))//" * "//   &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(K,1)))//")^"//TRIM(REAL2STR(2*(KMRef(K,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(K,1))))//")^"//TRIM(REAL2STR(2*(KMRef(K,4)+ &
 												 KMRef(K,5)),1))//") / "//  &
- 												 "g("//TRIM(AqPhaseChemicalNames(KMRef(L,1)))//")^"//TRIM(REAL2STR(2*(KMRef(L,4)+ &
+ 												 "g("//TRIM(AqPhaseChemicalNames(INT(KMRef(L,1))))//")^"//TRIM(REAL2STR(2*(KMRef(L,4)+ &
 													 KMRef(L,5)),1)))
 									CALL TRANSCRIPT ("*********************************************************")
 									CALL TRANSCRIPT ("") 
@@ -1783,11 +1788,11 @@
 				!! Get the name of the electrolyte
 				IF (AqEquilibriaList(I,1) .GT. 0) THEN
 					IF (AqEquilibriaList(I,1) .LE. HowManyAqChems) THEN
-						CurrLine = TRIM(AqPhaseChemicalNames(AqEquilibriaList(I,1)))
+						CurrLine = TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))))
 					ELSE IF (AqEquilibriaList(I,1) .LE. HowManyAqChems+HowManyAqCations) THEN
-						CurrLine = TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems))
+						CurrLine = TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems))
 					ELSE
-						CurrLine = TRIM(AqAnionNames(AqEquilibriaList(I,1)-HowManyAqChems-HowManyAqCations))
+						CurrLine = TRIM(AqAnionNames(INT(AqEquilibriaList(I,1))-HowManyAqChems-HowManyAqCations))
 					END IF
 				ELSE
 					IF (AqEquilibriaList(I,8) .GT. 0) CurrLine = "H2O"
@@ -1795,8 +1800,8 @@
 
 				CALL WARN ("The program could not determine an appropriate way to form composite activity coefficients for "//  &
 						   "the reaction <<"//TRIM(CurrLine)//" <=> "//TRIM(REAL2STR(AqEquilibriaList(I,4),1))//" "//           &
-						   TRIM(AqCationNames(AqEquilibriaList(I,2)))//" + "//TRIM(REAL2STR(AqEquilibriaList(I,5),1))//" "//    &
-						   TRIM(AqAnionNames(AqEquilibriaList(I,3)))//">> ")
+						   TRIM(AqCationNames(INT(AqEquilibriaList(I,2))))//" + "//TRIM(REAL2STR(AqEquilibriaList(I,5),1))//" "//    &
+						   TRIM(AqAnionNames(INT(AqEquilibriaList(I,3))))//">> ")
 				J = 1  ! flag for an error after listing all problems
 			END IF
 
@@ -1857,7 +1862,7 @@
 				IF (AqEquilibriaList(I,1) .LE. HowManyAqChems + HowManyAqCations) THEN
 
 					CALL ERROR ("Found an aqueous dissociation reaction in which the cation "//  &
-							    TRIM(AqCationNames(AqEquilibriaList(I,1)-HowManyAqChems))//      &
+							    TRIM(AqCationNames(INT(AqEquilibriaList(I,1))-HowManyAqChems))//      &
 								" acts as an electrolyte.  This program is not prepared to handle "// &
 								"this situation, and any charged electrolytes are taken to be anions.  "// &
 								"If you cannot write this reaction w.r.t. the anion, then you are S.O.L..  "// &
@@ -1869,7 +1874,7 @@
 				ELSE
 
 					CALL TRANSCRIPT ("*********************************************************")
-					CALL TRANSCRIPT ("Identified that "//TRIM(AqAnionNames(AqEquilibriaList(I,1)-  &
+					CALL TRANSCRIPT ("Identified that "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,1))-  &
 								     HowManyAqChems-HowManyAqCations))//" acts as an electrolyte in solution... "// &
 									 "and we are attempting to identify how to deal with the reaction.")
 					CALL TRANSCRIPT ("")
@@ -1897,12 +1902,12 @@
 							CALL TRANSCRIPT ("")
 							CALL TRANSCRIPT ("  (a) "//TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))))//" <=> "//  &
 											 TRIM(REAL2STR(AqEquilibriaList(I,4),1))//" "//TRIM(AqCationNames(  &
-											 AqEquilibriaList(I,2)))//" + "//TRIM(REAL2STR(AqEquilibriaList(I,5),1))// &
-											 " "//TRIM(AqAnionNames(AqEquilibriaList(I,3))))
+											 INT(AqEquilibriaList(I,2))))//" + "//TRIM(REAL2STR(AqEquilibriaList(I,5),1))// &
+											 " "//TRIM(AqAnionNames(INT(AqEquilibriaList(I,3)))))
 							CALL TRANSCRIPT ("  (b) "//TRIM(AqPhaseChemicalNames(INT(AqEquilibriaList(J,1))))//" <=> "// &
 											 TRIM(REAL2STR(AqEquilibriaList(J,4),1))//" "//TRIM(AqCationNames(  &
-											 AqEquilibriaList(J,2)))//" + "//TRIM(REAL2STR(AqEquilibriaList(J,5),1))//  &
-											 " "//TRIM(AqAnionNames(AqEquilibriaList(J,3))))
+											 INT(AqEquilibriaList(J,2))))//" + "//TRIM(REAL2STR(AqEquilibriaList(J,5),1))//  &
+											 " "//TRIM(AqAnionNames(INT(AqEquilibriaList(J,3)))))
 							CALL TRANSCRIPT ("")
 							CALL TRANSCRIPT ("Leading us to make the following assumptions regarding ")
 							CALL TRANSCRIPT ("the use of mean activity coefficients (g) in equilibration:")
@@ -1939,7 +1944,7 @@
 					IF (AqEquilibriaList(I,16) .EQ. I .AND. AqEquilibriaList(I,17) .EQ. 0) &
 						CALL ERROR("Did not find an appropriate path for this electrolyte ("//TRIM(AqPhaseChemicalNames( &
 									INT(AqEquilibriaList(I,1))))//")to reach a fully associated state, which must be reached "// &
-									"through a common dissociated form ("//TRIM(AqAnionNames(AqEquilibriaList(I,3)))// &
+									"through a common dissociated form ("//TRIM(AqAnionNames(INT(AqEquilibriaList(I,3))))// &
 									") using the same anion.  Please correct AqEquilibriumReactions.in")
 
 				END IF

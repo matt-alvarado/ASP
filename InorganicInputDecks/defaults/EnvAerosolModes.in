@@ -1,6 +1,6 @@
 !! Donnan Steele 
 !! MELAM -- (c) 2001-2004
-!! Updated by Matt Alvarado, 2004-2006
+!! Updated by Matt Alvarado, 2004-2012
 !!
 !! This input deck specifies the traits of aerosol distributions
 !! from which the particles are to be sampled for the ENVIRONMENTAL aerosol
@@ -43,16 +43,16 @@
 !
 !Size is from Seinfeld and Pandis, mass is from Timbavati (Hobbs et al., 2003)
 !
-0 ; 0.02; 1.175
-Lake McKay
-(NH4)2SO4; 0.006;
-K2SO4; 0.047;
-Na2SO4; 0.013;
-MgSO4; 0.016;
-Mg(NO3)2; 0.005;
-MgCl2; 0.009;
-BC; 0.000001;
-CPD3; 0.784;
+!0 ; 0.02; 1.175
+!Lake McKay
+!(NH4)2SO4; 0.006;
+!K2SO4; 0.047;
+!Na2SO4; 0.013;
+!MgSO4; 0.016;
+!Mg(NO3)2; 0.005;
+!MgCl2; 0.009;
+!BC; 0.000001;
+!CPD3; 0.784;
 !MgC2O4; 0.031
 !3200 ; 0.02 ; 1.175
 !RemConMode1 !S&P, p. 430
@@ -79,12 +79,12 @@ CPD3; 0.784;
 !BC; 0.5
 !SO10; 6.52
 !
-!6700 ; 0.116 ; 1.242 !2900 ; 0.116 ; 1.242
-!RemConMode2 !S&P, p. 430, scaled up to give correct mass
-!K2SO4; 1.647
-!(NH4)2SO4; 0.40
-!NH4NO3; 1.009
-!NH4Cl; 0.01
-!BC; 0.5
-!SO10; 6.52
+6700 ; 0.116 ; 1.242 !2900 ; 0.116 ; 1.242
+RemConMode2 !S&P, p. 430, scaled up to give correct mass
+K2SO4; 1.647;
+(NH4)2SO4; 0.40;
+NH4NO3; 1.009;
+NH4Cl; 0.01;
+BC; 0.5;
+SO10; 6.52;
 !

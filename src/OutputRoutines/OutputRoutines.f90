@@ -6,8 +6,8 @@
 !! This file contains many useful ways for summarizing aerosol
 !! data for output to ASCII text files
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							!!
 !!																				!!
 !! Month  Year   Name              Description									!!
 !! 07     2006   Matt Alvarado     Began Update History							!!
@@ -15,13 +15,15 @@
 !!									calculation in SizeDistOutput				!!
 !!								   2. Changed currentparticle to current		!!
 !!									 in SizeDistOutput							!!
-!! 09/01  2006   Matt Alvarado     1. Added TotalOrgCar calculation to			!!
-!!										SizeDistOutput							!!
-!! 09/07  2006   Matt Alvarado     Updated SpillBeans to spill BoundaryParticles!!
-!! 11/01  2006   Matt Alvarado     Added Optical properties to SpillBeans		!!
+!! 09/01  2006   Matt Alvarado     1. Added TotalOrgCar calculation to	!!
+!!				SizeDistOutput			!!
+!! 09/07  2006   Matt Alvarado   Updated SpillBeans to spill BoundaryParticles!
+!! 11/01  2006   Matt Alvarado     Added Optical properties to SpillBeans!!
 !! 10/03  2007   Matt Alvarado     Added lines to SpillBeans to help with 
-!!									initializing CRM6
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!						initializing CRM6
+!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! DEPENDENCIES						        !!
@@ -61,8 +63,6 @@ CONTAINS
 !! entire domain ensemble aerosol.               !!
 SUBROUTINE EachAerosolOutput (OutputFileName)
 
-	USE GridPointFields,	 ONLY : XGridPoints, YGridPoints, ZGridPoints, GasPhaseChemGridIndex
-
 	USE ModelParameters,	 ONLY : OutputDeckSubDir, micron, grams, moles
 
 	USE Aerosols,            ONLY : Particles, Particle, AerosolPH
@@ -83,7 +83,7 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 	CHARACTER *(*) :: OutputFileName
 	TYPE(Particle), POINTER :: Current
 	LOGICAL :: ChemicalPresent(HowManyAqChems+HowManyAqCations+HowManyAqAnions)
-	INTEGER :: I, X, Y, Z, FH
+	INTEGER :: I, FH
 
 	!! Fill the Logical Array "ChemicalPresent()" with trues if the
 	!! chemical is found in at least one aerosol particle.  This will
@@ -94,11 +94,7 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 	END DO
 	ChemicalPresent(1) = .TRUE. !! Assume water is present
 
-	DO X = 1, XGridPoints(GasPhaseChemGridIndex)
-	DO Y = 1, YGridPoints(GasPhaseChemGridIndex)
-	DO Z = 1, ZGridPoints(GasPhaseChemGridIndex)
-
-		Current => Particles(X,Y,Z)%First
+		Current => Particles%First
 
 10		IF (ASSOCIATED(Current)) THEN
 			DO I = 2, HowManyAqChems+HowManyAqCations+HowManyAqAnions
@@ -110,7 +106,6 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 			Current => Current%Next
 			GOTO 10
 		END IF
-	END DO ; END DO ; END DO
 
 !DO I = 1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
 !	Print *, I,ChemicalPresent(I) 
@@ -152,11 +147,7 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 
 	WRITE (FH, '(a)') ""
 
-	DO X = 1, XGridPoints(GasPhaseChemGridIndex)
-	DO Y = 1, YGridPoints(GasPhaseChemGridIndex)
-	DO Z = 1, ZGridPoints(GasPhaseChemGridIndex)
-
-		Current => Particles(X,Y,Z)%First
+		Current => Particles%First
 
 20		IF (ASSOCIATED(Current)) THEN
 
@@ -195,7 +186,6 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 			Current => Current%Next
 			GOTO 20
 		END IF
-	END DO ; END DO ; END DO
 
 	CLOSE(FH)
 	CALL ReturnFileHandle(FH)
@@ -205,29 +195,27 @@ END SUBROUTINE EachAerosolOutput
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Produces a data file that is appropriate		 !!
+!! Produces a data file that is appropriate      !!
 !! for printing the aerosol distribution of the  !!
 !! entire domain ensemble aerosol.               !!
 SUBROUTINE BinEntireDomainForPrinting (OutputFileName, inHowManyBins)
 
-	USE GridPointFields,	 ONLY : XGridPoints, YGridPoints, ZGridPoints, GasPhaseChemGridIndex
+	USE Aerosols,            ONLY : Particles, Particle,		&
+					ParticleArray,			&
+					RecalculateRadius,		&
+					HypotheticalElectrolyteConcentrations 
 
-	USE Aerosols,            ONLY : Particles, Particle,					&
-									ParticleArray,							&
-									RecalculateRadius,						&
-									HypotheticalElectrolyteConcentrations 
-
-	USE Chemistry,			 ONLY : HowManyAqChems,					&
-									HowManyAqCations,				&
-									HowManyAqAnions,				&
-									AqMolecularMass,				&
-									AqCationMass, AqAnionMass,		&
-									AqPhaseChemicalNames,			&
-									AqCationNames,AqAnionNames
+	USE Chemistry,		ONLY : HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqAnions,		&
+					AqMolecularMass,		&
+					AqCationMass, AqAnionMass,     &
+					AqPhaseChemicalNames,		&
+					AqCationNames,AqAnionNames
 
 
 	USE InfrastructuralCode, ONLY : WARN, ERROR, INT2STR, REAL2STR,	 &
-									GetFileHandle, ReturnFileHandle
+					GetFileHandle, ReturnFileHandle
 	
 	USE ModelParameters,	 ONLY : OutputDeckSubDir, micron
 
@@ -238,24 +226,25 @@ SUBROUTINE BinEntireDomainForPrinting (OutputFileName, inHowManyBins)
 	CHARACTER *(*) :: OutputFileName
 
 	!! Internal Variables
-	INTEGER ::  I, Bin, X, Y, Z,					&
-				HowManyBins,						&
-				HowManyAerosol,						&
-				HowManyElectroEquiv,				&
-				HowManyContents
+	INTEGER ::  I, X,Y,Z, Bin,		&
+		HowManyBins,			&
+		HowManyAerosol,			&
+		HowManyElectroEquiv,		&
+		HowManyContents
 
 	REAL*8  ::	SmallestRadius, LargestRadius,		&
 				BinBoundaries(inHowManyBins+1),		&
-				RadiusRatio,						&
+				RadiusRatio,				&
 				NumbHistogram(inHowManyBins),		&
-				ElectrolyteEquiv(inHowManyBins,HowManyAqChems), &
-				MassHistogram(inHowManyBins,HowManyAqChems+HowManyAqCations+HowManyAqAnions), &
-				HypotheticalElectroConcs(HowManyAqChems),	&
-				MaxNum, MinNum,						&
-				MaxEquiv, MinEquiv,					&
+			ElectrolyteEquiv(inHowManyBins,HowManyAqChems), &
+MassHistogram(inHowManyBins,HowManyAqChems+HowManyAqCations+HowManyAqAnions), &
+			HypotheticalElectroConcs(HowManyAqChems),	&
+				MaxNum, MinNum,				&
+				MaxEquiv, MinEquiv,			&
 				MaxContent, MinContent
 
-	LOGICAL  :: HypotheticalContent(HowManyAqChems), ActualContent(HowManyAqChems+HowManyAqCations+HowManyAqAnions)
+	LOGICAL  :: HypotheticalContent(HowManyAqChems), &
+               ActualContent(HowManyAqChems+HowManyAqCations+HowManyAqAnions)
 
 	TYPE(Particle), POINTER :: Current
 
@@ -263,16 +252,12 @@ SUBROUTINE BinEntireDomainForPrinting (OutputFileName, inHowManyBins)
 	HowManyBins = inHowManyBins
 
 	!! Make a first pass to determine the largest and smallest radius
-	Current => Particles(1,1,1)%First
+	Current => Particles%First
 	CALL RecalculateRadius(Current)
 	SmallestRadius = Current%EffectiveRadius
 	LargestRadius = Current%EffectiveRadius
 
-	DO X = 1, XGridPoints(GasPhaseChemGridIndex)
-	DO Y = 1, YGridPoints(GasPhaseChemGridIndex)
-	DO Z = 1, ZGridPoints(GasPhaseChemGridIndex)
-
-		Current => Particles(X,Y,Z)%First
+		Current => Particles%First
 		
 10		IF (ASSOCIATED(Current)) THEN
 
@@ -286,15 +271,11 @@ SUBROUTINE BinEntireDomainForPrinting (OutputFileName, inHowManyBins)
 				GOTO 10
 			END IF
 		END IF
-	END DO ; END DO ; END DO
 
 
 	!! Check to see if the specified number of bins makes sense with the number of particles
 	IF (HowManyAerosol/10. .LT. HowManyBins) THEN
 		X = MAX (1, FLOOR(HowManyAerosol / 10.))
-		CALL WARN("In BinEntireDomainForPrinting(), you asked for "//TRIM(INT2STR(HowManyBins))//		&
-				  " size bins.  However, there are only "//TRIM(INT2STR(HowManyAerosol))//				&
-				  " aerosol.  Resetting the number of bins to "//TRIM(INT2STR(X))//".")
 		HowManyBins = X
 	END IF
 
@@ -325,11 +306,8 @@ SUBROUTINE BinEntireDomainForPrinting (OutputFileName, inHowManyBins)
 	END DO
 
 	!! Tally everything
-	DO X = 1, XGridPoints(GasPhaseChemGridIndex)
-	DO Y = 1, YGridPoints(GasPhaseChemGridIndex)
-	DO Z = 1, ZGridPoints(GasPhaseChemGridIndex)
 
-		Current => Particles(X,Y,Z)%First
+		Current => Particles%First
 		
 20		IF (ASSOCIATED(Current)) THEN
 
@@ -372,7 +350,6 @@ SUBROUTINE BinEntireDomainForPrinting (OutputFileName, inHowManyBins)
 				GOTO 20
 			END IF
 		END IF
-	END DO ; END DO ; END DO
 
 	MaxNum		= NumbHistogram(1)
 	MinNum		= NumbHistogram(1)
@@ -710,14 +687,9 @@ END SUBROUTINE BinEntireDomainForPrinting
 !! CALL TO ANOTHER.									 !!
 SUBROUTINE SummarizeDomainMassForOutput (FileName, FirstCall)
 
-	USE GridPointFields,	ONLY :	XGridPoints,			&
-									YGridPoints,			&
-									ZGridPoints,			&
-									GasPhaseChemGridIndex,	&
-									GetGasChemVector,		&
-									GetRelativeHumidity,	&
-									GetTemp,				&
-									LocateGridPoint
+	USE GridPointFields,	ONLY :	GetGasChemVector,		&
+					GetRelativeHumidity,	&
+					GetTemp
 
 	USE Aerosols,           ONLY :	Particles, Particle, &
 									ParticleArray
@@ -748,10 +720,10 @@ SUBROUTINE SummarizeDomainMassForOutput (FileName, FirstCall)
 	LOGICAL, OPTIONAL :: FirstCall
 
 	!! Internal Variables
-	INTEGER :: I, X, Y, Z, FH
+	INTEGER :: I,  FH
 	REAL*8  :: AerosolMass(HowManyAqChems+HowManyAqCations+HowManyAqAnions), &
 			   GasMass(HowManyGasChems), GridPointGasVec(HowManyGasChems),	 &
-			   RH, Temperature, NumbAerosol, XX(3)
+			   RH, Temperature, NumbAerosol
 
 	TYPE(Particle), POINTER :: Current
 
@@ -782,15 +754,10 @@ SUBROUTINE SummarizeDomainMassForOutput (FileName, FirstCall)
 	Temperature = 0.
 
 	!! Tally everything
-	DO X = 1, XGridPoints(GasPhaseChemGridIndex)
-	DO Y = 1, YGridPoints(GasPhaseChemGridIndex)
-	DO Z = 1, ZGridPoints(GasPhaseChemGridIndex)
 
-		GridPointGasVec = GetGasChemVector (X, Y, Z)
-
-		XX          = LocateGridPoint(X,Y,Z,GasPhaseChemGridIndex)
-		RH          = RH + GetRelativeHumidity(XX(1),XX(2),XX(3))
-		Temperature = Temperature + GetTemp(XX(1),XX(2),XX(3))
+		GridPointGasVec = GetGasChemVector ()
+		RH          = RH + GetRelativeHumidity()
+		Temperature = Temperature + GetTemp()
 
 		DO I = 1, HowManyGasChems
 			GasMass(I) = GasMass(I) + GridPointGasVec(I) &
@@ -798,7 +765,7 @@ SUBROUTINE SummarizeDomainMassForOutput (FileName, FirstCall)
 						 * 1.e12 / Avogadro
 		END DO
 
-		Current => Particles(X,Y,Z)%First
+		Current => Particles%First
 10		IF (ASSOCIATED(Current)) THEN
 
 			NumbAerosol = NumbAerosol + Current%NumberOfParticles
@@ -824,14 +791,11 @@ SUBROUTINE SummarizeDomainMassForOutput (FileName, FirstCall)
 				GOTO 10
 			END IF
 		END IF
-	END DO ; END DO ; END DO
 
 	!! Scale RH, Temp, and Number Conc
-	RH          = RH / XGridPoints(GasPhaseChemGridIndex) / YGridPoints(GasPhaseChemGridIndex) / ZGridPoints(GasPhaseChemGridIndex)
-	Temperature = Temperature / XGridPoints(GasPhaseChemGridIndex) / YGridPoints(GasPhaseChemGridIndex) / &
-				  ZGridPoints(GasPhaseChemGridIndex)
-	NumbAerosol = NumbAerosol / XGridPoints(GasPhaseChemGridIndex) / YGridPoints(GasPhaseChemGridIndex) / &
-					ZGridPoints(GasPhaseChemGridIndex) 
+	RH          = RH 
+	Temperature = Temperature 
+	NumbAerosol = NumbAerosol 
 
 	!! Now You Have all of the data.  
 	!! Output the tallied data as an EXCEL type comma delimited file.
@@ -898,7 +862,7 @@ END SUBROUTINE SummarizeDomainMassForOutput
 !! sectional definitions: the lowest bin is from    !!
 !! zero to an endpoint and the largest is from an   !!
 !! endpoint to infinity.                            !!
-SUBROUTINE BinLagrangianParticlesForOutput (XP,YP,ZP,NumberOfBins,SmallEdge,LargeEdge, FH, FirstComment)
+SUBROUTINE BinLagrangianParticlesForOutput (NumberOfBins,SmallEdge,LargeEdge, FH, FirstComment)
 
 	USE InfrastructuralCode, ONLY : ERROR, REAL2STR
 	USE Aerosols,            ONLY : Particles, Particle, RecalculateRadius
@@ -906,7 +870,7 @@ SUBROUTINE BinLagrangianParticlesForOutput (XP,YP,ZP,NumberOfBins,SmallEdge,Larg
 
 	IMPLICIT NONE
 
-	INTEGER :: XP, YP, ZP, NumberOfBins,FH
+	INTEGER :: NumberOfBins,FH
 	REAL*8  :: SmallEdge, LargeEdge, BinRadiusRatio
 	REAL*8  :: BinEdges(NumberOfBins,2),BinVol(NumberOfBins),BinNumb(NumberOfBins)
 	INTEGER :: I
@@ -955,7 +919,7 @@ SUBROUTINE BinLagrangianParticlesForOutput (XP,YP,ZP,NumberOfBins,SmallEdge,Larg
 
 
 	!! Count up the bins
-	Runner => Particles(XP,YP,ZP)%First
+	Runner => Particles%First
 
 100	IF (ASSOCIATED(Runner)) THEN
 
@@ -999,7 +963,7 @@ SUBROUTINE BinLagrangianParticlesForOutput (XP,YP,ZP,NumberOfBins,SmallEdge,Larg
 	RETURN
 END SUBROUTINE BinLagrangianParticlesForOutput
 
-SUBROUTINE SpillBeans(XP, YP, ZP, Env)
+SUBROUTINE SpillBeans(Env)
 	
 	USE InfrastructuralCode, ONLY : ERROR, REAL2STR, INT2STR
 	USE Aerosols,            ONLY : Particles, &
@@ -1021,39 +985,36 @@ SUBROUTINE SpillBeans(XP, YP, ZP, Env)
 									HowManyAqChems, FindChem, &
 									GasPhaseBackground
 	USE ModelParameters,	 ONLY : micron 
-	USE GridPointFields, ONLY : GasPhaseChemGridIndex, LocateGridPoint, &
-								GetAirDensity, GetM, &
-								GridGasChem
+	USE GridPointFields, ONLY : GetAirDensity, GetM, &
+				    GridGasChem
 
 	Implicit None
 
 	!External
-	INTEGER		::	XP, YP, ZP
 	LOGICAL, OPTIONAL :: Env !True if we want the boundary distribution
 
 	!Internal
 	INTEGER		:: I, NumAqChems, NumOrgChems, A
-	REAL :: XX(3), Dens, ppbmCO, Mgas
+	REAL :: Dens, ppbmCO, Mgas
 	REAL*8 :: SaltConc(HowManyAqChems)
 	
 	TYPE(Particle), POINTER :: CurrentParticle
 			
 	! spill the beans...
 	IF (NOT(PRESENT(Env))) THEN
-		CurrentParticle => particles(XP,YP,ZP)%first
+		CurrentParticle => particles%first
 	ELSE
 		IF (Env) THEN
 			CurrentParticle => BoundaryParticles%first
 		ELSE
-			CurrentParticle => particles(XP,YP,ZP)%first
+			CurrentParticle => particles%first
 		END IF
 	END IF
 
-	XX = LocateGridPoint (XP, YP, ZP, GasPhaseChemGridIndex)
-	Dens = GetAirDensity(XX(1),XX(2),XX(3)) !g/cm3
-	Mgas = GetM   (XX(1),XX(2),XX(3))
+	Dens = GetAirDensity() !g/cm3
+	Mgas = GetM   ()
 	WRITE(*,*) "Dens: ", Dens
-	ppbmCO = (GridGasChem(1,1,1,FindChem("CO",0)) - &
+	ppbmCO = (GridGasChem(FindChem("CO",0)) - &
 	          GasPhaseBackground(FindChem("CO",0)))*(1e9/Mgas)*(28/28.973)
 	WRITE(*,*) "ppbm CO: ", ppbmCO
 			
@@ -1132,13 +1093,14 @@ SUBROUTINE SpillBeans(XP, YP, ZP, Env)
 
 END SUBROUTINE SpillBeans
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This subroutine outputs a file at a given time step that                     !!
-!! Contains the information necessary to plot the mass and number distributions. !!
-!! First written by Matt Alvarado, 10/19/05.                                    !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This subroutine outputs a file at a given time step that                  !!
+!! Contains the information necessary to plot the mass and                   !!
+!! number distributions.                                                     !!
+!! First written by Matt Alvarado, 10/19/05.                                 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-SUBROUTINE SizeDistOutput(XP, YP, ZP, t, Filename)
+SUBROUTINE SizeDistOutput(t, Filename)
 	
 	USE InfrastructuralCode, ONLY : ERROR, REAL2STR, INT2STR, GetFileHandle
 	USE Aerosols,            ONLY : Particles, &
@@ -1159,14 +1121,11 @@ SUBROUTINE SizeDistOutput(XP, YP, ZP, t, Filename)
 									Monodisperse, ThermoBulkMode
 
 	USE GridPointFields,	 ONLY : GridGasChem, &
-									GetM, &
-									LocateGridPoint, &
-									GasPhaseChemGridIndex
+					GetM
 	
 	Implicit None
 
 	!External
-	INTEGER		::	XP, YP, ZP
 	REAL*8      :: t
 	CHARACTER *(*), OPTIONAL :: FileName
 
@@ -1180,7 +1139,7 @@ SUBROUTINE SizeDistOutput(XP, YP, ZP, t, Filename)
 				Cli, NO3i, SO4i, HSO4i, K2SO4i, PotassiumIndex, &
 				K2SO4Index, FH, NumBins	, COi, Traceri
 	REAL*8 :: TotalPOA, TotalSOA, TotalK, TotalNa, TotalNH4, TotalCl, &
-			  TotalNO3, TotalSO4, DeltaLogRad, X(3), Mgas, TotalOrgCar		
+			  TotalNO3, TotalSO4, DeltaLogRad, Mgas, TotalOrgCar		
 					
 	
 	!Find chemical indices for later
@@ -1213,7 +1172,7 @@ SUBROUTINE SizeDistOutput(XP, YP, ZP, t, Filename)
 	COi = FindChem("CO", 0)
 
 	!Count # of bins, # of Aq. Chems
-	Current => particles(1,1,1)%first
+	Current => particles%first
 	NumBins = 0
 	I = 1
 	7 if (associated(Current)) then
@@ -1258,15 +1217,14 @@ SUBROUTINE SizeDistOutput(XP, YP, ZP, t, Filename)
 	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotSO4", " "
 			
 	WRITE(FH, FMT='(A1)') ""
+		
+	Mgas = GetM   ()
 	
-	X    = LocateGridPoint(1,1,1,GasPhaseChemGridIndex)	
-	Mgas = GetM   (X(1),X(2),X(3))
-	
-	Current => particles(1,1,1)%first
+	Current => particles%first
 		DO I = 1, NumBins
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') t/60
-			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(1,1,1,Traceri)*1e9/Mgas	
-			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(1,1,1,COi)*1e9/Mgas
+			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(Traceri)*1e9/Mgas	
+			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(COi)*1e9/Mgas
 			
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') Current%Edges(1)*1.0e4
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') Current%Edges(2)*1.0e4

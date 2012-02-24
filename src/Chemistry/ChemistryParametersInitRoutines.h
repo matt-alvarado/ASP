@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -8,17 +8,19 @@
 !! Also includes a subroutine for reading time-varying photolysis 
 !! rates from a file.
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!! 07/24  2006   Matt Alvarado     Change "Pointer => NULL()" to				!!
-!!									NULLIFY(POINTER) to fit pgf90							!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY			                                     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 07/24  2006   Matt Alvarado     Change "Pointer => NULL()" to	     !!
+!!				     NULLIFY(POINTER) to fit pgf90	     !!
+!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:					!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This file contains the following functions and subroutines:		     !!
 !! 1. SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)     
 !!		NOTE:	Any changes made to rate constant functions here 
 !!				must be reflected in subroutine 
@@ -33,919 +35,635 @@
 !! 8. SUBROUTINE MakeSensitivityMatrix
 !! 9. FUNCTION ParamDerivativeOfODEElement
 !! 10. SUBROUTINE PrintSensitivityMatrix 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! The Reactions to be Parsed are stored in this input deck.		!!
-	!! Chemicals used therein must be detailed in the GasPhaseChems.in	!!
-	!! deck as well.													!!
-	!! Size is the number of elements in the ODE deck					!!
-	!! ChemSize is the number of total chemicals in this phase			!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! The Reactions to be Parsed are stored in this input deck.		!!
+!! Chemicals used therein must be detailed in the GasPhaseChems.in	!!
+!! deck as well.							!!
+!! Size is the number of elements in the ODE deck			!!
+!! ChemSize is the number of total chemicals in this phase	        !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 
-		USE InfrastructuralCode
-		USE ModelParameters
-		USE GridPointFields, ONLY : AllocateGasReactionGrid
-		IMPLICIT NONE
+	USE InfrastructuralCode
+	USE ModelParameters
+	USE GridPointFields, ONLY : AllocateGasReactionGrid
+	IMPLICIT NONE
 
-		!! Input Variables
-		CHARACTER*(*)	  :: InputDeck, Delimitor
-		TYPE (DiffEqList) :: ODEs(:)
-		INTEGER			  :: ChemSize,Size,Phase
+	!! Input Variables
+	CHARACTER*(*)	  :: InputDeck, Delimitor
+	TYPE (DiffEqList) :: ODEs(:)
+	INTEGER	          :: ChemSize,Size,Phase
 
-		!! A Linked List Type Used Only in this Subroutine
-		TYPE ReactRate
-			integer					  :: NumbBodies   ! Number of bodies in the reaction
-			integer					  :: NumbRateFacs
-			real*8					  :: Rate(20)	  ! Elements needed for rate
-			type (ReactRate), pointer :: Next
-		END TYPE ReactRate
+	!! A Linked List Type Used Only in this Subroutine
+	TYPE ReactRate
+	    integer	  :: NumbBodies	! Number of bodies in the reaction
+	    integer	  :: NumbRateFacs
+	    real*8	  :: Rate(20)	  ! Elements needed for rate
+	    type (ReactRate), pointer :: Next
+	END TYPE ReactRate
 
-		!! Local Variables
-		INTEGER					  :: FH, allocation_error, I, J
-		INTEGER				      :: Reacts(10),Prods(10),ReactionType,NumbRateFacs
-		INTEGER					  :: NumbProducts,NumbReactants,NumbReactions,MaxNumbRateFacs
-		REAL*8					  :: ReactFactors(10),ProdFactors(10), II, RateFacs(20)
-		character (len=1024)      :: FullLine,CurrLine
-		character (len=512)		  :: Token,Reactants,Reactant
-		character (len=512)		  :: Products,Product
-		character (len=512)		  :: Rates,Rate
-		TYPE(DiffEqTerm), POINTER :: Current, New
-		TYPE(ChemTerm),   POINTER :: CurrentChem, NewChem
-		TYPE(ReactRate),  POINTER :: FirstRate,CurrentRate,NewRate
+	!! Local Variables
+	INTEGER		  :: FH, allocation_error, I, J
+	INTEGER		  :: Reacts(10),Prods(10),ReactionType,NumbRateFacs
+	INTEGER		  :: NumbProducts,NumbReactants,NumbReactions, & 
+                             MaxNumbRateFacs
+	REAL*8		  :: ReactFactors(10),ProdFactors(10), II, RateFacs(20)
+	character (len=1024)      :: FullLine,CurrLine
+	character (len=512)	  :: Token,Reactants,Reactant
+	character (len=512)	  :: Products,Product
+	character (len=512)	  :: Rates,Rate
+	TYPE(DiffEqTerm), POINTER :: Current, New
+	TYPE(ChemTerm),   POINTER :: CurrentChem, NewChem
+	TYPE(ReactRate),  POINTER :: FirstRate,CurrentRate,NewRate
 
-		LOGICAL, PARAMETER		  :: Scaffolding = .TRUE.
+	LOGICAL, PARAMETER		  :: Scaffolding = .TRUE.
 
-		!! SCSCSCSCSC
-		IF (Scaffolding) THEN
-			CALL TRANSCRIPT("")
-			CALL TRANSCRIPT("**** Entering MakeODESet() ****")
-			CALL TRANSCRIPT("")
+	!! SCSCSCSCSC
+	IF (Scaffolding) THEN
+		CALL TRANSCRIPT("")
+		CALL TRANSCRIPT("**** Entering MakeODESet() ****")
+		CALL TRANSCRIPT("")
+	END IF
+
+	!! Initialize Reaction-Array relevent stuff
+	NumbReactions   = 0
+	MaxNumbRateFacs = 0
+	NULLIFY(FirstRate)
+	!FirstRate	   => Null()
+
+	FH = GetFileHandle()
+        OPEN(UNIT=FH,FILE=TRIM(InputDeckSubDir)//TRIM(InputDeck),STATUS='OLD')
+
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!! GET as many REACTIONS from the input deck as it has !!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	DO 
+
+	   !! Get a new data line (non-comment) from the input deck
+10	   CurrLine = GetLine(FH)
+
+	   !! Exit the DO loop if the end of the file has been reached
+	   IF (CurrLine .EQ. EOF) EXIT
+
+	   NumbReactions = NumbReactions + 1
+	   FullLine = CurrLine
+
+	   !! Break the input line into three parts
+	   CALL GetToken(CurrLine,"=>", Reactants)
+	   CALL GetToken(CurrLine,";",  Products)
+	   Rates = Trim(CurrLine)
+
+	   !! Check to make sure the line parsed plausibly
+	   IF (Len_Trim(StripToken(Reactants)) == 0 .OR.		&
+		Len_Trim(StripToken(Products))  == 0 .OR.		&
+		Len_Trim(StripToken(Rates))		== 0)		&
+		CALL ERROR("The following input Line to MakeODESet() from "//TRIM(InputDeck)//" Parsed incorrectly:"// &
+		"    "//TRIM(FullLine))
+
+	   !!!!!!!!!!!!!!!
+	   !! REACTANTS !!
+	   !!!!!!!!!!!!!!!
+	
+	   ReactionType  = 0		! the number of bodies in the reaction
+	   NumbReactants = 0
+
+	   !! Tokenize the Reactants (up to three)
+	   DO I = 1, 3
+
+		ii = 1.
+		CALL GetToken(Reactants,Delimitor,Reactant)
+		IF (len_trim(Reactant) == 0) EXIT
+		ReactionType = ReactionType + 1		
+                ! Count the number of bodies in the reaction
+
+		!! Check Token for Leading Factor
+		CALL GetToken(Reactant," ",Token)
+
+		IF (IsReal(Token)) THEN
+			ii    = STR2REAL(Token)			! Store
+			Token = StripToken(Reactant)	! Push to Chemical
 		END IF
 
-		!! Initialize Reaction-Array relevent stuff
-		NumbReactions   = 0
-		MaxNumbRateFacs = 0
-		NULLIFY(FirstRate)
-		!FirstRate	   => Null()
-
-		FH = GetFileHandle()
-	    OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//TRIM(InputDeck), STATUS='OLD')
-
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! GET as many REACTIONS from the input deck as it has !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		DO 
-
-		!! Get a new data line (non-comment) from the input deck
-10		CurrLine = GetLine(FH)
-
-		!! Exit the DO loop if the end of the file has been reached
-		IF (CurrLine .EQ. EOF) EXIT
-
-		NumbReactions = NumbReactions + 1
-		FullLine = CurrLine
-
-		!! Break the input line into three parts
-		CALL GetToken(CurrLine,"=>", Reactants)
-		CALL GetToken(CurrLine,";",  Products)
-		Rates = Trim(CurrLine)
-
-		!! Check to make sure the line parsed plausibly
-		IF (Len_Trim(StripToken(Reactants)) == 0 .OR.		&
-			Len_Trim(StripToken(Products))  == 0 .OR.		&
-			Len_Trim(StripToken(Rates))		== 0)			&
-				CALL ERROR("The following input Line to MakeODESet() from "//TRIM(InputDeck)//" Parsed incorrectly:"// &
-						   "    "//TRIM(FullLine))
-
-		!!!!!!!!!!!!!!!
-		!! REACTANTS !!
-		!!!!!!!!!!!!!!!
-		
-		ReactionType  = 0		! the number of bodies in the reaction
-		NumbReactants = 0
-
-		!! Tokenize the Reactants (up to three)
-		DO I = 1, 3
-
-			ii = 1.
-			CALL GetToken(Reactants,Delimitor,Reactant)
-			IF (len_trim(Reactant) == 0) EXIT
-			ReactionType = ReactionType + 1		! Count the number of bodies in the reaction
-
-			!! Check Token for Leading Factor
-			CALL GetToken(Reactant," ",Token)
-
-			IF (IsReal(Token)) THEN
-				ii    = STR2REAL(Token)			! Store
-				Token = StripToken(Reactant)	! Push to Chemical
-			END IF
-
-			!! If it not the generic M, then go ahead
-			IF (Trim(StripToken(Token)) .NE. 'M' .AND.		&
-				Trim(StripToken(Token)) .NE. 'm') THEN
-					NumbReactants = NumbReactants + 1			
-					IF (NumbReactants > 2) &
-						CALL ERROR("Too many reactants specified in the following reaction:"//&
-						           "  "//TRIM(FullLine))
-
-					Reacts(NumbReactants)       = FindChem(Trim(StripToken(Token)), Phase)
-					ReactFactors(NumbReactants) = ii
-			END IF
-
-			IF (len_trim(StripToken(Reactants)) == 0) EXIT
-		END DO
-
-		!! If there is more reactant text in the pipe, then get confused
-		IF (len_trim(StripToken(Reactants)) .NE. 0) &
-			CALL WARN ("  Warning!! The following Reactant: ("//TRIM(StripToken(Reactants))// &
-			           ") Appeared to be Extra in Line... "//"  >>"//TRIM(FullLine)//"<<  Ignoring and Continuing...")
-
-		!!!!!!!!!!!!!!
-		!! PRODUCTS !!
-		!!!!!!!!!!!!!!
-		NumbProducts = 0
-
-		!! Tokenize the Products (up to three)
-		DO
-			ii = 1.
-			CALL GetToken(Products,Delimitor,Product)
-			IF (len_trim(Product) == 0) EXIT
-
-			!! Check Token for Leading Factor
-			CALL GetToken(Product," ",Token)
-
-			IF (IsReal(Token)) THEN
-				ii    = STR2REAL(Token)			! Store
-				Token = StripToken(Product)	    ! Push to Chemical
-			END IF
-
-			!! If it not the generic M, then go ahead
-			IF (Trim(StripToken(Token)) .NE. 'M' .AND.		&
-				Trim(StripToken(Token)) .NE. 'm') THEN
-					NumbProducts   = NumbProducts + 1
-					Prods(NumbProducts)       = FindChem(Trim(StripToken(Token)), Phase)
-					ProdFactors(NumbProducts) = ii
-			END IF
-
-			IF (len_trim(StripToken(Products)) == 0) EXIT
-		END DO
-
-		!! If there is more reactant text in the pipe, then get confused
-		IF (len_trim(StripToken(Products)) .NE. 0) &
-			CALL WARN("Warning!! The following Product: ("//TRIM(StripToken(Products))//") Appeared to be Extra in Line... "//  &
-					  "  >>"//TRIM(FullLine)//"  Ignoring and Continuing...")
-
-		!!!!!!!!!!!
-		!! RATES !!
-		!!!!!!!!!!!
-
-		!! Count the number of rate terms in Rates
-		J = 1
-		IF (Rates(Len_Trim(StripToken(Rates))+1:Len_Trim(StripToken(Rates))+1) == ';') &
-		    Rates(Len_Trim(StripToken(Rates))+1:Len_Trim(StripToken(Rates))+1) = ' '
-		DO I = 1, len(Rates)
-			IF (Rates(i:i) .EQ. ';') J = J+1    
-                END DO
-		J = J-1 !mja, 09/16/2010
-		DO I = 1, 20
-			RateFacs(I) = 0.
-		END DO
-
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!!! N.B. !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!!! Any Change to these reaction  !!!
-		!!! parsings must be mirrored in  !!!
-		!!! both the input file and in    !!!
-		!!! the RecalculateReactionRates()!!!
-		!!! subroutine and its sub-		  !!!
-		!!! subroutines.  DO NOT FORGET!  !!!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! Gas Phase Reactions Have Several Types: Photolytic, Two-Body, !!
-		!! Three-Body, each of which have different functional forms for !!
-		!! their respective reaction rates.  These are different for	 !!
-		!! each phase.													 !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		IF (Phase .EQ. GasPhase) THEN
-		
-		SELECT CASE (ReactionType)
-
-		!! An error in parsing the reaction type could have occured.  Check and exit.
-		CASE (:0)
-			CALL ERROR("The following line from  "//Trim(InputDeck)//" produced an"// &
-					   " impossible reaction type (too few):   >>"//TRIM(FullLine))
-
-
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!!  For ONE-BODY REACTIONS, assume that the reaction rate is proportional !!
-		!!  to concentration. Additional dependencies may later be added, such as !!
-		!!  interactive radiation (11/01).  So:									  !!
-		!!                1. Reaction Rate (sec^-1)								  !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		CASE (1)
-
-			!Check for PAN, Degradation, or Heterogeneous flag
-			CALL GetToken(Rates,";",Rate)
-			
-			!Photolysis Case (Flag = 0)
-			IF (INT(STR2REAL(StripToken(Rate))) .EQ. 0) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 2
-				 
-				   WRITE(*,*) J
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-				
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-
-
-			!PAN Degradation Case (Flag = 1)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 1) THEN			
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 6
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("  The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
-				
-				IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-				END IF
-
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			!Isomerization Case (Flag = 2)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 2) THEN			
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 5
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("  The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
-				
-				IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-				END IF
-
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			
-			!Heterogeneous case (Flag = 3)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 3) THEN
-			 !! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 4
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("  The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
-				
-				IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-				END IF
-
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-
-			!Equilibrium degradation case (Flag = 4)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 4) THEN
-			 !! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 8
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("  The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
-				
-				IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-				END IF
-
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-
-			!Fixed Rate Case (Flag = 5)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 5) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 2
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-				
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			!HNO4 case - this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 6) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 1
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-			
-			!N2O5 case - this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 7) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 1
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-			
-			!O1D case - this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 8) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 1
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-			
-			!O + O2 + M case - this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 9) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 1
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-			
-			!RAD* + O2 case - this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 10) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 1
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-			
-			
-			END IF
-
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!!  For TWO-BODY REACTIONS (thermal or pseudo-second-order pressure dependent), !!
-		!!  assume the form:															!!
-		!!			k = A * T^B exp(C/T)^D												!!
-		!!  All units are appropriate combinations of moles, cm, seconds, and K.		!!
-		!!  So, specify:  1. "A": Reaction Rate at 298									!!
-		!!		  2. "B": Direct Temperature Dependence									!!
-		!!		  3. "C": Arrhenius Temperature Dependence								!!
-		!!		  4. "D": Arrhenius Off-Factor for Temperature Depedence 				!!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		CASE (2)
-
-			!Check for Nitrate flags (first term 1 or 2)
-			CALL GetToken(Rates,";",Rate)			
-			
-			!Normal 2-Body Case
-			IF (INT(STR2REAL(StripToken(Rate))) .EQ. 0) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 4
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("  The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
-				
-				IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-				END IF
-
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			!Alkyl-Nirate Case (Flag = 1)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 1) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 9
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("  The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
-				
-				IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-				END IF
-
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			!Corresponding to nitrate case (Flag = 2)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 2) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 9
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("  The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
-				
-				IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-				END IF
-
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			!CO + OH case - this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 3) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 1
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-			
-			!k = k1 + k2*M case (Flag = 4)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 4) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 5
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-
-			!k = k1 + k3*M(1+k3*M/k2) case (Flag = 5)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 5) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 7
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			!Heterogeneous case (Flag = 6)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 6) THEN
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 2
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF
-
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			
-			END IF
-
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!!  For THREE-BODY REACTIONS (kinetically pressure-dependent), assume the form: !!
-		!!			k = (k_0 * k_inf) / (k_0 + k_inf) * F								!!
-		!!  With appropriate definitions of F.  So, specify with appropriate units:		!!
-		!!	      1. k_0																!!
-		!!		  2. Exponent for k_0 Temp Dependence									!!
-		!!		  3. k_inf																!!
-		!!		  4. Exponent for k_inf Temp Dependence									!!
-		!!		  5. F_c																!!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		CASE (3)
-
-			!Check for 3rd order rate constant flag (first term  = 1.0)
-			CALL GetToken(Rates,";",Rate)		
-			
-			!If the first term is below 1, assume it is a pseudo-2nd order reaction
-			IF(INT(STR2REAL(StripToken(Rate))) .EQ. 0) THEN
-			
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 5
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR(" The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//"  >>"//TRIM(FullLine)//"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-				END IF
-				
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   " apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
-							   //"):  "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			!Use third-order rate constant (as in O + O2 + M)
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 1) THEN
-				NumbRateFacs = 3
-
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR(" The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//"  >>"//TRIM(FullLine)//"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
-				END IF
-				
-				DO I = 2, NumbRateFacs
-
-					CALL GetToken(Rates,";",Rate)
-
-					IF (IsReal(StripToken(Rate))) THEN
-						RateFacs(I) = STR2REAL(StripToken(Rate))
-					ELSE
-						CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   " apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
-							   //"):  "//TRIM(FullLine))
-					END IF
-				END DO
-			
-			!Hardwired OH + NO2 + M reaction
-			ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 2) THEN
-			
-				!! This number should match the number of rate inputs for this reaction type
-				NumbRateFacs = 1
-
-				
-				IF (J .NE. NumbRateFacs) &
-					CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
-
-				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(1) = STR2REAL(StripToken(Rate))
-				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-				END IF	
-
-
-			ELSE
-				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   " is a third-order reaction that doesn't fit the current code:  "//TRIM(FullLine))
-			END IF
-
-		CASE (4:)
-			CALL ERROR("The following line from "//Trim(InputDeck)//			&
-					   " produced an impossible reaction type (too many): >>"// &
-					   TRIM(FullLine)//"<<")
-		END SELECT
-
+		!! If it not the generic M, then go ahead
+		IF (Trim(StripToken(Token)) .NE. 'M' .AND.		&
+			Trim(StripToken(Token)) .NE. 'm') THEN
+			NumbReactants = NumbReactants + 1			
+		IF (NumbReactants > 2) &
+		    CALL ERROR("Too many reactants specified in the following reaction:"//&
+	            "  "//TRIM(FullLine))
+
+		    Reacts(NumbReactants) = FindChem(Trim(StripToken(Token)), Phase)
+		    ReactFactors(NumbReactants) = ii
 		END IF
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! -- Now Consider Aqueous Phase -- !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		IF (Phase .EQ. AqPhase) THEN
+		IF (len_trim(StripToken(Reactants)) == 0) EXIT
+	   END DO
 
-		SELECT CASE (ReactionType)
+	   !! If there is more reactant text in the pipe, then get confused
+	   IF (len_trim(StripToken(Reactants)) .NE. 0) &
+		CALL WARN ("  Warning!! The following Reactant: ("//TRIM(StripToken(Reactants))// &
+		     ") Appeared to be Extra in Line... "//"  >>"//TRIM(FullLine)//"<<  Ignoring and Continuing...")
 
-		!! An error in parsing the reaction type could have occured.  Check and exit.
-		CASE (:0)
-			CALL ERROR("The following line from  "//Trim(InputDeck)//" produced an"// &
-					   " impossible reaction type (too few):   >>"//TRIM(FullLine))
+	   !!!!!!!!!!!!!!
+	   !! PRODUCTS !!
+	   !!!!!!!!!!!!!!
+	   NumbProducts = 0
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!!  For ONE-BODY REACTIONS, assume that the reaction rate is proportional !!
-		!!  to concentration. Additional dependencies may later be added, such as !!
-		!!  interactive radiation (11/01).  So:									  !!
-		!!                1. Reaction Rate (sec^-1)								  !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		CASE (1)
+	   !! Tokenize the Products (up to three)
+	   DO
+		ii = 1.
+		CALL GetToken(Products,Delimitor,Product)
+		IF (len_trim(Product) == 0) EXIT
 
-			!! This number should match the number of rate inputs for this reaction type
-			NumbRateFacs = 1
+		!! Check Token for Leading Factor
+		CALL GetToken(Product," ",Token)
 
+		IF (IsReal(Token)) THEN
+			ii    = STR2REAL(Token)			! Store
+			Token = StripToken(Product)	    ! Push to Chemical
+		END IF
+
+		!! If it not the generic M, then go ahead
+		IF (Trim(StripToken(Token)) .NE. 'M' .AND.		&
+			Trim(StripToken(Token)) .NE. 'm') THEN
+			NumbProducts   = NumbProducts + 1
+			Prods(NumbProducts) = FindChem(Trim(StripToken(Token)), Phase)
+			ProdFactors(NumbProducts) = ii
+		END IF
+
+		IF (len_trim(StripToken(Products)) == 0) EXIT
+	   END DO
+
+	   !! If there is more reactant text in the pipe, then get confused
+	   IF (len_trim(StripToken(Products)) .NE. 0) &
+		CALL WARN("Warning!! The following Product: ("//TRIM(StripToken(Products))//") Appeared to be Extra in Line... "//  &
+		"  >>"//TRIM(FullLine)//"  Ignoring and Continuing...")
+
+	   !!!!!!!!!!!
+	   !! RATES !!
+	   !!!!!!!!!!!
+
+	   !! Count the number of rate terms in Rates
+	   J = 1
+	   IF (Rates(Len_Trim(StripToken(Rates))+1:Len_Trim(StripToken(Rates))+1) == ';') &
+	    Rates(Len_Trim(StripToken(Rates))+1:Len_Trim(StripToken(Rates))+1) = ' '
+	   DO I = 1, len(Rates)
+		IF (Rates(i:i) .EQ. ';') J = J+1    
+           END DO
+           J = J-1 !mja, 09/16/2010
+	   DO I = 1, 20
+		RateFacs(I) = 0.
+	   END DO
+
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!!! N.B. !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!!! Any Change to these reaction  !!!
+	!!! parsings must be mirrored in  !!!
+	!!! both the input file and in    !!!
+	!!! the RecalculateReactionRates()!!!
+	!!! subroutine and its sub-       !!!
+	!!! subroutines.  DO NOT FORGET!  !!!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Gas Phase Reactions Have Several Types: Photolytic, Two-Body, !!
+!! Three-Body, each of which have different functional forms for !!
+!! their respective reaction rates.  These are different for	 !!
+!! each phase.							 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+           IF (Phase .EQ. GasPhase) THEN
+		
+	   SELECT CASE (ReactionType)
+
+	   !! An error in parsing the reaction type could have occured.  
+           !! Check and exit.
+	     CASE (:0)
+		CALL ERROR("The following line from  "//Trim(InputDeck)//" produced an"// &
+		" impossible reaction type (too few):   >>"//TRIM(FullLine))
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!  For ONE-BODY REACTIONS, assume that the reaction rate is proportional !!
+!!  to concentration. Additional dependencies may later be added, such as !!
+!!  interactive radiation (11/01).  So:					  !!
+!!                1. Reaction Rate (sec^-1)				  !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	     CASE (1)
+
+	        !Check for PAN, Degradation, or Heterogeneous flag
+		CALL GetToken(Rates,";",Rate)
+			
+		!Photolysis Case (Flag = 0)
+		IF (INT(STR2REAL(StripToken(Rate))) .EQ. 0) THEN
+		        !! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 2	 
+			!WRITE(*,*) J
 			IF (J .NE. NumbRateFacs) &
-				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-						   " had the wrong number of rate terms.  Expected "//	 &
-						   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-						   //"<<")
+			CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+			" had the wrong number of rate terms.  Expected "//	 &
+			 TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+			 //"<<")
 
-			DO I = 1, NumbRateFacs
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+				
+			DO I = 2, NumbRateFacs
 
 				CALL GetToken(Rates,";",Rate)
 
 				IF (IsReal(StripToken(Rate))) THEN
-					RateFacs(I) = STR2REAL(StripToken(Rate))
+				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
-					CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-					          " apparently has a bad rate expression ("//		&
-							  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!!  For TWO-BODY OR MORE BODY REACTIONS,										!!
-		!!  assume the form:															!!
-		!!			k = A * exp(B/T)^B													!!
-		!!  All units are appropriate combinations of moles, cm, seconds, and K.		!!
-		!!  So, specify:  1. "A": Reaction Rate at 298									!!
-		!!				  2. "B": Temperature Dependence								!!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		CASE (2:)
 
-			!! This number should match the number of rate inputs for this reaction type
-			NumbRateFacs = 2
+		!PAN Degradation Case (Flag = 1)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 1) THEN	
+	                !! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 6
 
 			IF (J .NE. NumbRateFacs) &
 				CALL ERROR("  The following line from "//Trim(InputDeck)//		&
-						   " had the wrong number of rate terms.  Expected "//	&
-						   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+				
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
 
-			DO I = 1, NumbRateFacs
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				      RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+				      CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						 "apparently has a bad rate expression ("//		&
+						 Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+			
+		!Isomerization Case (Flag = 2)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 2) THEN	
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 5
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("  The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+				
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
+
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				      RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+			
+			
+		!Heterogeneous case (Flag = 3)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 3) THEN
+		        !! This number should match the number of rate inputs 
+                        !! for this reaction type
+		        NumbRateFacs = 4
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("  The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+				
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
+
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				      RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+
+		!Equilibrium degradation case (Flag = 4)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 4) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 8
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("  The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+				
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
+
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				      RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+				      CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+
+		!Fixed Rate Case (Flag = 5)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 5) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 2
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+			
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+			            RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+				    CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					 "apparently has a bad rate expression ("//		&
+					Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+			
+		!HNO4 case - 
+                !this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 6) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 1
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+			
+		!N2O5 case - 
+                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 7) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 1
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+			
+		!O1D case - 
+                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 8) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 1
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+			
+		!O + O2 + M case 
+                ! - this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 9) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 1
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+			
+		!RAD* + O2 case - 
+                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 10) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 1
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+			
+			
+		END IF
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! For TWO-BODY REACTIONS (thermal or pseudo-second-order pressure dependent)!!
+!!  assume the form:							     !!
+!!			k = A * T^B exp(C/T)^D			 	     !!
+!!  All units are appropriate combinations of moles, cm, seconds, and K      !!
+!!  So, specify:  1. "A": Reaction Rate at 298				     !!
+!!		  2. "B": Direct Temperature Dependence			     !!
+!!		  3. "C": Arrhenius Temperature Dependence		     !!
+!!		  4. "D": Arrhenius Off-Factor for Temperature Depedence     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	     CASE (2)
+
+		!Check for Nitrate flags (first term 1 or 2)
+		CALL GetToken(Rates,";",Rate)			
+			
+		!Normal 2-Body Case
+		IF (INT(STR2REAL(StripToken(Rate))) .EQ. 0) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 4
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("  The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+				
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+				   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
+
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN	
+			               RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+			
+		!Alkyl-Nirate Case (Flag = 1)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 1) THEN
+		        !! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 9
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("  The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+				
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				     RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+				     CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+			
+		!Corresponding to nitrate case (Flag = 2)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 2) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 9
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("  The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+				
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
+
+
+			DO I = 2, NumbRateFacs
 
 				CALL GetToken(Rates,";",Rate)
 
@@ -953,120 +671,434 @@
 					RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-							   "apparently has a bad rate expression ("//		&
-							   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+			
+		!CO + OH case - 
+                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 3) THEN
+			!! This number should match the number of rate inputs 
+                        ! for this reaction type
+			NumbRateFacs = 1
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+		
+		!k = k1 + k2*M case (Flag = 4)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 4) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 5
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN	
+			               RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
 
-		END SELECT
+		!k = k1 + k3*M(1+k3*M/k2) case (Flag = 5)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 5) THEN
+		!! This number should match the number of rate inputs for 
+                !! this reaction type
+			NumbRateFacs = 7
 
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+					RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+			
+		!Heterogeneous case (Flag = 6)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 6) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 2
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				       RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+			
+			
 		END IF
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! ALLOCATE RATE TERMS !!!!!!!!!!!!!!!!!!!!!!
-		!! Allocate and load the new rate elements !!
-		ALLOCATE (NewRate, stat = allocation_error)
-		if (allocation_error > 0) CALL ERROR("Allocation of Rate Element NewRate Failed in MakeODESet()")
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!For THREE-BODY REACTIONS (kinetically pressure-dependent), assume the form:!!
+!!			k = (k_0 * k_inf) / (k_0 + k_inf) * F		     !!
+!!  With appropriate definitions of F.  So, specify with appropriate units:  !!
+!!	      1. k_0							     !!
+!!		  2. Exponent for k_0 Temp Dependence			     !!
+!!		  3. k_inf						     !!
+!!		  4. Exponent for k_inf Temp Dependence			     !!
+!!		  5. F_c						     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	     CASE (3)
 
-		NULLIFY(NewRate%Next)
-		!NewRate%Next		=> Null()
-		NewRate%NumbBodies	 = ReactionType
-		NewRate%NumbRateFacs = NumbRateFacs
-		Do I = 1,NumbRateFacs
-			NewRate%Rate(I) = RateFacs(I)
-		End Do
+		!Check for 3rd order rate constant flag (first term  = 1.0)
+		CALL GetToken(Rates,";",Rate)		
+			
+		!If the first term is below 1, 
+                ! assume it is a pseudo-2nd order reaction
+		IF(INT(STR2REAL(StripToken(Rate))) .EQ. 0) THEN
+			
+			!! This number should match the number of rate inputs 
+                        !!for this reaction type
+			NumbRateFacs = 5
 
-		IF (Associated(FirstRate)) THEN
-			CurrentRate%Next => NewRate
-			CurrentRate      => CurrentRate%Next
-		ELSE
-			FirstRate		 => NewRate
-			CurrentRate		 => FirstRate
-		END IF
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR(" The following line from "//Trim(InputDeck)//		&
+				" had the wrong number of rate terms.  Expected "//	&
+				TRIM(INT2STR(NumbRateFacs))//"  >>"//TRIM(FullLine)//"<<")
 
-		IF (NumbRateFacs > MaxNumbRateFacs) MaxNumbRateFacs = NumbRateFacs
-		Nullify(NewRate)
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+				"apparently has a bad rate expression ("//		&
+				Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
+				
+			DO I = 2, NumbRateFacs
 
-		!!!!!!!!!!!!!!!!!!!!!!!!
-		!! ALLOCATE ODE TERMS !!
-		!!				      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! Each term of the chemical ODE set is held as an element in a linked list !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				CALL GetToken(Rates,";",Rate)
 
-		!! Allocate and load the new element
-		ALLOCATE (New, stat = allocation_error)
-		if (allocation_error > 0) CALL ERROR("  Allocation of Linked List Element New Failed in MakeODESet()")
-		NULLIFY(New%Next)
-		!New%Next	  => Null()
-		New%ReactionNumber = NumbReactions
+				IF (IsReal(StripToken(Rate))) THEN
+				   RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						" apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
+						//"):  "//TRIM(FullLine))
+				END IF
+			END DO
+			
+		!Use third-order rate constant (as in O + O2 + M)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 1) THEN
+			NumbRateFacs = 3
 
-		!! Allocate, load, and dangle the chemicals involved
-		ALLOCATE (NewChem, stat = allocation_error)
-		if (allocation_error > 0) CALL ERROR("Allocation of Chemical Term fo a Linked List Element New Failed in MakeODESet()")
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR(" The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//"  >>"//TRIM(FullLine)//"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+		        ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+	        	END IF
+				
+		        DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+  				      RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   " apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
+						   //"):  "//TRIM(FullLine))
+				END IF
+			END DO
+			
+		!Hardwired OH + NO2 + M reaction
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 2) THEN
 		
-		NewChem%WhichChem = Reacts(1)
-		NewChem%Stoich    = ReactFactors(1)
-		NULLIFY(NewChem%Next)
-		!NewChem%Next     => Null()
-		New%DerefChem    => NewChem
-		Nullify(NewChem,CurrentChem)
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 1
+	
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
 
-		!! If there is more than one chemical, then load and dangle the extra 
-		IF (ReactionType > 1) THEN
-			DO I = 2, NumbReactants	
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF	
 
-				!! Make and load the chemical
-				ALLOCATE (NewChem, stat = allocation_error)
-				if (allocation_error > 0) &
-				CALL ERROR("Allocation of Chemical Term fo a Linked List Element New Failed in MakeODESet()")
 
-				NewChem%WhichChem = Reacts(I)
-				NewChem%Stoich    = ReactFactors(I)
-				Nullify(NewChem%Next)
-				CurrentChem		 => New%DerefChem
+		ELSE
+			CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   " is a third-order reaction that doesn't fit the current code:  "//TRIM(FullLine))
+		END IF
 
-				!! Place the chemical in the chemical list (ordered by chem number)
-				DO 
-					IF (Associated(CurrentChem%Next)) THEN
-						IF (CurrentChem%Next%WhichChem >= NewChem%WhichChem) THEN
+ 	     CASE (4:)
+		CALL ERROR("The following line from "//Trim(InputDeck)//			&
+				   " produced an impossible reaction type (too many): >>"// &
+				   TRIM(FullLine)//"<<")
+           END SELECT
+           END IF
 
-							!! Simply increase the stoicheometric constant by one
-							!! if the chemical is repeated.  Insert the chemical
-							!! where appropriate if it is not repeated.
-							IF (CurrentChem%Next%WhichChem .EQ. NewChem%WhichChem) THEN
-								CurrentChem%Next%Stoich = CurrentChem%Stoich + 1
-								Deallocate(NewChem)
-								Nullify(NewChem)
-							ELSE
-								NewChem%Next     => CurrentChem%Next
-								CurrentChem%Next => NewChem
-							END IF
-							EXIT
-						ELSE
-							CurrentChem => CurrentChem%Next
-							CYCLE
-						END IF
-					ELSE
-						!! Check for Duplicate Chemicals
-						IF (CurrentChem%WhichChem .EQ. NewChem%WhichChem) THEN
-							CurrentChem%Stoich = CurrentChem%Stoich + 1
+	   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	   !! -- Now Consider Aqueous Phase -- !!
+	   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	   IF (Phase .EQ. AqPhase) THEN
+
+	   SELECT CASE (ReactionType)
+
+	   !! An error in parsing the reaction type could have occured. 
+           !! Check and exit.
+	     CASE (:0)
+		CALL ERROR("The following line from  "//Trim(InputDeck)//" produced an"// &
+			   " impossible reaction type (too few):   >>"//TRIM(FullLine))
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!  For ONE-BODY REACTIONS, assume that the reaction rate is proportional !!
+!!  to concentration. Additional dependencies may later be added, such as !!
+!!  interactive radiation (11/01).  So:					  !!
+!!                1. Reaction Rate (sec^-1)				  !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	     CASE (1)
+
+		!! This number should match the number of rate inputs 
+                !! for this reaction type
+		NumbRateFacs = 1
+
+		IF (J .NE. NumbRateFacs) &
+			CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+		DO I = 1, NumbRateFacs
+
+			CALL GetToken(Rates,";",Rate)
+	
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(I) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+		END DO
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!  For TWO-BODY OR MORE BODY REACTIONS,				     !!
+!!  assume the form:							     !!
+!!			k = A * exp(B/T)^B				     !!
+!!  All units are appropriate combinations of moles, cm, seconds, and K      !!
+!!  So, specify:  1. "A": Reaction Rate at 298				     !!
+!!	          2. "B": Temperature Dependence	                     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	     CASE (2:)
+
+		!! This number should match the number of rate inputs 
+                !! for this reaction type
+		NumbRateFacs = 2
+
+		IF (J .NE. NumbRateFacs) &
+			CALL ERROR("  The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+
+		DO I = 1, NumbRateFacs
+
+			CALL GetToken(Rates,";",Rate)
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(I) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
+		END DO
+
+           END SELECT
+           END IF
+
+	   !!!!!!!!!!!!!!!!!!!!!!!!!
+	   !! ALLOCATE RATE TERMS !!!!!!!!!!!!!!!!!!!!!!
+	   !! Allocate and load the new rate elements !!
+	   ALLOCATE (NewRate, stat = allocation_error)
+	   if (allocation_error > 0) CALL ERROR("Allocation of Rate Element NewRate Failed in MakeODESet()")
+
+	   NULLIFY(NewRate%Next)
+	   !NewRate%Next		=> Null()
+	   NewRate%NumbBodies	 = ReactionType
+	   NewRate%NumbRateFacs = NumbRateFacs
+	   Do I = 1,NumbRateFacs
+	 	NewRate%Rate(I) = RateFacs(I)
+	   End Do
+
+	   IF (Associated(FirstRate)) THEN
+	 	CurrentRate%Next => NewRate
+		CurrentRate      => CurrentRate%Next
+	   ELSE
+		FirstRate		 => NewRate
+		CurrentRate		 => FirstRate
+	   END IF
+
+	   IF (NumbRateFacs > MaxNumbRateFacs) MaxNumbRateFacs = NumbRateFacs
+	   Nullify(NewRate)
+
+	   !!!!!!!!!!!!!!!!!!!!!!!!
+	   !! ALLOCATE ODE TERMS !!
+           !!!!!!!!!!!!!!!!!!!!!!!!
+	   
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Each term of the chemical ODE set is held as an element in a linked list !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+	   !! Allocate and load the new element
+	   ALLOCATE (New, stat = allocation_error)
+	   if (allocation_error > 0) CALL ERROR("  Allocation of Linked List Element New Failed in MakeODESet()")
+	   NULLIFY(New%Next)
+	   !New%Next	  => Null()
+	   New%ReactionNumber = NumbReactions
+
+	   !! Allocate, load, and dangle the chemicals involved
+	   ALLOCATE (NewChem, stat = allocation_error)
+	   if (allocation_error > 0) CALL ERROR("Allocation of Chemical Term fo a Linked List Element New Failed in MakeODESet()")
+		
+	   NewChem%WhichChem = Reacts(1)
+	   NewChem%Stoich    = ReactFactors(1)
+	   NULLIFY(NewChem%Next)
+	   !NewChem%Next     => Null()
+	   New%DerefChem    => NewChem
+	   Nullify(NewChem,CurrentChem)
+
+	   !!If there is more than one chemical, then load and dangle the extra
+	   IF (ReactionType > 1) THEN
+		DO I = 2, NumbReactants	
+
+			!! Make and load the chemical
+			ALLOCATE (NewChem, stat = allocation_error)
+			if (allocation_error > 0) &
+			CALL ERROR("Allocation of Chemical Term fo a Linked List Element New Failed in MakeODESet()")
+
+			NewChem%WhichChem = Reacts(I)
+			NewChem%Stoich    = ReactFactors(I)
+			Nullify(NewChem%Next)
+			CurrentChem		 => New%DerefChem
+
+			!! Place the chemical in the chemical list (ordered by chem number)
+			DO 
+				IF (Associated(CurrentChem%Next)) THEN
+					IF (CurrentChem%Next%WhichChem >= NewChem%WhichChem) THEN
+
+			!! Simply increase the stoicheometric constant by one
+			!! if the chemical is repeated.  Insert the chemical
+			!! where appropriate if it is not repeated.
+						IF (CurrentChem%Next%WhichChem .EQ. NewChem%WhichChem) THEN
+							CurrentChem%Next%Stoich = CurrentChem%Stoich + 1
 							Deallocate(NewChem)
 							Nullify(NewChem)
 						ELSE
+							NewChem%Next     => CurrentChem%Next
 							CurrentChem%Next => NewChem
 						END IF
 						EXIT
-					END IF							
-				END DO
+					ELSE
+						CurrentChem => CurrentChem%Next
+						CYCLE
+					END IF
+				ELSE
+					!! Check for Duplicate Chemicals
+					IF (CurrentChem%WhichChem .EQ. NewChem%WhichChem) THEN
+						CurrentChem%Stoich = CurrentChem%Stoich + 1
+						Deallocate(NewChem)
+						Nullify(NewChem)
+					ELSE
+						CurrentChem%Next => NewChem
+					END IF
+					EXIT
+				END IF							
 			END DO
-		END IF
-		Nullify(Current,NewChem,CurrentChem)
+		END DO
+	   END IF
+	   Nullify(Current,NewChem,CurrentChem)
 
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! Add the term to the chemical array at the correct places, citing one instance  !!
-		!! for each of the reactants and products										  !!
-		
-		!! First: REACTANTS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Add the term to the chemical array at the correct places,                 !!
+!! citing one instance                                                       !!
+!! for each of the reactants and products				     !!
+
+!! First: REACTANTS
 		DO I = 1, NumbReactants
 
 			IF (Reacts(I) > ChemSize) CALL ERROR(" Reactant identified is out of bounds! While parsing "//  &
@@ -1229,7 +1261,7 @@
 		END IF
 
 	RETURN
-	END SUBROUTINE MakeODESet
+END SUBROUTINE MakeODESet
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! SCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSCSC !!

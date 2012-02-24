@@ -6,26 +6,27 @@
 !! This file contains the sorting routines for condensation, 
 !! coagulation, and the moving-center size distribution
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY								!!
-!!									      	!!
-!! Month  Year   Name              Description	                         	!!
-!! 07     2006   Matt Alvarado     Began Update History	                  	!!
-!! 08/30  2006   Matt Alvarado     Edited RegridAerosol				!!
-!!					to prevent unnecessary equilibrations	!!
-!! 09/07  2006   Matt Alvarado     Created SortBoundaryPart
-!! 07/26  2007   Matt Alvarado     Added line to RegridAerosol
-!!			 to recalculate particle radius and density
-!!			  	every time it is called.
-!! 10/05  2007   Matt Alvarado     Redid RegridAerosol to prevent zeros in size bins
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY					                     !!
+!!									     !!
+!! Month  Year   Name              Description	                             !!
+!! 07     2006   Matt Alvarado     Began Update History	                     !!
+!! 08/30  2006   Matt Alvarado     Edited RegridAerosol		             !!
+!!					to prevent unnecessary equilibration !!
+!! 09/07  2006   Matt Alvarado     Created SortBoundaryPart                  !!
+!! 07/26  2007   Matt Alvarado     Added line to RegridAerosol               !!
+!!			 to recalculate particle radius and density          !!
+!!			  	every time it is called.                     !!
+!! 10/05  2007   Matt Alvarado     Redid RegridAerosol to prevent            !!
+!!                                 zeros in size bins                        !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:		!!	
-!! 1. SUBROUTINE SortAerosolAtGridPointForCondensation (XP, YP, ZP) !!
-!! 2. SUBROUTINE SortAerosolAtGridPointForCoagulation (XP, YP, ZP)  !!
-!! 3. SUBROUTINE RegridAerosol (XP, YP, XP)							!! 
-!! 4. SUBROUTINE SortBoundaryPart						            !!
+!! This file contains the following functions and subroutines:	    !!	
+!! 1. SUBROUTINE SortAerosolAtGridPointForCondensation ()           !!
+!! 2. SUBROUTINE SortAerosolAtGridPointForCoagulation ()            !!
+!! 3. SUBROUTINE RegridAerosol ()			            !! 
+!! 4. SUBROUTINE SortBoundaryPart				    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -35,11 +36,10 @@
 !! ignored.  There is a different critereon !!
 !! for coagulation.                         !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE SortAerosolAtGridPointForCondensation (XP, YP, ZP)
+SUBROUTINE SortAerosolAtGridPointForCondensation ()
 
 	IMPLICIT NONE
-
-	INTEGER :: XP, YP, ZP	
+	
 	TYPE(Particle), POINTER :: FirstParticle, CurrentParticle, PlaceHolder
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -47,16 +47,16 @@ SUBROUTINE SortAerosolAtGridPointForCondensation (XP, YP, ZP)
 		!! If there are empty sections, we don't want to  !!
 		!! waste time on them, move them to the end       !!
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		FirstParticle   => Particles(XP,YP,ZP)%First
+		FirstParticle   => Particles%First
 		CurrentParticle => FirstParticle
 		PlaceHolder     => Null()
 
-7		FirstParticle => Particles(XP,YP,ZP)%First
+7		FirstParticle => Particles%First
 
 		!! Look at the head of the list first.
 		IF(((FirstParticle%Sectional .AND. FirstParticle%NumberOfParticles .EQ. 0) .OR. &
 			FirstParticle%Dry) .AND. ASSOCIATED(FirstParticle%Next)) THEN
-			Particles(XP,YP,ZP)%First => FirstParticle%Next
+			Particles%First => FirstParticle%Next
 
 			IF (.NOT.ASSOCIATED(PlaceHolder)) THEN
 				PlaceHolder        => FirstParticle
@@ -69,7 +69,7 @@ SUBROUTINE SortAerosolAtGridPointForCondensation (XP, YP, ZP)
 		END IF
 
 		!! Back up to the head of the aerosol list
-		FirstParticle   => Particles(XP,YP,ZP)%First
+		FirstParticle   => Particles%First
 		CurrentParticle => FirstParticle
 
 		!! Take one step with FirstParticle
@@ -97,7 +97,7 @@ SUBROUTINE SortAerosolAtGridPointForCondensation (XP, YP, ZP)
 			GOTO 10
 		END IF
 
-		FirstParticle => Particles(XP,YP,ZP)%First
+		FirstParticle => Particles%First
 	    IF (ASSOCIATED(PlaceHolder)) THEN
 20          IF(ASSOCIATED(FirstParticle%Next)) THEN
 				FirstParticle => FirstParticle%Next
@@ -114,20 +114,18 @@ END SUBROUTINE SortAerosolAtGridPointForCondensation
 !! For Coagulation, Sort so the sections are first !!
 !! and in order (1 is smallest, up to biggest).    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE SortAerosolAtGridPointForCoagulation (XP, YP, ZP)
+SUBROUTINE SortAerosolAtGridPointForCoagulation ()
 
-use infrastructuralcode, only : int2str
-	IMPLICIT NONE
+        use infrastructuralcode, only : int2str
+	
+        IMPLICIT NONE
 
-	!! External Variables
-	INTEGER :: XP, YP, ZP
+
 	
 	!! Internal Variables	
 	TYPE(Particle), POINTER :: Particle1, Particle2, Particle3, PlaceHolder
 	INTEGER :: I, J
 	LOGICAL :: LocalFlag
-
-
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!!   SORTING -- SORTING -- SORTING -- SORTING     !!
@@ -135,7 +133,7 @@ use infrastructuralcode, only : int2str
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!! Return if the chain is only one item long 
-	IF (.NOT. ASSOCIATED(Particles(XP,YP,ZP)%First%Next)) RETURN
+	IF (.NOT. ASSOCIATED(Particles%First%Next)) RETURN
 
 
 	!! First, count the number of sectional terms
@@ -143,10 +141,10 @@ use infrastructuralcode, only : int2str
 	LocalFlag = .TRUE. ! True until first out of order or non-sectional bin
 
 	!! Return if the gridpoint is empty
-	IF (.NOT. ASSOCIATED(Particles(XP,YP,ZP)%First)) RETURN
+	IF (.NOT. ASSOCIATED(Particles%First)) RETURN
 
 
-	Particle1 => Particles(XP,YP,ZP)%First
+	Particle1 => Particles%First
 
 
 	IF (Particle1%Sectional) I = I+1  	!! The first one gets missed by the loop
@@ -175,7 +173,7 @@ use infrastructuralcode, only : int2str
 
 
 	!2. double walk (staggered) and cram all sections at beginning
-	Particle1 => Particles(XP,YP,ZP)%First
+	Particle1 => Particles%First
 	Particle2 => Particle1%Next
 	J         = I
 	IF (Particle1%Sectional) THEN
@@ -196,8 +194,8 @@ use infrastructuralcode, only : int2str
 		IF (.NOT.LocalFlag) THEN
 
 			Particle1%Next => Particle2%Next
-			Particle2%Next => Particles(XP,YP,ZP)%First 
-			Particles(XP,YP,ZP)%First => Particle2
+			Particle2%Next => Particles%First 
+			Particles%First => Particle2
 			Particle2      => Particle1%Next
 			GOTO 10
 		END IF
@@ -222,7 +220,7 @@ use infrastructuralcode, only : int2str
 	LocalFlag = .TRUE. ! this signals that we're working on the first slot
 
 	!! Particle1 sits at the head, Particle2 Trails, and Particle3 Leads
-	Particle1   => Particles(XP,YP,ZP)%First
+	Particle1   => Particles%First
 20	Particle2   => Particle1
 	Particle3   => Particle1%Next   ! this won't err because if only one link it've exited already
 	J           =  I
@@ -236,7 +234,7 @@ use infrastructuralcode, only : int2str
 		Particle2%Next => Particle3%Next
 		Particle3%Next => Particle1
 		IF (LocalFlag) THEN         !! This step is different for the first and later particles
-			Particles(XP,YP,ZP)%First => Particle3
+			Particles%First => Particle3
 		ELSE
 			PlaceHolder%Next => Particle3
 		END IF
@@ -263,7 +261,7 @@ use infrastructuralcode, only : int2str
 	!! Now recursively move back
 	IF (I .GT. 1) THEN
 		IF (LocalFlag) THEN
-			PlaceHolder => Particles(XP,YP,ZP)%First 
+			PlaceHolder => Particles%First 
 			LocalFlag = .FALSE.
 		ELSE
 			PlaceHolder => PlaceHolder%Next
@@ -277,36 +275,36 @@ use infrastructuralcode, only : int2str
 		RETURN
 END SUBROUTINE SortAerosolAtGridPointForCoagulation
 
-SUBROUTINE RegridAerosol (XP, YP, ZP)
+SUBROUTINE RegridAerosol ()
 
 !! Copyright Matt Alvarado, 2005
 !! This subroutine reallocates sectional particles when the
 !! "moving center" of a bin crosses grid boundaries.
 !! Calling this after growth & coagulation will make MELAM's
 !! sectional distribution behave like a moving center model.
-!! NOTE: Also updates temperature, radius, density and calls inorganic aqueous eq
+!! NOTE: Also updates temperature, radius, density and 
+!! calls inorganic aqueous eq
 !! NOTE: Particles are only moved one bin forward or backward, with
 !! no additional check to make sure this is the correct bin. Take small
 !! time steps!
 
-
 	!! Include modules
 	USE InfrastructuralCode, ONLY : Transcript, &
-									ERROR, &
-									REAL2STR, &
-									INT2STR
-	USE Chemistry,			 ONLY : HowManyAqCations, &
-									HowManyAqAnions, &
-									AqPhaseChemicalNames, &	
-									AqCationNames, &
-									AqAnionNames
+					ERROR, &
+					REAL2STR, &
+					INT2STR
+
+	USE Chemistry,		ONLY : HowManyAqCations, &
+					HowManyAqAnions, &
+					AqPhaseChemicalNames, &	
+					AqCationNames, &
+					AqAnionNames
+
 	USE GridPointFields,	 ONLY : GetTempfromGrid
-	USE	ModelParameters
+
+	USE ModelParameters
 
 	IMPLICIT NONE
-	
-	!!External Variables
-	INTEGER :: XP, YP, ZP
 	
 	!! Define the local variables
 	integer :: i, j, k, l, seedarray(2),q, r, NumBins, NumAqChems, NumOrgChems, NumAqOrgChems, GG
@@ -318,11 +316,11 @@ SUBROUTINE RegridAerosol (XP, YP, ZP)
 	LOGICAL :: IonReset
 				
 	!Reorder particles, smallest to biggest 
-	CALL SortAerosolAtGridPointForCoagulation (1, 1, 1)
+	CALL SortAerosolAtGridPointForCoagulation ()
 		
 	!Count # of bins, # of Aq. Chems, 
 	!call recalculate radius to get radius and density
-	CurrentParticle => particles(1,1,1)%first
+	CurrentParticle => particles%first
 	NumBins = 0
   8 if (associated(currentparticle)) then
 		NumBins = NumBins + 1
@@ -338,7 +336,7 @@ SUBROUTINE RegridAerosol (XP, YP, ZP)
 	ALLOCATE(NumConc(NumBins))
 
 	!WRITE(*,*) "Before loop"
-	CurrentParticle => particles(1,1,1)%first
+	CurrentParticle => particles%first
 	J = 1
  40 if (associated(currentparticle)) then    								
 					
@@ -360,7 +358,7 @@ SUBROUTINE RegridAerosol (XP, YP, ZP)
 				MassFactor = (CurrentParticle%Edges(1)**3 + CurrentParticle%Edges(2)**3) &
 				              /(2.0*CurrentParticle%EffectiveRadius**3)
 				
-				WRITE(*,*) "Growth", J, MassFactor
+				!WRITE(*,*) "Growth", J, MassFactor
 				BiggerParticle => currentparticle%next
 							
 				!Add particle mass to larger bin
@@ -405,18 +403,18 @@ SUBROUTINE RegridAerosol (XP, YP, ZP)
 				IF(BiggerParticle%numberofparticles .LT. 0.0) BiggerParticle%numberofparticles = Store
 				CurrentParticle%numberofparticles = 1.0e-4
 
-				WRITE(*,*) "Water: ", BiggerParticle%AqChems(1)
+				!WRITE(*,*) "Water: ", BiggerParticle%AqChems(1)
 				!Calculate density to reset radius
-				WRITE(*,*) "Density 1"
+				!WRITE(*,*) "Density 1"
 				Dum1 = ParticleDensity(BiggerParticle)
-				WRITE(*,*) "Density 2"
+				!WRITE(*,*) "Density 2"
 				Dum2 = ParticleDensity(CurrentParticle)
-				WRITE(*,*) "After Density 2"
+				!WRITE(*,*) "After Density 2"
 				!Reequilibrate particles internally (inorganic only)
-				WRITE(*,*) "Before Eq"
+				!WRITE(*,*) "Before Eq"
 				CALL FindElectrolyteEquilibrium (BiggerParticle, UpdateThermo=.TRUE., FirstEquilibration=.FALSE., ReturnType = GG)
 				CALL FindElectrolyteEquilibrium (CurrentParticle, UpdateThermo=.TRUE., FirstEquilibration=.FALSE., ReturnType = GG)
-				WRITE(*,*) "After Eq"
+				!WRITE(*,*) "After Eq"
 			!This accounts for shrinking particles, which are rare in clouds and plumes
 			!The second condition says do nothing to smallest particle or bulk
 			
@@ -430,9 +428,9 @@ SUBROUTINE RegridAerosol (XP, YP, ZP)
 				              /(2.0*CurrentParticle%EffectiveRadius**3)
 				END IF
 								
-				WRITE(*,*) "Shrink", J, CurrentParticle%EffectiveRadius, CurrentParticle%Edges(1), MassFactor
+				!WRITE(*,*) "Shrink", J, CurrentParticle%EffectiveRadius, CurrentParticle%Edges(1), MassFactor
 				!Scan back through particle list to find one just below
-				SmallerParticle => particles(1,1,1)%first
+				SmallerParticle => particles%first
 				K = 1
 			 50 if (associated(smallerparticle)) then
 					IF (K .EQ. J-1) THEN
@@ -449,7 +447,7 @@ SUBROUTINE RegridAerosol (XP, YP, ZP)
 												 -MassFactor*CurrentParticle%AqChems(I)*1.0e-4) &
 												 /(SmallerParticle%numberofparticles + CurrentParticle%numberofparticles - 1.0e-4)
 							IF(SmallerParticle%AqChems(I) .LT. 0.0 .OR. IonReset) THEN
-								WRITE(*,*) "Below 0!", I, SmallerParticle%numberofparticles
+								!WRITE(*,*) "Below 0!", I, SmallerParticle%numberofparticles
 								SmallerParticle%AqChems(I) = Store
 								IF(I .GT. HowManyAqChems) IonReset = .TRUE.
 							END IF
@@ -483,17 +481,17 @@ SUBROUTINE RegridAerosol (XP, YP, ZP)
 						CurrentParticle%numberofparticles = 1.0e-4
 							
 						!Calculate density to reset radius
-						WRITE(*,*) "Density 1"
+						!WRITE(*,*) "Density 1"
 						Dum1 = ParticleDensity(SmallerParticle)
-						WRITE(*,*) "Density 2"
+						!WRITE(*,*) "Density 2"
 						Dum2 = ParticleDensity(CurrentParticle)
-						WRITE(*,*) "After Density 2"
+						!WRITE(*,*) "After Density 2"
 						!Reequilibrate particles internally (inorganic only)
-						WRITE(*,*) "Before Eq 1"
+						!WRITE(*,*) "Before Eq 1"
 						CALL FindElectrolyteEquilibrium (SmallerParticle, UpdateThermo=.TRUE., FirstEquilibration=.FALSE., ReturnType=GG)
-						WRITE(*,*) "Before Eq 2"
+						!WRITE(*,*) "Before Eq 2"
 						CALL FindElectrolyteEquilibrium (CurrentParticle, UpdateThermo=.TRUE., FirstEquilibration=.FALSE., ReturnType=GG)
-						WRITE(*,*) "After Eq 2"
+						!WRITE(*,*) "After Eq 2"
 					END IF
 
 					if (associated(smallerparticle%next)) then
@@ -506,7 +504,7 @@ SUBROUTINE RegridAerosol (XP, YP, ZP)
 		END IF !Check for Non-zero
 
 		!Update Temperature
-		Currentparticle%Temperature = GetTempfromGrid (XP, YP, ZP)
+		Currentparticle%Temperature = GetTempfromGrid ()
 		
 		!Go to next particle
 		if (associated(currentparticle%next)) then
@@ -521,11 +519,11 @@ SUBROUTINE RegridAerosol (XP, YP, ZP)
 END SUBROUTINE RegridAerosol
 	
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This routine is similar to						!!
+!! This routine is similar to			    !!
 !! SortAerosolAtGridPointForCoagulation, but for the!!
-!! boundary particles.								!!
-!! Sort so the sections are first					!!
-!! and in order (1 is smallest, up to biggest).		!!
+!! boundary particles.				    !!
+!! Sort so the sections are first		    !!
+!! and in order (1 is smallest, up to biggest).	    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE SortBoundaryPart()
 

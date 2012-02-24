@@ -3,33 +3,36 @@
 !!
 !! File Description:
 !! ModelParameters.f90
-!! This file holds parameters and constants germaine to the aerosol definitions and 
-!! internal processes
+!! This file holds parameters and constants germaine to the aerosol definitions
+!! and internal processes
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY								!!
-!!										!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							     !!
+!!									     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History			     !!
 !! 07/19  2007   Matt Alvarado     Changed MaxIonicStrKM from 100 to 50      !!
-!! 08/01  2007   Matt Alvarado     Changed MinimumWater from 1.0e-21 to 5.0e-21
-!! 08/29  2007   Matt Alvarado     Fixed value of epsilon to match Jacobson value
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! 08/01  2007   Matt Alvarado     Changed MinimumWater from 1.0e-21 to 
+!!                                   5.0e-21
+!! 08/29  2007   Matt Alvarado     Fixed value of epsilon to match 
+!!                                   Jacobson value
+!! 02/15  2012   Matt Alvarado     Removed Eulerian coordinates
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! DEPENDENCIES												        !!
-!! 1. NONE															!!
+!! DEPENDENCIES							    !!
+!! 1. NONE							    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:			
+!! This file contains the following functions and subroutines:	
 !! 1. SUBROUTINE SetDomainSize (X, Y, Z)
 !! 2. SUBROUTINE SetBackgroundRH (BRH)
 !! 3. SUBROUTINE SetDissolutionEquilibriumOrFlux(Input)
 !! 4. SUBROUTINE SetSectionalParameters (inLagrSectSizeCutoff,inLowestBinCutoff,inHowManyBins, inStochasticOrNot, inLagrangianOrNot)
 !! 5. SUBROUTINE SetArraysForInsolubleAerosolCores (NumbDists)
 !! 6. SUBROUTINE DeallocateDataForInsolubleAerosolCores ()
-!! 7. SUBROUTINE SpecifyNewInsolType (Radius, Density, CosContactAngle, DistNumb)
+!! 7. SUBROUTINE SpecifyNewInsolType(Radius, Density, CosContactAngle, DistNumb
 !! 8. SUBROUTINE SetCondensationFlag(InFlag)
 !! 9. SUBROUTINE SetDissolutionFlag(InFlag)
 !!10. SUBROUTINE SetHydrophobicOrgDissolutionFlag(InFlag)
@@ -73,7 +76,7 @@ MODULE ModelParameters
 	!! These parameters may be used to specify which length scale is specified, and 
 	!! converts those units to the working scale, defined in centimeters multiplied by the 
 	!! LengthScale specified above.
-	real*8, parameter :: kilograms	 = MassScale * 1.d3
+	real*8, parameter :: kilograms	         = MassScale * 1.d3
 	real*8, parameter :: grams		 = MassScale * 1.		! Base Mass is Grams
 
 	real*8, parameter :: km			 = LengthScale * 1.d5
@@ -82,7 +85,7 @@ MODULE ModelParameters
 	real*8, parameter :: mm			 = LengthScale * 0.1
 	real*8, parameter :: micron		 = LengthScale * 1.d-4
 	real*8, parameter :: nm			 = LengthScale * 1.d-7
-	real*8, parameter :: Angstrom	 = LengthScale * 1.d-8
+	real*8, parameter :: Angstrom	         = LengthScale * 1.d-8
 	real*8, parameter :: fermi		 = LengthScale * 1.d-13
 
 	real*8, parameter :: mile		 = LengthScale * 160938.
@@ -216,10 +219,10 @@ MODULE ModelParameters
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! The extent of the physical DOMAIN is the same for all grids	!!
 	!! in the model and is taken to be rectangular.  This set of	!!
-	!! parameters define that domain size.							!!
-	!!																!!
+	!! parameters define that domain size.				!!
+	!!								!!
 	!! The origin is at 0,0,0, and the domain stretches this far in	!!
-	!! each direction.												!!
+	!! each direction.						!!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	REAL*8 :: DomainX, DomainY, DomainZ
 
@@ -258,15 +261,17 @@ MODULE ModelParameters
 	!!!!!!! DEFINE SUBROUTINES !!!!!!!
 	CONTAINS
 
-	!! Always call SetGridPointVolumes() with this!  (Can't from here because of heirarchy)
-	SUBROUTINE SetDomainSize (X, Y, Z)
+	!! Always call SetGridPointVolumes() with this!  
+        !! (Can't from here because of heirarchy)
+        !! MJA, 02-15-2012 Should always be 1 cm x 1 cm x 1 cm
+        !! so that concentrations are per cm^3
+	SUBROUTINE SetDomainSize ()
 
 		IMPLICIT NONE
-		REAL*8 :: X, Y, Z
 
-		DomainX = X
-		DomainY = Y
-		DomainZ = Z
+		DomainX = 1*cm
+		DomainY = 1*cm
+		DomainZ = 1*cm
 
 		RETURN
 	END SUBROUTINE SetDomainSize
@@ -283,20 +288,21 @@ MODULE ModelParameters
 
 	SUBROUTINE SetDissolutionEquilibriumOrFlux(Input)
 
-		IMPLICIT NONE
-		INTEGER :: Input
+	  IMPLICIT NONE
+	  INTEGER :: Input
 
-		IF (Input .EQ. 0) THEN
-			DissolutionEquilibriumOrFlux = .FALSE. !Flag to equilibrate
-		ELSE IF (Input .EQ. 1) THEN
-			DissolutionEquilibriumOrFlux = .TRUE. !Flag to do growth
-		END IF
+	  IF (Input .EQ. 0) THEN
+		DissolutionEquilibriumOrFlux = .FALSE. !Flag to equilibrate
+	  ELSE IF (Input .EQ. 1) THEN
+		DissolutionEquilibriumOrFlux = .TRUE. !Flag to do growth
+	  END IF
 
-		RETURN
+	  RETURN
 	END SUBROUTINE SetDissolutionEquilibriumOrFlux
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Set everything to do with the Representation of Sections in the Model !!
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	!! Set everything to do with the Representation of Sections       !!
+        !! in the Model !!
 	SUBROUTINE SetSectionalParameters (inLagrSectSizeCutoff,inLowestBinCutoff,inHowManyBins, inLagrangianOrNot)
 
 		IMPLICIT NONE

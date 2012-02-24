@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -6,16 +6,16 @@
 !! Contains many functions needed by the numerical integration routines
 !! for organic dissolution in the aqueous and hydrophobic phases.
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY								!!
-!!								   	        !!
-!! Month  Year   Name              Description				        !!
-!! 07     2006   Matt Alvarado     Began Update History				!!
-!! 08/28  2006   Matt Alvarado     1. Changed zero flag for			!!
-!!				   EquilibrateOrganicReaction			!!
-!!				   2. Set a minimum value for			!!
-!!				      TotalMolesOM (10^-30)		        !!
-!! 08/29  2006   Matt Alvarado	   Reset minimum value for			!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY						             !!
+!!								   	     !!
+!! Month  Year   Name              Description				     !!
+!! 07     2006   Matt Alvarado     Began Update History		             !!
+!! 08/28  2006   Matt Alvarado     1. Changed zero flag for	             !!
+!!				   EquilibrateOrganicReaction		     !!
+!!				   2. Set a minimum value for		     !!
+!!				      TotalMolesOM (10^-30)		     !!
+!! 08/29  2006   Matt Alvarado	   Reset minimum value for		     !!
 !!				      TotalMolesOM (10^-25)		
 !! 09/08  2006   Matt Alvarado     Created BinaryWaterActivityOrganic
 !! 07/10  2007   Matt Alvarado     Rewrote CalculateSurrogateGasConc
@@ -26,30 +26,37 @@
 !!				  to just exit after 500 iterations
 !! 05/26  2010   Matt Alvarado    Just use unity activity coefficients
 !! 10/15  2010   Matt Alvarado    Remove Optional Arguments
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!!                                 a one-box model or subroutine.            !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:		!!
-!! 1. FUNCTION SaturationVaporPressure (Temperature, OrganicDissolutionRxn)
-!! 2. FUNCTION TotalMolesOM(InParticle)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This file contains the following functions and subroutines:		     !!
+!! 1. FUNCTION SaturationVaporPressure (Temperature, OrganicDissolutionRxn)  !!
+!! 2. FUNCTION TotalMolesOM(InParticle)                                      !!
 !! 3. SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
 !! 4. SUBROUTINE CalculateSurrogateGasConc(lots)
 !! 5. SUBROUTINE UpdateGasPhaseOrganics(lots)
-!! 6. SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint(X, Y, Z)
-!! 7. SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, InParticle, Temperature, ReturnType, OptErrorTolerance)
-!! 8. FUNCTION HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle)
+!! 6. SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint()
+!! 7. SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, &
+!!               InParticle, Temperature, ReturnType, OptErrorTolerance)
+!! 8. FUNCTION HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, & 
+!!             WhichRxn, Temperature, InParticle)
 !! 9. SUBROUTINE EquilibrateHydrophilicReaction
-!! 10. FUNCTION HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle)		
-!! 11. FUNCTION EffectiveOrganicHenrysLaw (Temperature, ProtonMolality, AqOrganicDissolutionRxn)
+!! 10. FUNCTION HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, & 
+!!              WhichRxn, Temperature, InParticle)		
+!! 11. FUNCTION EffectiveOrganicHenrysLaw (Temperature, ProtonMolality, & 
+!!              AqOrganicDissolutionRxn)
 !! 12. SUBROUTINE UpdateHydrophilicUNIFAC(InParticle, Temperature)
 !! 13. FUNCTION TotalAqMoles (InParticle)
 !! 14. SUBROUTINE CalcInfiniteDilutionHydrophilicUNIFAC
 !! 15. SUBROUTINE EquilibrateAllOrganicsAtGridPoint
 !! 16. SUBROUTINE EquilibrateOrganicReaction
-!! 17. FUNCTION TwoPhaseOrgEqRatio(WhichAqRxn, WhichOrgRxn, InParticle, Temperature)
+!! 17. FUNCTION TwoPhaseOrgEqRatio(WhichAqRxn, WhichOrgRxn, InParticle, & 
+!!                 Temperature)
 !! 18. SUBROUTINE EquilibrateOrganicParticle
 !! 19. FUNCTION BinaryWaterActivityOrganic
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Calculate SaturationVaporPressure !!
@@ -69,7 +76,7 @@ REAL*8 FUNCTION SaturationVaporPressure  (Temperature, OrganicDissolutionRxn)
 	INTEGER :: OrganicDissolutionRxn
 
 	!Boiling point divided by Temperature
-	TempRatio = OrganicDissolutionData(OrganicDissolutionRxn,5) / Temperature
+	TempRatio = OrganicDissolutionData(OrganicDissolutionRxn,5)/Temperature
 
 	!Units of mbar, see Myrdal and Yalkowski and Schwarzenbach et al.,
 	!"Environmental Organic Chemistry"
@@ -182,53 +189,52 @@ END SUBROUTINE UpdateHydrophobicUNIFAC
 !! organic coumpounds and orders them into 10 surrogate compounds
 !! for gas-particle partitioning calculations. The mixing ratio (ppbv)
 !! of the surrogate compounds is calculated to conserve system mass.
-!! That is, the mixing ratio of each compound is converted to a mass concentration,
-!! which is summed for each surrogate compound. The ppbv of the surrogate is then
-!! calculated using the MW of the surrogate. 
-SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
-                SOA3MassFracs, SOA4MassFracs, SOA5MassFracs, SOA6MassFracs, &
-				SOA7MassFracs, SOA8MassFracs, SOA9MassFracs, SO10MassFracs, InitialBurden)
+!! That is, the mixing ratio of each compound is converted to a mass 
+!! concentration, which is summed for each surrogate compound. 
+!! The ppbv of the surrogate is then calculated using the MW of the surrogate. 
+SUBROUTINE CalculateSurrogateGasConc(SOA1MassFracs, SOA2MassFracs, &
+           SOA3MassFracs, SOA4MassFracs, SOA5MassFracs, SOA6MassFracs, &
+           SOA7MassFracs, SOA8MassFracs, SOA9MassFracs, &
+           SO10MassFracs, InitialBurden)
 
-	USE Chemistry,			 ONLY : FindChem, GasMolecularMass
+	USE Chemistry,		ONLY : FindChem, GasMolecularMass
 
-	USE GridPointFields,	 ONLY : GridGasChem, &
-									GetGasChem, &
-									GasPhaseChemGridIndex, &
-									ReplaceGridCellChemBurden, &
-									LocateGridPoint
+	USE GridPointFields,	ONLY : GridGasChem, &
+					GetGasChem, &
+					ReplaceGridCellChemBurden
+
 	USE ModelParameters,     ONLY : Avogadro 
+
 	USE InfrastructuralCode, ONLY : ERROR
 
 	IMPLICIT NONE
 
-	INTEGER :: XP, YP, ZP, & !Input
-			   UR21i, UR28i, SOA1i, &
+	INTEGER :: UR21i, UR28i, SOA1i, &
 			   RP13i, RP17i, RP18i, UR26i, UR29i, UR30i, SOA2i, &
 			   RPR9i, RP12i, SOA3i, &
 			   UR3i, UR8i, UR23i, SOA4i, &
 			   UR7i, UR17i, SOA5i, &
 			   AP1i, AP6i, UR31i, SOA6i, &
-			   ADACi, ARACi, RPR7i, RP14i, RP19i, UR2i, UR14i, UR27i, SOA7i, &
+			   ADACi, ARACi, RPR7i, RP14i, RP19i, UR2i, &
+                           UR14i, UR27i, SOA7i, &
 			   AP10i, UR11i, UR15i, SOA8i, &
 			   AP11i, AP12i, UR20i, UR34i, SOA9i, &
 			   AP7i, AP8i, UR5i, UR6i, SO10i, I
 
 	REAL*8  :: SOA1Temp, SOA2Temp, SOA3Temp, SOA4Temp, SOA5Temp, &
-				SOA6Temp, SOA7Temp, SOA8Temp, SOA9Temp, SO10Temp, &
-				SOA1MassFracs(2), SOA2MassFracs(6), SOA3MassFracs(2), &
-				SOA4MassFracs(3), SOA5MassFracs(2), SOA6MassFracs(3), &
-				SOA7MassFracs(8), SOA8MassFracs(3), SOA9MassFracs(4), &
-				SO10MassFracs(4), InitialBurden(10), XX(3), Sum
-	
-	XX = LocateGridPoint (XP, YP, ZP, GasPhaseChemGridIndex)
+			SOA6Temp, SOA7Temp, SOA8Temp, SOA9Temp, SO10Temp, &
+			SOA1MassFracs(2), SOA2MassFracs(6), SOA3MassFracs(2), &
+			SOA4MassFracs(3), SOA5MassFracs(2), SOA6MassFracs(3), &
+			SOA7MassFracs(8), SOA8MassFracs(3), SOA9MassFracs(4), &
+			SO10MassFracs(4), InitialBurden(10),  Sum
 	
 	UR21i = FindChem("UR21", 0)
 	UR28i = FindChem("UR28", 0)
 	SOA1i = FindChem("SOA1", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SOA1Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR21i)*GasMolecularMass(UR21i) + &
-				GridGasChem(XP,YP,ZP,UR28i)*GasMolecularMass(UR28i))
+	SOA1Temp = (1e12/Avogadro)*(GridGasChem(UR21i)*GasMolecularMass(UR21i) + &
+				GridGasChem(UR28i)*GasMolecularMass(UR28i))
 		
 	!If the surrogate concentration = 0, tell model to evenly
 	!divide up mass fractions, else calculate based on gas-phase concentrations
@@ -237,9 +243,9 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 		SOA1MassFracs(1) = 0.5
 		SOA1MassFracs(2) = 0.5
 	ELSE
-		SOA1MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR21i)*GasMolecularMass(UR21i)) &
+		SOA1MassFracs(1) = (1e12/Avogadro)*(GridGasChem(UR21i)*GasMolecularMass(UR21i)) &
 						/SOA1Temp
-		SOA1MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR28i)*GasMolecularMass(UR28i)) &
+		SOA1MassFracs(2) = (1e12/Avogadro)*(GridGasChem(UR28i)*GasMolecularMass(UR28i)) &
 						/SOA1Temp
 	END IF
 
@@ -252,12 +258,12 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	SOA2i = FindChem("SOA2", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SOA2Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RP13i)*GasMolecularMass(RP13i) + &
-			   GridGasChem(XP,YP,ZP,RP17i)*GasMolecularMass(RP17i) + &
-			   GridGasChem(XP,YP,ZP,RP18i)*GasMolecularMass(RP18i) + &
-			   GridGasChem(XP,YP,ZP,UR26i)*GasMolecularMass(UR26i) + &
-			   GridGasChem(XP,YP,ZP,UR29i)*GasMolecularMass(UR29i) + &
-				GridGasChem(XP,YP,ZP,UR30i)*GasMolecularMass(UR30i))
+	SOA2Temp = (1e12/Avogadro)*(GridGasChem(RP13i)*GasMolecularMass(RP13i) + &
+			   GridGasChem(RP17i)*GasMolecularMass(RP17i) + &
+			   GridGasChem(RP18i)*GasMolecularMass(RP18i) + &
+			   GridGasChem(UR26i)*GasMolecularMass(UR26i) + &
+			   GridGasChem(UR29i)*GasMolecularMass(UR29i) + &
+				GridGasChem(UR30i)*GasMolecularMass(UR30i))
 
 	IF (SOA2Temp .LE. 0.0) THEN
 		SOA2Temp = 0.
@@ -268,17 +274,17 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 		SOA2MassFracs(5) = 1.0/6.0
 		SOA2MassFracs(6) = 1.0/6.0
 	ELSE
-		SOA2MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RP13i)*GasMolecularMass(RP13i)) &
+		SOA2MassFracs(1) = (1e12/Avogadro)*(GridGasChem(RP13i)*GasMolecularMass(RP13i)) &
 						/SOA2Temp
-		SOA2MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RP17i)*GasMolecularMass(RP17i)) &
+		SOA2MassFracs(2) = (1e12/Avogadro)*(GridGasChem(RP17i)*GasMolecularMass(RP17i)) &
 						/SOA2Temp
-		SOA2MassFracs(3) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RP18i)*GasMolecularMass(RP18i)) &
+		SOA2MassFracs(3) = (1e12/Avogadro)*(GridGasChem(RP18i)*GasMolecularMass(RP18i)) &
 						/SOA2Temp
-		SOA2MassFracs(4) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR26i)*GasMolecularMass(UR26i)) &
+		SOA2MassFracs(4) = (1e12/Avogadro)*(GridGasChem(UR26i)*GasMolecularMass(UR26i)) &
 						/SOA2Temp
-		SOA2MassFracs(5) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR29i)*GasMolecularMass(UR29i)) &
+		SOA2MassFracs(5) = (1e12/Avogadro)*(GridGasChem(UR29i)*GasMolecularMass(UR29i)) &
 						/SOA2Temp
-		SOA2MassFracs(6) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR30i)*GasMolecularMass(UR30i)) &
+		SOA2MassFracs(6) = (1e12/Avogadro)*(GridGasChem(UR30i)*GasMolecularMass(UR30i)) &
 						/SOA2Temp
 	END IF
 		
@@ -287,17 +293,17 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	SOA3i = FindChem("SOA3", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SOA3Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RPR9i)*GasMolecularMass(RPR9i) + &
-			   GridGasChem(XP,YP,ZP,RP12i)*GasMolecularMass(RP12i))
+	SOA3Temp = (1e12/Avogadro)*(GridGasChem(RPR9i)*GasMolecularMass(RPR9i) + &
+			   GridGasChem(RP12i)*GasMolecularMass(RP12i))
 	
 	IF (SOA3Temp .LE. 0.0) THEN
 		SOA3Temp = 0.
 		SOA3MassFracs(1) = 0.5
 		SOA3MassFracs(2) = 0.5
 	ELSE
-		SOA3MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RPR9i)*GasMolecularMass(RPR9i)) &
+		SOA3MassFracs(1) = (1e12/Avogadro)*(GridGasChem(RPR9i)*GasMolecularMass(RPR9i)) &
 						/SOA3Temp
-		SOA3MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RP12i)*GasMolecularMass(RP12i)) &
+		SOA3MassFracs(2) = (1e12/Avogadro)*(GridGasChem(RP12i)*GasMolecularMass(RP12i)) &
 						/SOA3Temp
 	END IF
 
@@ -307,9 +313,9 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	SOA4i = FindChem("SOA4", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SOA4Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR3i)*GasMolecularMass(UR3i) + &
-			   GridGasChem(XP,YP,ZP,UR8i)*GasMolecularMass(UR8i) + &
-			   GridGasChem(XP,YP,ZP,UR23i)*GasMolecularMass(UR23i))
+	SOA4Temp = (1e12/Avogadro)*(GridGasChem(UR3i)*GasMolecularMass(UR3i) + &
+			   GridGasChem(UR8i)*GasMolecularMass(UR8i) + &
+			   GridGasChem(UR23i)*GasMolecularMass(UR23i))
 
 	IF (SOA4Temp .LE. 0.0) THEN
 		SOA4Temp = 0.
@@ -317,11 +323,11 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 		SOA4MassFracs(2) = 1.0/3.0
 		SOA4MassFracs(3) = 1.0/3.0
 	ELSE
-		SOA4MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR3i)*GasMolecularMass(UR3i)) &
+		SOA4MassFracs(1) = (1e12/Avogadro)*(GridGasChem(UR3i)*GasMolecularMass(UR3i)) &
 						/SOA4Temp
-		SOA4MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR8i)*GasMolecularMass(UR8i)) &
+		SOA4MassFracs(2) = (1e12/Avogadro)*(GridGasChem(UR8i)*GasMolecularMass(UR8i)) &
 						/SOA4Temp
-		SOA4MassFracs(3) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR23i)*GasMolecularMass(UR23i)) &
+		SOA4MassFracs(3) = (1e12/Avogadro)*(GridGasChem(UR23i)*GasMolecularMass(UR23i)) &
 						/SOA4Temp
 	END IF
 
@@ -330,17 +336,17 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	SOA5i = FindChem("SOA5", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SOA5Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR7i)*GasMolecularMass(UR7i) + &
-			   GridGasChem(XP,YP,ZP,UR17i)*GasMolecularMass(UR17i))
+	SOA5Temp = (1e12/Avogadro)*(GridGasChem(UR7i)*GasMolecularMass(UR7i) + &
+			   GridGasChem(UR17i)*GasMolecularMass(UR17i))
 
 	IF (SOA5Temp .LE. 0.0) THEN
 		SOA5Temp = 0.
 		SOA5MassFracs(1) = 0.5
 		SOA5MassFracs(2) = 0.5
 	ELSE
-		SOA5MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR7i)*GasMolecularMass(UR7i)) &
+		SOA5MassFracs(1) = (1e12/Avogadro)*(GridGasChem(UR7i)*GasMolecularMass(UR7i)) &
 						/SOA5Temp
-		SOA5MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR17i)*GasMolecularMass(UR17i)) &
+		SOA5MassFracs(2) = (1e12/Avogadro)*(GridGasChem(UR17i)*GasMolecularMass(UR17i)) &
 						/SOA5Temp
 	END IF
 
@@ -350,9 +356,9 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	SOA6i = FindChem("SOA6", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SOA6Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP1i)*GasMolecularMass(AP1i) + &
-			   GridGasChem(XP,YP,ZP,AP6i)*GasMolecularMass(AP6i) + &
-			   GridGasChem(XP,YP,ZP,UR31i)*GasMolecularMass(UR31i))
+	SOA6Temp = (1e12/Avogadro)*(GridGasChem(AP1i)*GasMolecularMass(AP1i) + &
+			   GridGasChem(AP6i)*GasMolecularMass(AP6i) + &
+			   GridGasChem(UR31i)*GasMolecularMass(UR31i))
 
 	IF (SOA6Temp .LE. 0.0) THEN
 		SOA6Temp = 0.
@@ -360,11 +366,11 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 		SOA6MassFracs(2) = 1.0/3.0
 		SOA6MassFracs(3) = 1.0/3.0
 	ELSE
-		SOA6MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP1i)*GasMolecularMass(AP1i)) &
+		SOA6MassFracs(1) = (1e12/Avogadro)*(GridGasChem(AP1i)*GasMolecularMass(AP1i)) &
 						/SOA6Temp
-		SOA6MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP6i)*GasMolecularMass(AP6i)) &
+		SOA6MassFracs(2) = (1e12/Avogadro)*(GridGasChem(AP6i)*GasMolecularMass(AP6i)) &
 						/SOA6Temp
-		SOA6MassFracs(3) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR31i)*GasMolecularMass(UR31i)) &
+		SOA6MassFracs(3) = (1e12/Avogadro)*(GridGasChem(UR31i)*GasMolecularMass(UR31i)) &
 						/SOA6Temp
 	END IF
 
@@ -379,14 +385,14 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	SOA7i = FindChem("SOA7", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SOA7Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,ADACi)*GasMolecularMass(ADACi) + &
-			   GridGasChem(XP,YP,ZP,ARACi)*GasMolecularMass(ARACi) + &
-			   GridGasChem(XP,YP,ZP,RPR7i)*GasMolecularMass(RPR7i) + &
-			   GridGasChem(XP,YP,ZP,RP14i)*GasMolecularMass(RP14i) + &
-			   GridGasChem(XP,YP,ZP,RP19i)*GasMolecularMass(RP19i) + &
-				GridGasChem(XP,YP,ZP,UR2i)*GasMolecularMass(UR2i) + &
-				GridGasChem(XP,YP,ZP,UR14i)*GasMolecularMass(UR14i) + &
-			GridGasChem(XP,YP,ZP,UR27i)*GasMolecularMass(UR27i))
+	SOA7Temp = (1e12/Avogadro)*(GridGasChem(ADACi)*GasMolecularMass(ADACi) + &
+			   GridGasChem(ARACi)*GasMolecularMass(ARACi) + &
+			   GridGasChem(RPR7i)*GasMolecularMass(RPR7i) + &
+			   GridGasChem(RP14i)*GasMolecularMass(RP14i) + &
+			   GridGasChem(RP19i)*GasMolecularMass(RP19i) + &
+				GridGasChem(UR2i)*GasMolecularMass(UR2i) + &
+				GridGasChem(UR14i)*GasMolecularMass(UR14i) + &
+			GridGasChem(UR27i)*GasMolecularMass(UR27i))
 
 	IF (SOA7Temp .LE. 0.0) THEN
 		SOA7Temp = 0.
@@ -399,21 +405,21 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 		SOA7MassFracs(7) = 0.125
 		SOA7MassFracs(8) = 0.125
 	ELSE
-		SOA7MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,ADACi)*GasMolecularMass(ADACi)) &
+		SOA7MassFracs(1) = (1e12/Avogadro)*(GridGasChem(ADACi)*GasMolecularMass(ADACi)) &
 						/SOA7Temp
-		SOA7MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,ARACi)*GasMolecularMass(ARACi)) &
+		SOA7MassFracs(2) = (1e12/Avogadro)*(GridGasChem(ARACi)*GasMolecularMass(ARACi)) &
 						/SOA7Temp
-		SOA7MassFracs(3) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RPR7i)*GasMolecularMass(RPR7i)) &
+		SOA7MassFracs(3) = (1e12/Avogadro)*(GridGasChem(RPR7i)*GasMolecularMass(RPR7i)) &
 						/SOA7Temp
-		SOA7MassFracs(4) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RP14i)*GasMolecularMass(RP14i)) &
+		SOA7MassFracs(4) = (1e12/Avogadro)*(GridGasChem(RP14i)*GasMolecularMass(RP14i)) &
 						/SOA7Temp
-		SOA7MassFracs(5) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,RP19i)*GasMolecularMass(RP19i)) &
+		SOA7MassFracs(5) = (1e12/Avogadro)*(GridGasChem(RP19i)*GasMolecularMass(RP19i)) &
 						/SOA7Temp
-		SOA7MassFracs(6) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR2i)*GasMolecularMass(UR2i)) &
+		SOA7MassFracs(6) = (1e12/Avogadro)*(GridGasChem(UR2i)*GasMolecularMass(UR2i)) &
 						/SOA7Temp
-		SOA7MassFracs(7) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR14i)*GasMolecularMass(UR14i)) &
+		SOA7MassFracs(7) = (1e12/Avogadro)*(GridGasChem(UR14i)*GasMolecularMass(UR14i)) &
 						/SOA7Temp
-		SOA7MassFracs(8) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR27i)*GasMolecularMass(UR27i)) &
+		SOA7MassFracs(8) = (1e12/Avogadro)*(GridGasChem(UR27i)*GasMolecularMass(UR27i)) &
 						/SOA7Temp
 	
 		Sum = 0.0
@@ -434,9 +440,9 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	SOA8i = FindChem("SOA8", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SOA8Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP10i)*GasMolecularMass(AP10i) + &
-			   GridGasChem(XP,YP,ZP,UR11i)*GasMolecularMass(UR11i) + &
-			   GridGasChem(XP,YP,ZP,UR15i)*GasMolecularMass(UR15i))
+	SOA8Temp = (1e12/Avogadro)*(GridGasChem(AP10i)*GasMolecularMass(AP10i) + &
+			   GridGasChem(UR11i)*GasMolecularMass(UR11i) + &
+			   GridGasChem(UR15i)*GasMolecularMass(UR15i))
 
 	IF (SOA8Temp .LE. 0.0) THEN
 		SOA8Temp = 0.
@@ -444,11 +450,11 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 		SOA8MassFracs(2) = 1.0/3.0
 		SOA8MassFracs(3) = 1.0/3.0
 	ELSE
-		SOA8MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP10i)*GasMolecularMass(AP10i)) &
+		SOA8MassFracs(1) = (1e12/Avogadro)*(GridGasChem(AP10i)*GasMolecularMass(AP10i)) &
 						/SOA8Temp
-		SOA8MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR11i)*GasMolecularMass(UR11i)) &
+		SOA8MassFracs(2) = (1e12/Avogadro)*(GridGasChem(UR11i)*GasMolecularMass(UR11i)) &
 						/SOA8Temp
-		SOA8MassFracs(3) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR15i)*GasMolecularMass(UR15i)) &
+		SOA8MassFracs(3) = (1e12/Avogadro)*(GridGasChem(UR15i)*GasMolecularMass(UR15i)) &
 						/SOA8Temp
 	END IF
 
@@ -459,10 +465,10 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	SOA9i = FindChem("SOA9", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SOA9Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP11i)*GasMolecularMass(AP11i) + &
-			   GridGasChem(XP,YP,ZP,AP12i)*GasMolecularMass(AP12i) + &
-			   GridGasChem(XP,YP,ZP,UR20i)*GasMolecularMass(UR20i) + &
-			   GridGasChem(XP,YP,ZP,UR34i)*GasMolecularMass(UR34i))
+	SOA9Temp = (1e12/Avogadro)*(GridGasChem(AP11i)*GasMolecularMass(AP11i) + &
+			   GridGasChem(AP12i)*GasMolecularMass(AP12i) + &
+			   GridGasChem(UR20i)*GasMolecularMass(UR20i) + &
+			   GridGasChem(UR34i)*GasMolecularMass(UR34i))
 
 	IF (SOA9Temp .LE. 0.0) THEN
 		SOA9Temp = 0.
@@ -471,13 +477,13 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 		SOA9MassFracs(3) = 0.25
 		SOA9MassFracs(4) = 0.25
 	ELSE
-		SOA9MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP11i)*GasMolecularMass(AP11i)) &
+		SOA9MassFracs(1) = (1e12/Avogadro)*(GridGasChem(AP11i)*GasMolecularMass(AP11i)) &
 						/SOA9Temp
-		SOA9MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP12i)*GasMolecularMass(AP12i)) &
+		SOA9MassFracs(2) = (1e12/Avogadro)*(GridGasChem(AP12i)*GasMolecularMass(AP12i)) &
 						/SOA9Temp
-		SOA9MassFracs(3) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR20i)*GasMolecularMass(UR20i)) &
+		SOA9MassFracs(3) = (1e12/Avogadro)*(GridGasChem(UR20i)*GasMolecularMass(UR20i)) &
 						/SOA9Temp
-		SOA9MassFracs(4) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR34i)*GasMolecularMass(UR34i)) &
+		SOA9MassFracs(4) = (1e12/Avogadro)*(GridGasChem(UR34i)*GasMolecularMass(UR34i)) &
 						/SOA9Temp
 	END IF
 		
@@ -488,10 +494,10 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	SO10i = FindChem("SO10", 0)
 
 	!Mass Conc of surrogate, ug/m3
-	SO10Temp = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP7i)*GasMolecularMass(AP7i) + &
-			   GridGasChem(XP,YP,ZP,AP8i)*GasMolecularMass(AP8i) + &
-			   GridGasChem(XP,YP,ZP,UR5i)*GasMolecularMass(UR5i) + &
-			   GridGasChem(XP,YP,ZP,UR6i)*GasMolecularMass(UR6i))
+	SO10Temp = (1e12/Avogadro)*(GridGasChem(AP7i)*GasMolecularMass(AP7i) + &
+			   GridGasChem(AP8i)*GasMolecularMass(AP8i) + &
+			   GridGasChem(UR5i)*GasMolecularMass(UR5i) + &
+			   GridGasChem(UR6i)*GasMolecularMass(UR6i))
 
 	IF (SO10Temp .LE. 0.0) THEN
 		SO10Temp = 0.
@@ -500,13 +506,13 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 		SO10MassFracs(3) = 0.25
 		SO10MassFracs(4) = 0.25
 	ELSE
-		SO10MassFracs(1) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP7i)*GasMolecularMass(AP7i)) &
+		SO10MassFracs(1) = (1e12/Avogadro)*(GridGasChem(AP7i)*GasMolecularMass(AP7i)) &
 						/SO10Temp
-		SO10MassFracs(2) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,AP8i)*GasMolecularMass(AP8i)) &
+		SO10MassFracs(2) = (1e12/Avogadro)*(GridGasChem(AP8i)*GasMolecularMass(AP8i)) &
 						/SO10Temp
-		SO10MassFracs(3) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR5i)*GasMolecularMass(UR5i)) &
+		SO10MassFracs(3) = (1e12/Avogadro)*(GridGasChem(UR5i)*GasMolecularMass(UR5i)) &
 						/SO10Temp
-		SO10MassFracs(4) = (1e12/Avogadro)*(GridGasChem(XP,YP,ZP,UR6i)*GasMolecularMass(UR6i)) &
+		SO10MassFracs(4) = (1e12/Avogadro)*(GridGasChem(UR6i)*GasMolecularMass(UR6i)) &
 						/SO10Temp
 	END IF
 
@@ -535,73 +541,80 @@ SUBROUTINE CalculateSurrogateGasConc(XP, YP, ZP, SOA1MassFracs, SOA2MassFracs, &
 	InitialBurden(10) = SO10Temp
 
 	!Replace burdens (updates gas-phase concentrations of surogates)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SOA1i, SOA1Temp)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SOA2i, SOA2Temp)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SOA3i, SOA3Temp)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SOA4i, SOA4Temp)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SOA5i, SOA5Temp)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SOA6i, SOA6Temp)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SOA7i, SOA7Temp)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SOA8i, SOA8Temp)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SOA9i, SOA9Temp)
-	CALL ReplaceGridCellChemBurden (XP, YP, ZP, SO10i, SO10Temp)
+	CALL ReplaceGridCellChemBurden ( SOA1i, SOA1Temp)
+	CALL ReplaceGridCellChemBurden ( SOA2i, SOA2Temp)
+	CALL ReplaceGridCellChemBurden ( SOA3i, SOA3Temp)
+	CALL ReplaceGridCellChemBurden ( SOA4i, SOA4Temp)
+	CALL ReplaceGridCellChemBurden ( SOA5i, SOA5Temp)
+	CALL ReplaceGridCellChemBurden ( SOA6i, SOA6Temp)
+	CALL ReplaceGridCellChemBurden ( SOA7i, SOA7Temp)
+	CALL ReplaceGridCellChemBurden ( SOA8i, SOA8Temp)
+	CALL ReplaceGridCellChemBurden ( SOA9i, SOA9Temp)
+	CALL ReplaceGridCellChemBurden ( SO10i, SO10Temp)
 
 END SUBROUTINE CalculateSurrogateGasConc 
 
-SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
+SUBROUTINE UpdateGasPhaseOrganics(S1MassFracs, S2MassFracs, &
                 S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-				S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+		S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs,& 
+                InitialBurden)
 
-	USE Chemistry,			 ONLY : FindChem, GasMolecularMass
+	USE Chemistry,		 ONLY : FindChem, GasMolecularMass
 
 	USE GridPointFields,	 ONLY : GridGasChem, &
-									GasPhaseChemGridIndex, &
-									ReplaceGridCellChemBurden, &
-									GetGridCellChemBurden
+					ReplaceGridCellChemBurden, &
+					GetGridCellChemBurden
+
 	USE ModelParameters,     ONLY : Avogadro 
 
 	IMPLICIT NONE
 
-	INTEGER :: X, Y, Z, & !Input
-			   I, UR21i, UR28i, SOA1i, &
-			   RP13i, RP17i, RP18i, UR26i, UR29i, UR30i, SOA2i, &
-			   RPR9i, RP12i, SOA3i, &
-			   UR3i, UR8i, UR23i, SOA4i, &
+	INTEGER ::   I, UR21i, UR28i, SOA1i, &
+	             RP13i, RP17i, RP18i, UR26i, UR29i, UR30i, SOA2i, &
+		     RPR9i, RP12i, SOA3i, &
+		     UR3i, UR8i, UR23i, SOA4i, &
 			   UR7i, UR17i, SOA5i, &
 			   AP1i, AP6i, UR31i, SOA6i, &
-			   ADACi, ARACi, RPR7i, RP14i, RP19i, UR2i, UR14i, UR27i, SOA7i, &
+			   ADACi, ARACi, RPR7i, RP14i, &
+                           RP19i, UR2i, UR14i, UR27i, SOA7i, &
 			   AP10i, UR11i, UR15i, SOA8i, &
 			   AP11i, AP12i, UR20i, UR34i, SOA9i, &
 			   AP7i, AP8i, UR5i, UR6i, SO10i, HowManyNonLumpedRxns
 
 	REAL*8  :: 	S1MassFracs(2), S2MassFracs(6), S3MassFracs(2), &
-				S4MassFracs(3), S5MassFracs(2), S6MassFracs(3), &
-				S7MassFracs(8), S8MassFracs(3), S9MassFracs(4), &
-				S10MassFracs(4), InitialBurden(10), DeltaBurden(10), &
-				DeltaMassConc(10), S1DeltaMassConc(2), S2DeltaMassConc(6), &
-				S3DeltaMassConc(2), S4DeltaMassConc(3), S5DeltaMassConc(2), &
-				S6DeltaMassConc(3), S7DeltaMassConc(8), S8DeltaMassConc(3), &
+			S4MassFracs(3), S5MassFracs(2), S6MassFracs(3), &
+			S7MassFracs(8), S8MassFracs(3), S9MassFracs(4), &
+			S10MassFracs(4), InitialBurden(10), DeltaBurden(10), &
+		DeltaMassConc(10), S1DeltaMassConc(2), S2DeltaMassConc(6), &
+		S3DeltaMassConc(2), S4DeltaMassConc(3), S5DeltaMassConc(2), &
+		S6DeltaMassConc(3), S7DeltaMassConc(8), S8DeltaMassConc(3), &
 				S9DeltaMassConc(4), S10DeltaMassConc(4), &
 				UR21DeltaBurden, UR28DeltaBurden, &
-			   RP13DeltaBurden, RP17DeltaBurden, RP18DeltaBurden, UR26DeltaBurden, UR29DeltaBurden, UR30DeltaBurden, &
+			   RP13DeltaBurden, RP17DeltaBurden, RP18DeltaBurden, &
+                          UR26DeltaBurden, UR29DeltaBurden, UR30DeltaBurden, &
 			   RPR9DeltaBurden, RP12DeltaBurden,  &
 			   UR3DeltaBurden, UR8DeltaBurden, UR23DeltaBurden,  &
 			   UR7DeltaBurden, UR17DeltaBurden,  &
 			   AP1DeltaBurden, AP6DeltaBurden, UR31DeltaBurden,  &
-			   ADACDeltaBurden, ARACDeltaBurden, RPR7DeltaBurden, RP14DeltaBurden, RP19DeltaBurden, UR2DeltaBurden, UR14DeltaBurden, UR27DeltaBurden, &
-			   AP10DeltaBurden, UR11DeltaBurden, UR15DeltaBurden, UR19DeltaBurden,  &
-			   AP11DeltaBurden, AP12DeltaBurden, UR20DeltaBurden, UR34DeltaBurden,  &
-			   AP7DeltaBurden, AP8DeltaBurden, UR5DeltaBurden, UR6DeltaBurden, &
+			   ADACDeltaBurden, ARACDeltaBurden, RPR7DeltaBurden, &
+                           RP14DeltaBurden, RP19DeltaBurden, UR2DeltaBurden, &
+                           UR14DeltaBurden, UR27DeltaBurden, &
+	AP10DeltaBurden, UR11DeltaBurden, UR15DeltaBurden, UR19DeltaBurden,  &
+	AP11DeltaBurden, AP12DeltaBurden, UR20DeltaBurden, UR34DeltaBurden,  &
+	AP7DeltaBurden, AP8DeltaBurden, UR5DeltaBurden, UR6DeltaBurden, &
 			   UR21NewBurden, UR28NewBurden, &
-			   RP13NewBurden, RP17NewBurden, RP18NewBurden, UR26NewBurden, UR29NewBurden, UR30NewBurden, &
+	RP13NewBurden, RP17NewBurden, RP18NewBurden, UR26NewBurden, & 
+                          UR29NewBurden, UR30NewBurden, &
 			   RPR9NewBurden, RP12NewBurden,  &
 			   UR3NewBurden, UR8NewBurden, UR23NewBurden,  &
 			   UR7NewBurden, UR17NewBurden,  &
 			   AP1NewBurden, AP6NewBurden, UR31NewBurden,  &
-			   ADACNewBurden, ARACNewBurden, RPR7NewBurden, RP14NewBurden, RP19NewBurden, UR2NewBurden, UR14NewBurden, UR27NewBurden, &
+			   ADACNewBurden, ARACNewBurden, RPR7NewBurden, &
+                           RP14NewBurden, RP19NewBurden, UR2NewBurden, &
+                           UR14NewBurden, UR27NewBurden, &
 			   AP10NewBurden, UR11NewBurden, UR15NewBurden,  &
-			   AP11NewBurden, AP12NewBurden, UR20NewBurden, UR34NewBurden,  &
-			   AP7NewBurden, AP8NewBurden, UR5NewBurden, UR6NewBurden
+		AP11NewBurden, AP12NewBurden, UR20NewBurden, UR34NewBurden,  &
+			AP7NewBurden, AP8NewBurden, UR5NewBurden, UR6NewBurden
 
 
 	!This tells the lumping to skip the first 8 non-lumped reactions
@@ -610,7 +623,7 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	
 	!Calculate change in the gas-phase burdens of the surrogate species
 	DO I = 1, 10
-		DeltaBurden(I) = InitialBurden(I) - GetGridCellChemBurden (X, Y, Z, INT(OrganicDissolutionData(I+HowManyNonLumpedRxns,1)))
+		DeltaBurden(I) = InitialBurden(I) - GetGridCellChemBurden ( INT(OrganicDissolutionData(I+HowManyNonLumpedRxns,1)))
 	END DO
 
 	!Convert Burden to mass concentration (ug/m3)
@@ -674,12 +687,12 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	UR28i = FindChem("UR28", 0)
 
 	UR21DeltaBurden = (Avogadro/1.0e12)*(S1DeltaMassConc(1)/GasMolecularMass(UR21i))
-	UR21NewBurden =  GetGridCellChemBurden(X, Y, Z, UR21i)-UR21DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR21i, UR21NewBurden)
+	UR21NewBurden =  GetGridCellChemBurden( UR21i)-UR21DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR21i, UR21NewBurden)
 	
 	UR28DeltaBurden = (Avogadro/1.0e12)*(S1DeltaMassConc(2)/GasMolecularMass(UR28i))
-	UR28NewBurden =  GetGridCellChemBurden(X, Y, Z, UR28i)-UR28DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR28i, UR28NewBurden)
+	UR28NewBurden =  GetGridCellChemBurden( UR28i)-UR28DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR28i, UR28NewBurden)
 
 	!Surrogate 2
 	RP13i = FindChem("RP13", 0)
@@ -690,28 +703,28 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	UR30i = FindChem("UR30", 0)
 
 	RP13DeltaBurden = (Avogadro/1.0e12)*(S2DeltaMassConc(1)/GasMolecularMass(RP13i))
-	RP13NewBurden =  GetGridCellChemBurden(X, Y, Z, RP13i)-RP13DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, RP13i, RP13NewBurden)
+	RP13NewBurden =  GetGridCellChemBurden( RP13i)-RP13DeltaBurden
+	CALL ReplaceGridCellChemBurden ( RP13i, RP13NewBurden)
 
 	RP17DeltaBurden = (Avogadro/1.0e12)*(S2DeltaMassConc(2)/GasMolecularMass(RP17i))
-	RP17NewBurden =  GetGridCellChemBurden(X, Y, Z, RP17i)-RP17DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, RP17i, RP17NewBurden)
+	RP17NewBurden =  GetGridCellChemBurden( RP17i)-RP17DeltaBurden
+	CALL ReplaceGridCellChemBurden ( RP17i, RP17NewBurden)
 
 	RP18DeltaBurden = (Avogadro/1.0e12)*(S2DeltaMassConc(3)/GasMolecularMass(RP18i))
-	RP18NewBurden =  GetGridCellChemBurden(X, Y, Z, RP18i)-RP18DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, RP18i, RP18NewBurden)
+	RP18NewBurden =  GetGridCellChemBurden( RP18i)-RP18DeltaBurden
+	CALL ReplaceGridCellChemBurden ( RP18i, RP18NewBurden)
 	
 	UR26DeltaBurden = (Avogadro/1.0e12)*(S2DeltaMassConc(4)/GasMolecularMass(UR26i))
-	UR26NewBurden =  GetGridCellChemBurden(X, Y, Z, UR26i)-UR26DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR26i, UR26NewBurden)
+	UR26NewBurden =  GetGridCellChemBurden( UR26i)-UR26DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR26i, UR26NewBurden)
 
 	UR29DeltaBurden = (Avogadro/1.0e12)*(S2DeltaMassConc(5)/GasMolecularMass(UR29i))
-	UR29NewBurden =  GetGridCellChemBurden(X, Y, Z, UR29i)-UR29DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR29i, UR29NewBurden)
+	UR29NewBurden =  GetGridCellChemBurden( UR29i)-UR29DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR29i, UR29NewBurden)
 
 	UR30DeltaBurden = (Avogadro/1.0e12)*(S2DeltaMassConc(6)/GasMolecularMass(UR30i))
-	UR30NewBurden =  GetGridCellChemBurden(X, Y, Z, UR30i)-UR30DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR30i, UR30NewBurden)
+	UR30NewBurden =  GetGridCellChemBurden( UR30i)-UR30DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR30i, UR30NewBurden)
 
 
 	!Surrogate 3
@@ -719,12 +732,12 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	RP12i = FindChem("RP12", 0)
 
 	RPR9DeltaBurden = (Avogadro/1.0e12)*(S3DeltaMassConc(1)/GasMolecularMass(RPR9i))
-	RPR9NewBurden =  GetGridCellChemBurden(X, Y, Z, RPR9i)-RPR9DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, RPR9i, RPR9NewBurden)
+	RPR9NewBurden =  GetGridCellChemBurden( RPR9i)-RPR9DeltaBurden
+	CALL ReplaceGridCellChemBurden ( RPR9i, RPR9NewBurden)
 
 	RP12DeltaBurden = (Avogadro/1.0e12)*(S3DeltaMassConc(2)/GasMolecularMass(RP12i))
-	RP12NewBurden =  GetGridCellChemBurden(X, Y, Z, RP12i)-RP12DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, RP12i, RP12NewBurden)
+	RP12NewBurden =  GetGridCellChemBurden( RP12i)-RP12DeltaBurden
+	CALL ReplaceGridCellChemBurden ( RP12i, RP12NewBurden)
 
 	!Surrogate 4
 	UR3i = FindChem("UR3", 0)
@@ -732,28 +745,28 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	UR23i = FindChem("UR23", 0)
 
 	UR3DeltaBurden = (Avogadro/1.0e12)*(S4DeltaMassConc(1)/GasMolecularMass(UR3i))
-	UR3NewBurden =  GetGridCellChemBurden(X, Y, Z, UR3i)-UR3DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR3i, UR3NewBurden)
+	UR3NewBurden =  GetGridCellChemBurden( UR3i)-UR3DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR3i, UR3NewBurden)
 
 	UR8DeltaBurden = (Avogadro/1.0e12)*(S4DeltaMassConc(2)/GasMolecularMass(UR8i))
-	UR8NewBurden =  GetGridCellChemBurden(X, Y, Z, UR8i)-UR8DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR8i, UR8NewBurden)
+	UR8NewBurden =  GetGridCellChemBurden( UR8i)-UR8DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR8i, UR8NewBurden)
 
 	UR23DeltaBurden = (Avogadro/1.0e12)*(S4DeltaMassConc(3)/GasMolecularMass(UR23i))
-	UR23NewBurden =  GetGridCellChemBurden(X, Y, Z, UR23i)-UR23DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR23i, UR23NewBurden)
+	UR23NewBurden =  GetGridCellChemBurden( UR23i)-UR23DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR23i, UR23NewBurden)
 
 	!Surrogate 5
 	UR7i = FindChem("UR7", 0)
 	UR17i = FindChem("UR17", 0)
 
 	UR7DeltaBurden = (Avogadro/1.0e12)*(S5DeltaMassConc(1)/GasMolecularMass(UR7i))
-	UR7NewBurden =  GetGridCellChemBurden(X, Y, Z, UR7i)-UR7DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR7i, UR7NewBurden)
+	UR7NewBurden =  GetGridCellChemBurden( UR7i)-UR7DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR7i, UR7NewBurden)
 	
 	UR17DeltaBurden = (Avogadro/1.0e12)*(S5DeltaMassConc(2)/GasMolecularMass(UR17i))
-	UR17NewBurden =  GetGridCellChemBurden(X, Y, Z, UR17i)-UR17DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR17i, UR17NewBurden)
+	UR17NewBurden =  GetGridCellChemBurden( UR17i)-UR17DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR17i, UR17NewBurden)
 	
 	!Surrogate 6
 	AP1i = FindChem("AP1", 0)
@@ -761,16 +774,16 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	UR31i = FindChem("UR31", 0)
 
 	AP1DeltaBurden = (Avogadro/1.0e12)*(S6DeltaMassConc(1)/GasMolecularMass(AP1i))
-	AP1NewBurden =  GetGridCellChemBurden(X, Y, Z, AP1i)-AP1DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, AP1i, AP1NewBurden)
+	AP1NewBurden =  GetGridCellChemBurden( AP1i)-AP1DeltaBurden
+	CALL ReplaceGridCellChemBurden ( AP1i, AP1NewBurden)
 	
 	AP6DeltaBurden = (Avogadro/1.0e12)*(S6DeltaMassConc(2)/GasMolecularMass(AP6i))
-	AP6NewBurden =  GetGridCellChemBurden(X, Y, Z, AP6i)-AP6DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, AP6i, AP6NewBurden)
+	AP6NewBurden =  GetGridCellChemBurden( AP6i)-AP6DeltaBurden
+	CALL ReplaceGridCellChemBurden ( AP6i, AP6NewBurden)
 
 	UR31DeltaBurden = (Avogadro/1.0e12)*(S6DeltaMassConc(3)/GasMolecularMass(UR31i))
-	UR31NewBurden =  GetGridCellChemBurden(X, Y, Z, UR31i)-UR31DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR31i, UR31NewBurden)
+	UR31NewBurden =  GetGridCellChemBurden( UR31i)-UR31DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR31i, UR31NewBurden)
 
 	!Surrogate 7
 	ADACi = FindChem("ADAC", 0)
@@ -783,36 +796,36 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	UR27i = FindChem("UR27", 0)
 
 	ADACDeltaBurden = (Avogadro/1.0e12)*(S7DeltaMassConc(1)/GasMolecularMass(ADACi))
-	ADACNewBurden =  GetGridCellChemBurden(X, Y, Z, ADACi)-ADACDeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, ADACi, ADACNewBurden)
+	ADACNewBurden =  GetGridCellChemBurden( ADACi)-ADACDeltaBurden
+	CALL ReplaceGridCellChemBurden ( ADACi, ADACNewBurden)
 
 	ARACDeltaBurden = (Avogadro/1.0e12)*(S7DeltaMassConc(2)/GasMolecularMass(ARACi))
-	ARACNewBurden =  GetGridCellChemBurden(X, Y, Z, ARACi)-ARACDeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, ARACi, ARACNewBurden)
+	ARACNewBurden =  GetGridCellChemBurden( ARACi)-ARACDeltaBurden
+	CALL ReplaceGridCellChemBurden ( ARACi, ARACNewBurden)
 
 	RPR7DeltaBurden = (Avogadro/1.0e12)*(S7DeltaMassConc(3)/GasMolecularMass(RPR7i))
-	RPR7NewBurden =  GetGridCellChemBurden(X, Y, Z, RPR7i)-RPR7DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, RPR7i, RPR7NewBurden)
+	RPR7NewBurden =  GetGridCellChemBurden( RPR7i)-RPR7DeltaBurden
+	CALL ReplaceGridCellChemBurden ( RPR7i, RPR7NewBurden)
 
 	RP14DeltaBurden = (Avogadro/1.0e12)*(S7DeltaMassConc(4)/GasMolecularMass(RP14i))
-	RP14NewBurden =  GetGridCellChemBurden(X, Y, Z, RP14i)-RP14DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, RP14i, RP14NewBurden)
+	RP14NewBurden =  GetGridCellChemBurden( RP14i)-RP14DeltaBurden
+	CALL ReplaceGridCellChemBurden ( RP14i, RP14NewBurden)
 
 	RP19DeltaBurden = (Avogadro/1.0e12)*(S7DeltaMassConc(5)/GasMolecularMass(RP19i))
-	RP19NewBurden =  GetGridCellChemBurden(X, Y, Z, RP19i)-RP19DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, RP19i, RP19NewBurden)
+	RP19NewBurden =  GetGridCellChemBurden( RP19i)-RP19DeltaBurden
+	CALL ReplaceGridCellChemBurden ( RP19i, RP19NewBurden)
 
 	UR2DeltaBurden = (Avogadro/1.0e12)*(S7DeltaMassConc(6)/GasMolecularMass(UR2i))
-	UR2NewBurden =  GetGridCellChemBurden(X, Y, Z, UR2i)-UR2DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR2i, UR2NewBurden)
+	UR2NewBurden =  GetGridCellChemBurden( UR2i)-UR2DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR2i, UR2NewBurden)
 
 	UR14DeltaBurden = (Avogadro/1.0e12)*(S7DeltaMassConc(7)/GasMolecularMass(UR14i))
-	UR14NewBurden =  GetGridCellChemBurden(X, Y, Z, UR14i)-UR14DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR14i, UR14NewBurden)
+	UR14NewBurden =  GetGridCellChemBurden( UR14i)-UR14DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR14i, UR14NewBurden)
 
 	UR27DeltaBurden = (Avogadro/1.0e12)*(S7DeltaMassConc(8)/GasMolecularMass(UR27i))
-	UR27NewBurden =  GetGridCellChemBurden(X, Y, Z, UR27i)-UR27DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR27i, UR27NewBurden)
+	UR27NewBurden =  GetGridCellChemBurden( UR27i)-UR27DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR27i, UR27NewBurden)
 
 	!Surrogate 8
 	AP10i = FindChem("AP10", 0)
@@ -820,16 +833,16 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	UR15i = FindChem("UR15", 0)
 
 	AP10DeltaBurden = (Avogadro/1.0e12)*(S8DeltaMassConc(1)/GasMolecularMass(AP10i))
-	AP10NewBurden =  GetGridCellChemBurden(X, Y, Z, AP10i)-AP10DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, AP10i, AP10NewBurden)
+	AP10NewBurden =  GetGridCellChemBurden( AP10i)-AP10DeltaBurden
+	CALL ReplaceGridCellChemBurden ( AP10i, AP10NewBurden)
 
 	UR11DeltaBurden = (Avogadro/1.0e12)*(S8DeltaMassConc(2)/GasMolecularMass(UR11i))
-	UR11NewBurden =  GetGridCellChemBurden(X, Y, Z, UR11i)-UR11DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR11i, UR11NewBurden)
+	UR11NewBurden =  GetGridCellChemBurden( UR11i)-UR11DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR11i, UR11NewBurden)
 
 	UR15DeltaBurden = (Avogadro/1.0e12)*(S8DeltaMassConc(3)/GasMolecularMass(UR15i))
-	UR15NewBurden =  GetGridCellChemBurden(X, Y, Z, UR15i)-UR15DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR15i, UR15NewBurden)
+	UR15NewBurden =  GetGridCellChemBurden( UR15i)-UR15DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR15i, UR15NewBurden)
 
 	!Surrogate 9
 	AP11i = FindChem("AP11", 0)
@@ -838,20 +851,20 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	UR34i = FindChem("UR34", 0)
 
 	AP11DeltaBurden = (Avogadro/1.0e12)*(S9DeltaMassConc(1)/GasMolecularMass(AP11i))
-	AP11NewBurden =  GetGridCellChemBurden(X, Y, Z, AP11i)-AP11DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, AP11i, AP11NewBurden)
+	AP11NewBurden =  GetGridCellChemBurden( AP11i)-AP11DeltaBurden
+	CALL ReplaceGridCellChemBurden ( AP11i, AP11NewBurden)
 
 	AP12DeltaBurden = (Avogadro/1.0e12)*(S9DeltaMassConc(2)/GasMolecularMass(AP12i))
-	AP12NewBurden =  GetGridCellChemBurden(X, Y, Z, AP12i)-AP12DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, AP12i, AP12NewBurden)
+	AP12NewBurden =  GetGridCellChemBurden( AP12i)-AP12DeltaBurden
+	CALL ReplaceGridCellChemBurden ( AP12i, AP12NewBurden)
 
 	UR20DeltaBurden = (Avogadro/1.0e12)*(S9DeltaMassConc(3)/GasMolecularMass(UR20i))
-	UR20NewBurden =  GetGridCellChemBurden(X, Y, Z, UR20i)-UR20DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR20i, UR20NewBurden)
+	UR20NewBurden =  GetGridCellChemBurden( UR20i)-UR20DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR20i, UR20NewBurden)
 
 	UR34DeltaBurden = (Avogadro/1.0e12)*(S9DeltaMassConc(4)/GasMolecularMass(UR34i))
-	UR34NewBurden =  GetGridCellChemBurden(X, Y, Z, UR34i)-UR34DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR34i, UR34NewBurden)
+	UR34NewBurden =  GetGridCellChemBurden( UR34i)-UR34DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR34i, UR34NewBurden)
 
 	!Surrogate 10
 	AP7i = FindChem("AP7", 0)
@@ -860,74 +873,72 @@ SUBROUTINE UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
 	UR6i = FindChem("UR6", 0)
 
 	AP7DeltaBurden = (Avogadro/1.0e12)*(S10DeltaMassConc(1)/GasMolecularMass(AP7i))
-	AP7NewBurden =  GetGridCellChemBurden(X, Y, Z, AP7i)-AP7DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, AP7i, AP7NewBurden)
+	AP7NewBurden =  GetGridCellChemBurden( AP7i)-AP7DeltaBurden
+	CALL ReplaceGridCellChemBurden ( AP7i, AP7NewBurden)
 
 	AP8DeltaBurden = (Avogadro/1.0e12)*(S10DeltaMassConc(2)/GasMolecularMass(AP8i))
-	AP8NewBurden =  GetGridCellChemBurden(X, Y, Z, AP8i)-AP8DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, AP8i, AP8NewBurden)
+	AP8NewBurden =  GetGridCellChemBurden( AP8i)-AP8DeltaBurden
+	CALL ReplaceGridCellChemBurden ( AP8i, AP8NewBurden)
 	
 	UR5DeltaBurden = (Avogadro/1.0e12)*(S10DeltaMassConc(3)/GasMolecularMass(UR5i))
-	UR5NewBurden =  GetGridCellChemBurden(X, Y, Z, UR5i)-UR5DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR5i, UR5NewBurden)
+	UR5NewBurden =  GetGridCellChemBurden( UR5i)-UR5DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR5i, UR5NewBurden)
 	
 	UR6DeltaBurden = (Avogadro/1.0e12)*(S10DeltaMassConc(4)/GasMolecularMass(UR6i))
-	UR6NewBurden =  GetGridCellChemBurden(X, Y, Z, UR6i)-UR6DeltaBurden
-	CALL ReplaceGridCellChemBurden (X, Y, Z, UR6i, UR6NewBurden)
+	UR6NewBurden =  GetGridCellChemBurden( UR6i)-UR6DeltaBurden
+	CALL ReplaceGridCellChemBurden ( UR6i, UR6NewBurden)
 
 	RETURN
 END SUBROUTINE UpdateGasPhaseOrganics
 
-SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint(X, Y, Z)
+SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint()
 
-	USE Aerosols, ONLY : SortAerosolAtGridPointForCondensation, &
-						 Particles,							&
-						 Particle, &
-						 DumpParticleContentsAtError
+	USE Aerosols,    ONLY : SortAerosolAtGridPointForCondensation, &
+				Particles,			&
+				Particle, &
+				DumpParticleContentsAtError
 	
-	USE Chemistry,		 ONLY : HowManyEvolveGasChems, &
-								GasMolecularMass
+	USE Chemistry,	 ONLY : HowManyEvolveGasChems, &
+				GasMolecularMass
 	
-	USE GridPointFields, ONLY : GetTemp,					&
-								LocateGridPoint,			& 
-								GasPhaseChemGridIndex,		&
-								GetGridCellChemBurden,		&
-								ReplaceGridCellChemBurden
+	USE GridPointFields, ONLY : GetTemp,	&
+			            GetGridCellChemBurden,	&
+				    ReplaceGridCellChemBurden
 
-	USE ModelParameters, ONLY : AqThermoNumbAllowedIterations,	&
-								AqThermoEquilibriumError, &
-								ThermoBulkMode, &
-								Avogadro
+	USE ModelParameters,     ONLY : AqThermoNumbAllowedIterations,	&
+					AqThermoEquilibriumError, &
+					ThermoBulkMode, &
+					Avogadro
 
 	USE InfrastructuralCode, ONLY : ERROR, WARN, INT2STR, REAL2STR
 	
 	IMPLICIT NONE
 
-	INTEGER :: X, Y, Z, HowManyLinks
+	INTEGER ::  HowManyLinks
 	REAL*8  :: S1MassFracs(2), S2MassFracs(6), S3MassFracs(2), &
-				S4MassFracs(3), S5MassFracs(2), S6MassFracs(3), &
-				S7MassFracs(8), S8MassFracs(4), S9MassFracs(4), &
-				S10MassFracs(4), InitialBurden(10) 
+			S4MassFracs(3), S5MassFracs(2), S6MassFracs(3), &
+			S7MassFracs(8), S8MassFracs(4), S9MassFracs(4), &
+			S10MassFracs(4), InitialBurden(10) 
 	TYPE(Particle),POINTER :: Current
 
 	LOGICAL :: Equilibrated, RxnEquilibrated
-	REAL*8  :: GasPhaseBurden, Temperature, XX(3), II
+	REAL*8  :: GasPhaseBurden, Temperature,  II
 	INTEGER :: I, J, K, L, M, Q, ReturnType
 
 	
 	!Calculate surrogate concentrations and 
 	!mass fractions of organics contributing to surrogates, and
 	!Store initial surrogate gas phase burdens in a dummy vector
-	CALL CalculateSurrogateGasConc(X, Y, Z, S1MassFracs, S2MassFracs, &
+	CALL CalculateSurrogateGasConc(S1MassFracs, S2MassFracs, &
                 S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-				S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 
 	!! Sort the gridcell, pushing all empty sections to the end
-	CALL SortAerosolAtGridPointForCondensation (X, Y, Z)
+	CALL SortAerosolAtGridPointForCondensation ()
 
 	!! Count the number of links
 	HowManyLinks = 0
-	Current => Particles(X,Y,Z)%First
+	Current => Particles%First
 	IF (ASSOCIATED(Current)) THEN
 10		IF (Current%NumberOfParticles .GT. 0 ) &
 			HowManyLinks = HowManyLinks + 1
@@ -937,8 +948,7 @@ SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint(X, Y, Z)
 			END IF
 	END IF
 
-	XX = LocateGridPoint (X, Y, Z, GasPhaseChemGridIndex)
-	Temperature = GetTemp(XX(1),XX(2),XX(3))
+	Temperature = GetTemp()
 
 	Equilibrated = .FALSE.
 	K = 0
@@ -956,7 +966,7 @@ SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint(X, Y, Z)
 			L = 0
 			RxnEquilibrated = .FALSE.
 				
-			GasPhaseBurden = GetGridCellChemBurden (X, Y, Z, INT(OrganicDissolutionData(I,1)))
+			GasPhaseBurden = GetGridCellChemBurden ( INT(OrganicDissolutionData(I,1)))
 		!WRITE(*,*) GasPhaseBurden
 			!! Loop over all of the particles until 
 			!! this particular reaction is happy
@@ -964,7 +974,7 @@ SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint(X, Y, Z)
 
 				RxnEquilibrated = .TRUE.
 
-				Current => Particles(X,Y,Z)%First
+				Current => Particles%First
 				DO J = 1, HowManyLinks
 									
 					!Equilibrate one reaction
@@ -994,7 +1004,7 @@ SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint(X, Y, Z)
 				END DO
 
 				IF (L .GT. AqThermoNumbAllowedIterations) THEN
-					CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
+					CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
 					CALL ERROR ("EquilibrateHydrophobicPhaseAtGridPoint() in HydrophobicCondensationFunctions.h tried to equilibrate all "     // &
@@ -1007,13 +1017,13 @@ SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint(X, Y, Z)
 			
 			!! Replace the surrogate gas phase chemical concentrations
 			IF (INT(OrganicDissolutionData(I,1)) .LE. HowManyEvolveGasChems)										&
-				CALL ReplaceGridCellChemBurden (X, Y, Z, INT(OrganicDissolutionData(I,1)), GasPhaseBurden)			
+				CALL ReplaceGridCellChemBurden ( INT(OrganicDissolutionData(I,1)), GasPhaseBurden)			
 		END DO
 
 
 
 		IF (K .GT. AqThermoNumbAllowedIterations) THEN
-			CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
+			CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
 			CALL ERROR ("EquilibrateHydrophobicPhaseAtGridPoint() in HydrophobicCondensationFunctions.h tried to equilibrate all of the hydrophobic dissolution "// &
@@ -1026,9 +1036,9 @@ SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint(X, Y, Z)
 
 	!WRITE(*,*) "Before org update"
 	!Update Concentrations of individual organics
-	CALL UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
+	CALL UpdateGasPhaseOrganics( S1MassFracs, S2MassFracs, &
                 S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-				S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 	!WRITE(*,*) "aFTER org update"
 
 	RETURN
@@ -1039,38 +1049,38 @@ END SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! --- EQUILIBRATE ONE HYDROPHOBIC DISSOLUTION REACTION ---	   !!
-!!															   !!
+!! --- EQUILIBRATE ONE HYDROPHOBIC DISSOLUTION REACTION ---    !!
+!!							       !!
 !! Iterate a particular reaction until it reaches equilibrium. !!
-!!															   !!
-!! ReturnType: 1 is normal, 2 is "already was in eq"		   !!
+!!							       !!
+!! ReturnType: 1 is normal, 2 is "already was in eq"	       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, InParticle, Temperature, ReturnType, OptErrorTolerance)
+SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, &
+            InParticle, Temperature, ReturnType, OptErrorTolerance)
 
-	USE Chemistry,				ONLY :	AqEquilibriaList,		&
-										HowManyOrgChems,		&
-										OrgPhaseChemicalNames,	&
-										HowManyEvolveGasChems
+	USE Chemistry,		ONLY :	AqEquilibriaList,		&
+					HowManyOrgChems,		&
+					OrgPhaseChemicalNames,	&
+					HowManyEvolveGasChems
 
-	USE ModelParameters,		ONLY :	AqThermoEquilibriumError,			&
-										WaterContentPrecision,				&
-										AqThermoNumbAllowedIterations,		&
-										AerosolWaterEquilibriumRHThreshold,	&
-										Avogadro,							&
-										moles, grams, WaterMolecMass, micron 
+	USE ModelParameters,	ONLY :	AqThermoEquilibriumError,	&
+					WaterContentPrecision,		&
+					AqThermoNumbAllowedIterations,	&
+					AerosolWaterEquilibriumRHThreshold,&
+					Avogadro,&
+					moles, grams, WaterMolecMass, micron 
 
-	USE GridPointFields,		ONLY :  GasPhaseChemGridIndex,	&
-										GetRelativeHumidity
+	USE GridPointFields,	ONLY :  GetRelativeHumidity
 
-	USE InfrastructuralCode,	ONLY :	INT2STR, REAL2STR,		&
-										Transcript,				&
-										ERROR, WARN
+	USE InfrastructuralCode,ONLY :	INT2STR, REAL2STR,		&
+					Transcript,			&
+					ERROR, WARN
 
-	USE Aerosols,				ONLY :	EquilibriumWaterContent,	 &
-										DumpParticleContentsAtError, &
-										EqCoeff,					 &
-										MeanActivity,&
-										EquilibrateAqueousDissociationReaction
+	USE Aerosols,		ONLY :	EquilibriumWaterContent,	 &
+					DumpParticleContentsAtError, &
+					EqCoeff,			&
+					MeanActivity,&
+					EquilibrateAqueousDissociationReaction
 
 	IMPLICIT NONE
 
@@ -1082,7 +1092,8 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, InParticle,
 
 	!! Local Variables
 	INTEGER :: I
-	REAL*8  :: II, Qdenom, Qnumer, Z, dX, EqRatio, ActivityCoefficients, ErrorTolerance, DissociatedScaling, DissociatedExp
+	REAL*8  :: II, Qdenom, Qnumer, Z, dX, EqRatio, ActivityCoefficients,&
+                   ErrorTolerance, DissociatedScaling, DissociatedExp
 	LOGICAL :: WaterRxn
 
 	!! SCSCSCSCSC
@@ -1090,46 +1101,39 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, InParticle,
 
 	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
-	!! Set the error tolerance according to the 
-	!! subroutine's optinoal input.
-	!! THIS IS NOT THE TOLERANCE FOR THE EQUILIBRATION
-	!! CHECK (WHICH USES THE GLOBAL VALUE), RATHER IT 
-	!! IS THE VALUE WE EQUILIBRATE TO IF THAT CHECK FAILS	
-	!IF (PRESENT(OptErrorTolerance)) THEN
-		ErrorTolerance = OptErrorTolerance
-	!ELSE
-	!	ErrorTolerance = AqThermoEquilibriumError / 2.
-	!END IF
+
+	ErrorTolerance = OptErrorTolerance
 	
 	!! Presume innocence in the form of a successful return.
 	ReturnType = 1
-	
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! This routine generally follows the Mass Flux Iteration method reviewed in Jacobson,  !!
-	!! 1999 (the textbook) and reviewed earlier in Jacobson et al. 1996, and Villars 1959   !!
-	!!																						!!
-	!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium within aerosols !!
-	!!    and nonequilibrium between gases and aerosols, Journal of Geophysical Research,	!!
-	!!    101 (D4), 9079-9091, 1996.														!!
-	!!																						!!
-	!! Villars, D.S., A method of successive approximations for computing combustion		!!
-	!!    equilibria on a high speed digital computer, Journal of Physical Chemistry,		!!
-	!!    63, 521-5, 1959.																	!!
-	!!																						!!
-	!! STEP 1: Find the most aberrant ratio of concentration to stoicheometric coefficient  !!
-	!! (cf., Jacobson 1999, p.497)															!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!! Check for already equilibrated (either by none of 
-	!! the species being present or explicit equilibrium)
-	!!
-	!! And then pre-calculate the Qnumer and Qdenomer
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This routine generally follows the Mass Flux Iteration method reviewed!! 
+!! in Jacobson, 1999 (the textbook) and reviewed earlier in              !!
+!! Jacobson et al. 1996, and Villars 1959                                !!
+!!                                                                       !!
+!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium  !!
+!!       within aerosols and nonequilibrium between gases and aerosols,  !!
+!!       Journal of Geophysical Research, 101 (D4), 9079-9091, 1996.     !!
+!!									 !!
+!! Villars, D.S., A method of successive approximations for computing    !!
+!!    combustion equilibria on a high speed digital computer,            !!
+!!    Journal of Physical Chemistry, 63, 521-5, 1959.			 !!
+!!									 !!
+!! STEP 1: Find the most aberrant ratio of concentration to              !!
+!!         stoicheometric coefficient  (cf., Jacobson 1999, p.497)	 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! There is only one reaction type:											!!
-	!!																				!!														!!
-	!! 8. Direct dissolution of a single species not inclorporating dissociation.	!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Check for already equilibrated (either by none of 
+!! the species being present or explicit equilibrium)
+!!
+!! And then pre-calculate the Qnumer and Qdenomer
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! There is only one reaction type:					     !!
+!!									     !!
+!! 8. Direct dissolution of a single species not inclorporating dissociation.!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!WRITE(*,*) "Reaction Check 1", GasPhaseBurden, WhichRxn, Temperature
 	EqRatio = HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle)
@@ -1141,7 +1145,7 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, InParticle,
 
 	!Check if all organic has evaporated, but gas-phase is still unsaturated
 	IF (EqRatio .GT. 1.0 & !The gas-phase is sub-saturated
-		.AND. InParticle%OrgChems(OrganicDissolutionData(WhichRxn,3)) .LT. 1e-30) THEN !There is no organic left
+		.AND. InParticle%OrgChems(INT(OrganicDissolutionData(WhichRxn,3))) .LT. 1e-30) THEN !There is no organic left
 		ReturnType = 2
 		RETURN
 	END IF
@@ -1153,7 +1157,7 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, InParticle,
 		RETURN
 	END IF
 
-	Qnumer = InParticle%OrgChems(OrganicDissolutionData(WhichRxn,3))
+	Qnumer = InParticle%OrgChems(INT(OrganicDissolutionData(WhichRxn,3)))
 	Qdenom = GasPhaseBurden / Avogadro  / InParticle%NumberOfParticles
 	!WRITE(*,*) "Reaction Check 3", Qnumer, Qdenom
 
@@ -1175,7 +1179,7 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, InParticle,
 	!!							  !!
 	!! -- Ions First			  !!
 
-	InParticle%OrgChems(OrganicDissolutionData(WhichRxn,3)) = InParticle%OrgChems(OrganicDissolutionData(WhichRxn,3)) + dX
+	InParticle%OrgChems(INT(OrganicDissolutionData(WhichRxn,3))) = InParticle%OrgChems(INT(OrganicDissolutionData(WhichRxn,3))) + dX
 	IF (OrganicDissolutionData(WhichRxn,1) .LE. HowManyEvolveGasChems) &
 			GasPhaseBurden = GasPhaseBurden - dX * Avogadro * InParticle%NumberOfParticles
 
@@ -1203,7 +1207,7 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, InParticle,
 
 	!Check if all organic has evaporated, but gas-phase is still unsaturated
 	IF (EqRatio .GT. 1.0 & !The gas-phase is sub-saturated
-		.AND. InParticle%OrgChems(OrganicDissolutionData(WhichRxn,3)) .LT. 1e-30) THEN !There is no organic left
+		.AND. InParticle%OrgChems(INT(OrganicDissolutionData(WhichRxn,3))) .LT. 1e-30) THEN !There is no organic left
 		RETURN
 	END IF
 
@@ -1235,20 +1239,21 @@ END SUBROUTINE EquilibrateHydrophobicReaction
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Check the Ratio between the Existing and Ideal Equilibrium   !!
-!! Constants for hydrophobic reactions.  
-!! This is used by several other routines.		    !!
-!!															    !!
+!! Constants for hydrophobic reactions.                         !!
+!! This is used by several other routines.		        !!
+!!								!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!! This should only be used in the context of EquilibrateHydrophobicReaction!  Otherwise there is
-	!! no check for lack of the species.
-REAL*8 FUNCTION HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle)
+!! This should only be used in the context of EquilibrateHydrophobicReaction!  
+!! Otherwise there is no check for lack of the species.
+REAL*8 FUNCTION HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, & 
+                 WhichRxn, Temperature, InParticle)
 
 	USE Chemistry,       ONLY : AqEquilibriaList, HowManyOrgChems
 
-	USE ModelParameters, ONLY : RStarMB, moles, grams, WaterMolecMass, Avogadro
+	USE ModelParameters, ONLY : RStarMB, moles, grams, &
+                                    WaterMolecMass, Avogadro
 
-	USE GridPointFields,		ONLY : GasPhaseChemGridIndex
 	USE InfrastructuralCode, ONLY : Error
 
 	USE Aerosols, ONLY : OrgCurvatureCorrection
@@ -1261,25 +1266,19 @@ REAL*8 FUNCTION HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	REAL*8 :: GasPhaseBurden, Temperature, ActCoeff, OrgMolFrac
 
 	!! Internal Variables
-	REAL*8	:: Pvap, XX(3), P1
+	REAL*8	:: Pvap, P1
 
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! There is only one reaction type:											!!
-	!!																				!!														!!
-	!! 8. Direct dissolution of a single species not incorporating dissociation.	!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! There is only one reaction type:					     !!
+!!									     !!
+!! 8. Direct dissolution of a single species not incorporating dissociation. !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! See if the reaction is empty !!
-
-	!WRITE(*,*) "Flag 1"
-	!! If there is none of the chemical to deal with
-	!WRITE(*,*) "Rxn #: ", WhichRxn
-	!WRITE(*,*) InParticle%OrgChems(OrganicDissolutionData(WhichRxn,3))
-	!WRITE(*,*) GasPhaseBurden
-	IF (InParticle%OrgChems(OrganicDissolutionData(WhichRxn,3)) .EQ. 0. .AND.	&
-		GasPhaseBurden .EQ. 0) THEN
+	IF (InParticle%OrgChems(INT(OrganicDissolutionData(WhichRxn,3))) .EQ. 0. & 
+            .AND. GasPhaseBurden .EQ. 0) THEN
 		
 		HydrophobicEquilibriumConstantsRatio = 1.
 		RETURN
@@ -1298,10 +1297,10 @@ REAL*8 FUNCTION HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	Pvap = SaturationVaporPressure (Temperature, WhichRxn)
 	
 	!WRITE(*,*) "Flag 3a"
-	ActCoeff = InParticle%HydrophobicActivityCoeffs(OrganicDissolutionData(WhichRxn,3))
+	ActCoeff = InParticle%HydrophobicActivityCoeffs(INT(OrganicDissolutionData(WhichRxn,3)))
 	!WRITE(*,*) WhichRxn, ActCoeff
 	!WRITE(*,*) "Flag 3b"
-	OrgMolFrac = InParticle%OrgChems(OrganicDissolutionData(WhichRxn,3))/TotalMolesOM(InParticle)
+	OrgMolFrac = InParticle%OrgChems(INT(OrganicDissolutionData(WhichRxn,3)))/TotalMolesOM(InParticle)
 	!WRITE(*,*) "Flag 3c"
 	P1 = GasPhaseBurden*RstarMB*Temperature/Avogadro
 	!WRITE(*,*) "Flag 3d"	
@@ -1325,38 +1324,38 @@ END FUNCTION HydrophobicEquilibriumConstantsRatio
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! --- EQUILIBRATE ONE HYDROPHIlIC DISSOLUTION REACTION ---	   !!
-!!															   !!
+!! --- EQUILIBRATE ONE HYDROPHIlIC DISSOLUTION REACTION ---    !!
+!!							       !!
 !! Iterate a particular reaction until it reaches equilibrium. !!
-!!															   !!
-!! ReturnType: 1 is normal, 2 is "already was in eq"		   !!
+!!							       !!
+!! ReturnType: 1 is normal, 2 is "already was in eq"	       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, InParticle, Temperature, ReturnType, OptErrorTolerance)
+SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, & 
+            InParticle, Temperature, ReturnType, OptErrorTolerance)
 
-	USE Chemistry,				ONLY :	AqEquilibriaList,		&
-										HowManyOrgChems,		&
-										OrgPhaseChemicalNames,	&
-										HowManyEvolveGasChems
+	USE Chemistry,	ONLY :	AqEquilibriaList,		&
+				HowManyOrgChems,		&
+				OrgPhaseChemicalNames,	&
+				HowManyEvolveGasChems
 
-	USE ModelParameters,		ONLY :	AqThermoEquilibriumError,			&
-										WaterContentPrecision,				&
-										AqThermoNumbAllowedIterations,		&
-										AerosolWaterEquilibriumRHThreshold,	&
-										Avogadro,							&
-										moles, grams, WaterMolecMass, micron 
+	USE ModelParameters,	ONLY :	AqThermoEquilibriumError,	&
+					WaterContentPrecision,		&
+					AqThermoNumbAllowedIterations,	&
+					AerosolWaterEquilibriumRHThreshold,&
+					Avogadro,			&
+					moles, grams, WaterMolecMass, micron 
 
-	USE GridPointFields,		ONLY :  GasPhaseChemGridIndex,	&
-										GetRelativeHumidity
+	USE GridPointFields,	ONLY :  GetRelativeHumidity
 
-	USE InfrastructuralCode,	ONLY :	INT2STR, REAL2STR,		&
-										Transcript,				&
-										ERROR, WARN
+	USE InfrastructuralCode,	ONLY :	INT2STR, REAL2STR,	&
+						Transcript,		&
+						ERROR, WARN
 
-	USE Aerosols,				ONLY :	EquilibriumWaterContent,	 &
-										DumpParticleContentsAtError, &
-										EqCoeff,					 &
-										MeanActivity,&
-										EquilibrateAqueousDissociationReaction
+	USE Aerosols,		ONLY :	EquilibriumWaterContent,	 &
+					DumpParticleContentsAtError, &
+					EqCoeff,			&
+					MeanActivity,&
+					EquilibrateAqueousDissociationReaction
 
 	IMPLICIT NONE
 
@@ -1390,32 +1389,33 @@ SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, InParticle,
 	!! Presume innocence in the form of a successful return.
 	ReturnType = 1
 	
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! This routine generally follows the Mass Flux Iteration method reviewed in Jacobson,  !!
-	!! 1999 (the textbook) and reviewed earlier in Jacobson et al. 1996, and Villars 1959   !!
-	!!																						!!
-	!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium within aerosols !!
-	!!    and nonequilibrium between gases and aerosols, Journal of Geophysical Research,	!!
-	!!    101 (D4), 9079-9091, 1996.														!!
-	!!																						!!
-	!! Villars, D.S., A method of successive approximations for computing combustion		!!
-	!!    equilibria on a high speed digital computer, Journal of Physical Chemistry,		!!
-	!!    63, 521-5, 1959.																	!!
-	!!																						!!
-	!! STEP 1: Find the most aberrant ratio of concentration to stoicheometric coefficient  !!
-	!! (cf., Jacobson 1999, p.497)															!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This routine generally follows the Mass Flux Iteration method reviewed!! 
+!! in Jacobson, 1999 (the textbook) and reviewed earlier in              !!
+!! Jacobson et al. 1996, and Villars 1959                                !!
+!!                                                                       !!
+!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium  !!
+!!       within aerosols and nonequilibrium between gases and aerosols,  !!
+!!       Journal of Geophysical Research, 101 (D4), 9079-9091, 1996.     !!
+!!									 !!
+!! Villars, D.S., A method of successive approximations for computing    !!
+!!    combustion equilibria on a high speed digital computer,            !!
+!!    Journal of Physical Chemistry, 63, 521-5, 1959.			 !!
+!!									 !!
+!! STEP 1: Find the most aberrant ratio of concentration to              !!
+!!         stoicheometric coefficient  (cf., Jacobson 1999, p.497)	 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!! Check for already equilibrated (either by none of 
-	!! the species being present or explicit equilibrium)
-	!!
-	!! And then pre-calculate the Qnumer and Qdenomer
+!! Check for already equilibrated (either by none of 
+!! the species being present or explicit equilibrium)
+!!
+!! And then pre-calculate the Qnumer and Qdenomer
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! There is only one reaction type:											!!
-	!!																				!!														!!
-	!! 9. Direct dissolution of a single species not inclorporating dissociation.	!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! There is only one reaction type:					     !!
+!!									     !!
+!! 9. Direct dissolution of a single species not inclorporating dissociation.!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!WRITE(*,*) "Reaction Check 1", GasPhaseBurden, WhichRxn, Temperature
 	EqRatio = HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle)
@@ -1427,7 +1427,7 @@ SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, InParticle,
 
 	!Check if all organic has evaporated, but gas-phase is still unsaturated
 	IF (EqRatio .GT. 1.0 & !The gas-phase is sub-saturated
-		.AND. InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3)) .LT. 1e-30) THEN !There is no organic left
+		.AND. InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) .LT. 1e-30) THEN !There is no organic left
 		ReturnType = 2
 		RETURN
 	END IF
@@ -1440,7 +1440,7 @@ SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, InParticle,
 	END IF
 
 
-	Qnumer = InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3))
+	Qnumer = InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3)))
 	Qdenom = GasPhaseBurden / Avogadro / InParticle%NumberOfParticles
 	!WRITE(*,*) "Reaction Check 3"
 
@@ -1462,7 +1462,7 @@ SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, InParticle,
 	!!							  !!
 	!! -- Ions First			  !!
 
-	InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3)) = InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3)) + dX
+	InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) = InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) + dX
 	IF (AqOrganicDissolutionData(WhichRxn,1) .LE. HowManyEvolveGasChems) &
 			GasPhaseBurden = GasPhaseBurden - dX * Avogadro * InParticle%NumberOfParticles
 
@@ -1488,7 +1488,7 @@ SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, InParticle,
 
 	!Check if all organic has evaporated, but gas-phase is still unsaturated
 	IF (EqRatio .GT. 1.0 & !The gas-phase is sub-saturated
-		.AND. InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3)) .LT. 1e-30) THEN !There is no organic left
+		.AND. InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) .LT. 1e-30) THEN !There is no organic left
 		RETURN
 	END IF
 
@@ -1504,7 +1504,7 @@ SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, InParticle,
 											 InDoSurfaceTension=.FALSE.,InDoWaterActivity=.FALSE., InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., &
                                                      InDensity=.TRUE.,  InIonicStrength=.TRUE.)
-		WRITE(*,*) "Aq Org Reaction #: ", WhichRxn, "Eq. Ratio: ", EqRatio, InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3))
+		WRITE(*,*) "Aq Org Reaction #: ", WhichRxn, "Eq. Ratio: ", EqRatio, InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3)))
 		WRITE(*,*) GasPhaseBurden/ Avogadro / InParticle%NumberOfParticles
 		CALL ERROR("Apparent Non Convergence in EquilibrateHydrophilicReaction().  Trying to converge "// &
 				   "towards equilibrium in hydrophilic dissolution reaction number "//TRIM(INT2STR(WhichRxn))// ".")
@@ -1521,20 +1521,21 @@ END SUBROUTINE EquilibrateHydrophilicReaction
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Check the Ratio between the Existing and Ideal Equilibrium   !!
-!! Constants for hydrophilic reactions.  
-!! This is used by several other routines.		    !!
-!!															    !!
+!! Constants for hydrophilic reactions.                         !!
+!! This is used by several other routines.		        !!
+!!								!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!! This should only be used in the context of EquilibrateHydrophilicReaction!  Otherwise there is
-	!! no check for lack of the species.
-REAL*8 FUNCTION HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle)
+!! This should only be used in the context of EquilibrateHydrophilicReaction!  
+!! Otherwise there is no check for lack of the species.
+REAL*8 FUNCTION HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, & 
+                  WhichRxn, Temperature, InParticle)
 
 	USE Chemistry,       ONLY : AqEquilibriaList, HowManyAqOrgChems
 
-	USE ModelParameters, ONLY : RStarMB, moles, grams, WaterMolecMass, Avogadro, ProtonIndex
+	USE ModelParameters, ONLY : RStarMB, moles, grams, & 
+                                    WaterMolecMass, Avogadro, ProtonIndex
 
-	USE GridPointFields,		ONLY :  GasPhaseChemGridIndex
 	USE InfrastructuralCode, ONLY : Error
 	USE Aerosols, ONLY : Molality, CurvatureCorrection
 
@@ -1543,17 +1544,17 @@ REAL*8 FUNCTION HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	!! External Variables
 	INTEGER :: WhichRxn, ReactionType
 	TYPE(PARTICLE),POINTER :: InParticle
-	REAL*8 :: GasPhaseBurden, Temperature, ActCoeff, OrgMolality, ProtonMolality
+	REAL*8 :: GasPhaseBurden, Temperature, ActCoeff, OrgMolality, & 
+                  ProtonMolality
 
 	!! Internal Variables
-	REAL*8	:: Henry, XX(3), P1
+	REAL*8	:: Henry,  P1
 
-
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! There is only one reaction type:											!!
-	!!																				!!														!!
-	!! 9. Direct dissolution of a single species not incorporating dissociation.	!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! There is only one reaction type:					     !!
+!!									     !!
+!! 9. Direct dissolution of a single species not incorporating dissociation. !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! See if the reaction is empty !!
@@ -1563,7 +1564,7 @@ REAL*8 FUNCTION HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	!WRITE(*,*) WhichRxn
 	!WRITE(*,*) InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3))
 	!WRITE(*,*) GasPhaseBurden
-	IF (InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3)) .EQ. 0. .AND.	&
+	IF (InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) .EQ. 0. .AND.	&
 		GasPhaseBurden .EQ. 0) THEN
 		
 		HydrophilicEquilibriumConstantsRatio = 1.
@@ -1591,13 +1592,13 @@ REAL*8 FUNCTION HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, 
 	Henry = EffectiveOrganicHenrysLaw  (Temperature, ProtonMolality, WhichRxn)
 	
 	!Retrieve the hydrophilic activity coefficient (corrected for infinite dilution convention)
-	ActCoeff = InParticle%HydrophilicActivityCoeffs(AqOrganicDissolutionData(WhichRxn,3))
+	ActCoeff = InParticle%HydrophilicActivityCoeffs(INT(AqOrganicDissolutionData(WhichRxn,3)))
 
 	!Partial pressure in mbar
 	P1 = GasPhaseBurden*RstarMB*Temperature/Avogadro
 
 	!Calculate molality of species in aqueous phase
-	OrgMolality = InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3)) / InParticle%AqChems(1) / moles * grams / WaterMolecMass * 1000.
+	OrgMolality = InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) / InParticle%AqChems(1) / moles * grams / WaterMolecMass * 1000.
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Make the primary calculation !!
@@ -1760,56 +1761,54 @@ SUBROUTINE CalcInfiniteDilutionHydrophilicUNIFAC(Temperature, InfDiluActCoeff)
 
 END SUBROUTINE CalcInfiniteDilutionHydrophilicUNIFAC
 
-SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
+SUBROUTINE EquilibrateAllOrganicsAtGridPoint()
 
-	USE Aerosols, ONLY : SortAerosolAtGridPointForCondensation, &
-						 Particles,							&
-						 Particle, &
-						 DumpParticleContentsAtError
+	USE Aerosols,    ONLY : SortAerosolAtGridPointForCondensation, &
+				Particles,				&
+				Particle, &
+				DumpParticleContentsAtError
 	
-	USE Chemistry,		 ONLY : HowManyEvolveGasChems, &
-								GasMolecularMass
+	USE Chemistry,	 ONLY : HowManyEvolveGasChems, &
+				GasMolecularMass
 	
-	USE GridPointFields, ONLY : GetTemp,					&
-								LocateGridPoint,			& 
-								GasPhaseChemGridIndex,		&
-								GetGridCellChemBurden,		&
-								ReplaceGridCellChemBurden
+	USE GridPointFields, ONLY : GetTemp,	&
+				    GetGridCellChemBurden,		&
+				    ReplaceGridCellChemBurden
 
 	USE ModelParameters, ONLY : AqThermoNumbAllowedIterations,	&
-								AqThermoEquilibriumError, &
-								ThermoBulkMode, &
-								Avogadro
+					AqThermoEquilibriumError, &
+					ThermoBulkMode, &
+					Avogadro
 
 	USE InfrastructuralCode, ONLY : ERROR, WARN, INT2STR, REAL2STR
 	
 	IMPLICIT NONE
 
-	INTEGER :: X, Y, Z, HowManyLinks
+	INTEGER ::  HowManyLinks
 	REAL*8  :: S1MassFracs(2), S2MassFracs(6), S3MassFracs(2), &
-				S4MassFracs(3), S5MassFracs(2), S6MassFracs(3), &
-				S7MassFracs(8), S8MassFracs(4), S9MassFracs(4), &
-				S10MassFracs(4), InitialBurden(10) 
+			S4MassFracs(3), S5MassFracs(2), S6MassFracs(3), &
+			S7MassFracs(8), S8MassFracs(4), S9MassFracs(4), &
+			S10MassFracs(4), InitialBurden(10) 
 	TYPE(Particle),POINTER :: Current
 
 	LOGICAL :: Equilibrated, RxnEquilibrated
-	REAL*8  :: GasPhaseBurden, Temperature, XX(3), II
+	REAL*8  :: GasPhaseBurden, Temperature, II
 	INTEGER :: I, J, K, L, M, Q, ReturnType, AqRxnIndex
 
 	
 	!Calculate surrogate concentrations and 
 	!mass fractions of organics contributing to surrogates, and
 	!Store initial surrogate gas phase burdens in a dummy vector
-	CALL CalculateSurrogateGasConc(X, Y, Z, S1MassFracs, S2MassFracs, &
+	CALL CalculateSurrogateGasConc( S1MassFracs, S2MassFracs, &
                 S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-				S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 
 	!! Sort the gridcell, pushing all empty sections to the end
-	CALL SortAerosolAtGridPointForCondensation (X, Y, Z)
+	CALL SortAerosolAtGridPointForCondensation ()
 
 	!! Count the number of links
 	HowManyLinks = 0
-	Current => Particles(X,Y,Z)%First
+	Current => Particles%First
 	IF (ASSOCIATED(Current)) THEN
 10		IF (Current%NumberOfParticles .GT. 0 ) &
 			HowManyLinks = HowManyLinks + 1
@@ -1819,8 +1818,7 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 			END IF
 	END IF
 
-	XX = LocateGridPoint (X, Y, Z, GasPhaseChemGridIndex)
-	Temperature = GetTemp(XX(1),XX(2),XX(3))
+	Temperature = GetTemp()
 
 	Equilibrated = .FALSE.
 	K = 0
@@ -1841,7 +1839,7 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 			!Hydrophobic Reactions
 			IF (I .LE. HowManyOrganicDissolutionReactions) THEN
 			
-				GasPhaseBurden = GetGridCellChemBurden (X, Y, Z, INT(OrganicDissolutionData(I,1)))
+				GasPhaseBurden = GetGridCellChemBurden ( INT(OrganicDissolutionData(I,1)))
 				!WRITE(*,*) GasPhaseBurden
 				!! Loop over all of the particles until 
 				!! this particular reaction is happy
@@ -1849,7 +1847,7 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 
 					RxnEquilibrated = .TRUE.
 
-					Current => Particles(X,Y,Z)%First
+					Current => Particles%First
 					DO J = 1, HowManyLinks
 									
 						!Equilibrate one reaction
@@ -1879,7 +1877,7 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 					END DO
 
 					IF (L .GT. AqThermoNumbAllowedIterations) THEN
-						CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
+						CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
 						CALL ERROR ("EquilibrateAllOrganicsAtGridPoint() in HydrophobicCondensationFunctions.h tried to equilibrate all "     // &
@@ -1892,13 +1890,13 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 			
 				!! Replace the surrogate gas phase chemical concentrations
 				IF (INT(OrganicDissolutionData(I,1)) .LE. HowManyEvolveGasChems)										&
-					CALL ReplaceGridCellChemBurden (X, Y, Z, INT(OrganicDissolutionData(I,1)), GasPhaseBurden)			
+					CALL ReplaceGridCellChemBurden ( INT(OrganicDissolutionData(I,1)), GasPhaseBurden)			
 		
 			!Hydrophilic Reactions
 			ELSE
 		
 				AqRxnIndex = I - HowManyOrganicDissolutionReactions
-				GasPhaseBurden = GetGridCellChemBurden (X, Y, Z, INT(AqOrganicDissolutionData(AqRxnIndex,1)))
+				GasPhaseBurden = GetGridCellChemBurden ( INT(AqOrganicDissolutionData(AqRxnIndex,1)))
 				!WRITE(*,*) AqRxnIndex
 				!IF (AqRxnIndex .EQ. 1) WRITE(*,*) GasPhaseBurden
 				!! Loop over all of the particles until 
@@ -1907,7 +1905,7 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 
 					RxnEquilibrated = .TRUE.
 
-					Current => Particles(X,Y,Z)%First
+					Current => Particles%First
 					DO J = 1, HowManyLinks
 									
 						!Equilibrate one reaction
@@ -1938,7 +1936,7 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 					END DO
 
 					IF (L .GT. AqThermoNumbAllowedIterations) THEN
-						CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
+						CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
 						CALL ERROR ("EquilibrateAllOrganicsAtGridPoint() in HydrophobicCondensationFunctions.h tried to equilibrate all "     // &
@@ -1951,7 +1949,7 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 			
 				!! Replace the surrogate gas phase chemical concentrations
 				IF (INT(AqOrganicDissolutionData(AqRxnIndex,1)) .LE. HowManyEvolveGasChems)										&
-					CALL ReplaceGridCellChemBurden (X, Y, Z, INT(AqOrganicDissolutionData(AqRxnIndex,1)), GasPhaseBurden)			
+					CALL ReplaceGridCellChemBurden ( INT(AqOrganicDissolutionData(AqRxnIndex,1)), GasPhaseBurden)			
 				
 			END IF
 		END DO
@@ -1959,7 +1957,7 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 
 
 		IF (K .GT. AqThermoNumbAllowedIterations) THEN
-			CALL DumpParticleContentsAtError(Particles(X,Y,Z)%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
+			CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
 			CALL ERROR ("EquilibrateHydrophobicPhaseAtGridPoint() in HydrophobicCondensationFunctions.h tried to equilibrate all of the hydrophobic dissolution "// &
@@ -1972,9 +1970,9 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint(X, Y, Z)
 
 	!WRITE(*,*) "Before org update"
 	!Update Gas Phase Concentrations of individual organics
-	CALL UpdateGasPhaseOrganics(X, Y, Z, S1MassFracs, S2MassFracs, &
+	CALL UpdateGasPhaseOrganics(S1MassFracs, S2MassFracs, &
                 S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-				S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 	!WRITE(*,*) "After org update"
 
 	RETURN
@@ -2002,32 +2000,33 @@ REAL*8 function dev(xin, Q, RH, Temp)
 
 end function dev
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Iterate until a single organic in two phases (org and aqueous) is in equilibrium.
-!!															   !!
-!! ReturnType: 1 is normal, 2 is "already was in eq"		   !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, InParticle, Temperature, ReturnType, OptErrorTolerance)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Iterate until a single organic in two phases (org and aqueous)!! 
+!! is in equilibrium.                                            !!
+!!								 !!
+!! ReturnType: 1 is normal, 2 is "already was in eq"		 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, &
+               InParticle, Temperature, ReturnType, OptErrorTolerance)
 
-	USE Chemistry,				ONLY :	AqEquilibriaList,		&
-										HowManyOrgChems,		&
-										OrgPhaseChemicalNames,	&
-										HowManyEvolveGasChems
+	USE Chemistry,	ONLY :	AqEquilibriaList,		&
+				HowManyOrgChems,		&
+				OrgPhaseChemicalNames,	&
+				HowManyEvolveGasChems
 
 	USE ModelParameters
 			
-	USE GridPointFields,		ONLY :  GasPhaseChemGridIndex,	&
-										GetRelativeHumidity
+	USE GridPointFields,		ONLY : 	GetRelativeHumidity
 
-	USE InfrastructuralCode,	ONLY :	INT2STR, REAL2STR,		&
-										Transcript,				&
-										ERROR, WARN
+	USE InfrastructuralCode,	ONLY :	INT2STR, REAL2STR,	&
+						Transcript,	&
+						ERROR, WARN
 
-	USE Aerosols,				ONLY :	EquilibriumWaterContent,	 &
-										DumpParticleContentsAtError, &
-										EqCoeff,					 &
-										MeanActivity,&
-										EquilibrateAqueousDissociationReaction
+	USE Aerosols,		ONLY :	EquilibriumWaterContent, &
+					DumpParticleContentsAtError, &
+					EqCoeff,		&
+					MeanActivity, &
+					EquilibrateAqueousDissociationReaction
 
 	IMPLICIT NONE
 
@@ -2039,7 +2038,9 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, InParticle, Temp
 
 	!! Local Variables
 	INTEGER :: I
-	REAL*8  :: II, Qdenom, Qnumer, Z, dX, EqRatio, ActivityCoefficients, ErrorTolerance, DissociatedScaling, DissociatedExp
+	REAL*8  :: II, Qdenom, Qnumer, Z, dX, EqRatio, &
+                    ActivityCoefficients, ErrorTolerance, &
+                    DissociatedScaling, DissociatedExp
 	LOGICAL :: WaterRxn
 
 	!! SCSCSCSCSC
@@ -2052,43 +2053,38 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, InParticle, Temp
 	IF (TotalMolesOM(InParticle) .LE. 0.0) RETURN 
 
 	!! Set the error tolerance according to the 
-	!! subroutine's optinoal input.
-	!! THIS IS NOT THE TOLERANCE FOR THE EQUILIBRATION
-	!! CHECK (WHICH USES THE GLOBAL VALUE), RATHER IT 
-	!! IS THE VALUE WE EQUILIBRATE TO IF THAT CHECK FAILS	
-	!IF (PRESENT(OptErrorTolerance)) THEN
-		ErrorTolerance = OptErrorTolerance
-	!ELSE
-	!	ErrorTolerance = AqThermoEquilibriumError / 2.
-	!END IF
+	!! subroutine's input.
+	ErrorTolerance = OptErrorTolerance
+
 	
 	!! Presume innocence in the form of a successful return.
 	ReturnType = 1
 	
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! This routine generally follows the Mass Flux Iteration method reviewed in Jacobson,  !!
-	!! 1999 (the textbook) and reviewed earlier in Jacobson et al. 1996, and Villars 1959   !!
-	!!																						!!
-	!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium within aerosols !!
-	!!    and nonequilibrium between gases and aerosols, Journal of Geophysical Research,	!!
-	!!    101 (D4), 9079-9091, 1996.														!!
-	!!																						!!
-	!! Villars, D.S., A method of successive approximations for computing combustion		!!
-	!!    equilibria on a high speed digital computer, Journal of Physical Chemistry,		!!
-	!!    63, 521-5, 1959.																	!!
-	!!																						!!
-	!! STEP 1: Find the most aberrant ratio of concentration to stoicheometric coefficient  !!
-	!! (cf., Jacobson 1999, p.497)															!!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This routine generally follows the Mass Flux Iteration method reviewed!! 
+!! in Jacobson, 1999 (the textbook) and reviewed earlier in              !!
+!! Jacobson et al. 1996, and Villars 1959                                !!
+!!                                                                       !!
+!! Jacobson, M.Z., A. Tabazadeh, and R.P. Turco, Simulating equilibrium  !!
+!!       within aerosols and nonequilibrium between gases and aerosols,  !!
+!!       Journal of Geophysical Research, 101 (D4), 9079-9091, 1996.     !!
+!!									 !!
+!! Villars, D.S., A method of successive approximations for computing    !!
+!!    combustion equilibria on a high speed digital computer,            !!
+!!    Journal of Physical Chemistry, 63, 521-5, 1959.			 !!
+!!									 !!
+!! STEP 1: Find the most aberrant ratio of concentration to              !!
+!!         stoicheometric coefficient  (cf., Jacobson 1999, p.497)	 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	!! Check for already equilibrated (either by none of 
-	!! the species being present or explicit equilibrium)
-	!!
-	!! And then pre-calculate the Qnumer and Qdenomer
+!! Check for already equilibrated (either by none of 
+!! the species being present or explicit equilibrium)
+!!
+!! And then pre-calculate the Qnumer and Qdenomer
 
 	!If none of the organic is present, return
-	IF(InParticle%AqOrgChems(AqOrganicDissolutionData(WhichAqRxn, 3)) .EQ. 0.0 &
-	   .AND. InParticle%OrgChems(OrganicDissolutionData(WhichOrgRxn, 3)) .EQ. 0.0) THEN
+	IF(InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichAqRxn, 3))) .EQ. 0.0 &
+	   .AND. InParticle%OrgChems(INT(OrganicDissolutionData(WhichOrgRxn, 3))) .EQ. 0.0) THEN
 		ReturnType = 2
 		RETURN
 	END IF
@@ -2103,16 +2099,16 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, InParticle, Temp
 
 	!If the concentration in either phase is going to 0, and the
 	!other phase is subsaturated, return.
-	IF((InParticle%OrgChems(OrganicDissolutionData(WhichOrgRxn,3)) .LT. 1.0e-30 &
+	IF((InParticle%OrgChems(INT(OrganicDissolutionData(WhichOrgRxn,3))) .LT. 1.0e-30 &
 		.AND. EqRatio .GT. 1.0) .OR. &
-		(InParticle%AqOrgChems(AqOrganicDissolutionData(WhichAqRxn,3)) .LT. 1.0e-30 &
+		(InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichAqRxn,3))) .LT. 1.0e-30 &
 		.AND. EqRatio .LT. 1.0) ) THEN
 		ReturnType = 2
 		RETURN
 	END IF
 
-	Qnumer = InParticle%OrgChems(OrganicDissolutionData(WhichOrgRxn,3))
-	Qdenom = InParticle%AqOrgChems(AqOrganicDissolutionData(WhichAqRxn,3))
+	Qnumer = InParticle%OrgChems(INT(OrganicDissolutionData(WhichOrgRxn,3)))
+	Qdenom = InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichAqRxn,3)))
 	!WRITE(*,*) "Reaction Check 3", Qnumer, Qdenom
 
 	!WRITE(*,*) "Check 4"
@@ -2133,8 +2129,8 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, InParticle, Temp
 	!!							  !!
 	!! -- Ions First			  !!
 
-	InParticle%OrgChems(OrganicDissolutionData(WhichOrgRxn,3)) = InParticle%OrgChems(OrganicDissolutionData(WhichOrgRxn,3)) + dX
-	InParticle%AqOrgChems(AqOrganicDissolutionData(WhichAqRxn,3)) = InParticle%AqOrgChems(AqOrganicDissolutionData(WhichAqRxn,3)) - dX
+	InParticle%OrgChems(INT(OrganicDissolutionData(WhichOrgRxn,3))) = InParticle%OrgChems(INT(OrganicDissolutionData(WhichOrgRxn,3))) + dX
+	InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichAqRxn,3))) = InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichAqRxn,3))) - dX
 	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! STEP 4: Recalculate Z and dX for a new iteration !!
@@ -2155,9 +2151,9 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, InParticle, Temp
 	
 	!If the concentration in either phase is going to 0, and the
 	!other phase is subsaturated, return.
-	IF((InParticle%OrgChems(OrganicDissolutionData(WhichOrgRxn,3)) .LT. 1.0e-30 &
+	IF((InParticle%OrgChems(INT(OrganicDissolutionData(WhichOrgRxn,3))) .LT. 1.0e-30 &
 		.AND. EqRatio .GT. 1.0) .OR. &
-		(InParticle%AqOrgChems(AqOrganicDissolutionData(WhichAqRxn,3)) .LT. 1.0e-30 &
+		(InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichAqRxn,3))) .LT. 1.0e-30 &
 		.AND. EqRatio .LT. 1.0) ) THEN
 		RETURN
 	END IF
@@ -2167,8 +2163,8 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, InParticle, Temp
 
 	!Error if no convergence
 	IF (I .GT. 500) THEN
-		WRITE(*,*) EqRatio, InParticle%OrgChems(OrganicDissolutionData(WhichOrgRxn,3)), &
-		            InParticle%AqOrgChems(AqOrganicDissolutionData(WhichAqRxn,3))
+		WRITE(*,*) EqRatio, InParticle%OrgChems(INT(OrganicDissolutionData(WhichOrgRxn,3))), &
+		            InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichAqRxn,3)))
 		CALL DumpParticleContentsAtError(InParticle, "UnEquilableParticle-HydrophobicDissolutionError.txt", &
 											 InDoSurfaceTension=.FALSE.,InDoWaterActivity=.FALSE., InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE.,  &
@@ -2184,17 +2180,19 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, InParticle, Temp
 	RETURN
 END SUBROUTINE EquilibrateOrganicReaction
 
-REAL*8 FUNCTION TwoPhaseOrgEqRatio(WhichAqRxn, WhichOrgRxn, InParticle, Temperature)
+REAL*8 FUNCTION TwoPhaseOrgEqRatio(WhichAqRxn, WhichOrgRxn, & 
+                                   InParticle, Temperature)
 
 	USE Chemistry,       ONLY : AqEquilibriaList, HowManyOrgChems
 
-	USE ModelParameters, ONLY : RStarMB, moles, grams, WaterMolecMass, Avogadro, &
-								ProtonIndex
+	USE ModelParameters, ONLY : RStarMB, moles, grams, WaterMolecMass, &
+                                    Avogadro, &
+				    ProtonIndex
 
-	USE GridPointFields,		ONLY : GasPhaseChemGridIndex
 	USE InfrastructuralCode, ONLY : Error
 
-	USE Aerosols, ONLY : Molality, CurvatureCorrection, OrgCurvatureCorrection
+	USE Aerosols, ONLY : Molality, CurvatureCorrection, &
+                             OrgCurvatureCorrection
 
 	IMPLICIT NONE
 
@@ -2204,7 +2202,7 @@ REAL*8 FUNCTION TwoPhaseOrgEqRatio(WhichAqRxn, WhichOrgRxn, InParticle, Temperat
 	REAL*8 :: Temperature
 
 	!! Internal Variables
-	REAL*8	:: Pvap, XX(3), OrgActCoeff, OrgMolFrac, ProtonMolality, &
+	REAL*8	:: Pvap, OrgActCoeff, OrgMolFrac, ProtonMolality, &
 				Henry, AqOrgMolality, AqActCoeff
 	
 
@@ -2220,9 +2218,9 @@ REAL*8 FUNCTION TwoPhaseOrgEqRatio(WhichAqRxn, WhichOrgRxn, InParticle, Temperat
 	!! and the partial pressure and the equilibrium at this temperature
 	Pvap = SaturationVaporPressure (Temperature, WhichOrgRxn)
 	
-	OrgActCoeff = InParticle%HydrophobicActivityCoeffs(OrganicDissolutionData(WhichOrgRxn,3))
+	OrgActCoeff = InParticle%HydrophobicActivityCoeffs(INT(OrganicDissolutionData(WhichOrgRxn,3)))
 
-	OrgMolFrac = InParticle%OrgChems(OrganicDissolutionData(WhichOrgRxn,3))/TotalMolesOM(InParticle)
+	OrgMolFrac = InParticle%OrgChems(INT(OrganicDissolutionData(WhichOrgRxn,3)))/TotalMolesOM(InParticle)
 
 	!Calculate the proton molality
 	!WRITE(*,*) "ProtonIndex", ProtonIndex
@@ -2233,10 +2231,10 @@ REAL*8 FUNCTION TwoPhaseOrgEqRatio(WhichAqRxn, WhichOrgRxn, InParticle, Temperat
 	Henry = EffectiveOrganicHenrysLaw  (Temperature, ProtonMolality, WhichAqRxn)
 	
 	!Retrieve the hydrophilic activity coefficient (corrected for infinite dilution convention)
-	AqActCoeff = InParticle%HydrophilicActivityCoeffs(AqOrganicDissolutionData(WhichAqRxn,3))
+	AqActCoeff = InParticle%HydrophilicActivityCoeffs(INT(AqOrganicDissolutionData(WhichAqRxn,3)))
 
 	!Calculate molality of species in aqueous phase
-	AqOrgMolality = InParticle%AqOrgChems(AqOrganicDissolutionData(WhichAqRxn,3)) / InParticle%AqChems(1) / moles * grams / WaterMolecMass * 1000.
+	AqOrgMolality = InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichAqRxn,3))) / InParticle%AqChems(1) / moles * grams / WaterMolecMass * 1000.
 
 	!Prevents a return of infinity if there is no organic in aqueous phase
 	IF(AqOrgMolality .EQ. 0.0) THEN
@@ -2256,27 +2254,27 @@ REAL*8 FUNCTION TwoPhaseOrgEqRatio(WhichAqRxn, WhichOrgRxn, InParticle, Temperat
 
 END FUNCTION TwoPhaseOrgEqRatio
 
-SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, ReturnType, OptErrorTolerance)
+SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, &
+                                      ReturnType, OptErrorTolerance)
 
-	USE Chemistry,				ONLY :	AqEquilibriaList,		&
-										HowManyOrgChems,		&
-										OrgPhaseChemicalNames,	&
-										HowManyEvolveGasChems
+	USE Chemistry,	ONLY :	AqEquilibriaList,		&
+				HowManyOrgChems,		&
+				OrgPhaseChemicalNames,	&
+				HowManyEvolveGasChems
 
 	USE ModelParameters
 			
-	USE GridPointFields,		ONLY :  GasPhaseChemGridIndex,	&
-										GetRelativeHumidity
+	USE GridPointFields,	ONLY :  GetRelativeHumidity
 
-	USE InfrastructuralCode,	ONLY :	INT2STR, REAL2STR,		&
-										Transcript,				&
-										ERROR, WARN
+	USE InfrastructuralCode,ONLY :	INT2STR, REAL2STR,	&
+					Transcript,	&
+					ERROR, WARN
 
-	USE Aerosols,				ONLY :	EquilibriumWaterContent,	 &
-										DumpParticleContentsAtError, &
-										EqCoeff,					 &
-										MeanActivity,&
-										EquilibrateAqueousDissociationReaction
+	USE Aerosols,		ONLY :	EquilibriumWaterContent,	 &
+					DumpParticleContentsAtError, &
+					EqCoeff,		&
+					MeanActivity,&
+					EquilibrateAqueousDissociationReaction
 
 	IMPLICIT NONE
 
@@ -2302,16 +2300,8 @@ SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, ReturnType, OptE
 	!WRITE(*,*) "Total OM in EquilibrateOrganicParticle ", TotalMolesOM(InParticle)
 	IF (TotalMolesOM(InParticle) .LE. 0.0) RETURN 
 
-	!! Set the error tolerance according to the 
-	!! subroutine's optinoal input.
-	!! THIS IS NOT THE TOLERANCE FOR THE EQUILIBRATION
-	!! CHECK (WHICH USES THE GLOBAL VALUE), RATHER IT 
-	!! IS THE VALUE WE EQUILIBRATE TO IF THAT CHECK FAILS	
-	!IF (PRESENT(OptErrorTolerance)) THEN
-		ErrorTolerance = OptErrorTolerance
-	!ELSE
-	!	ErrorTolerance = AqThermoEquilibriumError / 2.
-	!END IF
+	!! Set the error tolerance according to the input
+	ErrorTolerance = OptErrorTolerance
 	
 	!! Presume innocence in the form of a successful return.
 	ReturnType = 1
@@ -2352,10 +2342,6 @@ SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, ReturnType, OptE
 	!Error if no convergence
 	!Actually, just exit (MJA, 091107)
 	IF (K .GT. 500) THEN
-		!CALL DumpParticleContentsAtError(InParticle, "UnEquilableParticle-HydrophobicDissolutionError.txt", &
-		!									 InDoSurfaceTension=.FALSE.,InDoWaterActivity=.FALSE.)
-		!CALL WARN("Apparent Non Convergence in EquilibrateOrganicParticle.")
-		!CALL TRANSCRIPT("Exiting anyway.")
 		Eq = .TRUE.
 	END IF
 
