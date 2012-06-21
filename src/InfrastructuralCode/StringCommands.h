@@ -351,7 +351,7 @@ END FUNCTION CountDigits
 		CHARACTER (len = 100)  :: CurrString
 		INTEGER				   :: I, N, P, IOS, J, K
 		CHARACTER*8			   :: FMT
-		CHARACTER (len=15)	   :: Numbers = "0123456789.-+de"
+		CHARACTER (len=17)	   :: Numbers = "0123456789.-+deDE"
 
 		!! Strip Leading and Trailing Whitespace / Tabs
 		CurrString = TRIM(StripToken(InString))
@@ -363,6 +363,7 @@ END FUNCTION CountDigits
 		K = 0
 		DO J = 1, LEN_TRIM(CurrString) 
 			IF (INDEX (Numbers, CurrString(J:J)) == 0) K = 1
+                        write(*,*) J, K
 		END DO
 		IF (K == 1) &								! Non-Numerical Numbers
 			CALL ERROR ("STR2REAL Received the Following Confusing String:"//">>"//TRIM(CurrString)//"<<")

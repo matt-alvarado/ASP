@@ -1,5 +1,5 @@
 ##################################################
-##  A pig makefile for ASP on rufus				##
+##  A pgi makefile for ASP on rufus				##
 ##  Matt Alvarado, 02/13/2012		## 
 ##################################################
 SHELL = /bin/sh

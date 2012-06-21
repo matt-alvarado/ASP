@@ -97,7 +97,7 @@ PROGRAM ASP
 	CALL Transcript ("** by H. D. Steele (donnan@mit.edu).                    **")
 	CALL Transcript ("**********************************************************")
 	
-	IF(.FALSE.) THEN !Gas Chemistry Only
+	IF(.TRUE.) THEN !Gas Chemistry Only
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
 		!! MJA 02-15-2012 always 1 cm^3
@@ -119,12 +119,13 @@ PROGRAM ASP
 		ALLOCATE(HeteroNumberConc(HeteroBins))
 		ALLOCATE(HeteroRadii(HeteroBins))
 
-		HeteroNumberConc(1) = 1.5e5 !Guess for Williams fire
+		HeteroNumberConc(1) = 7.25e4 !For Williams fire, see file 
+                                            !/nas/project/p1704/asp_rundir/Yokelson/README_Williams_aero_init
                 !1.5e5 !Guess for Williams fire
                 !3.0e4 !Guess for Alaska
 		!3.1e4 !Otavi (Haywood et al, 2003)  
 		!1.433e5 !Timbavati (Trentmann et al, 2005)
-		HeteroRadii(1) = 1.0e-7 ! in m
+		HeteroRadii(1) = 2.54e-7 ! in m
 		CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .TRUE.)
 		
 		!Calculate Initial Photolysis Rates
@@ -683,7 +684,7 @@ PROGRAM ASP
 		    
 	END IF !Bulk Particle Tests
 
-	IF (.TRUE.) THEN !Size Dist PARTICLE TESTS
+	IF (.FALSE.) THEN !Size Dist PARTICLE TESTS
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
