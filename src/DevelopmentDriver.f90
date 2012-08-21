@@ -25,6 +25,7 @@
 !! 08/27  2010   Matt Alvarado     Minor Changes                             !!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 08/1  2012    Tara Soni         Minor Changes                             !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 PROGRAM ASP
@@ -129,7 +130,9 @@ PROGRAM ASP
 		CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .TRUE.)
 		
 		!Calculate Initial Photolysis Rates
-		ut =  19.0 !Yokelson Williams fire, 11 AM local time
+		ut = 3.0 !Yokelson Williams fire, 11 AM local time
+                !0.217 !MILAGRO Yucatan fire: in the fire measuring photolysis rates  at 73007, smoke age starts at 72989
+                !3.0 !Yokelson Williams fire, 11 AM local time
                 !19.0 !Yokelson Lake McKay fire, 11 AM local time
                 !2.51 !ARCTAS Lake McKay Late Pass time in hours 
                 ! 0.87 !Alaska Universal time in hours
@@ -216,8 +219,14 @@ PROGRAM ASP
 			!Step Gas Chemistry
 			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep))
 
-			Slope = 2.0 
-			b = 212.22 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from yo = 1km, Ky = 1178 m2/s
+			Slope = 2.00
+                        b=106.8735
+                        !212..22 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from yo = 1km, Ky = 1178 m2/s
+                        !15  !Yokelson Williams Fire fast 
+                        !106..87357 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from curvefit of CO data
+                        !4000 ! slow fit for MILAGRO Fire (Yucatan March 23, 2006)
+                        !100 !fast fit for MILAGRO Fire (Yucatan March 23, 2006)
+                        !529.7 ! MILAGRO Fire (Yucatan March 23, 2006), middle curvefit
                         !7884 !ARCTAS Lake McKay Late Pass from Jason St. Clair peak CO data  
                                  !(Ky = 8632 m2/s, yo = 16.5 km)
                         !212.22 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from yo = 1km, Ky = 1178 m2/s
@@ -235,7 +244,7 @@ PROGRAM ASP
 			!66 + (2.0/3.0) !Timbavati Fast  
 			!1.0e50 !No Dilution 	
 			!12000	 
-			T_mix = Slope*t+b
+			T_mix = Slope*t + b
 		
 			!Step Dilution of Chems
 			DO q = 1, HowManyGasChems
@@ -250,7 +259,6 @@ PROGRAM ASP
 			DO q = 1, HeteroBins
 				HeteroNumberConc(q) = HeteroNumberConc(q)/(1+ MixTimestep/T_mix)
 			END DO
-			
 			t = t + MixTimestep
 			ut = ut + (MixTimestep/3600.0)
 	        IF(ut .GE. 24.0) ut = 0.0
@@ -423,7 +431,10 @@ PROGRAM ASP
 
 		t=0
 		Slope = 2.0 
-		b = 7884 !ARCTAS Lake McKay Late Pass from Jason St. Clair peak CO data  
+                b=106.87 ! Willaims medium
+                !212.22 !Willams slow
+                !15     !Williams fast
+		!7884 !ARCTAS Lake McKay Late Pass from Jason St. Clair peak CO data  
                                  !(Ky = 8632 m2/s, yo = 16.5 km)
                 !142 + (6.0/7.0) !Timbavati
 		!400.0 !Timbavati Slow

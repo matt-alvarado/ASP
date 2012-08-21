@@ -197,8 +197,12 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 							
 	!This is a CO + OH reaction
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN	
-	  k1 = 1.3e-13
-	  k2 = 3.19e-33
+	!! JPL  
+	!!k1 = 1.50E-13
+	!!k2 = 5.90E-33
+	!! IUPAC
+	  k1 = 1.44E-13
+	  k2 = 2.92E-32
 	  GasPhaseChemicalRates(L) = k1 + k2*Mgas
 							
 	!This is a k = k1 + k2*M case 
@@ -218,31 +222,70 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 6) THEN
 	  !Temporary - call ResetHeteroRates to set rate!
 	  GasPhaseChemicalRates(L) = 0.0
+
+	!k = A*exp(B/T)*(1-(1/(1+C*exp(D/T)))) 
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 7) THEN
+	  k1 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP)
+          k2 = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
+          GasPhaseChemicalRates(L) = k1*(1 - (1/(1 + k2))) 
+
+	!k = A*exp(B/T)*(1/(1+C*exp(D/T))) 
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 8) THEN
+	  k1 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP)
+          k2 = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
+          GasPhaseChemicalRates(L) = k1*(1/(1 + k2)) 
+
+        !k = A*exp(B/T)*(1-C*exp(D/T)) 
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 9) THEN
+	  k1 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP)
+          k2 = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
+          GasPhaseChemicalRates(L) = k1*(1 - k2) 
+
+        !reaction form k0 = a*exp(B/T) and ki = c*exp(D/T)
+        ! where CH3O2NO2 + M =>
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 10) THEN
+	  
+	  k0 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP) * Mgas
+	  ki = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
+	  GasPhaseChemicalRates(L) = (k0*ki)/(k0+ki) * ReactionRates(L,8)** &
+					(1./(1.+(DLOG10(k0/ki)**2.)))
+
         END IF
 
-      !! Three body reactions, using the troe pressure-broadening 
-      !! From from p.1303 of Seinfeld & Pandis
-      !! This yields an effective second-order rate constant.
-      !! Rates are set in 1 / ppb / ppb / sec 
+     !! Three body reactions, using the troe pressure-broadening 
+     !! From from p.1303 of Seinfeld & Pandis
+     !! This yields an effective second-order rate constant.
+     !! Rates are set in 1 / ppb / ppb / sec 
       CASE(3)
 	TEMP = GetTemp()
 	Mgas = GetM   ()
-
-	!Case for third-order rate constant
+     
+     !Case for third-order rate constant
 	!(like for O + O2 + M => O3 + M) (NOT USED - see first order class 9)
 	IF (INT(ReactionRates(L,3)) .EQ. 1) THEN
 	   GasPhaseChemicalRates(L) = ReactionRates(L,4)*(Temp/300.)**(-1.*ReactionRates(L,5)) * Mgas
 						
 	!Hardwired OH + NO2 + M Reaction
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 2) THEN
-	   KO = 2.85E-30*(300.0/TEMP)**2.67
-	   KINF = 3.13E-11
+	  !! JPL
+	  !!KO = 1.80E-30*(300.0/TEMP)**3
+	  !!KINF = 2.80E-11
+	  !! IUPAC
+	  KO = 3.30E-30*(300.0/TEMP)**3
+	  KINF = 6.00E-11
 	   MO = Mgas
 	   GasPhaseChemicalRates(L) = 0.937*KO*MO/(1.0+(0.937*KO*MO/KINF)) &
      				      *(EXP(-1.*TEMP/363.0))**(1.0+ &
      			((LOG10(0.937*KO*MO/KINF)-0.12)/(0.85-0.67*LOG10( &
      			EXP(-1.*TEMP/363.0))))**2)**(-1)
 
+        !PAN reactions of the form: k0 = a*exp(B/T) and ki = c*exp(D/T)
+        ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN
+							
+	  k0 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP) * Mgas
+	  ki = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
+	  GasPhaseChemicalRates(L) = (k0*ki)/(k0+ki) * ReactionRates(L,8)** &
+					(1./(1.+(DLOG10(k0/ki)**2.)))
 							
 	!Calculate pseudo-2nd order rate constant
 	ELSE

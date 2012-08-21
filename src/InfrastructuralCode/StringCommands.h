@@ -363,7 +363,6 @@ END FUNCTION CountDigits
 		K = 0
 		DO J = 1, LEN_TRIM(CurrString) 
 			IF (INDEX (Numbers, CurrString(J:J)) == 0) K = 1
-                        write(*,*) J, K
 		END DO
 		IF (K == 1) &								! Non-Numerical Numbers
 			CALL ERROR ("STR2REAL Received the Following Confusing String:"//">>"//TRIM(CurrString)//"<<")
