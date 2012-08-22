@@ -1,5 +1,5 @@
 ##################################################
-##  A pig makefile for ASP on rufus				##
+##  A pgi makefile for ASP on rufus				##
 ##  Matt Alvarado, 02/13/2012		## 
 ##################################################
 SHELL = /bin/sh
@@ -257,7 +257,7 @@ $(OBJDIR)DevelopmentDriver.o: $(SOURCEDIR)DevelopmentDriver.f90 \
 	$(OBJECTS) $(ALLINC)
 	  $(FC) -c $(F90FLAGS) $< 
 	  \mv DevelopmentDriver.o $(OBJDIR)  
-	  \mv *.mod $(OBJDIR) 
+#	  \mv *.mod $(OBJDIR) 
 #
 # === Rules
 #
