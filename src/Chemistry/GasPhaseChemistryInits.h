@@ -65,7 +65,7 @@ SUBROUTINE SetGasPhaseChemistry ()
 	integer	:: FH
 	FH = GetFileHandle()
 	HowManyGasChems=1
-        ! Water is the first, which is why these aren't 0
+        ! Water is the first, which is why these arent 0
 	HowManyEvolveGasChems=1
 
 	IF (TranscriptFH > 0) THEN

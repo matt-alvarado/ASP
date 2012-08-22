@@ -25,6 +25,7 @@
 !! 08/27  2010   Matt Alvarado     Minor Changes                             !!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 08/1  2012    Tara Soni         Minor Changes                             !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 PROGRAM ASP
@@ -97,7 +98,7 @@ PROGRAM ASP
 	CALL Transcript ("** by H. D. Steele (donnan@mit.edu).                    **")
 	CALL Transcript ("**********************************************************")
 	
-	IF(.FALSE.) THEN !Gas Chemistry Only
+	IF(.TRUE.) THEN !Gas Chemistry Only
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
 		!! MJA 02-15-2012 always 1 cm^3
@@ -119,16 +120,19 @@ PROGRAM ASP
 		ALLOCATE(HeteroNumberConc(HeteroBins))
 		ALLOCATE(HeteroRadii(HeteroBins))
 
-		HeteroNumberConc(1) = 1.5e5 !Guess for Williams fire
+		HeteroNumberConc(1) = 7.25e4 !For Williams fire, see file 
+                                            !/nas/project/p1704/asp_rundir/Yokelson/README_Williams_aero_init
                 !1.5e5 !Guess for Williams fire
                 !3.0e4 !Guess for Alaska
 		!3.1e4 !Otavi (Haywood et al, 2003)  
 		!1.433e5 !Timbavati (Trentmann et al, 2005)
-		HeteroRadii(1) = 1.0e-7 ! in m
+		HeteroRadii(1) = 2.54e-7 ! in m
 		CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .TRUE.)
 		
 		!Calculate Initial Photolysis Rates
-		ut =  19.0 !Yokelson Williams fire, 11 AM local time
+		ut = 3.0 !Yokelson Williams fire, 11 AM local time
+                !0.217 !MILAGRO Yucatan fire: in the fire measuring photolysis rates  at 73007, smoke age starts at 72989
+                !3.0 !Yokelson Williams fire, 11 AM local time
                 !19.0 !Yokelson Lake McKay fire, 11 AM local time
                 !2.51 !ARCTAS Lake McKay Late Pass time in hours 
                 ! 0.87 !Alaska Universal time in hours
@@ -215,8 +219,14 @@ PROGRAM ASP
 			!Step Gas Chemistry
 			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep))
 
-			Slope = 2.0 
-			b = 212.22 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from yo = 1km, Ky = 1178 m2/s
+			Slope = 2.00
+                        b=106.8735
+                        !212..22 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from yo = 1km, Ky = 1178 m2/s
+                        !15  !Yokelson Williams Fire fast 
+                        !106..87357 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from curvefit of CO data
+                        !4000 ! slow fit for MILAGRO Fire (Yucatan March 23, 2006)
+                        !100 !fast fit for MILAGRO Fire (Yucatan March 23, 2006)
+                        !529.7 ! MILAGRO Fire (Yucatan March 23, 2006), middle curvefit
                         !7884 !ARCTAS Lake McKay Late Pass from Jason St. Clair peak CO data  
                                  !(Ky = 8632 m2/s, yo = 16.5 km)
                         !212.22 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from yo = 1km, Ky = 1178 m2/s
@@ -234,7 +244,7 @@ PROGRAM ASP
 			!66 + (2.0/3.0) !Timbavati Fast  
 			!1.0e50 !No Dilution 	
 			!12000	 
-			T_mix = Slope*t+b
+			T_mix = Slope*t + b
 		
 			!Step Dilution of Chems
 			DO q = 1, HowManyGasChems
@@ -249,7 +259,6 @@ PROGRAM ASP
 			DO q = 1, HeteroBins
 				HeteroNumberConc(q) = HeteroNumberConc(q)/(1+ MixTimestep/T_mix)
 			END DO
-			
 			t = t + MixTimestep
 			ut = ut + (MixTimestep/3600.0)
 	        IF(ut .GE. 24.0) ut = 0.0
@@ -422,7 +431,10 @@ PROGRAM ASP
 
 		t=0
 		Slope = 2.0 
-		b = 7884 !ARCTAS Lake McKay Late Pass from Jason St. Clair peak CO data  
+                b=106.87 ! Willaims medium
+                !212.22 !Willams slow
+                !15     !Williams fast
+		!7884 !ARCTAS Lake McKay Late Pass from Jason St. Clair peak CO data  
                                  !(Ky = 8632 m2/s, yo = 16.5 km)
                 !142 + (6.0/7.0) !Timbavati
 		!400.0 !Timbavati Slow
@@ -683,7 +695,7 @@ PROGRAM ASP
 		    
 	END IF !Bulk Particle Tests
 
-	IF (.TRUE.) THEN !Size Dist PARTICLE TESTS
+	IF (.FALSE.) THEN !Size Dist PARTICLE TESTS
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!

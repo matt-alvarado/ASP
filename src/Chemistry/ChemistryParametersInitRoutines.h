@@ -795,6 +795,105 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
+
+		!k = A*exp(B/T)*(1-(1/(1+C*exp(D/T)))) case (Flag = 7)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 7) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 5
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				       RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+
+                !k = A*exp(B/T)*(1/(1+C*exp(D/T))) case (Flag = 8)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 8) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 5
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				       RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
+	
+		!k = A*exp(B/T)*(1-C*exp(D/T)) case (Flag = 9)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 9) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 5
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				       RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
 			
 			
 		END IF
@@ -897,8 +996,37 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
 				          " apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-			END IF	
+			END IF 
+	
+	        !THIRD ORDER PAN degradation 
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 3) THEN
+			NumbRateFacs = 6
 
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR(" The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//"  >>"//TRIM(FullLine)//"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+		        ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+	        	END IF
+				
+		        DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+  				      RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   " apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
+						   //"):  "//TRIM(FullLine))
+				END IF
+			END DO
 
 		ELSE
 			CALL ERROR("The following line from "//Trim(InputDeck)//	&

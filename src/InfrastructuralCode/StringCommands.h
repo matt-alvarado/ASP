@@ -351,7 +351,7 @@ END FUNCTION CountDigits
 		CHARACTER (len = 100)  :: CurrString
 		INTEGER				   :: I, N, P, IOS, J, K
 		CHARACTER*8			   :: FMT
-		CHARACTER (len=15)	   :: Numbers = "0123456789.-+de"
+		CHARACTER (len=17)	   :: Numbers = "0123456789.-+deDE"
 
 		!! Strip Leading and Trailing Whitespace / Tabs
 		CurrString = TRIM(StripToken(InString))

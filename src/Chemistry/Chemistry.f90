@@ -140,7 +140,7 @@ MODULE Chemistry
 ! This holds reaction rate information
 	REAL*8,		    ALLOCATABLE :: GasPhaseBackground(:)
 	REAL*8,		    ALLOCATABLE :: GasPhaseDepVel(:)		
-	REAL*8				:: PhotoRates(96,21)
+	REAL*8				:: PhotoRates(96,25)
 
 	INTEGER :: GasConcInputTypeFlag
 
@@ -571,7 +571,7 @@ MODULE Chemistry
 		FH = GetFileHandle()
 	    OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//"PhotoRates.in", STATUS='OLD')
 		
-		!The input file must have 96 lines and 21 reactions (23 column total, first one time, second solar zenith angle)
+		!The input file must have 96 lines and 25 reactions (27 column total, first one time, second solar zenith angle)
 		
 		DO I = 1, 96
 			!! Get a new data line (non-comment) from the input deck
@@ -582,11 +582,12 @@ MODULE Chemistry
 			CALL GetToken(CurrLine," ", Sza)
 
 			!Do for each photolysis reaction
-			DO J = 1, 21
+			DO J = 1, 25
+                                write(*,*) I,J
 				CALL GetToken(CurrLine," ", Token)
 				Token = StripToken(Token)		
 				PhotoRates(I,J) = STR2REAL(Token)
-				!IF (J .EQ.21 ) WRITE(*,*) I, PhotoRates(I,J)
+				!IF (J .EQ.25 ) WRITE(*,*) I, PhotoRates(I,J)
                                 !CALL flush(6)
                                 !STOP
 			END DO
