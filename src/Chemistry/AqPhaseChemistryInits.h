@@ -17,6 +17,14 @@
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
 !!                                 Also fixed type-conversion errors         !!
+!! 02/27  2012   Matt Alvarado     Removed Refractive Index Data, now        !!
+!!                                  hardcoded in SUBROUTINE                  !!
+!!                                  ShellRefIndAndRad(InParticle) in file    !!
+!!                                  ParticleAttributes.h                     !!
+!! 02/29  2012   Matt Alvarado     Added flag to AqPhaseChem.in and          !!
+!!                                  SetAqPhaseChemistry to indicate what     !!
+!!                                  refractive index should be used for an   !!
+!!                                  electrolyte.                             !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -72,13 +80,13 @@ SUBROUTINE SetAqPhaseChemistry ()
 		IF (Scaffolding) CALL Transcript(">>Entering SetAqPhaseChemistry()<<")
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! There are several Aqueous Phase Input Decks Required for Initialization: !!!!!!!!!!!!!!!!!!
-		!!   1). AqPhaseChems.in (List of Undissociate Chemicals Present in Aq Phase.)				!!
-		!!	 2). AqPhaseIons.in  (List of Ions Dissociated from Chemicals Present in Aq Phase.)		!!
-		!!	 3). AqChemicalMechanism.in (Forward Reactions in Aqueous Phase.)						!!
+		!! There are several Aqueous Phase Input Decks Required for Initialization: !!!!!!!!!!!!!!!!!!!!!!
+		!!   1). AqPhaseChems.in (List of Undissociate Chemicals Present in Aq Phase.)			!!
+		!!	 2). AqPhaseIons.in  (List of Ions Dissociated from Chemicals Present in Aq Phase.)	!!
+		!!	 3). AqChemicalMechanism.in (Forward Reactions in Aqueous Phase.)			!!
 		!!   4). AqEquilibriumReactions.in (Equilibrium Dissociation Reactions in Aqueous Phase.)	!!
-		!!   5). AerosolThermoKusikMeissner.in (Thermodynamic data for equilib rxns)				!!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		!!   5). AerosolThermoKusikMeissner.in (Thermodynamic data for equilib rxns)			!!
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 		!! In this subroutine, we will create listings of all of the chemicals 
 	    OPEN(UNIT=FH,  FILE=TRIM(InputDeckSubDir)//'AqPhaseChems.in', STATUS='OLD')	! the incoming chemicals
@@ -144,14 +152,14 @@ SUBROUTINE SetAqPhaseChemistry ()
 		ALLOCATE (AqMolecularMass(HowManyAqChems), stat = allocation_error)
 		if (allocation_error > 0) CALL ERROR("Allocation of AqMolecularMass could not proceed in SetChemistryParams()")
 
-		!!! -- REFRACTIVE INDEX in complex form (real in slot 1, imag in slot 2) -- !!!
-		ALLOCATE (AqRefractiveIndex(HowManyAqChems+HowManyAqCations+HowManyAqAnions,4), stat = allocation_error)
-		if (allocation_error > 0) CALL ERROR("Allocation of AqRefractiveIndex could not proceed in SetAqPhaseChemistry()")
 
 		!!! -- SOLID SALT DENSITY (grams / cm3) -- !!!
 		ALLOCATE (SolidSaltDensity(HowManyAqChems), stat = allocation_error)
 		if (allocation_error > 0) CALL ERROR("Allocation of SolidSaltDensity could not proceed in SetChemistryParams()")
 
+		!!! -- REFRACTIVE INDEX FLAG -- !!!
+		ALLOCATE (RefIndFlag(HowManyAqChems), stat = allocation_error)
+		if (allocation_error > 0) CALL ERROR("Allocation of RefIndFlag could not proceed in SetChemistryParams()")
 		
 		!! SCSCSCSCSC
 		IF (Scaffolding) CALL Transcript (">>Importing Aq Phase Species Info<<")
@@ -165,10 +173,6 @@ SUBROUTINE SetAqPhaseChemistry ()
 
 		!! Hard Code the Water 
 		AqPhaseChemicalNames(1)		= "H2O"
-		AqRefractiveIndex(1,1)		= 1.34
-		AqRefractiveIndex(1,2)		= 1.0E-9
-		AqRefractiveIndex(1,3)		= 1.22
-		AqRefractiveIndex(1,4)		= 0.05
 		AqMolecularMass(1)			= WaterMolecMass
 		
 		DO i = 2, HowManyAqChems
@@ -218,38 +222,23 @@ SUBROUTINE SetAqPhaseChemistry ()
 							TRIM(AqPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
 			AqMolecularMass(CurrIndex) = STR2REAL(Token) * grams / moles
 
-			!! ---	4. & 5. SOLAR REFRACTIVE INDEX (first real and then imaginary)
-			CALL GetToken(CurrLine,";",Token) 
-			IF (LEN_TRIM(Token) .EQ. 0) &
-			CALL ERROR("In AqPhaseChems.in, the first refractive index term appears to be missing on "//		&
-						TRIM(AqPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-			AqRefractiveIndex(CurrIndex,1) = STR2REAL (Token)
-
-			CALL GetToken(CurrLine,";",Token) 
-			IF (LEN_TRIM(Token) .EQ. 0) &
-			CALL ERROR("In AqPhaseChems.in, the second refractive index term appears to be missing on "//	&
-					   TRIM(AqPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-			AqRefractiveIndex(CurrIndex,2) = STR2REAL (Token)
-
-			!! ---	6. & 7. IR REFRACTIVE INDEX (first real and then imaginary)
-			CALL GetToken(CurrLine,";",Token) 
-			IF (LEN_TRIM(Token) .EQ. 0) &
-			CALL ERROR("In AqPhaseChems.in, the first refractive index term appears to be missing on "//		&
-						TRIM(AqPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-			AqRefractiveIndex(CurrIndex,3) = STR2REAL (Token)
-
-			CALL GetToken(CurrLine,";",Token) 
-			IF (LEN_TRIM(Token) .EQ. 0) &
-			CALL ERROR("In AqPhaseChems.in, the second refractive index term appears to be missing on "//	&
-					   TRIM(AqPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-			AqRefractiveIndex(CurrIndex,4) = STR2REAL (Token)
 			
-			!! 8. SOLID SALT DENSITY (g/cm3)
+			!! 4. SOLID SALT DENSITY (g/cm3)
 			CALL GetToken(CurrLine,";",Token) 
 			IF (LEN_TRIM(Token) .EQ. 0) &
-			CALL ERROR("In AqPhaseChems.in, the second refractive index term appears to be missing on "//	&
+			CALL ERROR("In AqPhaseChems.in, the solid salt density term appears to be missing on "//	&
 					   TRIM(AqPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
 			SolidSaltDensity(CurrIndex) = STR2REAL (Token)*grams/cm/cm/cm
+
+	                !! 4. REFRACTIVE INDEX FLAG: 0 if the H2O refractive index is used
+                        !!                           1 if the sulfate droplet refractive index is used
+                        !!                           2 if the sea salt refractive index is used
+                        !!                           3 if the mineral dust refractive index is used
+			CALL GetToken(CurrLine,";",Token) 
+			IF (LEN_TRIM(Token) .EQ. 0) &
+			CALL ERROR("In AqPhaseChems.in, the refractive index flag appears to be missing on "//	&
+					   TRIM(AqPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
+			RefIndFlag(CurrIndex) = STR2INT(Token)
 			
 			!! Transcript
 			IF (Transcribe) CALL Transcript(AqPhaseChemicalNames(CurrIndex))
@@ -405,13 +394,13 @@ SUBROUTINE SetAqPhaseChemistry ()
 			AqMolecularMass(I+HowManyAqChems)      = AqCationMass(I)
 			AqPhaseChemicalNames(I+HowManyAqChems) = TRIM(AqCationNames(I))
 			AqChemicalCharge(I+HowManyAqChems)	   = AqCationCharge(I)
-			AqRefractiveIndex(I+HowManyAqChems,1)  = CationIonicRefraction(I)
+		
 		END DO
 		DO I = 1, HowManyAqAnions
 			AqMolecularMass(I+HowManyAqChems+HowManyAqCations)		= AqAnionMass(I)
 			AqPhaseChemicalNames(I+HowManyAqChems+HowManyAqCations) = TRIM(AqAnionNames(I))
 			AqChemicalCharge(I+HowManyAqChems+HowManyAqCations)	    = AqAnionCharge(I)
-			AqRefractiveIndex(I+HowManyAqChems+HowManyAqCations,1)  = AnionIonicRefraction(I)
+		
 		END DO
 
 		!! Tell ModelParameters which of the chemicals is a proton

@@ -17,6 +17,8 @@
 !! 09/07  2006   Matt Alvarado     Added array BoundaryParticles             !!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 03/01  2012   Matt Alvarado     Added SetInitialDens to                   !!
+!!                                  SUBROUTINE InitializeParticlesSectional  !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -52,6 +54,7 @@
 !!11. FUNCTION CopyLagrangianParticle (InParticle)
 !!12. SUBROUTINE InitializeParticlesSectional()
 !!13. SUBROUTINE DissociateAllElectrolytes()
+!!14. FUNCTION ISNAN
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 MODULE Aerosols
 
@@ -100,7 +103,7 @@ PUBLIC	:: AerosolModeNames,			&
 		   SortAerosolAtGridPointForCoagulation,  &
 		   SurfaceTension,				&
 		   TerminalVelocity,			&
-			EquilibrateAqueousDissociationReaction,&
+		EquilibrateAqueousDissociationReaction,&
 			PrintParticleContents,&
 			SCTailorMakeParticle, & !! this is junk
 			SCInitializeWaterParticles, &
@@ -119,7 +122,10 @@ PUBLIC	:: AerosolModeNames,			&
 			ShellRefIndAndRad, &
 			AerosolOptProp, &
 			DeliquesenceRH, &
-			EquilibriumConstantsRatio
+			EquilibriumConstantsRatio, &
+                        PopulateParticlesSectionsRightAway, &
+                        ReadDistributionsOrganic, &
+                        InputFlagRatioOrMass
 
 INCLUDE "ParticleStructure.h"
 
@@ -143,7 +149,7 @@ INTEGER :: ODowdSaltNumbBins
 !!   IC(1..M)  (Number of each type of insoluble core aerosol per input)     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8, ALLOCATABLE :: AerosolModes(:,:)
-INTEGER				:: HowManyAerosolModes
+INTEGER	            :: HowManyAerosolModes
 LOGICAL             :: InsolCoresYesOrNo
 CHARACTER (len=64), ALLOCATABLE  :: AerosolModeNames(:)
 
@@ -161,12 +167,15 @@ TYPE (ParticleArray) :: Particles
 !!BoundaryParticles is the environmental particle list
 TYPE (ParticleArray) :: BoundaryParticles
 
+!
+
 CONTAINS
 
 INCLUDE "InitializationAndSamplingRoutines.h"
 INCLUDE "ParticleAttributes.h"
 INCLUDE "Thermodynamics.h"
 INCLUDE "SortAerosol.h"
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Erase all particles so we can start again !!
@@ -427,6 +436,7 @@ END FUNCTION CopyLagrangianParticle
 SUBROUTINE InitializeParticlesSectional()
 
 	USE InfrastructuralCode, ONLY : ERROR
+        USE ModelParameters,     ONLY : SetInitialDens
 
 	IMPLICIT NONE
 
@@ -434,11 +444,13 @@ SUBROUTINE InitializeParticlesSectional()
 	INTEGER :: Allocation_Error
 
 	Particles%First => Null()
+        CALL SetInitialDens(1.5000) !MJA 03-01-2012
+        !Moved here so that the initial density can be set and reset at will
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Open the Particle Modes Input Deck and Read It In !!
 	!! And then use it to populate the AerosolModes Array!!
-	CALL ReadDistributionsOrganic() !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	CALL ReadDistributionsOrganic() !!!!!!!!!!!!!!!!!!!!!!!
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Fill the Array with a Selection of Particles, !!
@@ -505,14 +517,14 @@ SUBROUTINE DissociateAllElectrolytes()
 				II * AqEquilibriaList(I,4)
 
 				!! ANION:
-				Current%AqChems(HowManyAqChems+HowManyAqCations+INT(AqEquilibriaList(I,3))) =		&
-				Current%AqChems(HowManyAqChems+HowManyAqCations+INT(AqEquilibriaList(I,3))) +		&
+				Current%AqChems(HowManyAqChems+HowManyAqCations+INT(AqEquilibriaList(I,3))) =	&
+				Current%AqChems(HowManyAqChems+HowManyAqCations+INT(AqEquilibriaList(I,3))) +	&
 				II * AqEquilibriaList(I,5)
 
 				IF(AqEquilibriaList(I,22) .NE. 0) THEN
 					!!Levitocite case, extra anion
-					Current%AqChems(HowManyAqChems+HowManyAqCations+INT(AqEquilibriaList(I,22))) =		&
-					Current%AqChems(HowManyAqChems+HowManyAqCations+INT(AqEquilibriaList(I,22))) +		&
+					Current%AqChems(HowManyAqChems+HowManyAqCations+INT(AqEquilibriaList(I,22))) =	&
+					Current%AqChems(HowManyAqChems+HowManyAqCations+INT(AqEquilibriaList(I,22))) +	&
 					II * AqEquilibriaList(I,23)
 				END IF
 				
@@ -550,6 +562,5 @@ logical function isnan(a)
    end if
    return
 end function
-
 
 END MODULE Aerosols

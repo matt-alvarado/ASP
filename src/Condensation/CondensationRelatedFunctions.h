@@ -46,11 +46,13 @@
 !! 10/14  2010   Matt Alvarado     Removed "OPTIONAL" statements             !!
 !! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 02/29  2012   Matt Alvarado     Changed EquilibrateInternallyatGridPoint
+!!                                   to skip dry (BC only) particles.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:		     !!
-!! 1. FUNCTION GetThermalVelocity (ChemIndex, ChemName
+!! 1. FUNCTION GetThermalVelocity (ChemIndex, ChemName)
 !! 2. FUNCTION CondensationRateCoefficients (ReactionNumb, NumbLinks)
 !! 3. FUNCTION HenrysLaw (Temperature, DissolutionRxn)
 !! 4. FUNCTION SatVapPressRatio (InParticle , ChemIndex )
@@ -2348,20 +2350,10 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 	INTEGER :: I, K, HowManyLinks, ReturnType
 	TYPE(Particle),POINTER :: Current
 
-	!! Get optional arguments	
-	!IF (PRESENT(EquilibrateWater)) THEN
-		LocalEquilibrateWater = EquilibrateWater
-	!ELSE
-	!	LocalEquilibrateWater = .FALSE.
-	!END IF
-
-	!IF (PRESENT(WaterOpenSystem)) THEN
-		LocalWaterOpenSystem = WaterOpenSystem
-	!ELSE
-	!	LocalWaterOpenSystem = .FALSE.
-	!END IF
-
-
+	LocalEquilibrateWater = EquilibrateWater
+	
+	LocalWaterOpenSystem = WaterOpenSystem
+	
 	!! Sort the gridcell, pushing all empty sections to the end
 	CALL SortAerosolAtGridPointForCondensation ()
 	!! Count the number of links
@@ -2384,13 +2376,21 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 	!! The main loop calculates whether it's equilibrated
 	DO WHILE (.NOT.Equilibrated)
 
-		
 		K = K + 1
 		Equilibrated = .TRUE.
 
 		Current => particles%first
 		ParticleEquilibrated = .TRUE.
 		DO I = 1, HowManyLinks
+
+                        !Skip dry partciles (BC only)
+                        IF (Current%Dry) THEN
+                            if (associated(current%next)) then
+				current => current%next
+			    end if
+                            CYCLE
+                        ENDIF
+  
 			IF(ZSROrgWater) THEN
 				CALL EqAllWater(Current, ReturnType, LocalWaterOpenSystem)
 			ELSE

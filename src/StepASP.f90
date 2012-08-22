@@ -20,13 +20,19 @@
 !! 10/09  2007   Matt Alvarado     Changed zero criteria for 
 !!                                     aerosol concentrations in 
 !!				       InputConcentrations to 
-!!                                     1.0e-40 mol/particle
+!!                                    1.0e-40 mol/particle
 !! 10/12  2007   Matt Alvarado     Removed Scale from photorates: 
 !!                                     now in chemtrop.F
 !! 02/19  2009   Matt Alvarado     Changed DFPORT to IFPORT 
 !!                                     (to use ifort compiler)
 !! 08/26  2010   Matt Alvarado     Comment out IFPORT (to use pgf90 compiler)
 !! 02/15  2012   Matt Alvarado     Removed Eulerian Coords
+!! 05/03  2012   Matt Alvarado     Updated call to AerosolOptProps to include
+!!                                  BackScatCoeff
+!! 08/16  2012   Matt Alvarado     Updated call to AerosolOptProps to include
+!!                                  SubExtCoeff and SubSSA
+!! 08/17  2012   Matt Alvarado     Updated call to AerosolOptProps to include
+!!                                  SubExtCoeff and SubSSA
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -337,7 +343,9 @@ MODULE StepASP
 
 		!! External Variables
 		REAL*8 :: Temp, Press, Dens
-		REAL*8, DIMENSION(62) :: ExtCoeff, SingScat, Assym
+		REAL*8, DIMENSION(451) :: ExtCoeff, SingScat, Assym,BackScatCoeff,SubExtCoeff, SubSSA, &
+                                          ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
+                                          SubExtCoeffSep, SubSSASep
 		REAL*8 :: GasConc(HowManyEvolveGasChems)
 		REAL*8 :: AeroNumConc(HowManyBins)
 		REAL*8 :: AeroMassConc(HowManyBins, HowManyAqChems+HowManyAqCations+HowManyAqAnions+HowManyOrgChems+HowManyAqOrgChems)
@@ -418,7 +426,9 @@ MODULE StepASP
 		END DO
 
 		!Output Average Aerosol optical properties
-		CALL AerosolOptProp (ExtCoeff, SingScat, Assym)
+		CALL AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSSA, &
+                                     ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
+                                     SubExtCoeffSep, SubSSASep)
 		!WRITE(*,*) ExtCoeff(1), SingScat(1), Assym(1)
 		!PAUSE
 

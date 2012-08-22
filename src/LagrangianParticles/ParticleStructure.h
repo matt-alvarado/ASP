@@ -18,6 +18,12 @@
 !!                                 to allow 60 bins between 290 nm and 410 nm!!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!!! 02/16  2012   Matt Alvarado     Changed dimensions of optical properties !!
+!!                                 to allow 451 bins from 250 nm to 700 nm.  !!
+!!  08/17  2012  Matt Alvarado     Add extinction and scattering efficiency 
+!!                                  and asymm param for a particle
+!!                                  with the same effective size but 
+!!                                  (a) all BC or (b) all shell.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -101,9 +107,9 @@ TYPE Particle
 	REAL*8, POINTER :: HydrophilicActivityCoeffs(:) 
         !These are indexed by aq org compound number
 
-	REAL*8, DIMENSION(2) :: ShellRealRefracInd 
+	REAL*8, DIMENSION(451) :: ShellRealRefracInd 
         !Solar (550 nm) and IR (10 um)
-	REAL*8, DIMENSION(2) :: ShellImagRefracInd 
+	REAL*8, DIMENSION(451) :: ShellImagRefracInd 
         !Solar (550 nm) and IR (10 um)
 	REAL*8				  :: AbsCoreRad
 !In the CRM6 radiation scheme, six  and  12 bands are selected for solar 
@@ -132,10 +138,24 @@ TYPE Particle
 ! then 550 nm and 700 nm for comparison with aerosol optical property 
 ! measurements.
 
-	REAL*8, DIMENSION(62) :: ExtEff !Extinction Efficiency
-	REAL*8, DIMENSION(62) :: ScaEff !Scattering Efficiency
-	REAL*8, DIMENSION(62) :: BackScaEff !Back-Scattering Efficiency
-	REAL*8, DIMENSION(62) :: AssymParam !Assymetry Parameter
+	REAL*8, DIMENSION(451) :: ExtEff !Extinction Efficiency
+	REAL*8, DIMENSION(451) :: ScaEff !Scattering Efficiency
+	REAL*8, DIMENSION(451) :: BackScaEff !Back-Scattering Efficiency
+	REAL*8, DIMENSION(451) :: AssymParam !Assymetry Parameter
+
+        !MJA 08-17-2012 Below for a hypothetical particle of
+        !same effective size but all BC
+	REAL*8, DIMENSION(451) :: ExtEffBC !Extinction Efficiency
+	REAL*8, DIMENSION(451) :: ScaEffBC !Scattering Efficiency
+	REAL*8, DIMENSION(451) :: BackScaEffBC !Back-Scattering Efficiency
+	REAL*8, DIMENSION(451) :: AssymParamBC !Assymetry Parameter
+
+        !MJA 08-17-2012 Below for a hypothetical particle of
+        !same effective size and same ref. ind. as the shell
+	REAL*8, DIMENSION(451) :: ExtEffShell !Extinction Efficiency
+	REAL*8, DIMENSION(451) :: ScaEffShell !Scattering Efficiency
+	REAL*8, DIMENSION(451) :: BackScaEffShell !Back-Scattering Efficiency
+	REAL*8, DIMENSION(451) :: AssymParamShell !Assymetry Parameter
 	
 	!! These area stored as linked lists
 	TYPE (Particle), POINTER :: Next

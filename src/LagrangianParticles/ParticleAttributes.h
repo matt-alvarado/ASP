@@ -47,6 +47,22 @@
 !!                                 to allow 62 photolysis wavelengths
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 02/27  2012   Matt Alvarado     Changed ShellRefIndandRad, 
+!!                                  AerosolOpticalDepth, and AerosolOptProp 
+!!                                  to allow 451 bins between 250 nm and 700 nm
+!!                                 ShellRefIndandRad now used OPAC wavelength
+!!                                  dependent complex refractive indices
+!! 02/29  2012   Matt Alvarado     Changed ShellRefIndandRad to use different
+!!                                  wavelength dependent refractive indices
+!!                                  for different electrolytes based on flags
+!!                                  in AqPhaseChems.in. Also added refractive
+!!                                  index for dust.
+!! 05/03  2012   Matt Alvarado     Changed AerosolOptProp to calculate
+!!                                  backscattering coefficient.
+!! 05/08  2012   Matt Alvarado     Added special routine for dry BC only particles
+!!                                  to particle density.
+!! 05/03  2012   Matt Alvarado     Fixed calculation of hemispherical
+!!                                  backscattering coefficient in AerosolOptProp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -186,6 +202,7 @@ END FUNCTION AerosolPH
 !! Calculate the PARTICLE DENSITY for a lagrangian particle !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION ParticleDensity (InParticle)
+!MJA 05-008-2012 Added special routine for dry BC only particles
 
 	USE ModelParameters,     ONLY : grams, cm, aqchemscale, &
                                         moles, pi, avogadro,    &
@@ -232,6 +249,20 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
 		RETURN
 	END IF
 
+	!MJA 05-08-2012 Special routine for dry (BC only) particles
+        IF (InParticle%Dry) THEN
+		ParticleDensity = OrgDensity(1) !BC density
+		InsolVolume = InParticle%OrgChems(1)*OrgMolecularMass(1)/OrgDensity(1) 
+                InParticle%EmbryoRadius    = 0.0
+		InParticle%InsolubleRadius = (0.75 * InsolVolume / pi)**0.33333333333
+                InParticle%EffectiveRadius = InParticle%InsolubleRadius
+
+		InParticle%ParticleDensity = OrgDensity(1)
+		InParticle%SolutionDensity = OrgDensity(1)
+		InParticle%InsolubleDensity = OrgDensity(1)
+		InParticle%InorgSolnDensity = OrgDensity(1)
+		RETURN
+	END IF
 
 	Mass = 0 ; Volume = 0; ionMass = 0; NumerSum = 0; DenomSum = 0
 
@@ -406,11 +437,11 @@ END FUNCTION ParticleDensity
 REAL*8 FUNCTION ParticleMass (InParticle)
 
 	USE ModelParameters,     ONLY : grams, cm, aqchemscale, moles, pi, avogadro
-	USE Chemistry,			 ONLY : AqMolecularMass, HowManyAqChems,	&
-									HowManyAqAnions, HowManyAqCations,	&
-									AqCationMass, AqAnionMass, &
-									HowManyOrgChems, OrgMolecularMass, &
-									HowManyAqOrgChems, AqOrgMolecularMass 
+	USE Chemistry,		 ONLY : AqMolecularMass, HowManyAqChems,	&
+					HowManyAqAnions, HowManyAqCations,	&
+					AqCationMass, AqAnionMass, &
+					HowManyOrgChems, OrgMolecularMass, &
+					HowManyAqOrgChems, AqOrgMolecularMass 
 
 	IMPLICIT NONE
 
@@ -1200,13 +1231,16 @@ END FUNCTION AqueousSolutionMass
 !! assymetry parameter
 SUBROUTINE ShellRefIndAndRad(InParticle)
 ! 08/30/2010 Changed for the Photolyis Wavebands MJA
-	
+! 02/27/2012 Changed to wavelength-dependent refractive indices
+! 08/17/2012 Added capability for external mixtures
 	USE ModelParameters
-	USE Chemistry, ONLY : AqRefractiveIndex, OrgRefractiveIndex, &
-						AqOrgRefractiveIndex, AqMolecularMass, &
-						SolidSaltDensity, AqPhaseChemicalNames, &
-						OrgMolecularMass, OrgDensity, &
-						AqOrgMolecularMass, AqOrgDensity
+	USE Chemistry, ONLY : AqMolecularMass, &
+			        SolidSaltDensity, AqPhaseChemicalNames, &
+				OrgMolecularMass, OrgDensity, &
+				AqOrgMolecularMass, AqOrgDensity, &
+                                CationIonicRefraction, &
+                                AnionIonicRefraction,  &
+                                RefIndFlag
 
 	USE InfrastructuralCode, ONLY : INT2STR, REAL2STR, ERROR
 	
@@ -1215,45 +1249,268 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
 	!! External Variables
 	TYPE(Particle),POINTER :: InParticle
 
-	!!External Subroutines ..
-    EXTERNAL  DMiLay
+	!!External Subroutines 
+        EXTERNAL  DMiLay
 
 	!! Internal Variables
 	INTEGER, PARAMETER  :: MaxAng = 100
- 	INTEGER				:: I, JJ, NumAng, ib
-	REAL*8				:: SingleParticleVolume, VolumeConc, Factor,xxx
-	REAL*8				:: Er, Ei, SumEr, SumEi, Wavelength, Sum
-	REAL*8				:: SolnMolWeight, MolalRefraction, MolVol, TotalVolConc, Rshell, &
-						   ShellVolumeConc
+ 	INTEGER	:: I, JJ, NumAng, ib, w_ind_low
+	REAL*8	:: SingleParticleVolume, VolumeConc, Factor,xxx
+	REAL*8	:: Er, Ei, SumEr, SumEi, Wavelength, Sum
+	REAL*8	:: SolnMolWeight, MolalRefraction, MolVol, & 
+                   TotalVolConc, Rshell, ShellVolumeConc
+
 	REAL*8, ALLOCATABLE	:: AqVolConc(:), &
-							   OrgVolConc(:), AqOrgVolConc(:), MolFrac(:)
-	COMPLEX				:: SolarShellInd, SolarCoreInd, IRShellInd, IRCoreInd
-	REAL*8				:: Angles(MaxAng), CosAng(MaxAng), M1( MaxAng, 2), &
-							M2( MaxAng, 2 ), S21( MaxAng, 2 ), &
-							D21( MaxAng, 2 ), SolutionRefracIndex(2), SolutionVolConc
+				OrgVolConc(:), AqOrgVolConc(:), MolFrac(:)
 
-	!! BUILD N ARRAY for Species Volume Concentrations
+        !These are refractive indices given as data statements
+        !!Wavelength-dependent refractive indices from version 3.1a
+        !!of Optical Properties of Aerosols and Clouds (OPAC) 
+        !! M. Hess, P. Koepke, and I. Schult (1998): 
+        !!Optical Properties of Aerosols and clouds: 
+        !!The software package OPAC, Bull. Am. Met. Soc., 79, 831-844.
+        REAL*8 :: WAVE(61), SOOT_REAL(61), SOOT_IMAG(61)
+        REAL*8 :: WATER_REAL(61), WATER_IMAG(61)
+        REAL*8 :: WASO_REAL(61), WASO_IMAG(61)
+        REAL*8 :: INSO_REAL(61), INSO_IMAG(61)
+        REAL*8 :: SEASALT_REAL(61), SEASALT_IMAG(61)
+        REAL*8 :: SULF_REAL(61), SULF_IMAG(61)
+        REAL*8 :: DUST_REAL(61), DUST_IMAG(61)
+        REAL*8 :: a_w, b_w, n_real, n_imag, V_molal, R_molal
+
+	COMPLEX	:: SolarShellInd, SolarCoreInd, IRShellInd, IRCoreInd
+	REAL*8	:: Angles(MaxAng), CosAng(MaxAng), M1( MaxAng, 2), &
+			M2( MaxAng, 2 ), S21( MaxAng, 2 ), &
+		D21( MaxAng, 2 ), SolutionRefracIndex(2), SolutionVolConc
+
+!First specify the wavelength-dependent refractive indices of
+!soot, water, organics, sulfate,
+!and sea salt.
+!From OPAC v3.1a, downloaded from http://www.lrz.de/~uh234an/www/radaer/opac-des.html
+!Reference: M. Hess, P. Koepke, and I. Schult (1998): 
+!Optical Properties of Aerosols and clouds: 
+!The software package OPAC, Bull. Am. Met. Soc., 79, 831-844.
+!All values at 0% RH
+!Following GEOS-Chem Aerosol Optics memo of Collette Heald, (Jan. 30, 2010)
+!Model BC using OPAC SOOT, organics using WASO, sulfate and nitrate salts
+!as sulfate, chloride salts as sea salt.
+
+        !Wavelength in nm
+        WAVE = 1.0e3*(/ &
+        2.500e-01,  3.000e-01,  3.500e-01,  4.000e-01,  4.500e-01, & 
+        5.000e-01,  5.500e-01,  6.000e-01,  6.500e-01,  7.000e-01, &
+        7.500e-01,  8.000e-01,  9.000e-01,  1.000e+00,  1.250e+00, &
+        1.500e+00,  1.750e+00,  2.000e+00,  2.500e+00,  3.000e+00, &
+        3.200e+00,  3.390e+00,  3.500e+00,  3.750e+00,  4.000e+00, &
+        4.500e+00,  5.000e+00,  5.500e+00,  6.000e+00,  6.200e+00, &
+        6.500e+00,  7.200e+00,  7.900e+00,  8.200e+00,  8.500e+00, &
+        8.700e+00,  9.000e+00,  9.200e+00,  9.500e+00,  9.800e+00, &
+        1.000e+01,  1.060e+01,  1.100e+01,  1.150e+01,  1.250e+01, &
+        1.300e+01,  1.400e+01,  1.480e+01,  1.500e+01,  1.640e+01, &
+        1.720e+01,  1.800e+01,  1.850e+01,  2.000e+01,  2.130e+01, &
+        2.250e+01,  2.500e+01,  2.790e+01,  3.000e+01,  3.500e+01, &
+        4.000e+01/)
+
+        SOOT_REAL=(/ & !From file soot00 for black carbon
+        1.620e+00,  1.740e+00,  1.750e+00,  1.750e+00,  1.750e+00, & 
+        1.750e+00,  1.750e+00,  1.750e+00,  1.750e+00,  1.750e+00, &
+        1.750e+00,  1.750e+00,  1.750e+00,  1.760e+00,  1.760e+00, &
+        1.770e+00,  1.790e+00,  1.800e+00,  1.820e+00,  1.840e+00, &
+        1.860e+00,  1.870e+00,  1.880e+00,  1.900e+00,  1.920e+00, &
+        1.940e+00,  1.970e+00,  1.990e+00,  2.020e+00,  2.030e+00, &
+        2.040e+00,  2.060e+00,  2.120e+00,  2.130e+00,  2.150e+00, &
+        2.160e+00,  2.170e+00,  2.180e+00,  2.190e+00,  2.200e+00, &
+        2.210e+00,  2.220e+00,  2.230e+00,  2.240e+00,  2.270e+00, &
+        2.280e+00,  2.310e+00,  2.330e+00,  2.330e+00,  2.360e+00, &
+        2.380e+00,  2.400e+00,  2.410e+00,  2.450e+00,  2.460e+00, &
+        2.480e+00,  2.510e+00,  2.540e+00,  2.570e+00,  2.630e+00, &
+        2.690e+00/) 
+        SOOT_IMAG=(/ &
+       -4.500e-01, -4.700e-01, -4.650e-01, -4.600e-01, -4.550e-01, &
+       -4.500e-01, -4.400e-01, -4.350e-01, -4.350e-01, -4.300e-01, &
+       -4.300e-01, -4.300e-01, -4.350e-01, -4.400e-01, -4.500e-01, &
+       -4.600e-01, -4.800e-01, -4.900e-01, -5.100e-01, -5.400e-01, &
+       -5.400e-01, -5.495e-01, -5.600e-01, -5.700e-01, -5.800e-01, &
+       -5.900e-01, -6.000e-01, -6.100e-01, -6.200e-01, -6.250e-01, &
+       -6.300e-01, -6.500e-01, -6.700e-01, -6.800e-01, -6.900e-01, &
+       -6.900e-01, -7.000e-01, -7.000e-01, -7.100e-01, -7.150e-01, &
+       -7.200e-01, -7.300e-01, -7.300e-01, -7.400e-01, -7.500e-01, &
+       -7.600e-01, -7.750e-01, -7.900e-01, -7.900e-01, -8.100e-01, &
+       -8.200e-01, -8.250e-01, -8.300e-01, -8.500e-01, -8.600e-01, &
+       -8.700e-01, -8.900e-01, -9.100e-01, -9.300e-01, -9.700e-01, &
+       -1.000e+00/) 
+
+        WATER_REAL=(/ & !Refractive index from cuma00 file
+        1.362e+00,  1.349e+00,  1.343e+00,  1.339e+00,  1.337e+00, &
+        1.335e+00,  1.333e+00,  1.332e+00,  1.331e+00,  1.331e+00, &
+        1.330e+00,  1.329e+00,  1.328e+00,  1.327e+00,  1.323e+00, &
+        1.321e+00,  1.313e+00,  1.306e+00,  1.261e+00,  1.371e+00, &
+        1.478e+00,  1.423e+00,  1.400e+00,  1.369e+00,  1.351e+00, &
+        1.332e+00,  1.325e+00,  1.298e+00,  1.265e+00,  1.363e+00, &
+        1.339e+00,  1.312e+00,  1.294e+00,  1.286e+00,  1.278e+00, &
+        1.272e+00,  1.262e+00,  1.255e+00,  1.243e+00,  1.229e+00, &
+        1.218e+00,  1.179e+00,  1.153e+00,  1.126e+00,  1.123e+00, &
+        1.146e+00,  1.210e+00,  1.258e+00,  1.270e+00,  1.346e+00, &
+        1.386e+00,  1.423e+00,  1.443e+00,  1.480e+00,  1.491e+00, &
+        1.506e+00,  1.531e+00,  1.549e+00,  1.551e+00,  1.532e+00, &
+        1.519e+00/) 
+        WATER_IMAG=(/ &
+       -3.350e-08, -1.600e-08, -6.500e-09, -1.860e-09, -1.020e-09, & 
+       -1.000e-09, -1.960e-09, -1.090e-08, -1.640e-08, -3.350e-08, &
+       -1.560e-07, -1.250e-07, -4.860e-07, -2.890e-06, -8.700e-06, &
+       -2.000e-04, -1.000e-04, -1.100e-03, -1.740e-03, -2.720e-01, &
+       -9.240e-02, -2.314e-02, -9.400e-03, -3.500e-03, -4.600e-03, &
+       -1.340e-02, -1.240e-02, -1.160e-02, -1.070e-01, -8.800e-02, &
+       -3.920e-02, -3.210e-02, -3.390e-02, -3.510e-02, -3.670e-02, &
+       -3.790e-02, -3.990e-02, -4.150e-02, -4.440e-02, -4.790e-02, &
+       -5.080e-02, -6.740e-02, -9.680e-02, -1.420e-01, -2.590e-01, &
+       -3.050e-01, -3.700e-01, -3.960e-01, -4.020e-01, -4.270e-01, &
+       -4.290e-01, -4.260e-01, -4.210e-01, -3.930e-01, -3.790e-01, &
+       -3.700e-01, -3.560e-01, -3.390e-01, -3.280e-01, -3.360e-01, &
+       -3.850e-01/) 
+
+        !From file waso00, water-soluble sulfates, nitrates, and organic
+        WASO_REAL=(/ & 
+        1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00, &
+        1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00, &
+        1.530e+00,  1.520e+00,  1.520e+00,  1.520e+00,  1.510e+00, &
+        1.510e+00,  1.470e+00,  1.420e+00,  1.420e+00,  1.420e+00, &
+        1.430e+00,  1.430e+00,  1.450e+00,  1.452e+00,  1.455e+00, &
+        1.460e+00,  1.450e+00,  1.440e+00,  1.410e+00,  1.430e+00, &
+        1.460e+00,  1.400e+00,  1.200e+00,  1.010e+00,  1.300e+00, &
+        2.400e+00,  2.560e+00,  2.200e+00,  1.950e+00,  1.870e+00, &
+        1.820e+00,  1.760e+00,  1.720e+00,  1.670e+00,  1.620e+00, &
+        1.620e+00,  1.560e+00,  1.440e+00,  1.420e+00,  1.750e+00, &
+        2.080e+00,  1.980e+00,  1.850e+00,  2.120e+00,  2.060e+00, &
+        2.000e+00,  1.880e+00,  1.840e+00,  1.820e+00,  1.920e+00, &
+        1.860e+00/) 
+        WASO_IMAG=(/ &
+       -3.000e-02, -8.000e-03, -5.000e-03, -5.000e-03, -5.000e-03, &
+       -5.000e-03, -6.000e-03, -6.000e-03, -7.000e-03, -7.000e-03, &
+       -8.500e-03, -1.000e-02, -1.300e-02, -1.550e-02, -1.900e-02, &
+       -2.250e-02, -1.750e-02, -8.000e-03, -1.200e-02, -2.200e-02, &
+       -8.000e-03, -7.050e-03, -5.000e-03, -4.000e-03, -5.000e-03, &
+       -1.300e-02, -1.200e-02, -1.800e-02, -2.300e-02, -2.700e-02, &
+       -3.300e-02, -7.000e-02, -6.500e-02, -1.000e-01, -2.150e-01, &
+       -2.900e-01, -3.700e-01, -4.200e-01, -1.600e-01, -9.500e-02, &
+       -9.000e-02, -7.000e-02, -5.000e-02, -4.700e-02, -5.300e-02, &
+       -5.500e-02, -7.300e-02, -1.000e-01, -2.000e-01, -1.600e-01, &
+       -2.420e-01, -1.800e-01, -1.700e-01, -2.200e-01, -2.300e-01, &
+       -2.400e-01, -2.800e-01, -2.900e-01, -3.000e-01, -4.000e-01, &
+       -5.000e-01/) 
+
+       !From file ssam00, for sea salt
+       SEASALT_REAL = (/ &
+       1.510e+00,  1.510e+00,  1.510e+00,  1.500e+00,  1.500e+00, &
+       1.500e+00,  1.500e+00,  1.490e+00,  1.490e+00,  1.490e+00, &
+       1.490e+00,  1.480e+00,  1.480e+00,  1.470e+00,  1.470e+00, &
+       1.460e+00,  1.450e+00,  1.450e+00,  1.430e+00,  1.610e+00, &
+       1.490e+00,  1.480e+00,  1.480e+00,  1.470e+00,  1.480e+00, &
+       1.490e+00,  1.470e+00,  1.420e+00,  1.410e+00,  1.600e+00, &
+       1.460e+00,  1.420e+00,  1.400e+00,  1.420e+00,  1.480e+00, &
+       1.600e+00,  1.650e+00,  1.610e+00,  1.580e+00,  1.560e+00, &
+       1.540e+00,  1.500e+00,  1.480e+00,  1.480e+00,  1.420e+00, &
+       1.410e+00,  1.410e+00,  1.430e+00,  1.450e+00,  1.560e+00, &
+       1.740e+00,  1.780e+00,  1.770e+00,  1.760e+00,  1.760e+00, &
+       1.760e+00,  1.760e+00,  1.770e+00,  1.770e+00,  1.760e+00, &
+       1.740e+00/) 
+       SEASALT_IMAG = (/ &
+      -5.000e-06, -2.000e-06, -3.240e-07, -3.000e-08, -2.430e-08, &
+      -1.550e-08, -1.000e-08, -1.600e-08, -4.240e-08, -2.000e-07, &
+      -1.080e-06, -1.950e-06, -4.240e-05, -1.410e-04, -3.580e-04, &
+      -5.700e-04, -7.620e-04, -1.000e-03, -4.000e-03, -1.000e-02, &
+      -3.000e-03, -2.050e-03, -1.600e-03, -1.400e-03, -1.400e-03, &
+      -1.400e-03, -2.500e-03, -3.600e-03, -1.100e-02, -2.200e-02, &
+      -5.000e-03, -7.000e-03, -1.300e-02, -2.000e-02, -2.600e-02, &
+      -3.000e-02, -2.800e-02, -2.620e-02, -1.800e-02, -1.600e-02, &
+      -1.500e-02, -1.400e-02, -1.400e-02, -1.400e-02, -1.600e-02, &
+      -1.800e-02, -2.300e-02, -3.000e-02, -3.500e-02, -9.000e-02, &
+      -1.200e-01, -1.300e-01, -1.350e-01, -1.520e-01, -1.650e-01, &
+      -1.800e-01, -2.050e-01, -2.750e-01, -3.000e-01, -5.000e-01, &
+      -1.000e+00/) 
+
+       !From file suso00, for acidic (stratospheric) H2SO4 droplets
+       SULF_REAL = (/ &
+        1.484e+00,  1.469e+00,  1.452e+00,  1.440e+00,  1.432e+00, &
+        1.431e+00,  1.430e+00,  1.429e+00,  1.429e+00,  1.428e+00, &
+        1.427e+00,  1.426e+00,  1.425e+00,  1.422e+00,  1.413e+00, &
+        1.403e+00,  1.394e+00,  1.384e+00,  1.344e+00,  1.293e+00, &
+        1.311e+00,  1.350e+00,  1.376e+00,  1.396e+00,  1.385e+00, &
+        1.385e+00,  1.360e+00,  1.337e+00,  1.425e+00,  1.424e+00, &
+        1.370e+00,  1.210e+00,  1.140e+00,  1.200e+00,  1.370e+00, &
+        1.530e+00,  1.650e+00,  1.600e+00,  1.670e+00,  1.910e+00, &
+        1.890e+00,  1.720e+00,  1.670e+00,  1.890e+00,  1.740e+00, &
+        1.690e+00,  1.640e+00,  1.610e+00,  1.590e+00,  1.520e+00, &
+        1.724e+00,  1.950e+00,  1.927e+00,  1.823e+00,  1.780e+00, &
+        1.870e+00,  1.930e+00,  1.920e+00,  1.920e+00,  1.900e+00, &
+        1.890e+00/) 
+       SULF_IMAG = (/ &
+       -1.000e-08, -1.000e-08, -1.000e-08, -1.000e-08, -1.000e-08, &
+       -1.000e-08, -1.000e-08, -1.470e-08, -1.670e-08, -2.050e-08, &
+       -7.170e-08, -8.630e-08, -2.550e-07, -1.530e-06, -6.940e-06, &
+       -1.200e-04, -4.160e-04, -1.260e-03, -3.760e-03, -9.550e-02, &
+       -1.350e-01, -1.578e-01, -1.580e-01, -1.310e-01, -1.260e-01, &
+       -1.200e-01, -1.210e-01, -1.830e-01, -1.950e-01, -1.650e-01, &
+       -1.280e-01, -1.760e-01, -4.880e-01, -6.450e-01, -7.550e-01, &
+       -7.720e-01, -6.330e-01, -5.860e-01, -7.500e-01, -6.800e-01, &
+       -4.550e-01, -3.400e-01, -4.850e-01, -3.740e-01, -1.980e-01, &
+       -1.950e-01, -1.950e-01, -2.050e-01, -2.110e-01, -4.140e-01, &
+       -5.900e-01, -4.100e-02, -3.025e-02, -2.352e-02, -2.925e-01, &
+       -3.150e-02, -2.000e-01, -1.800e-01, -1.800e-01, -1.900e-01, &
+       -2.200e-01/) 
+
+       !From file miam00, for mineral dust (Quartz and clay particles)
+       DUST_REAL = (/ &
+        1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00, &
+        1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00, &
+        1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00,  1.530e+00, &
+        1.530e+00,  1.530e+00,  1.530e+00,  1.520e+00,  1.520e+00, &
+        1.510e+00,  1.510e+00,  1.510e+00,  1.500e+00,  1.500e+00, &
+        1.500e+00,  1.480e+00,  1.460e+00,  1.440e+00,  1.430e+00, &
+        1.420e+00,  1.460e+00,  1.220e+00,  1.120e+00,  1.060e+00, &
+        1.190e+00,  1.850e+00,  2.220e+00,  2.940e+00,  2.910e+00, &
+        2.570e+00,  1.910e+00,  1.830e+00,  1.810e+00,  1.740e+00, &
+        2.000e+00,  1.630e+00,  1.540e+00,  1.510e+00,  1.470e+00, &
+        1.490e+00,  1.770e+00,  2.050e+00,  2.200e+00,  2.390e+00, &
+        2.690e+00,  2.990e+00,  2.570e+00,  2.420e+00,  2.420e+00, &
+        2.340e+00/) 
+       DUST_IMAG = (/ &
+       -3.000e-02, -2.500e-02, -1.700e-02, -1.300e-02, -8.500e-03, &
+       -7.800e-03, -5.500e-03, -4.500e-03, -4.500e-03, -4.000e-03, &
+       -4.000e-03, -4.000e-03, -4.000e-03, -4.000e-03, -5.000e-03, &
+       -5.700e-03, -6.400e-03, -7.600e-03, -1.400e-02, -3.900e-02, &
+       -2.400e-02, -1.925e-02, -1.800e-02, -1.200e-02, -6.700e-03, &
+       -8.700e-03, -1.800e-02, -3.600e-02, -5.500e-02, -6.300e-02, &
+       -5.200e-02, -1.300e-01, -8.900e-02, -1.200e-01, -2.100e-01, &
+       -2.900e-01, -4.400e-01, -5.400e-01, -6.500e-01, -6.500e-01, &
+       -5.000e-01, -2.500e-01, -2.000e-01, -3.500e-01, -5.000e-01, &
+       -3.500e-01, -2.200e-01, -2.400e-01, -2.600e-01, -3.200e-01, &
+       -3.700e-01, -4.700e-01, -5.700e-01, -8.200e-01, -9.400e-01, &
+       -1.000e+00, -8.000e-01, -7.800e-01, -6.700e-01, -6.200e-01, &
+       -7.000e-01/) 
+
+
+	!! BUILD N ARRAY for AqSpecies Volume Concentrations
 	ALLOCATE (AqVolConc(HowManyAqChems+HowManyAqCations+HowManyAqAnions), STAT = I)
-	IF (I > 0) CALL ERROR("In ShellRefIndAndRad(), couldn't allocate AqVolConc at size "	&
-						  //TRIM(INT2STR(HowManyAqChems+HowManyAqCations+HowManyAqAnions)))
+	IF (I > 0) CALL ERROR("In ShellRefIndAndRad(), couldn't allocate "// &
+                               "AqVolConc at size "//	&
+	     TRIM(INT2STR(HowManyAqChems+HowManyAqCations+HowManyAqAnions)))
 
-	!! BUILD N ARRAY for Species Volume Concentrations
+	!! BUILD N ARRAY for Org Species Volume Concentrations
 	ALLOCATE (OrgVolConc(HowManyOrgChems), STAT = I)
 	IF (I > 0) CALL ERROR("In ShellRefIndAndRad(), couldn't allocate OrgVolConc at size "	&
 						  //TRIM(INT2STR(HowManyOrgChems)))
 
-	!! BUILD N ARRAY for Species Volume Concentrations
+	!! BUILD N ARRAY for Aq Org Species Volume Concentrations
 	ALLOCATE (AqOrgVolConc(HowManyAqOrgChems), STAT = I)
 	IF (I > 0) CALL ERROR("In ShellRefIndAndRad(), couldn't allocate AqOrgVolConc at size "	&
 						  //TRIM(INT2STR(HowManyAqOrgChems)))
 
-	!! BUILD N ARRAY for Species Volume Concentrations
+	!! BUILD N ARRAY for H2O and Ion Mol Fractions
 	ALLOCATE (MolFrac(1+HowManyAqCations+HowManyAqAnions), STAT = I)
 	IF (I > 0) CALL ERROR("In ShellRefIndAndRad(), couldn't allocate MolFrac at size "	&
 						  //TRIM(INT2STR(HowManyAqOrgChems)))
 	
-	!WRITE(*,*) "Number of Particles: ", InParticle%numberofparticles 
-	!WRITE(*,*) "Size (um): ", InParticle%effectiveradius*1.0e4
 	IF (InParticle%numberofparticles .GT. 1.0e-6) THEN
 		SingleParticleVolume = (4.0*Pi/3.0)*(InParticle%effectiveradius)**3 !cm3
 		
@@ -1262,301 +1519,354 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
 		!Convert aqueous concentrations to cm3 solution/cm3 air
 		
 		!Water
-		AqVolConc(1)  = InParticle%AqChems(1) * InParticle%NumberOfParticles*AqMolecularMass(1)/InParticle%SolutionDensity
+		AqVolConc(1)  = InParticle%AqChems(1) * &
+                                InParticle%NumberOfParticles*AqMolecularMass(1)/ &
+                                InParticle%SolutionDensity
 		SolutionVolConc = AqVolConc(1)
 		TotalVolConc = AqVolConc(1)
-		
 				
 		!Solid Salts
 		DO I = 2, HowManyAqChems
-			AqVolConc(I)  = InParticle%AqChems(I) * InParticle%NumberOfParticles*AqMolecularMass(I)/SolidSaltDensity(I)
+			AqVolConc(I)  = InParticle%AqChems(I) * &
+                                        InParticle%NumberOfParticles*AqMolecularMass(I)/ &
+                                        SolidSaltDensity(I)
 			TotalVolConc = TotalVolConc + AqVolConc(I)
-			!WRITE(*,*) I, "TotalVolConc", TotalVolConc
-			IF(AqVolConc(I) .LT. 0.0) WRITE(*,*) "Negative AqVolume Conc!"	
-			IF(AqVolConc(I) .GT. 1.0e30) WRITE(*,*) "Error", AqPhaseChemicalNames(I), AqVolConc(I)
 		END DO
 
 		!Inorganic Ions
 		DO I = HowManyAqChems+1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
-			AqVolConc(I)  = InParticle%AqChems(I) * InParticle%NumberOfParticles*AqMolecularMass(I)/InParticle%SolutionDensity
+			AqVolConc(I)  = InParticle%AqChems(I) * &
+                                        InParticle%NumberOfParticles*AqMolecularMass(I)/ &
+                                        InParticle%SolutionDensity
 			TotalVolConc = TotalVolConc + AqVolConc(I)
-			!WRITE(*,*) I, "TotalVolConc", TotalVolConc
-			SolutionVolConc = SolutionVolConc + AqVolConc(I)
-			IF(AqVolConc(I) .LT. 0.0) WRITE(*,*) "Negative AqVolume Conc!"	
+			SolutionVolConc = SolutionVolConc + AqVolConc(I)	
 		END DO
 
 		!Convert org concentrations to cm3 solution/cm3 air
 		DO I = 1, HowManyOrgChems
-			OrgVolConc(I)  = InParticle%OrgChems(I) * InParticle%NumberOfParticles*OrgMolecularMass(I)/OrgDensity(I)
-			TotalVolConc = TotalVolConc + OrgVolConc(I)
-			!WRITE(*,*) I, "TotalVolConc", TotalVolConc
-			IF(OrgVolConc(I) .LT. 0.0) WRITE(*,*) "Negative OrgVolume Conc!"	
+			OrgVolConc(I)  = InParticle%OrgChems(I) * &
+                                         InParticle%NumberOfParticles*OrgMolecularMass(I)/ &
+                                         OrgDensity(I)
+			TotalVolConc = TotalVolConc + OrgVolConc(I)	
 		END DO
 	
 		!Convert hydrophilic org concentrations to cm3 solution/cm3 air
 		DO I = 1, HowManyAqOrgChems
-			AqOrgVolConc(I)  = InParticle%AqOrgChems(I) * InParticle%NumberOfParticles*AqOrgMolecularMass(I)/AqOrgDensity(I)
-			TotalVolConc = TotalVolConc + AqOrgVolConc(I)
-			!WRITE(*,*) I, "TotalVolConc", TotalVolConc
-			IF(AqOrgVolConc(I) .LT. 0.0) WRITE(*,*) "Negative AqOrgVolume Conc!"	
+			AqOrgVolConc(I)  = InParticle%AqOrgChems(I) * &
+                                           InParticle%NumberOfParticles*AqOrgMolecularMass(I) &
+                                           /AqOrgDensity(I)
+			TotalVolConc = TotalVolConc + AqOrgVolConc(I)	
 		END DO
 
 		!Calculate shell volume conc (Total - BC)
 		ShellVolumeConc = VolumeConc - OrgVolConc(1)
 			
-	ELSE !No particles, use dummy numbers
+	ELSE    !No particles, use dummy numbers
 		InParticle%ExtEff = 1.0
 		InParticle%ScaEff = 1.0
 		InParticle%BackScaEff = 1.0
 		InParticle%AssymParam = 1.0
-        RETURN          
+                RETURN          
 	END IF
 
-	!Calculate solar refractive index
-	!Use the volume average dielectric constant mixing rule
-	!See Jacobson, "Fund. of Atm. Modeling", 2nd ed, p. 310
-	SumEr = 0.
-	SumEi = 0.
-	
-	!Calculate average refractive index for ionic solution
-	!Following Tang et. al., JGR V.102, D19, pp. 23269-23275, 1997. 
-        !and Tang, JGR V.102, D2, pp. 1883-1893, 1997.)
-		!Step 1: Calculate mole fractions in solution
-		Sum = InParticle%AqChems(1)
-		DO I = HowManyAqChems+1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
-			Sum = Sum + InParticle%AqChems(I)
-		END DO
-		MolFrac(1) = InParticle%AqChems(1)/Sum
-		DO I = 2, 1+HowManyAqCations+HowManyAqAnions
-			MolFrac(I) = InParticle%AqChems(HowManyAqChems+I-1)/Sum
-		END DO
-		
-		!Step 2: Calculate average molecular weight	
-		SolnMolWeight = MolFrac(1)*AqMolecularMass(1)
-		DO I = 2, 1+HowManyAqCations+HowManyAqAnions
-			SolnMolWeight = SolnMolWeight + MolFrac(I)*AqMolecularMass(HowManyAqChems+I-1)
-		END DO
-		
-		!Step 3: Calculate average molal refraction
-		MolalRefraction = MolFrac(1)*3.717 !See Tang et. al, 1997
-		DO I = 2, 1+HowManyAqCations+HowManyAqAnions
-			MolalRefraction = MolalRefraction + MolFrac(I)*AqRefractiveIndex(HowManyAqChems+I-1,1)
-		END DO
-		
-		!Step 4: Calculate molal volume
-		MolVol = SolnMolWeight/InParticle%InorgSolnDensity
+        !Calculate shell and core refractive index for each wavelength bin
+        DO ib = 1, 451 !For photolysis between 250 and 700 nm, every 1 nm
 
-		!Step 5: Calculate Refractive Index
-		xxx = MolalRefraction/MolVol
-		SolutionRefracIndex(1) = SQRT((2.*xxx+1.)/(1.-xxx))
-		SolutionRefracIndex(2) = 1.0e-9 !Imaginary index for water
-	
-		!Step 6: Calculate Er and Ei
-		Er = SolutionRefracIndex(1)**2 - SolutionRefracIndex(2)**2
-		Ei = 2*SolutionRefracIndex(1)*SolutionRefracIndex(2)
-		SumEr = SumEr + (SolutionVolConc/ShellVolumeConc)*Er
-		SumEi = SumEi + (SolutionVolConc/ShellVolumeConc)*Ei
-	
-	!Solid salts
-	DO I = 2, HowManyAqChems
-		Er = AqRefractiveIndex(I,1)**2 - AqRefractiveIndex(I,2)**2
-		Ei = 2*AqRefractiveIndex(I,1)*AqRefractiveIndex(I,2)
-		SumEr = SumEr + (AqVolConc(I)/ShellVolumeConc)*Er
+           Wavelength = (250+(ib-1)*1) !in nm
+
+           !Index of point on array WAVE closest to, but less than,
+           !the wavelength for interpolation
+           w_ind_low = INT(ib/50)+1
+
+           !Calculate weightings of wavelength-dependent refractive index points
+           a_w = (WAVE(w_ind_low+1)-Wavelength) &
+                  /(WAVE(w_ind_low+1)-WAVE(w_ind_low))
+           b_w = 1-a_w
+
+           !Calculate Core Refractive Index
+           n_real = a_w*SOOT_REAL(w_ind_low)+b_w*SOOT_REAL(w_ind_low+1)
+           n_imag = -1.0*(a_w*SOOT_IMAG(w_ind_low)+b_w*SOOT_IMAG(w_ind_low+1))
+	   SolarCoreInd = CMPLX(n_real, -1.0*n_imag)
+           !IF (ib .eq. 419 .or. ib .eq. 420) WRITE(*,*) Wavelength, SolarShellInd, SolarCoreInd
+
+           !We assume the core is BC, the shell everything else
+           !BUT we need to handle the cases where the particle is all BC (no shell)
+           ! or has no BC (all core). All core handled here.
+           IF (ShellVolumeConc .LE. 0 .OR. InParticle%Dry) THEN
+                !Shell and core refractive indices equal.
+                SolarShellInd = SolarCoreInd
+                !Calculate Core radius
+	        InParticle%AbsCoreRad = OrgVolConc(1)/InParticle%NumberofParticles
+	        InParticle%AbsCoreRad = (0.75*InParticle%AbsCoreRad/Pi)**(1.0/3.0) !In cm
+                !Set Shell radius to above, and core a little less than shell
+                InParticle%EffectiveRadius = InParticle%AbsCoreRad
+                InParticle%AbsCoreRad = 0.99*InParticle%AbsCoreRad
+           ELSE !Some or all shell, all shell handled at bottom
+	     !Calculate shell refractive index
+	     !Use the volume average dielectric constant mixing rule
+	     !See Jacobson, "Fund. of Atm. Modeling", 2nd ed, p. 310
+ 	     SumEr = 0.
+	     SumEi = 0.
+ 
+             !Water refractive index and molal Refraction
+             n_real = a_w*WATER_REAL(w_ind_low)+b_w*WATER_REAL(w_ind_low+1)
+             n_imag = -1.0*(a_w*WATER_IMAG(w_ind_low)+b_w*WATER_IMAG(w_ind_low+1))
+             V_molal = 18.0674 !Tang, 1997: density = 0.9971 g/cm3, MW = 18.015 g/mol, V = MW/dens
+	     R_molal = V_molal*(n_real**2 - 1.0)/(n_real**2 + 2) 
+
+             !Calculate average refractive index for ionic solution
+	     !Following Tang et. al., JGR V.102, D19, pp. 23269-23275, 1997. 
+             !and Tang, JGR V.102, D2, pp. 1883-1893, 1997.)
+	     !Step 1: Calculate mole fractions in solution
+	     Sum = InParticle%AqChems(1)
+	     DO I = HowManyAqChems+1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
+	   	Sum = Sum + InParticle%AqChems(I)
+	     END DO
+	     MolFrac(1) = InParticle%AqChems(1)/Sum
+	     DO I = 2, 1+HowManyAqCations+HowManyAqAnions
+	   	MolFrac(I) = InParticle%AqChems(HowManyAqChems+I-1)/Sum
+	     END DO
+		
+	     !Step 2: Calculate average molecular weight	
+	     SolnMolWeight = MolFrac(1)*AqMolecularMass(1)
+	     DO I = 2, 1+HowManyAqCations+HowManyAqAnions
+	   	SolnMolWeight = SolnMolWeight + MolFrac(I)*AqMolecularMass(HowManyAqChems+I-1)
+	     END DO
+		
+	     !Step 3: Calculate average molal refraction
+	     MolalRefraction = MolFrac(1)*R_molal !See Tang et. al, 1997
+	     DO I = 2, 1+HowManyAqCations
+                MolalRefraction = MolalRefraction + MolFrac(I)*CationIonicRefraction(I-1)
+                !WRITE(*,*) MolFrac(I), CationIonicRefraction(I-1)
+	     END DO
+	     DO I = 2+HowManyAqCations, 1+HowManyAqCations+HowManyAqAnions
+	   	MolalRefraction = MolalRefraction + MolFrac(I)*AnionIonicRefraction(I-HowManyAqCations-1)
+                !WRITE(*,*) MolFrac(I), AnionIonicRefraction(I-HowManyAqCations-1)
+	     END DO
+
+	     !Step 4: Calculate solution molal volume
+	     MolVol = SolnMolWeight/InParticle%InorgSolnDensity
+
+	     !Step 5: Calculate Refractive Index
+	     xxx = MolalRefraction/MolVol
+	     SolutionRefracIndex(1) = SQRT((2.*xxx+1.)/(1.-xxx))
+	     SolutionRefracIndex(2) = n_imag !Imaginary index for water
+	  
+	     !Step 6: Calculate Er and Ei
+	     Er = SolutionRefracIndex(1)**2 - SolutionRefracIndex(2)**2
+	     Ei = 2*SolutionRefracIndex(1)*SolutionRefracIndex(2)
+             SumEr = SumEr + (SolutionVolConc/ShellVolumeConc)*Er
+	     SumEi = SumEi + (SolutionVolConc/ShellVolumeConc)*Ei
+
+             !Solid Salts
+             DO I = 2, HowManyAqChems
+                IF(RefIndFlag(I) .EQ. 0) THEN
+                   n_real = a_w*WATER_REAL(w_ind_low)+b_w*SULF_REAL(w_ind_low+1)
+                   n_imag = -1.0*(a_w*WATER_IMAG(w_ind_low)+b_w*SULF_IMAG(w_ind_low+1))
+                ELSE IF(RefIndFlag(I) .EQ. 1) THEN
+                   n_real = a_w*SULF_REAL(w_ind_low)+b_w*SULF_REAL(w_ind_low+1)
+                   n_imag = -1.0*(a_w*SULF_IMAG(w_ind_low)+b_w*SULF_IMAG(w_ind_low+1))
+                ELSE IF(RefIndFlag(I) .EQ. 2) THEN
+                   n_real = a_w*SEASALT_REAL(w_ind_low)+b_w*SEASALT_REAL(w_ind_low+1)
+                   n_imag = -1.0*(a_w*SEASALT_IMAG(w_ind_low)+b_w*SEASALT_IMAG(w_ind_low+1))
+                ELSE IF(RefIndFlag(I) .EQ. 3) THEN
+                   n_real = a_w*DUST_REAL(w_ind_low)+b_w*DUST_REAL(w_ind_low+1)
+                   n_imag = -1.0*(a_w*DUST_IMAG(w_ind_low)+b_w*DUST_IMAG(w_ind_low+1))
+                ENDIF
+	        Er = n_real**2 - n_imag**2
+	        Ei = 2*n_real*n_imag
+                SumEr = SumEr + (AqVolConc(I)/ShellVolumeConc)*Er
 		SumEi = SumEi + (AqVolConc(I)/ShellVolumeConc)*Ei
-	END DO
-	
-	!Organics, skipping BC
-	DO I = 2, HowManyOrgChems
-		Er = OrgRefractiveIndex(I,1)**2 - OrgRefractiveIndex(I,2)**2
-		Ei = 2*OrgRefractiveIndex(I,1)*OrgRefractiveIndex(I,2)
+	     END DO
+         
+             !Insoluble organics, skipping BC core
+	     n_real = a_w*WASO_REAL(w_ind_low)+b_w*WASO_REAL(w_ind_low+1)
+             n_imag = -1.0*(a_w*WASO_IMAG(w_ind_low)+b_w*WASO_IMAG(w_ind_low+1))
+	     Er = n_real**2 - n_imag**2
+	     Ei = 2*n_real*n_imag
+             DO I = 2, HowManyOrgChems
 		SumEr = SumEr + (OrgVolConc(I)/ShellVolumeConc)*Er
 		SumEi = SumEi + (OrgVolConc(I)/ShellVolumeConc)*Ei
-	END DO
+	     END DO
 
-	!Hydrophilic Organics
-	DO I = 1, HowManyAqOrgChems
-		Er = AqOrgRefractiveIndex(I,1)**2 - AqOrgRefractiveIndex(I,2)**2
-		Ei = 2*AqOrgRefractiveIndex(I,1)*AqOrgRefractiveIndex(I,2)
+             !Hydrophilic Organics
+	     n_real = a_w*WASO_REAL(w_ind_low)+b_w*WASO_REAL(w_ind_low+1)
+             n_imag = -1.0*(a_w*WASO_IMAG(w_ind_low)+b_w*WASO_IMAG(w_ind_low+1))
+	     Er = n_real**2 - n_imag**2
+	     Ei = 2*n_real*n_imag
+             DO I = 1, HowManyAqOrgChems
 		SumEr = SumEr + (AqOrgVolConc(I)/ShellVolumeConc)*Er
 		SumEi = SumEi + (AqOrgVolConc(I)/ShellVolumeConc)*Ei
-	END DO
+	     END DO
 
-	Factor = SQRT(SumEr**2 + SumEi**2)
-	InParticle%ShellRealRefracInd(1) = SQRT((Factor + SumEr)/2.0)
-	InParticle%ShellImagRefracInd(1) = SQRT((Factor - SumEr)/2.0)
-	
-	
-	!Calculate Core radius
-	InParticle%AbsCoreRad = OrgVolConc(1)/InParticle%NumberofParticles
-	InParticle%AbsCoreRad = (0.75*InParticle%AbsCoreRad/Pi)**(1.0/3.0) !In cm
-	IF(InParticle%AbsCoreRad .GT. InParticle%EffectiveRadius) InParticle%AbsCoreRad = 0.9999*InParticle%EffectiveRadius
-	!WRITE(*,*) "Rshell by TotalVolConc: ", (0.75*TotalVolConc/InParticle%NumberofParticles/Pi)**(1.0/3.0)
-	!Rshell = (0.75*TotalVolConc/InParticle%NumberofParticles/Pi)**(1.0/3.0)
-	!WRITE(*,*) "Rcore: ", InParticle%AbsCoreRad
-	!WRITE(*,*) "Rshell: ", InParticle%EffectiveRadius
-									
+	    Factor = SQRT(SumEr**2 + SumEi**2)
+	    InParticle%ShellRealRefracInd(ib) = SQRT((Factor + SumEr)/2.0)
+	    InParticle%ShellImagRefracInd(ib) = SQRT((Factor - SumEr)/2.0)
+	    SolarShellInd = CMPLX(InParticle%ShellRealRefracInd(ib),-1.0*InParticle%ShellImagRefracInd(ib))
 
-	SolarShellInd = CMPLX(InParticle%ShellRealRefracInd(1), -1.0*InParticle%ShellImagRefracInd(1))
-	SolarCoreInd = CMPLX(OrgRefractiveIndex(1,1), -1.0*OrgRefractiveIndex(1,2))
-	!WRITE(*,*) "Shell Ind: ", SolarShellInd
-	!WRITE(*,*) "Core Ind: ",  SolarCoreInd
-	NumAng = 0.
+            !We assume the core is BC, the shell everything else
+            !BUT we need to handle the cases where the particle is all BC (all core, no shell)
+            ! or has no BC (all shell, no core). No core, all shell handeled here.
 
-	!Calculate IR refractive index
-	!Use the volume average dielectric constant mixing rule
-	!See Jacobson, "Fund. of Atm. Modeling", 2nd ed, p. 310
-	SumEr = 0.
-	SumEi = 0.
-	
-	!Water and solid salts
-	DO I = 1, HowManyAqChems
-		Er = AqRefractiveIndex(I,3)**2 - AqRefractiveIndex(I,4)**2
-		Ei = 2*AqRefractiveIndex(I,3)*AqRefractiveIndex(I,4)
-		SumEr = SumEr + (AqVolConc(I)/ShellVolumeConc)*Er
-		SumEi = SumEi + (AqVolConc(I)/ShellVolumeConc)*Ei
-	END DO
+            IF (OrgVolConc(1) .LE. 0.0) THEN !No core
+               !Set core and shell refractive indices equal
+               SolarCoreInd = SolarShellInd
+               !Set small core radius
+               InParticle%AbsCoreRad = 0.01*InParticle%EffectiveRadius
+            ELSE !Both Shell and Core
+	       !Calculate Core radius
+	       InParticle%AbsCoreRad = OrgVolConc(1)/InParticle%NumberofParticles
+	       InParticle%AbsCoreRad = (0.75*InParticle%AbsCoreRad/Pi)**(1.0/3.0) !In cm
+	       !This shouldn't happen, but be safe
+               IF(InParticle%AbsCoreRad .GT. 0.9999*InParticle%EffectiveRadius) & 
+                InParticle%AbsCoreRad = 0.9999*InParticle%EffectiveRadius
+            ENDIF
+          ENDIF
+	  NumAng = 0.
 
-	!Assume ions the same as H2O
-	DO I = HowManyAqChems+1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
-		Er = AqRefractiveIndex(1,3)**2 - AqRefractiveIndex(1,4)**2
-		Ei = 2*AqRefractiveIndex(1,3)*AqRefractiveIndex(1,4)
-		SumEr = SumEr + (AqVolConc(I)/ShellVolumeConc)*Er
-		SumEi = SumEi + (AqVolConc(I)/ShellVolumeConc)*Ei
-	END DO
-	
-	!Organics, skipping BC
-	DO I = 2, HowManyOrgChems
-		Er = OrgRefractiveIndex(I,3)**2 - OrgRefractiveIndex(I,4)**2
-		Ei = 2*OrgRefractiveIndex(I,3)*OrgRefractiveIndex(I,4)
-		SumEr = SumEr + (OrgVolConc(I)/ShellVolumeConc)*Er
-		SumEi = SumEi + (OrgVolConc(I)/ShellVolumeConc)*Ei
-	END DO
+          !DMiLay needs 2*Pi divided by the wavelength
+          Wavelength = 2*PI/((Wavelength)*nm)
 
-	!Hydrophilic Organics
-	DO I = 1, HowManyAqOrgChems
-		Er = AqOrgRefractiveIndex(I,3)**2 - AqOrgRefractiveIndex(I,4)**2
-		Ei = 2*AqOrgRefractiveIndex(I,3)*AqOrgRefractiveIndex(I,4)
-		SumEr = SumEr + (AqOrgVolConc(I)/ShellVolumeConc)*Er
-		SumEi = SumEi + (AqOrgVolConc(I)/ShellVolumeConc)*Ei
-	END DO
+!    DMiLay Documentation				
+!    I N P U T   A R G U M E N T S
 
-	Factor = SQRT(SumEr**2 + SumEi**2)
-	InParticle%ShellRealRefracInd(2) = SQRT((Factor + SumEr)/2.0)
-	InParticle%ShellImagRefracInd(2) = SQRT((Factor - SumEr)/2.0)
+!    (Definition:  size parameter = sphere circumference / wavelength )
 
-	IRShellInd = CMPLX(InParticle%ShellRealRefracInd(2), -1.0*InParticle%ShellImagRefracInd(2))
-	IRCoreInd = CMPLX(OrgRefractiveIndex(1,3), -1.0*OrgRefractiveIndex(1,4))
-	NumAng = 0.
-		
-	!Call DMiLay for all 18 wavelength bins used in CRM6, using proxy wavelength
-	!(usually midpoint of band range)
-	!In this radiation scheme,  six  and  12 bands are selected for solar 
-        ! and thermal IR regions, respectively. The spectral division is below: 
-        ! Band Range              Refractive Index  Proxy Wavelength
-	! 0.2 - 0.7 um              Solar (550 nm)      550 nm
-	! 0.7 - 1.3 um              Solar (550 nm)      1.0 um
-	! 1.3 - 1.9 um	            Solar (550 nm)      1.6 um
-	! 1.9 - 2.5 um              Solar (550 nm)      2.2 um
-	! 2.5 -3.5 um               Solar (550 nm)      3.0 um
-	! 3.5 - 4.0 um              Solar (550 nm)      3.75 um  
-	! 2200 - 1900 cm**-1,       IR (10 um)		4.79 um
-	! 1900 - 1700 cm**-1,	    IR (10 um)		5.45 um 
-	! 1700 -1400  cm**-1,	    IR (10 um)		6.51 um
-	!  1400 - 1250 cm**-1,	    IR (10 um)		7.57 um
-	!  1250 - 1100 cm**-1,	    IR (10 um)		8.55 um
-	! 1100 - 980 cm**-1,	    IR (10 um)		9.65 um
-        ! 980 - 800 cm**-1,	    IR (10 um)	       11.35 um
-	!  800 - 670 cm**-1,	    IR (10 um)	       13.71 um
-	!  670 - 540 cm**-1,	    IR (10 um)	       16.72 um
-	! 540 - 400 cm**-1,	    IR (10 um)	       21.76 um
-	!  400 - 280 cm**-1,	    IR (10 um) 	       30.36 um
-	!  280 - 0 cm**-1,	    IR (10 um)	       71.43 um
-	
-	!DO ib = 1, 18
-	DO ib = 1, 62 !For photolysis between 290 nm and 410 nm, plus 550 and 700 nm
-		
-                IF (ib .LE. 60) THEN 
-                       Wavelength = 2*PI/((290+(i-1)*2)*nm)
-                ELSE IF (ib .EQ. 61) THEN
-                       Wavelength = 2*PI/(550*nm)
-                ELSE 
-                       Wavelength = 2*PI/(700*nm)
-                END IF
+!      Rshell      radius of shell
 
-                !Choose correct proxy wavelength for CRM6
-		!SELECT CASE(ib)
-		!	CASE(1)
-		!		Wavelength = 2*PI/(550*nm)
-		!	CASE(2)
-		!		Wavelength = 2*PI/(1.0*micron)
-		!	CASE(3)
-		!		Wavelength = 2*PI/(1.6*micron)		
-		!	CASE(4)
-		!		Wavelength = 2*PI/(2.2*micron)
-		!	CASE(5)
-		!		Wavelength = 2*PI/(3.0*micron)				
-		!	CASE(6)
-		!		Wavelength = 2*PI/(3.75*micron)
-		!	CASE(7)
-		!		Wavelength = 2*PI/(4.79*micron)
-		!	CASE(8)
-		!		Wavelength = 2*PI/(5.45*micron)		
-		!	CASE(9)
-		!		Wavelength = 2*PI/(6.51*micron)
-		!	CASE(10)
-		!		Wavelength = 2*PI/(7.57*micron)				
-		!	CASE(11)
-		!		Wavelength = 2*PI/(8.55*micron)
-		!	CASE(12)
-		!		Wavelength = 2*PI/(9.65*micron)				
-		!	CASE(13)
-	       	!               Wavelength = 2*PI/(11.35*micron)
-		!	CASE(14)
-		!		Wavelength = 2*PI/(13.71*micron)				
-		!	CASE(15)
-		!		Wavelength = 2*PI/(16.72*micron)				
-		!	CASE(16)
-		!		Wavelength = 2*PI/(21.76*micron)
-		!	CASE(17)
-		!		Wavelength = 2*PI/(30.36*micron)				
-		!	CASE(18)
-		!		Wavelength = 2*PI/(71.43*micron)
-		!	END SELECT
+!      Rcore       radius of core
 
-		!IF (ib .LT. 7) THEN !Solar bands
-				
-			CALL DMiLay( InParticle%AbsCoreRad, &
-				 InParticle%EffectiveRadius, &
-				 Wavelength, &
-				 SolarShellInd, & 
-				 SolarCoreInd, &
-				  CosAng, &
-				  NumAng, &
-				  InParticle%ExtEff(ib), &
-				  InParticle%ScaEff(ib), &
-				  InParticle%BackScaEff(ib), &
-				  InParticle%AssymParam(ib), & 
+!      WVNO        2*pi / wavelength
+
+!      RindSh      COMPLEX refractive index of shell (negative
+!                     imaginary part)
+
+!      RindCo      COMPLEX refractive index of core (negative
+!                     imaginary part)
+
+!      MU          array of cosines of scattering angles (angles between
+!                     directions of incident and scattered radiation).
+!                     For angles between 90 and 180 degrees, use the
+!                     supplement (180-angle) of the angle instead, so
+!                     0.le.MU.le.1 (see comments below on M1,M2,21,D21)
+
+!      NumAng      Number of scattering angles for which computations
+!                     are required; should not exceed MaxAng
+!                     (NOTE:  NumAng=0 will suppress the calculation
+!                      of the scattering matrix quantitities  M1, M2,
+!                      S21, D21 and save a lot of computer time)
+
+!      MaxAng      First dimension of M1,M2,21,D21 in calling program
+
+
+
+!    O U T P U T   A R G U M E N T S
+
+!      (Definitions for these arguments can be found in H.C. van de
+!       Hulst, Light Scattering By Small Particles, Dover Press, New
+!       York, 1981 (reprint of 1957 edition); abbreviated VDH below)
+
+!      QEXT     Efficiency factor for extinction (VDH Sec 9.32)
+!               (same as corresponding quantity in MIEV)
+
+!      Qsca     Efficiency factor for scattering (VDH Sec 9.32)
+!               (same as corresponding quantity in MIEV)
+
+!      GQS!     average(cosine theta) * Qsca (VDH Sec 9.32)
+!                  (<cos theta> is usually denoted by g, hence
+!                   the name of the variable)
+!               (same as corresponding quantity in MIEV)
+
+!      QBS      Backscatter cross section.
+!               ( Re(SBACK)**2 + Im(SBACK)**2 ) / (Pi*XSHELL**2)
+!               where the corresponding quantity from MIEV is
+
+!               SBACK = 0.5*sum(n=1 to inf)((-1)**(n+1)(2n+1)(an-bn))
+
+!               and an,bn are ACOE,BCOE below.
+
+!      M1(j,k)  Element M1 of scattering matrix F' (VDH Sec 5.14);
+!                  M1(j,1) refers to angle with cosine MU(j); 
+!                  M1(j,2) refers to supplement of that angle.
+!               (Be sure to type REAL in calling program.)
+
+!      M2(j,k)  Element M2 of scattering matrix F' (VDH Sec 5.14);
+!                  M2(j,1) refers to angle with cosine MU(j); 
+!                  M2(j,2) refers to supplement of that angle.
+!               (Be sure to type REAL in calling program.)
+
+!     S21(j,k)  Element S21 of scattering matrix F' (VDH Sec 5.14);
+!                  S21(j,1) refers to angle with cosine MU(j); 
+!                  S21(j,2) refers to supplement of that angle.
+
+!     D21(j,k)  Element D21 of scattering matrix F' (VDH Sec 5.14);
+!                  D21(j,1) refers to angle with cosine MU(j); 
+!                  D21(j,2) refers to supplement of that angle.
+
+	  CALL DMiLay( InParticle%AbsCoreRad, &
+			InParticle%EffectiveRadius, &
+			Wavelength, &
+			SolarShellInd, & 
+			SolarCoreInd, &
+			CosAng, &
+			NumAng, &
+			InParticle%ExtEff(ib), &
+			InParticle%ScaEff(ib), &
+			InParticle%BackScaEff(ib), &
+			InParticle%AssymParam(ib), & 
                         M1, M2, S21, D21, MAXANG )
 
-		!ELSE !IR bands
-		!	CALL DMiLay( InParticle%AbsCoreRad, &
-		!		 InParticle%EffectiveRadius, &
-		!		 Wavelength, &
-		!		 IRShellInd, & 
-		!		 IRCoreInd, &
-		!		  CosAng, &
-		!		  NumAng, &
-		!		  InParticle%ExtEff(ib), &
-		!		  InParticle%ScaEff(ib), &
-		!		  InParticle%BackScaEff(ib), &
-		!		  InParticle%AssymParam(ib), & 
-                !        M1, M2, S21, D21, MAXANG )
-		!END IF
-			
-		!DMiLay gives the assymetry parameter times the scattering efficiency
-		!So divide by scattering efficiency here (MJA, 10/15/07)
-		InParticle%AssymParam(ib) = InParticle%AssymParam(ib)/InParticle%ScaEff(ib)
+	   !IF (ib .eq. 419 .or. ib .eq. 420) THEN
+                !WRITE(*,*) "ExtEff: ", InParticle%ExtEff(ib)
+                !WRITE(*,*) "ScaEff: ", InParticle%ScaEff(ib)
+                !WRITE(*,*) "SSA: ", InParticle%ScaEff(ib)/InParticle%ExtEff(ib)
+                !WRITE(*,*) "AssymParam: ", InParticle%AssymParam(ib)
+           !ENDIF
 
+	   !DMiLay gives the assymetry parameter times the scattering efficiency
+	   !So divide by scattering efficiency here (MJA, 10/15/07)
+	   InParticle%AssymParam(ib) = InParticle%AssymParam(ib)/InParticle%ScaEff(ib)
+
+          !Now call for a hypothetical particle of
+          !same effective size but all BC
+	  CALL DMiLay( InParticle%AbsCoreRad, &
+			InParticle%EffectiveRadius, &
+			Wavelength, &
+			SolarCoreInd, & 
+			SolarCoreInd, &
+			CosAng, &
+			NumAng, &
+			InParticle%ExtEffBC(ib), &
+			InParticle%ScaEffBC(ib), &
+			InParticle%BackScaEffBC(ib), &
+			InParticle%AssymParamBC(ib), & 
+                        M1, M2, S21, D21, MAXANG )
+
+	   !DMiLay gives the assymetry parameter times the scattering eff.
+	   !So divide by scattering efficiency here (MJA, 10/15/07)
+	   InParticle%AssymParamBC(ib) = &
+                InParticle%AssymParamBC(ib)/InParticle%ScaEffBC(ib)
+
+          !Now call for a hypothetical particle of
+          !same effective size but all shell
+	  CALL DMiLay( InParticle%AbsCoreRad, &
+			InParticle%EffectiveRadius, &
+			Wavelength, &
+			SolarShellInd, & 
+			SolarShellInd, &
+			CosAng, &
+			NumAng, &
+			InParticle%ExtEffShell(ib), &
+			InParticle%ScaEffShell(ib), &
+			InParticle%BackScaEffShell(ib), &
+			InParticle%AssymParamShell(ib), & 
+                        M1, M2, S21, D21, MAXANG )
+
+	   !DMiLay gives the assymetry parameter times the scattering eff.
+	   !So divide by scattering efficiency here (MJA, 10/15/07)
+	   InParticle%AssymParamShell(ib) = &
+                InParticle%AssymParamShell(ib)/InParticle%ScaEffShell(ib)
+          
 	END DO
 
 	RETURN
@@ -1566,7 +1876,7 @@ END SUBROUTINE ShellRefIndAndRad
 !Can only be used in inversion mode! 
 REAL*8 FUNCTION AerosolOpticalDepth ()
 ! 08/30/2010 Changed for photolysis radiation bins MJA
-	
+! 02/27/2012 Changed for photolysis radiation bins MJA	
 	USE ModelParameters, ONLY : PI, InversionHeight
 
 	IMPLICIT NONE
@@ -1579,7 +1889,7 @@ REAL*8 FUNCTION AerosolOpticalDepth ()
 
 10	IF (ASSOCIATED(Particle)) THEN
 
-		AerosolOpticalDepth = AerosolOpticalDepth + Particle%NumberofParticles*(PI*Particle%EffectiveRadius**2)*Particle%ExtEff(61)
+		AerosolOpticalDepth = AerosolOpticalDepth + Particle%NumberofParticles*(PI*Particle%EffectiveRadius**2)*Particle%ExtEff(301)
 		
 		IF (ASSOCIATED(Particle%Next)) THEN
 			Particle => Particle%Next
@@ -1597,34 +1907,84 @@ END FUNCTION AerosolOpticalDepth
 !average single scattering albedo, and 
 !average assymetry factor 
 !for a grid point at 18 radiative bands.
-SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym)
+SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, &
+                          SubExtCoeff, SubSingScat, &
+                          ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
+                          SubExtCoeffSep, SubSingScatSep)
 ! 08/30/2010 Changed for the photolysis wavebands MJA
-	
+! 02/27/2012 Changed for photolysis radiation bins MJA	
+! 05/03/2012 Changed to calculate backscattering coefficient, units
+!             for extcoeff and backscatcoeff now Mm^-1
+! 08/16/2012 Fixed backscattering coefficient, added submicron extinction & SSA
+! 08/17/2012 Added capability for external mixtures
 	USE ModelParameters, ONLY : PI, InversionHeight
 
 	IMPLICIT NONE
 
 	!Output Variables
-	REAL*8, DIMENSION(18) :: ExtCoeff, SingScat, Assym
-	
+	REAL*8, DIMENSION(451) :: ExtCoeff, SingScat, Assym, BackScatCoeff
+	REAL*8, DIMENSION(451) :: SubExtCoeff, SubSingScat
+        !Below are for external mixture of BC and "shell"
+	REAL*8, DIMENSION(451) :: ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep
+	REAL*8, DIMENSION(451) :: SubExtCoeffSep, SubSingScatSep
+
 	!Internal variables
 	INTEGER :: ib
-	REAL*8, DIMENSION(18) :: ScatCoeff
-	REAL*8 :: AssymSum, xxx
+	REAL*8, DIMENSION(451) :: ScatCoeff, SubScatCoeff
+	REAL*8, DIMENSION(451) :: ScatCoeffSep, SubScatCoeffSep
+	REAL*8 :: AssymSum, AssymSumSep, xxx, hbs_frac, assym_sq, bc_vol_frac
 	Type(Particle),POINTER :: Particle
 
-	!DO ib = 1, 18
-        DO ib = 1, 62
+        DO ib = 1, 451
 		ExtCoeff(ib) = 0.0
 		ScatCoeff(ib) = 0.0
-		AssymSum = 0.0
+		BackScatCoeff(ib) = 0.0
+		SubExtCoeff(ib) = 0.0
+		SubScatCoeff(ib) = 0.0
+                AssymSum = 0.0
+		ExtCoeffSep(ib) = 0.0
+		ScatCoeffSep(ib) = 0.0
+		BackScatCoeffSep(ib) = 0.0
+		SubExtCoeffSep(ib) = 0.0
+		SubScatCoeffSep(ib) = 0.0
+                AssymSumSep = 0.0
 		Particle => Particles%First
 
 	10	IF (ASSOCIATED(Particle)) THEN
-			xxx = Particle%NumberofParticles*(PI*Particle%EffectiveRadius**2)
+                     IF (Particle%EffectiveRadius .gt. 0) THEN 
+                       bc_vol_frac = (Particle%AbsCoreRad/Particle%EffectiveRadius)**3
+                     ELSE
+                       bc_vol_frac = 0.0
+                     ENDIF
+			
+                        xxx = Particle%NumberofParticles*(PI*Particle%EffectiveRadius**2)
 			ExtCoeff(ib) = ExtCoeff(ib) + xxx*Particle%ExtEff(ib)
 			ScatCoeff(ib) = ScatCoeff(ib) + xxx*Particle%ScaEff(ib)
 			AssymSum = AssymSum + xxx*Particle%ScaEff(ib)*Particle%AssymParam(ib)
+
+                        ExtCoeffSep(ib) = ExtCoeffSep(ib) + &
+                                        bc_vol_frac*xxx*Particle%ExtEffBC(ib) &
+                                        +(1.0-bc_vol_frac)*xxx*Particle%ExtEffShell(ib)
+			ScatCoeffSep(ib) = ScatCoeffSep(ib) + &
+                                        bc_vol_frac*xxx*Particle%ScaEffBC(ib) &
+                                        +(1.0-bc_vol_frac)*xxx*Particle%ScaEffShell(ib)
+			AssymSumSep = AssymSumSep + &
+                                        bc_vol_frac*xxx*Particle%ScaEffBC(ib)*Particle%AssymParamBC(ib) &
+                                       +(1.0-bc_vol_frac)*xxx* &
+                                       Particle%ScaEffShell(ib)*Particle%AssymParamShell(ib)
+
+                        !Particles with diameters less than 1 micron
+                        IF (2*Particle%EffectiveRadius .LT. 1.0e-4) THEN
+ 			  SubExtCoeff(ib) = SubExtCoeff(ib) + xxx*Particle%ExtEff(ib)
+			  SubScatCoeff(ib) = SubScatCoeff(ib) + xxx*Particle%ScaEff(ib)
+                          SubExtCoeffSep(ib) = SubExtCoeffSep(ib) + &
+                                        bc_vol_frac*xxx*Particle%ExtEffBC(ib) &
+                                        +(1.0-bc_vol_frac)*xxx*Particle%ExtEffShell(ib)
+			  SubScatCoeffSep(ib) = SubScatCoeffSep(ib) + &
+                                        bc_vol_frac*xxx*Particle%ScaEffBC(ib) &
+                                        +(1.0-bc_vol_frac)*xxx*Particle%ScaEffShell(ib)
+
+                        ENDIF
 					
 			IF (ASSOCIATED(Particle%Next)) THEN
 				Particle => Particle%Next
@@ -1635,14 +1995,35 @@ SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym)
 
 		!Formula from p.327, eqn 9.103 of Jacobson, 2nd ed. "Fundamentals of Atm. Modeling"
 		SingScat(ib) = ScatCoeff(ib)/ExtCoeff(ib)
-		!IF(ib .EQ. 61) WRITE(*,*) "SingScat: ", SingScat(1)
+		SubSingScat(ib) = SubScatCoeff(ib)/SubExtCoeff(ib)                
+		SingScatSep(ib) = ScatCoeffSep(ib)/ExtCoeffSep(ib)
+		SubSingScatSep(ib) = SubScatCoeffSep(ib)/SubExtCoeffSep(ib)   
+		!IF(ib .EQ. 419 .OR. ib .EQ. 420) WRITE(*,*) "SingScat: ", SingScat(ib), ScatCoeff(ib), ExtCoeff(ib) 
 		
 		!Formula from p.329, eqn 9.117 of Jacobson, 2nd ed. "Fundamentals of Atm. Modeling"
 		Assym(ib) = AssymSum/ScatCoeff(ib)
+		AssymSep(ib) = AssymSumSep/ScatCoeffSep(ib)
 		!IF(ib .EQ. 61) WRITE(*,*) "Assym: ", Assym(1)
 
-		!Convert ExtCoeff from 1/cm to 1/m
-		ExtCoeff(ib) = 100*ExtCoeff(ib)
+		!Convert ExtCoeff and BackScatCoeff from 1/cm to 1/Mm
+		ExtCoeff(ib) = 1.0e8*ExtCoeff(ib)
+		SubExtCoeff(ib) = 1.0e8*SubExtCoeff(ib)
+		ExtCoeffSep(ib) = 1.0e8*ExtCoeffSep(ib)
+		SubExtCoeffSep(ib) = 1.0e8*SubExtCoeffSep(ib)
+
+
+		!hbs_frac = hemispherical backscattering fraction
+                !See Wiscombe and Grams (1976) J. Atmos. Sci. 33(12), pp. 2440-2451.
+                !Integrate Eq. 23 using Henyey-Greenstein phase function from Eq. 16
+                assym_sq = assym(ib)**2
+                hbs_frac = 0.5*((assym_sq-1)/assym(ib))*(1.0/SQRT(assym_sq+2*assym(ib)+1)-1.0/SQRT(assym_sq+1))
+		BackScatCoeff(ib) = hbs_frac*ScatCoeff(ib)
+                BackScatCoeff(ib) = 1.0e8*BackScatCoeff(ib)
+
+                assym_sq = assymSep(ib)**2
+                hbs_frac = 0.5*((assym_sq-1)/assymSep(ib))*(1.0/SQRT(assym_sq+2*assymSep(ib)+1)-1.0/SQRT(assym_sq+1))
+		BackScatCoeffSep(ib) = hbs_frac*ScatCoeffSep(ib)
+                BackScatCoeffSep(ib) = 1.0e8*BackScatCoeffSep(ib)
 		!IF(ib .EQ. 61) WRITE(*,*) "ExtCoeff: ", ExtCoeff(1)
 
 	END DO

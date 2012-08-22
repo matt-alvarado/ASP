@@ -17,6 +17,14 @@
 !!			             interpolation.			     !!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 02/27  2012   Matt Alvarado     Removed Refractive Index Data, now        !!
+!!                                  hardcoded in SUBROUTINE                  !!
+!!                                  ShellRefIndAndRad(InParticle) in file    !!
+!!                                  ParticleAttributes.h                     !!
+!! 02/29  2012   Matt Alvarado     Added flag to AqPhaseChem.in and          !!
+!!                                  SetAqPhaseChemistry to indicate what     !!
+!!                                  refractive index should be used for an   !!
+!!                                  electrolyte.                             !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -126,9 +134,9 @@ MODULE Chemistry
 			GasPhaseBackground,             &
 			AqOrgNumCarbon,                 &
 			GasPhaseDepVel,                 &
-			AqRefractiveIndex,              &
-			OrgRefractiveIndex,             &
-			AqOrgRefractiveIndex
+                        CationIonicRefraction,          &
+                        AnionIonicRefraction,           &
+                        RefIndFlag
 					!     "
 	!! These are indexed by the GAS PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: GasPhaseChemicalNames(:)	   !
@@ -161,9 +169,8 @@ MODULE Chemistry
 
 	!! These are indexed by the AQUEOUS PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: AqPhaseChemicalNames(:) 
-	REAL*8,		    ALLOCATABLE :: AqRefractiveIndex(:,:)
-! Index of Refraction for each aqueous species
-	REAL*8,		    ALLOCATABLE :: SolidSaltDensity(:)   
+	REAL*8,		    ALLOCATABLE :: SolidSaltDensity(:)  
+	Integer,	    ALLOCATABLE ::  RefIndFlag(:)
 ! Electrolyte Density (mole / cm3) for aq. species
 	REAL*8,		    ALLOCATABLE :: AqPhaseReactionRateInfo(:,:) 
 ! This holds reaction rate information
@@ -269,8 +276,6 @@ MODULE Chemistry
 
 	!! These are indexed by the ORGANIC PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: OrgPhaseChemicalNames(:) 
-	REAL*8,		ALLOCATABLE :: OrgRefractiveIndex(:,:)	   
-! Index of Refraction for each aqueous species
 	REAL*8,		ALLOCATABLE :: OrgMolecularMass(:)		   
 ! Molecular Mass (g / mole)
 	REAL*8,		ALLOCATABLE :: OrgDensity(:)		   
@@ -278,8 +283,6 @@ MODULE Chemistry
 
 	!! These are indexed by the HYDROPHILIC ORGANIC COMPOUND INDEX
 	CHARACTER (len=15), ALLOCATABLE :: AqOrgPhaseChemicalNames(:) 
-	REAL*8,		ALLOCATABLE :: AqOrgRefractiveIndex(:,:)	   
-! Index of Refraction for each aqueous species
 	REAL*8,		ALLOCATABLE :: AqOrgMolecularMass(:)		   
 ! Molecular Mass (g / mole)
 	REAL*8,		ALLOCATABLE :: AqOrgDensity(:)		   

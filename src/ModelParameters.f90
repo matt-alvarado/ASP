@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -17,6 +17,8 @@
 !! 08/29  2007   Matt Alvarado     Fixed value of epsilon to match 
 !!                                   Jacobson value
 !! 02/15  2012   Matt Alvarado     Removed Eulerian coordinates
+!! 03/01  2012   Matt Alvarado     Made it so AverageAerosolDensity can be 
+!!                                  set and reset automatically.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -26,7 +28,7 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:	
-!! 1. SUBROUTINE SetDomainSize (X, Y, Z)
+!! 1. SUBROUTINE SetDomainSize ()
 !! 2. SUBROUTINE SetBackgroundRH (BRH)
 !! 3. SUBROUTINE SetDissolutionEquilibriumOrFlux(Input)
 !! 4. SUBROUTINE SetSectionalParameters (inLagrSectSizeCutoff,inLowestBinCutoff,inHowManyBins, inStochasticOrNot, inLagrangianOrNot)
@@ -52,6 +54,7 @@
 !!24. SUBROUTINE SetMetastable(iMetastable)
 !!25. SUBROUTINE SetAmmoniaFlux(iAmmoniaFlux)
 !!26. SUBROUTINE SetIgnoreDiffuseCorrect(iDiffuseCorrect)
+!!27. SUBROUTINE SetInitialDens(iDens)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !! This one holds all of the physical constants that are used in the code
@@ -206,7 +209,7 @@ MODULE ModelParameters
 											   !! uses this as the error tolerance...
 	LOGICAL, PARAMETER :: OpenSystemForCondensation = .FALSE.
 	LOGICAL			   :: DissolutionEquilibriumOrFlux		! False is equilibrium, True is flux
-	REAL*8, PARAMETER :: AverageAerosolDensity  = 1.5 * grams / cm / cm / cm
+	REAL*8            :: AverageAerosolDensity  != 1.5 * grams / cm / cm / cm
 	REAL*8, PARAMETER :: SmallestAerosolPossible = 0.0015 * micron   ! Any electrolyte sphere below this size doesn't take up water
 																	! If this is too small, say O(0.001 microns), there will be 
 																	! only O(100) molecules of water and the condensation routine 
@@ -568,6 +571,17 @@ MODULE ModelParameters
 		IgnoreCorrectionstoDiffusivity = iDiffuseCorrect
 
 	END SUBROUTINE SetIgnoreDiffuseCorrect
+
+	SUBROUTINE SetInitialDens(iDens)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: iDens
+
+		AverageAerosolDensity = iDens * grams / cm / cm / cm
+
+	END SUBROUTINE SetInitialDens
+
 
 
 end module ModelParameters

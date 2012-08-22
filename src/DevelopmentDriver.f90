@@ -25,6 +25,8 @@
 !! 08/27  2010   Matt Alvarado     Minor Changes                             !!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 02/28  2012   Matt Alvarado     Added section to run optical property     !!
+!!                                  tests.                                   !!
 !! 08/1  2012    Tara Soni         Minor Changes                             !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -40,6 +42,7 @@ PROGRAM ASP
 	USE Condensation
 	USE OutputRoutines
 	USE Coagulation
+        USE StepASP
 	
 	implicit none
 
@@ -51,7 +54,7 @@ PROGRAM ASP
 				Nai, NaNO3i, NaCli, NaHSO4i, Na2SO4i, &
 				NH3i, NH4i, NH4NO3i, NH4Cli, NH4HSO4i, NH42SO4i, &
 				Cli, NO3i, SO4i, HSO4i, K2SO4i,LevAeroIndex, AmSulfAeroIndex, H2SO4AeroIndex, N, HNO3Index, &
-				NH3Gas, HNO3Gas, HClGas, H2SO4Gas, NumAqOrgChems, ReturnType
+				NH3Gas, HNO3Gas, HClGas, H2SO4Gas, NumAqOrgChems, ReturnType, Hi, NumModes
 	real*8  :: ii, jj, kk, y(200), Dum1
 	real*8  :: T_mix, Tau_Dep, slope, b, ChemTimestep, MixTimestep, &
 				CoagTimeStep, CondTimeStep, t, Mgas, Temp, &
@@ -59,14 +62,16 @@ PROGRAM ASP
 				Potassium, HClConc, TotalNumber, TotalVolume, TotalSulfateMass, TotalPotassiumMass, SOA2Conc, &
 				TotalPOA, TotalSOA, TotalK, TotalNa, TotalNH4, TotalCl, TotalNO3, TotalSO4, &
 				NucRate, MolsinNucParticle, GridTotalSOA, RH, tiny, x1, x2, x3, f1, f2, f3, chg, xs, molalbin, &
-				K2SO4Mass, Kmass, TotalMass, TimeStepSize, PressEq, P1, EnvMass, InitialMass, NewMass
+				K2SO4Mass, Kmass, TotalMass, TimeStepSize, PressEq, P1, EnvMass, InitialMass, NewMass, ChemPercentage, sum
 
-	REAL*4  :: etimearray(2)
+	REAL*4  :: etimearray(2), etime
 	REAL*8, ALLOCATABLE	::	XPASS(:), GAMMA(:), Chem(:), NumConc(:), &
 				   HeteroNumberConc(:), HeteroRadii(:), &
 							InitNumConc(:), EnvNumConc(:)
-	REAL*8, DIMENSION(18) :: ExtCoeff, SingScat, Assym
-	REAL*8	:: Term(250), Total, Yield
+	REAL*8, DIMENSION(451) :: ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSingScat, &
+                                           ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
+                                           SubExtCoeffSep, SubSSASep
+	REAL*8	:: Term(250), Total, Yield, Store_H2O, Store_Dens
 	INTEGER :: GP(3), clock, time(8)
         INTEGER, ALLOCATABLE :: outFH(:), OFH(:)
 
@@ -75,7 +80,7 @@ PROGRAM ASP
 
 							
 	
-	LOGICAL :: DoTestCoagulation, DoHumidityTest
+	LOGICAL :: DoTestCoagulation, DoHumidityTest, GADS
 	
 	TYPE(Particle), POINTER :: Current, Env
 	
@@ -97,9 +102,170 @@ PROGRAM ASP
 	CALL Transcript ("** ASP is an updated, expanded version of MELAM         **")
 	CALL Transcript ("** by H. D. Steele (donnan@mit.edu).                    **")
 	CALL Transcript ("**********************************************************")
-	
-	IF(.TRUE.) THEN !Gas Chemistry Only
-		!!!!!!!!!!!!!!!!!!!!!!!!!
+        IF(.TRUE.) THEN !Optical Properties Only
+         !MJA, 02-28-2012: The general idea here is to:
+         ! 1. Read the size distribution parameters, including multiple modes
+         ! 2. Read the non-H2O species as relative mass fractions
+         ! 3. For each mode, create a monodisperse aerosol and calculate the 
+         !    H2O content in equilibrium with the non-H2O species
+         !    and the particle density.
+         ! 4. Use the calculated relative mass fraction of H2O and 
+         !    density from step 3 to initialize a sectional distribution for this mode.
+         ! 5. Sum all modes..
+         ! 6. Calculate aerosol optical properties.
+         ! WARNING: This works for multiple modes, but calculates the density and 
+         ! water mass fraction based on the first mode only. 
+         ! So if the composition of the modes is radically different, you
+         ! could have problems.
+         ! WARNING: I'm pretty sure PopulateParticlesSectionsRightAway doesnt' account for
+         ! cases where the number concentration is less than 1.
+          
+             GADS = .FALSE. !Flag for GADS comparison
+             !!!!!!!!!!!!!!!!!!!!!!!!!
+	     !! SET the DOMAIN SIZE !!
+	     CALL SetDomainSize ()
+	     !! Call subroutines to set module data
+	     CALL SetFileHandleCounter(12)
+             CALL ReadMainInputDeck()
+
+             ! INITIALIZE the CHEMISTRY 
+	     CALL SetChemistryParams
+
+	     !! INITIALIZE the DISSOLUTION routine
+	     CALL SetAllDissolution
+             
+             ii = etime(etimearray)
+	     CALL TRANSCRIPT("")
+	     CALL TRANSCRIPT("CPU time after chem initialization "//trim(real2str(ii)))
+
+             Particles%First => Null()
+             CALL SetInitialDens(1.500)
+	     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	     !! Open the Particle Modes Input Deck and Read It In !!
+	     !! And then use it to populate the AerosolModes Array!!
+	     CALL ReadDistributionsOrganic() !!!!!!!!!!!!!!!!!!!!!!!
+
+             !!Make and equilibrate a Monodisperse aerosol
+             Monodisperse = .TRUE.
+             InputFlagRatioOrMass = 1
+             Call PopulateParticlesSectionsRightAway
+	     !Output size distribution
+	     CALL SizeDistOutput(0.0,"SizeDist_Opt_Mono.txt")
+             
+             ii = etime(etimearray)
+	     CALL TRANSCRIPT("")
+	     CALL TRANSCRIPT("CPU time after mono particle initialization "//trim(real2str(ii)))
+
+             !!WARNING Force initial water equilibrium between gas and aerosol
+	     !!(Uses open system for water eq.)
+	     CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+	     !CALL EquilibrateGridPointAll( EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+	     CALL SpillBeans() 
+
+             ii = etime(etimearray)
+	     CALL TRANSCRIPT("")
+	     CALL TRANSCRIPT("CPU time after mono particle eq "//trim(real2str(ii)))
+
+             !Save water amount and density to initialize size distribution
+             current => particles%first
+             Store_H2O = current%AqChems(1)*current%numberofparticles*1.0e12*AqMolecularMass(1) !18.015 !ug/m3
+             Store_Dens = current%ParticleDensity
+             !NumAqChems = size(current%AqChems)
+             !Need to subtract out ions
+             Hi = FindChem("H+", 1)
+             NumAqChems = Hi-1
+	     NumOrgChems = size(current%OrgChems)
+             NumModes = ubound(AerosolModes, 1)
+             WRITE(*,*) "NumModes: ", NumModes
+             WRITE(*,*) "Store_Dens: ", Store_Dens
+             WRITE(*,*) "NumAqChems: ", NumAqChems
+             WRITE(*,*) "NumOrgChems: ", NumOrgChems
+
+             !Set Sectional Distribution
+             Monodisperse = .FALSE.
+             Particles%First => Null()
+             DO I = 1, NumModes
+               CALL SetInitialDens(Store_Dens)
+
+               IF (NOT(GADS)) THEN
+                  AerosolModes(I,4) = Store_H2O 
+               ELSE 
+                  AerosolModes(I,4) = 0.0
+               ENDIF
+               InputFlagRatioOrMass = 0
+               WRITE(*,*) "Store_H2O: ", Store_H2O
+               !!Renormalize mass fractions including water
+               ChemPercentage = 0
+               Sum = 0
+               DO J = 4, NumAqChems+NumOrgChems+3
+			WRITE(*,*) J, AerosolModes(I,J)
+                        ChemPercentage = AerosolModes(I,J) + ChemPercentage
+               END DO
+               DO J = 4, NumAqChems+NumOrgChems+3
+			AerosolModes(I,J) = AerosolModes(I,J)/ChemPercentage
+                        Sum = Sum + AerosolModes(I,J)
+               END DO
+               WRITE(*,*) "After Renorm: ", Sum, I, AerosolModes(I,4), ChemPercentage
+             ENDDO
+
+             !!Reset Sectional Parameters, currently hardwired distribution
+             CALL SetSectionalParameters (20.0*micron,0.005*micron,100,.FALSE.)
+ 
+             !!CALL ReadDistributionsOrganic()
+             InputFlagRatioOrMass = 0
+             Call PopulateParticlesSectionsRightAway
+             ii = etime(etimearray)
+	     CALL TRANSCRIPT("")
+	     CALL TRANSCRIPT("CPU time after sectional particle initialization "//trim(real2str(ii)))
+             CALL SizeDistOutput(0.0,"SizeDist_Opt_Sect_init.txt")
+
+             CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+             CALL SpillBeans()
+	     !Output size distribution
+	     CALL SizeDistOutput(0.0,"SizeDist_Opt_Sect.txt")
+
+             ii = etime(etimearray)
+	     CALL TRANSCRIPT("")
+	     CALL TRANSCRIPT("CPU time after sectional particle eq "//trim(real2str(ii)))
+
+             !Calculate optical properties for each particle
+	     current => particles%first
+	     I = 1
+	     DO WHILE(associated(current))
+		CALL RecalculateRadius(current)
+			
+		!Recalculate optical parameters
+		CALL ShellRefIndAndRad(Current)
+			
+		I = I + 1
+		
+		current => current%next
+				
+	      END DO !END STEP Particle Optical Properties
+
+	      CALL AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSingScat, &
+                                     ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
+                                     SubExtCoeffSep, SubSSASep)
+              
+              ALLOCATE(OutFH(1))
+	      OutFH(1) = GetFileHandle()
+              OPEN(UNIT=OutFH(1), FILE=TRIM(OutputDeckSubDir)//"AeroOpt.txt", STATUS="REPLACE")
+              WRITE(OutFH(1), FMT='(7A17)') "Wavelength", "ExtCoeff (Mm^-1)", "SSA", "<g>", "BackScat (Mm^-1)", "SubExtCoeff", "SubSSA"
+              DO I = 1, 451 
+                 WRITE(OutFH(1), FMT='(F17.1,6E17.6)') 250.0+(I-1), ExtCoeff(I), SingScat(I), Assym(I), BackScatCoeff(I), SubExtCoeff(I), SubSingScat(I)
+              ENDDO
+
+              ALLOCATE(OutFH(2))
+	      OutFH(2) = GetFileHandle()
+              OPEN(UNIT=OutFH(2), FILE=TRIM(OutputDeckSubDir)//"AeroOpt_ExternalMix.txt", STATUS="REPLACE")
+              WRITE(OutFH(2), FMT='(7A17)') "Wavelength", "ExtCoeff (Mm^-1)", "SSA", "<g>", "BackScat (Mm^-1)", "SubExtCoeff", "SubSSA"
+              DO I = 1, 451 
+                 WRITE(OutFH(2), FMT='(F17.1,6E17.6)') 250.0+(I-1), ExtCoeffSep(I), SingScatSep(I), AssymSep(I), BackScatCoeffSep(I), SubExtCoeffSep(I), SubSSASep(I)
+              ENDDO
+        ENDIF	
+
+        IF(.FALSE.) THEN !Gas Chemistry Only
+	        !!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
 		!! MJA 02-15-2012 always 1 cm^3
 		CALL SetDomainSize ()
@@ -221,7 +387,7 @@ PROGRAM ASP
 
 			Slope = 2.00
                         b=106.8735
-                        !212..22 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from yo = 1km, Ky = 1178 m2/s
+                        !212.22 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from yo = 1km, Ky = 1178 m2/s
                         !15  !Yokelson Williams Fire fast 
                         !106..87357 !Yokelson Williams Fire (California, Nov. 17 2009) estimated from curvefit of CO data
                         !4000 ! slow fit for MILAGRO Fire (Yucatan March 23, 2006)
@@ -1209,7 +1375,9 @@ PROGRAM ASP
 			!WRITE(*,*) "AOD: ", AerosolOpticalDepth ()	
 			!WRITE(*,*) "Dilution Okay"	
 			!CALL SpillBeans()
-			CALL AerosolOptProp ( ExtCoeff, SingScat, Assym)
+			CALL AerosolOptProp ( ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSingScat, &
+                                      ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
+                                      SubExtCoeffSep, SubSSASep)
 			
 			!Write Output to file every minute 
 			IF (MOD(t,10.0) .LT. 0.01) THEN
@@ -1536,7 +1704,9 @@ PROGRAM ASP
 
 				!IF (NumBins .GT. 1) CALL ERROR("The current output routine needs a bulk aerosol to work.") 
 	
-				CALL AerosolOptProp ( ExtCoeff, SingScat, Assym)
+				CALL AerosolOptProp ( ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSingScat, &
+                                      ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
+                                      SubExtCoeffSep, SubSSASep)
 		
 				current => particles%first
 				WRITE(OFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') current%IonicStr

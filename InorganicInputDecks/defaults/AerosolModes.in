@@ -38,7 +38,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!First, specify WHETHER OR NOT WE WILL ALLOW LAGRANGIAN PARTICLES in this model.
-!! (F) No Lagrangian particles (behaves like a moving center sectional model
+!! (F) No Lagrangian particles (behaves like a moving center sectional model)
 !! (T) Yes Lagrangian particles
 F !!
 !
@@ -136,28 +136,28 @@ F !!
 !
 34000; 0.11; 1.91;  
 Timbavati Size Test;
-KCl; 135.8; 
-NH4Cl; 204.6; 
+KCl; 13.58; 
+NH4Cl; 20.46; 
 !KCl; 421;
 !HCl; 139.4;
-NH4NO3; 17.6; 
-(NH4)2SO4; 34.3; 
-BC; 35.0; 
-POA1; 96.6; 
-CBIO; 278.3;
+NH4NO3; 1.76; 
+(NH4)2SO4; 3.43; 
+BC; 3.50; 
+POA1; 9.66; 
+CBIO; 27.83;
 !
 !
-!66000 ; 0.02 ; 1.175 
-!RemConMode1 
-!KCl; 135.8 !
-!NH4Cl; 204.6  
-!KCl; 421
-!HCl; 139.4
-!NH4NO3; 17.6 
-!(NH4)2SO4; 34.3  
-!BC; 35.0
-!POA1; 96.6 
-!CBIO; 278.3 
+66000 ; 0.02 ; 1.175; 
+RemConMode1; 
+KCl; 13.58;
+NH4Cl; 20.46;  
+!KCl; 421;
+!HCl; 139.4;
+NH4NO3; 1.76; 
+(NH4)2SO4; 3.43;  
+BC; 3.50;
+POA1; 9.66; 
+CBIO; 27.83; 
 !
 !
 !0; 0.2; 1.4

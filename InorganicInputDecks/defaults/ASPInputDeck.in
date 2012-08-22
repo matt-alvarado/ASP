@@ -1,6 +1,6 @@
 !! ASPInputDeck.in
 !! Main Input Deck of ASP
-!! Matt Alvarado, 2004-2006 (c)
+!! Matt Alvarado, 2004-2012 (c)
 !! Based on MELAM by Donnan Steele, 2000-2004 (c)
 !! The ordering of the inputs must be kept constant (as in all
 !! input decks) although the formatting is not as important.  Use 
@@ -8,8 +8,8 @@
 !! All other input decks may be stored in a subdirectory, 
 !! note that directory, relative or absolute positioning, here.
 !!
-!! Specify the environmental parameters, either a single homogeneous
-!! value (numerical) or an input deck (text)
+!! Specify the environmental parameters as a single homogeneous
+!! value (numerical)
 285.0  !! Temperature (K)
 921.0  !! Pressure     (mb)
 0.73   !! Initial Relative Humidity (between 0 and 1)
@@ -32,4 +32,3 @@
 1       !! Include Coagulation?
 0	  !! Is the Coagulation Kernel calculated (0) or constant(1)?
 0       !! Ignore diffusivity corrections (1) or include them (0)? (Also sets curvature corrections to 1.0!)
-

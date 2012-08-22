@@ -19,6 +19,16 @@
 !!				       MakeBoundaryBulk                      !!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 02/29  2012   Matt Alvarado     Revised MakeParticle to allow particules 
+!!                                  to have a specified amount of initial 
+!!                                  water and to allow particles with only BC.
+!! 05/29  2012   Matt Alvarado     Added option to 
+!!                                    PopulateParticlesSectionsRightAway
+!!                                    to follow Jacobson formulas for 
+!!                                    initialization
+!! 06/04  2012   Matt Alvarado     Modified the Jacobson init in 
+!!                                    PopulateParticlesSectionsRightAway
+!!                                    to ignore smallest bin
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -234,11 +244,11 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 
 		ELSE
-			
-			CALL ERROR("This version of the code lacks the ability to sample from an aerosol distribution "// &
+
+                  	CALL ERROR("This version of the code lacks the ability to sample from an aerosol distribution "// &
 			           "stochastically (need a proprietary function, which I originally used the COMPAQ "//   &
 					   "compiler's version, then removed it to port to linux.")
-
+                        !RETURN
 		END IF
 	ELSE
 		II = AerosolModes(WhichPopulation,2)/2.*micron
@@ -254,28 +264,30 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 		!! Find the appropriate section to put it in, or err
 		IF (ASSOCIATED(CurrentParticle)) THEN
 
-10		IF ((CurrentParticle%Sectional .EQ. .TRUE.) .AND.			&
-		    (II .GT. CurrentParticle%Edges(1)) .AND.							&
-			(II .LE. CurrentParticle%Edges(2)))								THEN
+10		IF ((CurrentParticle%Sectional .EQ. .TRUE.) .AND.	&
+		    (II .GT. CurrentParticle%Edges(1)) .AND.		&
+			(II .LE. CurrentParticle%Edges(2)))	THEN
 			
 			!! We've found the proper section
 			!! So add the chemicals
 
 			CurrentParticle%NumberOfParticles = CurrentParticle%NumberOfParticles + 1
-			DO I = 2, HowManyAqChems
-				CurrentParticle%AqChems(I) = (AerosolModes(WhichPopulation,3+I) *								&
-										     4./3.*Pi*II*II*II*AverageAerosolDensity/							&
-										     AqMolecularMass(I) +												&
-											 (CurrentParticle%NumberOfParticles-1.)*CurrentParticle%AqChems(I))/ &
-											 CurrentParticle%NumberOfParticles 
+			!DO I = 2, HowManyAqChems
+			DO I = 1, HowManyAqChems !MJA, 02-28-2012
+                                  !WRITE(*,*) "MakeParticle: ", AverageAerosolDensity
+                                  CurrentParticle%AqChems(I) = (AerosolModes(WhichPopulation,3+I) *	&
+							      4./3.*Pi*II*II*II*AverageAerosolDensity/		&
+							     AqMolecularMass(I) +				&
+							     (CurrentParticle%NumberOfParticles-1.)*CurrentParticle%AqChems(I))/ &
+							     CurrentParticle%NumberOfParticles
 			END DO
 			
 			DO I = 1, HowManyOrgChems
-				CurrentParticle%OrgChems(I) = (AerosolModes(WhichPopulation,3+HowManyAqChems+I) *								&
-										     4./3.*Pi*II*II*II*AverageAerosolDensity/							&
-										     OrgMolecularMass(I) +												&
-											 (CurrentParticle%NumberOfParticles-1.)*CurrentParticle%OrgChems(I))/ &
-											 CurrentParticle%NumberOfParticles 
+				CurrentParticle%OrgChems(I) = (AerosolModes(WhichPopulation,3+HowManyAqChems+I) *	&
+								4./3.*Pi*II*II*II*AverageAerosolDensity/		&
+								OrgMolecularMass(I) +					&
+								(CurrentParticle%NumberOfParticles-1.)*CurrentParticle%OrgChems(I))/ &
+								CurrentParticle%NumberOfParticles 
 			END DO
 			
 			!NOTE: We initialize with all of the organic compounds in 
@@ -283,7 +295,7 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 			DO I = 1, HowManyAqOrgChems
 				CurrentParticle%AqOrgChems(I) = 0.0
 			END DO
-
+                        
 
 		ELSE
 			IF(ASSOCIATED(CurrentParticle%Next)) THEN
@@ -751,7 +763,8 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 					BinEdges,			&
 					micron,				&
 					SmallestAerosolPossible,        &
-					Monodisperse
+					Monodisperse,                   &
+                                        Pi, AverageAerosolDensity
 
 	USE GridPointFields,     ONLY : GetTemp
 
@@ -761,7 +774,8 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
                                         howmanyaqcations,               &
 					HowManyOrgChems,	        &
 					OrgMolecularMass,               &
-                                        AqPhaseChemicalNames
+                                        AqPhaseChemicalNames,           &
+                                        HowManyAqOrgChems
 
 	IMPLICIT NONE
 
@@ -771,16 +785,19 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	           SectionalParticles,	&
 		   LagrangianParticles
 
-	REAL*8  :: II, Temperature
+	REAL*8  :: II, Temperature, ln_sigma_sq, vtot, mtot, d_mass_mean
+	REAL*8 :: del_diam, vrat, diam, mass_bin, store_num, d_num_mean
+	REAL*8 :: sum_num, new_num, sum_mass, num_all_modes, rescale
 	REAL*8  :: RescalingFactors(HowManyAerosolModes,HowManyAqChems+HowManyOrgChems) 
 
 	CHARACTER (len= 1024) :: str
-	LOGICAL :: Scaffolding, Transcribe
+	LOGICAL :: Scaffolding, Transcribe, Jacobson
 	TYPE(Particle), POINTER :: NewSection
 	TYPE(Particle), POINTER :: Current, Trailer, SectionRunner
 
 	Scaffolding= .FALSE.
 	Transcribe = .TRUE.
+        Jacobson = .TRUE. !Use Jacobson init or MELAM init
 
 	IF(Scaffolding .OR. TRANSCRIBE) CALL Transcript("")
 	IF(Scaffolding)	CALL Transcript(">>Entering PopulateParticlesSectionsRightAway()<<")
@@ -829,6 +846,9 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	IF (.NOT.ThermoBulkMode .AND. .NOT.Monodisperse) THEN
 
 !! Allocate all of the aerosol and place them in the appropriate structures:
+                sum_num = 0.0
+                sum_mass = 0.0
+                num_all_modes = 0.0
 	        DO I = 1, MAX(1,HowManyAerosolModes)
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! Scale the particle concentration by the number !!
@@ -838,19 +858,107 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 			SectionalParticles  = 0
 			LagrangianParticles = 0
 			IF(AerosolModes(I,3) .NE. 0.0) THEN !Log-normal mode
-				DO J = 1, NumbParticles
+
+                                !MJA 05-29-2012 Old method, only integer numbers of particles
+			    IF (NOT(Jacobson)) THEN
+                                   DO J = 1, NumbParticles
 					!Matt changed this to hopefully put particles in sections right away
 					CALL MakeParticle(I, K, .FALSE., StructuredDistribution = (DFLOAT(J)-0.5)/NumbParticles)
 					SectionalParticles  = SectionalParticles + 1 - K
 					LagrangianParticles = LagrangianParticles + K
-				END DO
+				  END DO
+                            ELSE
+                                !MJA 05-29-2012 New method
+			        !The idea here is to populate the sections with mass and number based on Jacobson,
+                                !Fundamentals of Atmospheric Modeling, 2005 
+                                !Eq. 13.21 and 13.24 - MJA, 05-29-2012
 
-				!! Report the results and allocations of the population
-				IF (TRANSCRIBE) CALL TRANSCRIPT ("")
-				IF (TRANSCRIBE) CALL TRANSCRIPT ("For the '"//TRIM(AerosolModeNames(I))//"' aerosol mode")
-				IF (TRANSCRIBE) CALL TRANSCRIPT ("Allocated "//TRIM(INT2STR(LagrangianParticles))//" Lagrangian particles")
-				IF (TRANSCRIBE) CALL TRANSCRIPT ("and "//TRIM(INT2STR(SectionalParticles))//" Sectional particles")
-				
+                                !Calculate parameters out of loop if possible
+                                ln_sigma_sq = LOG(AerosolModes(I,3))**2
+                                d_num_mean = AerosolModes(I,2)*micron !Convert from um to cm 
+                                !Jacobson, Eq. 13.25
+                                vtot = (pi/6.0)*(d_num_mean**3.0)*exp(4.5*ln_sigma_sq)*AerosolModes(I,1)
+                                mtot = vtot*AverageAerosolDensity
+
+                                num_all_modes = num_all_modes +  AerosolModes(I,1)            
+ 
+                                !Seinfeld and Pandis, 1998, Eq. 7.52
+                                d_mass_mean = exp(log(d_num_mean)+3*ln_sigma_sq)
+
+                                !Jacobson, Eq 13.6
+                                vrat = (BinEdges(2,2)/BinEdges(2,1))**3.0
+
+
+                                !Loop over sections
+                                Current => Particles%First                        
+ 99			        IF (Current%Sectional .EQ. .TRUE. .AND. Current%Edges(2) .LT. 1.0E4 ) THEN
+                           
+                                    !Jacobson, Eq 13.9
+                                    del_diam = 2.0*(Current%Edges(2)-Current%Edges(1)) 
+
+                                    !Jacobson, Eq. 13.9
+                                    diam = del_diam/(2.0**(1.0/3.0))
+                                    diam = diam*(1.0+vrat)**(1.0/3.0)
+                                    diam = diam/(vrat**(1.0/3.0)-1.0)
+                                    !Write(*,*) vrat, del_diam, diam, 2*Current%Edges(2), 2*Current%Edges(1), d_num_mean
+                                    !STOP
+                                    !Jacobson, Eq. 13.24: Number of particles
+                                    store_num = Current%NumberOfParticles
+
+                                    if (Current%Edges(1) .NE. 0.0) then !Skip first bin for now
+                                         new_num = (AerosolModes(I,1)*(del_diam/diam) &
+                                                       *exp(-0.5*(log(diam/d_num_mean)**2)/ln_sigma_sq) &
+                                                       /sqrt(2*Pi*ln_sigma_sq))
+                                         if(new_num .gt. 1.0e-6) then !Skip bins with less than 1e-6 particles/cm3
+                                           sum_num = sum_num + new_num
+                                           Current%NumberOfParticles = Current%NumberOfParticles + new_num
+                                         endif
+                                    endif
+
+                                    !Jacobson, Eq. 13.21: Mass of particles
+                                    if (Current%Edges(1) .NE. 0.0) then !Skip first bin for now
+                                       mass_bin = mtot*(del_diam/diam) &
+                                                      *exp(-0.5*(log(diam/d_mass_mean)**2)/ln_sigma_sq) &
+                                                      /sqrt(2*Pi*ln_sigma_sq)
+                                       write(*,*) "mass check: ", mass_bin, d_mass_mean
+                                       if(new_num .gt. 1.0e-6) then !Skip bins with less than 1e-6 particles/cm3
+                                          sum_mass = sum_mass+mass_bin
+                                       endif
+                                    endif
+
+                                    if(new_num .gt. 1.0e-6) then !Skip bins with less than 1e-6 particles/cm3
+	                              DO J = 1, HowManyAqChems !MJA, 02-28-2012
+                                        !WRITE(*,*) "MakeParticle: ", AverageAerosolDensity
+                                         Current%AqChems(J) = (Current%AqChems(J)*store_num &
+                                                              + AerosolModes(I,3+J) *mass_bin/AqMolecularMass(J))		&
+							     /Current%NumberOfParticles
+			              END DO
+			
+			              DO J = 1, HowManyOrgChems
+				         Current%OrgChems(J) = (Current%OrgChems(J)*store_num &
+                                                              + AerosolModes(I,3+HowManyAqChems+J) *mass_bin/OrgMolecularMass(J)) &
+							     /Current%NumberOfParticles
+			              END DO
+                                    endif
+
+			            !NOTE: We initialize with all of the organic compounds in 
+			            !the organic phase, and none in the hydrophilic phase
+			            DO J = 1, HowManyAqOrgChems
+				         Current%AqOrgChems(J) = 0.0
+		 	            END DO
+                                ENDIF
+
+                                IF(ASSOCIATED(Current%Next)) THEN
+				     Current => Current%Next
+				     GOTO 99
+                                ENDIF
+                        
+                            ENDIF
+		            !! Report the results and allocations of the population
+			    IF (TRANSCRIBE) CALL TRANSCRIPT ("")
+			    IF (TRANSCRIBE) CALL TRANSCRIPT ("For the '"//TRIM(AerosolModeNames(I))//"' aerosol mode")
+			    IF (TRANSCRIBE) CALL TRANSCRIPT ("Allocated "//TRIM(INT2STR(LagrangianParticles))//" Lagrangian particles")
+			    IF (TRANSCRIBE) CALL TRANSCRIPT ("and "//TRIM(INT2STR(SectionalParticles))//" Sectional particles")
 			ELSE !Exponential Mode
 				CALL MakeParticleExponential(I)
 			END IF
@@ -858,6 +966,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	
 
 	END IF
+
 
 	IF(Scaffolding) WRITE(*,*) "Check 1.5"
 
@@ -877,7 +986,6 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 		END DO ; END DO
 
 		Current => PARTICLES%First
-                 write(*,*) current%EffectiveRadius
 
 	10	IF (ASSOCIATED(Current)) THEN
 
@@ -940,6 +1048,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 
 	IF(Scaffolding) WRITE(*,*) "Check 4"
 
+
 	!! Now that all of the consitutents have been added,
 	!! walk through the lists and equilibrate everything
 	Current => PARTICLES%First
@@ -954,24 +1063,36 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 				!IF (Current%AqChems(I) .NE. 0.0) WRITE(*,*) AqPhaseChemicalNames(I)
 				II = II + Current%AqChems(I)
 			END DO
+			DO I = 2, HowManyOrgChems
+				!IF (Current%AqChems(I) .NE. 0.0) WRITE(*,*) AqPhaseChemicalNames(I)
+				II = II + Current%OrgChems(I)
+			END DO
 
-			!! As a token amount of water to avoid initial numerical problems
-			Current%AqChems(1) = II*1.
+                        WRITE(*,*) "H2O: ", Current%AqChems(1)
+			!! Add a token amount of water to avoid initial numerical problems
+			IF (II .GT. 0.0) THEN
+                           Current%AqChems(1) = II*1.
+                        ELSE
+                           !If only BC specified, particle is dry
+                           Current%Dry = .TRUE.
+                        ENDIF
           
 
-			!WRITE(*,*) Current%EffectiveRadius
-			CALL KusikMeissner (Current)
-				IF(Scaffolding) WRITE(*,*) "Before Equilibrate"
-			!WRITE(*,*) Current%AqChems(1), Current%AqChems(7)
-                        CALL FindElectrolyteEquilibrium(Current, .TRUE., FirstEquilibration=.TRUE., ReturnType = Q)
-				IF(Scaffolding) WRITE(*,*) "After Equilibrate"
-			!WRITE(*,*) Current%AqChems(1), Current%AqChems(7), Current%EffectiveRadius
-                        CALL EquilibriumWaterContent  (Current, OpenSystem=.TRUE., ReturnType = Q, ForceEquilibrium=.FALSE.)
-				IF(Scaffolding) WRITE(*,*) "After Water EQ"
-			!WRITE(*,*) Current%AqChems(7), Current%EffectiveRadius
+
+			IF (NOT(Current%Dry)) THEN 
+                           CALL KusikMeissner (Current)
+			   IF(Scaffolding) WRITE(*,*) "Before Equilibrate"
+
+                           CALL FindElectrolyteEquilibrium(Current, .TRUE., FirstEquilibration=.TRUE., ReturnType = Q)
+			   IF(Scaffolding) WRITE(*,*) "After Equilibrate"
+		
+                           CALL EquilibriumWaterContent  (Current, OpenSystem=.TRUE., ReturnType = Q, ForceEquilibrium=.FALSE.)
+			   IF(Scaffolding) WRITE(*,*) "After Water EQ"
+			ENDIF
+                         WRITE(*,*) "H2O Second: ", Current%AqChems(1)
                         CALL RecalculateRadius (Current)
 				IF(Scaffolding) WRITE(*,*) "After RecalculateRadius"
-			!WRITE(*,*) Current%AqChems(7), Current%EffectiveRadius
+
                         !CALL ShellRefIndAndRad(Current)
 				IF(Scaffolding) WRITE(*,*) "After ShellRefIndAndRad"
 		
@@ -1052,8 +1173,7 @@ SUBROUTINE ReadDistributionsOrganic ()
 
 	!! Open the Input Deck
 	FH = GetFileHandle()
-    OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//'AerosolModes.in', STATUS='OLD')
-    WRITE(*,*) "Aerosol Open"
+        OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//'AerosolModes.in', STATUS='OLD')
    
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1064,13 +1184,7 @@ SUBROUTINE ReadDistributionsOrganic ()
 
 	!! Get whether or not we should allow lagrangian particles
 	CurrLine = GetLine(FH)
-        
-	!IF (.NOT.IsInteger(CurrLine)) &
-	!CALL ERROR("Did not find the Lagrangian-particles-or-not flag for the aerosol distribution.  The first non-comment "// &
-	!           "line of the input file AerosolModes.in should be a flag telling the model if you are allowing "//     &
-	!		   "Lagrangian particles (1) or forcing a secitonal distribution (0).")
-	!I = STR2INT(TRIM(CurrLine))
-
+      
 	IF (TRIM(CurrLine) .EQ. "F") THEN
 		LagrangianOrNot = .FALSE. !No Lagrangian particles
 	ELSE IF (TRIM(CurrLine) .EQ. "T") THEN
@@ -1195,7 +1309,7 @@ SUBROUTINE ReadDistributionsOrganic ()
 	IF (InputFlagRatioOrMass .EQ. 0) THEN
 	  IF (TRIM(Token) .EQ. EOF .OR. (IsReal(Token) .AND. I .NE. 0)) THEN
 		IF (ChemPercentage .EQ. 0) CALL ERROR("Must specify some composition for aerosol mode "//TRIM(AerosolModeNames(I)))
-		DO J = 4, HowManyAqChems+HowManyOrgChems+3
+                DO J = 4, HowManyAqChems+HowManyOrgChems+3
 			AerosolModes(I,J) = AerosolModes(I,J) / ChemPercentage
 		END DO
 	  END IF 
@@ -1254,14 +1368,14 @@ SUBROUTINE ReadDistributionsOrganic ()
 						"you must comment it out...")
 			
 			IF (Monodisperse .AND. InputFlagRatioOrMass .NE. 1) &
-			CALL ERROR ("You selected a monodisperse aerosol in the main input deck.  In that mode, you must specify the abundance of chemicals by "// &
+			CALL WARN ("You selected a monodisperse aerosol in the main input deck.  In that mode, you must specify the abundance of chemicals by "// &
 						"the total mass concentration using the second flag in AerosolModes.in (1); you have selected another "// &
 						"option.  Please remedy.")
 
 			IF (Monodisperse) CALL TRANSCRIPT ("The model will be run in MONODISPERSE MODE, in which only one particle  is considered.")
 			
 			IF(NOT(Monodisperse) .AND. InputFlagRatioOrMass .NE. 0) &
-			CALL ERROR ("You selected a sectional aerosol.  In this mode, you must specify the abundance of chemicals by "// &
+			CALL WARN ("You selected a sectional aerosol.  In this mode, you must specify the abundance of chemicals by "// &
 						"the relative mass percentage using the second flag in AerosolModes.in (0); you have selected another "// &
 						"option.  Please remedy.")
 			
@@ -1306,7 +1420,7 @@ SUBROUTINE ReadDistributionsOrganic ()
 		!WRITE(*,*) "Hi Matt!"
 		
 		!! Initialize the Aqueous Arrays
-		DO J = 4, HowManyAqChems+HowManyOrgChems+3
+                DO J = 4, HowManyAqChems+HowManyOrgChems+3
 			AerosolModes(I,J) = 0.
 		END DO
 		ChemPercentage = 0

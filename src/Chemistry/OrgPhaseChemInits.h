@@ -14,6 +14,10 @@
 !! 11/01  2006   Matt Alvarado     Added Refractive Index Data               !!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 02/27  2012   Matt Alvarado     Removed Refractive Index Data, now        !!
+!!                                  hardcoded in SUBROUTINE                  !!
+!!                                  ShellRefIndAndRad(InParticle) in file    !!
+!!                                  ParticleAttributes.h                     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -119,10 +123,6 @@ SUBROUTINE SetOrgPhaseChemistry ()
 	!!! -- DENSITY (grams / cm3) -- !!!
 	ALLOCATE (OrgDensity(HowManyOrgChems), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of OrgDensity could not proceed in SetOrgChemistryParams()")
-		
-	!!! -- REFRACTIVE INDEX at 550 nm and 10 um -- !!!
-	ALLOCATE (OrgRefractiveIndex(HowManyOrgChems, 4), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of OrgRefractiveIndex could not proceed in SetOrgChemistryParams()")
 			
 	!! SCSCSCSCSC
 	IF (Scaffolding) CALL Transcript (">>Importing Org Phase Species Info<<")
@@ -140,14 +140,6 @@ SUBROUTINE SetOrgPhaseChemistry ()
 	OrgMolecularMass(1)			= 200.0* grams / moles
 	OrgDensity(1)				= 2.0 * grams / cm / cm / cm 
         !Seinfeld and Pandis, "Atm. Chem and Phys.", 1998, p. 701
-	OrgRefractiveIndex(1, 1)	=  1.82 
-        !Jacobson, "Fund. of Atm. Mod.", 2nd ed., p. 303
-	OrgRefractiveIndex(1, 2)	=  0.74 
-        !Jacobson, "Fund. of Atm. Mod.", 2nd ed., p. 303
-	OrgRefractiveIndex(1, 3)	=  2.40 
-        !Jacobson, "Fund. of Atm. Mod.", 2nd ed., p. 303
-	OrgRefractiveIndex(1, 4)	=  1.00 
-        !Jacobson, "Fund. of Atm. Mod.", 2nd ed., p. 303
 
 	DO i = 2, HowManyOrgChems
 
@@ -202,31 +194,6 @@ SUBROUTINE SetOrgPhaseChemistry ()
 		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In OrgPhaseChems.in, the density appears to be missing on "//   &
 						TRIM(OrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
 		OrgDensity(CurrIndex) = STR2REAL(Token) * grams / cm / cm / cm
-
-		!! --- 5. Real Refractive Index at 550 nm
-		CALL GetToken(CurrLine,";",Token)
-		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In OrgPhaseChems.in, the real refractive index appears to be missing on "//   &
-						TRIM(OrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-		OrgRefractiveIndex(CurrIndex, 1) = STR2REAL(Token)
-
-		!! --- 6. Imaginary Refractive Index at 550 nm
-		CALL GetToken(CurrLine,";",Token)
-		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In OrgPhaseChems.in, the imaginary refractive index appears to be missing on "//   &
-						TRIM(OrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-		OrgRefractiveIndex(CurrIndex, 2) = STR2REAL(Token)
-
-		!! --- 7. Real Refractive Index at 10 um
-		CALL GetToken(CurrLine,";",Token)
-		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In OrgPhaseChems.in, the real refractive index appears to be missing on "//   &
-						TRIM(OrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-		OrgRefractiveIndex(CurrIndex, 3) = STR2REAL(Token)
-
-		!! --- 8. Imaginary Refractive Index at 10 um
-		CALL GetToken(CurrLine,";",Token)
-		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In OrgPhaseChems.in, the imaginary refractive index appears to be missing on "//   &
-						TRIM(OrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-		OrgRefractiveIndex(CurrIndex, 4) = STR2REAL(Token)
-
 			
 		!! Transcript
 		IF (Transcribe) CALL Transcript(OrgPhaseChemicalNames(CurrIndex))
@@ -342,10 +309,6 @@ SUBROUTINE SetHydrophilicOrgPhaseChemistry ()
 	ALLOCATE (AqOrgNumCarbon(HowManyAqOrgChems), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of AqOrgNumCarbon could not proceed in SetHydrophilicOrgChemistryParams()")
 		
-	!!! -- REFRACTIVE INDEX at 550 nm and 10 um -- !!!
-	ALLOCATE (AqOrgRefractiveIndex(HowManyAqOrgChems, 4), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of AqOrgRefractiveIndex could not proceed in SetHydrophilicOrgChemistryParams()")
-		
 	!! SCSCSCSCSC
 	IF (Scaffolding) CALL Transcript (">>Importing Hydrophilic Org Phase Species Info<<")
 
@@ -416,31 +379,6 @@ SUBROUTINE SetHydrophilicOrgPhaseChemistry ()
 						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
 		AqOrgNumCarbon(CurrIndex) = STR2INT(Token)
 			
-		!! --- 6. Real Refractive Index at 550 nm
-		CALL GetToken(CurrLine,";",Token)
-		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In AqOrgPhaseChems.in, the real refractive index appears to be missing on "//   &
-						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-		AqOrgRefractiveIndex(CurrIndex, 1) = STR2REAL(Token)
-
-		!! --- 7. Imaginary Refractive Index at 550 nm
-		CALL GetToken(CurrLine,";",Token)
-		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In AqOrgPhaseChems.in, the imaginary refractive index appears to be missing on "//   &
-						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-		AqOrgRefractiveIndex(CurrIndex, 2) = STR2REAL(Token)
-
-		!! --- 8. Real Refractive Index at 10 um
-		CALL GetToken(CurrLine,";",Token)
-		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In AqOrgPhaseChems.in, the real refractive index appears to be missing on "//   &
-						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-		AqOrgRefractiveIndex(CurrIndex, 3) = STR2REAL(Token)
-
-		!! --- 9. Imaginary Refractive Index at 10 um
-		CALL GetToken(CurrLine,";",Token)
-		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In AqOrgPhaseChems.in, the imaginary refractive index appears to be missing on "//   &
-						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
-		AqOrgRefractiveIndex(CurrIndex, 4) = STR2REAL(Token)
-
-
 		!! Transcript
 		IF (Transcribe) CALL Transcript(AqOrgPhaseChemicalNames(CurrIndex))
 	END DO
