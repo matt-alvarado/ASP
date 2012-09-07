@@ -976,27 +976,6 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 						   //"):  "//TRIM(FullLine))
 				END IF
 			END DO
-			
-		!Hardwired OH + NO2 + M reaction
-		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 2) THEN
-		
-			!! This number should match the number of rate inputs 
-                        !! for this reaction type
-			NumbRateFacs = 1
-	
-			IF (J .NE. NumbRateFacs) &
-				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
-					   " had the wrong number of rate terms.  Expected "//	 &
-					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
-					   //"<<")
-
-			IF (IsReal(StripToken(Rate))) THEN
-				RateFacs(1) = STR2REAL(StripToken(Rate))
-			ELSE
-				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
-						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
-			END IF 
 	
 	        !THIRD ORDER PAN degradation 
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 3) THEN

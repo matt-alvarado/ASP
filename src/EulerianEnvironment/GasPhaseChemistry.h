@@ -265,20 +265,6 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 	IF (INT(ReactionRates(L,3)) .EQ. 1) THEN
 	   GasPhaseChemicalRates(L) = ReactionRates(L,4)*(Temp/300.)**(-1.*ReactionRates(L,5)) * Mgas
 						
-	!Hardwired OH + NO2 + M Reaction
-	ELSE IF (INT(ReactionRates(L,3)) .EQ. 2) THEN
-	  !! JPL
-	  !!KO = 1.80E-30*(300.0/TEMP)**3
-	  !!KINF = 2.80E-11
-	  !! IUPAC
-	  KO = 3.30E-30*(300.0/TEMP)**3
-	  KINF = 6.00E-11
-	   MO = Mgas
-	   GasPhaseChemicalRates(L) = 0.937*KO*MO/(1.0+(0.937*KO*MO/KINF)) &
-     				      *(EXP(-1.*TEMP/363.0))**(1.0+ &
-     			((LOG10(0.937*KO*MO/KINF)-0.12)/(0.85-0.67*LOG10( &
-     			EXP(-1.*TEMP/363.0))))**2)**(-1)
-
         !PAN reactions of the form: k0 = a*exp(B/T) and ki = c*exp(D/T)
         ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN
 							

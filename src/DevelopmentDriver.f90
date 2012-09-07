@@ -102,7 +102,7 @@ PROGRAM ASP
 	CALL Transcript ("** ASP is an updated, expanded version of MELAM         **")
 	CALL Transcript ("** by H. D. Steele (donnan@mit.edu).                    **")
 	CALL Transcript ("**********************************************************")
-        IF(.TRUE.) THEN !Optical Properties Only
+        IF(.FALSE.) THEN !Optical Properties Only
          !MJA, 02-28-2012: The general idea here is to:
          ! 1. Read the size distribution parameters, including multiple modes
          ! 2. Read the non-H2O species as relative mass fractions
@@ -264,7 +264,7 @@ PROGRAM ASP
               ENDDO
         ENDIF	
 
-        IF(.FALSE.) THEN !Gas Chemistry Only
+        IF(.TRUE.) THEN !Gas Chemistry Only
 	        !!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
 		!! MJA 02-15-2012 always 1 cm^3
