@@ -18,6 +18,9 @@
 !!                                  hardcoded in SUBROUTINE                  !!
 !!                                  ShellRefIndAndRad(InParticle) in file    !!
 !!                                  ParticleAttributes.h                     !!
+!! 11/09  2012   Matt Alvarado     Changed BC density to 1.8 g/cm3 to match
+!!                                  density assumed for SP2 measurements 
+!!                                  in ARCTAS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -138,8 +141,8 @@ SUBROUTINE SetOrgPhaseChemistry ()
 	!Hard code values for BC
 	OrgPhaseChemicalNames(1)	= "BC"
 	OrgMolecularMass(1)			= 200.0* grams / moles
-	OrgDensity(1)				= 2.0 * grams / cm / cm / cm 
-        !Seinfeld and Pandis, "Atm. Chem and Phys.", 1998, p. 701
+	OrgDensity(1)				= 1.8 * grams / cm / cm / cm 
+        !ARCTAS SP2 observations used this density
 
 	DO i = 2, HowManyOrgChems
 
