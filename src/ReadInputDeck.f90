@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -11,6 +11,8 @@
 !!									     !!
 !! Month  Year   Name              Description				     !!
 !! 07     2006   Matt Alvarado     Began Update History			     !!
+!! 11/06  2012   Matt Alvarado     Updated main input deck to give model more!!
+!!                                 flexibility without recompiling.          !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -57,7 +59,7 @@
 		LOGICAL   :: IFGAS,IFAQ,IFSOLID
 		CHARACTER(len=512) :: Token
 		CHARACTER(len=512)::CurrLine,StoreLine
-		REAL*8    :: T,P,II, RH, BRH 
+		REAL*8    :: T,P,II, RH, BRH, Num, Wind, length
 
 		FHT = GetFileHandle()
 		FH  = GetFileHandle()
@@ -72,58 +74,13 @@
 		OPEN(UNIT=FHT, FILE=TRIM("OutputFiles/Transcript.TXT"))
 		
 
-		!! -- Get TEMPERATURE
-		Token = GetLine(FH)
 
-		!! Assume it is an input deck if not a real
-		IF (IsReal(Token) .EQ. 0) THEN
-			CALL ERROR("In ASPInputDeck.in, You tried to load Temperature from an input "//&
-					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
-		ELSE
-			T = STR2REAL(Token)
-		END IF
+                !!SECTION 1. PROCESS CONTROL SETTINGS
+                !!
+                !!Here we decide which processes (gas-phase chemistry, condensation, 
+                !!coagulation, etc.) are modeled and how they are calculated.
 
-		!! -- Get PRESSURE
-		Token = GetLine(FH)
-
-		!! Assume it is an input deck if not a real
-		IF (IsReal(Token) .EQ. 0) THEN
-			CALL ERROR("In ASPInputDeck.in, You tried to load Pressure from an input "//&
-					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
-		ELSE
-			P = STR2REAL(Token)
-		END IF
-
-		!! -- Get INITIAL RELATIVE HUMIDITY
-		Token = GetLine(FH)
-
-		!! Assume it is an input deck if not a real
-		IF (IsReal(Token) .EQ. 0) THEN
-			CALL ERROR("In ASPInputDeck.in, You tried to load RH from an input "//&
-					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
-		ELSE
-			II = STR2REAL(Token)
-			RH = II
-		END IF
-
-		!! -- Get BACKGROUND RELATIVE HUMIDITY
-		Token = GetLine(FH)
-
-		!! Assume it is an input deck if not a real
-		IF (IsReal(Token) .EQ. 0) THEN
-			CALL ERROR("In ASPInputDeck.in, You tried to load RH from an input "//&
-					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
-		ELSE
-			II = STR2REAL(Token)
-			BRH = II
-		END IF
-
-		!! Set the grid structure, t and p
-		CALL InitializeGridPointFields (T,P)
-		CALL SetWaterVaporField (RH)
-		CALL SetBackgroundRH(BRH)
-		
-		!!! -- Specify Which Chemical Phases are to be included
+		!!! -- Specify Which Phases have kinetic chemistry
 		CurrLine = GetLine(FH)
 
 			!!! Gas Phase
@@ -285,6 +242,21 @@
 		ELSE
 			CALL SetMetastable(.TRUE.)
 		END IF
+
+		!!Ignore corrections to diffusivity? (Also sets curvature corrections to 1.0!)
+		Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+			CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+					   "whether diffusivity corrections are ignored (1) or included (0). Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+					   "whether diffusivity corrections are ignored (1) or included (0).. Received "//StripToken(Token))	
+		IF (I .EQ. 0) THEN
+			CALL SetIgnoreDiffuseCorrect(.FALSE.)
+		ELSE
+			CALL SetIgnoreDiffuseCorrect(.TRUE.)
+		END IF
 		
 		!!! Coagulation?
 		Token = GetLine(FH)
@@ -317,19 +289,307 @@
 			CALL SetConstantKernel(.TRUE.)
 		END IF
 
-		!!Ignore corrections to diffusivity? (Also sets curvature corrections to 1.0!)
+                !!**************************************************************************
+                !!SECTION 2. RUN CONTROL SETTINGS
+                !!
+                !!Here we decide between a Langrangian parcel run, Eulerian box run, smog
+                !!chamber run, or other special run formats.
+
+	        !!Lagrangian Parcel Model?
 		Token = GetLine(FH)
 		IF (.NOT.IsInteger(Token)) &
-			CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
-					   "whether diffusivity corrections are ignored (1) or included (0). Received "//StripToken(Token))	
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if the Lagrangian Parcel Model is to be used. Received "//StripToken(Token))	
 		I = STR2INT(Token)
 		IF (I < 0 .OR. I > 1) &
 			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
-					   "whether diffusivity corrections are ignored (1) or included (0).. Received "//StripToken(Token))	
-		IF (I .EQ. 0) THEN
-			CALL SetIgnoreDiffuseCorrect(.FALSE.)
+			"if the Lagrangian Parcel Model is to be used. Received "//StripToken(Token))	             
+                CALL SetLagrangianParcelModel(I)
+
+	        !!Eulerian Box Model?
+		Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if the Eulerian Box Model is to be used. Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if the Eulerian Box Model is to be used. Received "//StripToken(Token))	             
+                CALL SetEulerianBoxModel(I)
+
+	        !!Smog Chamber Model?
+		Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if the Smog Chamber Model is to be used. Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if the Smog Chamber Model is to be used. Received "//StripToken(Token))	             
+                CALL SetSmogChamberModel(I)
+
+	        !!Optical Properties Model?
+		Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if the Optical Properties Model is to be used. Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if the Optical Properties Model is to be used. Received "//StripToken(Token))	             
+                CALL SetOpticalPropertiesModel(I)
+
+	        !!Thermo Test?
+		Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if a Thermodynamics Test is to be run. Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if a Thermodynamics Test is to be run. Received "//StripToken(Token))	             
+                CALL SetThermoTest(I)
+
+	        !!Coag Test?
+		Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if a Coagulation Test is to be run. Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if a Coagulation Test is to be run. Received "//StripToken(Token))	             
+                CALL SetCoagTest(I)
+
+
+	        !!Cond Test?
+		Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if a Condensation Test is to be run. Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if a Condensation Test is to be run. Received "//StripToken(Token))	             
+                CALL SetCondTest(I)
+ 
+                !!Subroutine Model?
+		Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if ASP is to be run as a subroutine. Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if ASP is to be run as a subroutine. Received "//StripToken(Token))	             
+                CALL SetSubroutineModel(I)
+
+                !!*************************************************************************
+                !!SECTION 3. RUN PARAMETERS
+                !!
+                !!Here we set temperature, pressure, RH, and other parameters needed
+                !!for the run types given above
+
+		!! -- Get TEMPERATURE
+		Token = GetLine(FH)
+
+		!! Assume it is an input deck if not a real
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load Temperature from an input "//&
+					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
 		ELSE
-			CALL SetIgnoreDiffuseCorrect(.TRUE.)
+			T = STR2REAL(Token)
 		END IF
-			
+
+		!! -- Get PRESSURE
+		Token = GetLine(FH)
+
+		!! Assume it is an input deck if not a real
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load Pressure from an input "//&
+					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
+		ELSE
+			P = STR2REAL(Token)
+		END IF
+
+		!! -- Get INITIAL RELATIVE HUMIDITY
+		Token = GetLine(FH)
+
+		!! Assume it is an input deck if not a real
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load RH from an input "//&
+					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
+		ELSE
+			II = STR2REAL(Token)
+			RH = II
+		END IF
+
+		!! -- Get BACKGROUND RELATIVE HUMIDITY
+		Token = GetLine(FH)
+
+		!! Assume it is an input deck if not a real
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load RH from an input "//&
+					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
+		ELSE
+			II = STR2REAL(Token)
+			BRH = II
+		END IF
+
+		!! Set the grid structure, t and p
+		CALL InitializeGridPointFields (T,P)
+		CALL SetWaterVaporField (RH)
+		CALL SetBackgroundRH(BRH)
+
+                !!Get Start time (hours in UTC)
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real start time.")
+		ELSE
+			II = STR2REAL(Token)
+                        CALL SetStartTime(II)
+		END IF
+
+	        !!Get Run Length (in min)
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real run length.")
+		ELSE
+			II = STR2REAL(Token)
+                        CALL SetRunLength(II)
+		END IF
+
+	        !!Get Chem Step (in s)
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real chemistry time step.")
+		ELSE
+			II = STR2REAL(Token)
+                        CALL SetChemStep(II)
+		END IF
+
+	        !!Get Mix Step (in s)
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real mixing time step.")
+		ELSE
+			II = STR2REAL(Token)
+                        CALL SetMixStep(II)
+		END IF
+
+	        !!Get Cond Step (in s)
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real condensation time step.")
+		ELSE
+			II = STR2REAL(Token)
+                        CALL SetCondStep(II)
+		END IF
+
+	        !!Get Coag Step (in s)
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real coagulation time step.")
+		ELSE
+			II = STR2REAL(Token)
+                        CALL SetCoagStep(II)
+		END IF
+
+	        !!Get Inversion height for deposition calcs
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real inversion height.")
+		ELSE
+			II = STR2REAL(Token)
+                        CALL SetInversionHeight(II)
+		END IF
+
+	        !!Include Aerosols?
+		Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if aerosols are to be included. Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			"if aerosols are to be included. Received "//StripToken(Token))	             
+                CALL SetIncludeAerosols(I)
+
+	        !!Get Hetero propoerties for bulk or gas only runs
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real number conc.")
+		ELSE
+			II = STR2REAL(Token)
+                        Num = II
+		END IF
+
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real aerosol radii.")
+		ELSE
+			II = STR2REAL(Token)
+                        CALL SetHetero(Num, II)
+		END IF
+
+	        !!Get Lagranigan Mixing param (s)
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real Lagrangian mixing scale.")
+		ELSE
+			II = STR2REAL(Token)
+                        Call SetLagrangianMix(II)
+		END IF
+
+	        !!Get Eulerian Box Parameters
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real wind speed.")
+		ELSE
+			II = STR2REAL(Token)
+                        wind = II
+		END IF
+
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real box length.")
+		ELSE
+			II = STR2REAL(Token)
+                        length = II
+		END IF
+
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real box width.")
+		ELSE
+			II = STR2REAL(Token)
+                        Call SetEulerianBox(wind,length,II)
+		END IF
+	
 	END SUBROUTINE ReadMainInputDeck

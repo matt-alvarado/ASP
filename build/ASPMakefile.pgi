@@ -26,8 +26,8 @@ OBJDIR = ./asp_linux_pgi_dbl.obj/
 FILES	= $(SOURCEDIR)ModelParameters.f90 \
 	  $(SOURCEDIR)ReadInputDeck.f90  \
           $(SOURCEDIR)StepASP.f90 \
-	  $(SOURCEDIR)Time.f90 
-
+	  $(SOURCEDIR)Time.f90 \
+	  $(SOURCEDIR)EulerianBoxDriver.f90
 
 MODULES = $(CHEMDIR)Chemistry.f90 \
           $(COAGDIR)Coagulation.f90 \
@@ -120,7 +120,8 @@ OBJECTS := $(OBJECTS) \
 	   $(OBJDIR)OutputRoutines.o \
 	   $(OBJDIR)Coagulation.o \
 	   $(OBJDIR)ReadInputDeck.o \
-	   $(OBJDIR)StepASP.o $(OBJDIR)DevelopmentDriver.o
+	   $(OBJDIR)StepASP.o $(OBJDIR)DevelopmentDriver.o \
+           $(OBJDIR)EulerianBoxDriver.o
 	
 # === Modules: 0 grid define; 1 essential; d type define; s all
 MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
@@ -138,7 +139,8 @@ MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.
 	   $(OBJDIR)OutputRoutines.o \
 	   $(OBJDIR)Coagulation.o \
 	   $(OBJDIR)ReadInputDeck.o \
-	   $(OBJDIR)StepASP.o $(OBJDIR)DevelopmentDriver.o
+	   $(OBJDIR)StepASP.o $(OBJDIR)DevelopmentDriver.o \
+           $(OBJDIR)EulerianBoxDriver.o
 
 MODS := $(MODASP)
 
@@ -253,6 +255,12 @@ $(OBJDIR)StepASP.o: $(SOURCEDIR)StepASP.f90 \
 	$(OBJDIR)Time.o $(OBJDIR)LagrangianAerosols.o $(ALLINC)
 	  $(FC) -c $(F90FLAGS) $<  
 	  \mv StepASP.o $(OBJDIR) 
+$(OBJDIR)EulerianBoxDriver.o: $(SOURCEDIR)EulerianBoxDriver.f90 \
+	$(OBJDIR)GridPointFields.o   $(OBJDIR)Condensation.o \
+       	$(OBJDIR)ModelParameters.o \
+	$(OBJDIR)Time.o $(OBJDIR)LagrangianAerosols.o $(ALLINC)
+	  $(FC) -c $(F90FLAGS) $<  
+	  \mv EulerianBoxDriver.o $(OBJDIR) 
 $(OBJDIR)DevelopmentDriver.o: $(SOURCEDIR)DevelopmentDriver.f90 \
 	$(OBJECTS) $(ALLINC)
 	  $(FC) -c $(F90FLAGS) $< 

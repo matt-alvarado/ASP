@@ -1,6 +1,8 @@
+!! 11/06  2012  Matt Alvarado Updated intitalization to make parallel to others in
+!!                            DevelopmentDriver.f90
 SUBROUTINE EulerianBox()
 	!! Include modules
-	USE DFPORT,				 ONLY : RTC, ETIME
+!	USE DFPORT,				 ONLY : RTC, ETIME
 	USE ModelParameters
 	USE InfrastructuralCode	
 	USE GridPointFields
@@ -29,14 +31,17 @@ SUBROUTINE EulerianBox()
 				TotalPOA, TotalSOA, TotalK, TotalNa, TotalNH4, TotalCl, TotalNO3, TotalSO4, &
 				NucRate, MolsinNucParticle, GridTotalSOA, RH, tiny, x1, x2, x3, f1, f2, f3, chg, xs, molalbin, &
 				K2SO4Mass, Kmass, TotalMass, TimeStepSize, PressEq, P1, EnvMass, InitialMass, NewMass, &
-				Xlength, Ylength, Height, Windspeed, FireCO, FluxCO, DeltaCO, spinup
+				Xlength, Ylength, Height, FireCO, FluxCO, DeltaCO, spinup
 
 	REAL*4  :: etimearray(2)
 	REAL*8, ALLOCATABLE	::	XPASS(:), GAMMA(:), Chem(:), NumConc(:), &
-							HeteroNumberConc(:), HeteroRadii(:), OutFH(:), OFH(:),&
+							HeteroNumberConc(:), HeteroRadii(:), &
 							InitNumConc(:), EnvNumConc(:), Flux(:), SourceNumConc(:), SourceMassConc(:,:), &
 							AqMassFlux(:,:), OrgMassFlux(:,:), AqOrgMassFlux(:,:), NumFlux(:)
-	REAL*8, DIMENSION(18) :: ExtCoeff, SingScat, Assym
+        REAL*8, DIMENSION(451) :: ExtCoeff, SingScat, Assym,BackScatCoeff,SubExtCoeff, SubSSA, &
+                                          ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
+                                          SubExtCoeffSep, SubSSASep
+        INTEGER, ALLOCATABLE :: OutFH(:), OFH(:)
 
 							
 	
@@ -74,39 +79,17 @@ SUBROUTINE EulerianBox()
 						  !Adding it to the gas phase will hopefully prevent 
 						  !H+ below 0 errors. Must be consistent with melaminit.F!
 		
-		Xlength = 52500. !52500. !52.5 km
-		Ylength = 10000. !20000. !20 km
-		Height = 1000.	!1 km
-		Windspeed = 9.3 !m/s, from Trentmann 2005
+		Xlength = boxlength !52500. !52.5 km
+		Ylength = boxwidth !20000. !20 km
+		Height = inversionheight	!1 km
 		spinup = 600 !spinup time in s
 		
 		FireCO = 49.5 !kg/s
 		!Want molecules/m2/s
 		FluxCO = FireCO/XLength/Ylength !kg/m2/s
 		FluxCO = FluxCO*6.022e23*1000/28.0 !molecules/m2/s
-	
-	!! Initialize the random number generator 
-	seedarray(1) = RTC()
-	seedarray(2) = FLOOR(SQRT(REAL(seedarray(1))))
-	CALL Random_Seed(put=seedarray)
-
-	!! Send a Welcome Message
-	CALL Transcript ("**********************************************************")
-	CALL Transcript ("** Welcome to the ASP Model developed by Matt Alvarado  **")
-	CALL Transcript ("** (mjalvara@mit.edu).                                  **")
-	CALL Transcript ("** ASP is an updated, expanded version of MELAM         **")
-	CALL Transcript ("** by H. D. Steele (donnan@mit.edu).                    **")
-	CALL Transcript ("**********************************************************")
 
 	IF (.TRUE.) THEN !Size Dist PARTICLE TESTS
-		
-		!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! SET the DOMAIN SIZE !!
-		CALL SetDomainSize () !Always 1 cm^3
-	
-		!! Call subroutines to set module data
-		CALL SetFileHandleCounter(12)
-		CALL ReadMainInputDeck()
 	
 		! INITIALIZE the CHEMISTRY 
 		CALL SetChemistryParams
@@ -173,7 +156,7 @@ SUBROUTINE EulerianBox()
 		HSO4i = FindChem("HSO4-", 1)
 
 		!Count # of bins, # of Aq. Chems
-		current => particles()%first
+		current => particles%first
 		Env => BoundaryParticles%first
 		NumBins = 0
 		Potassium = 0
@@ -358,7 +341,7 @@ SUBROUTINE EulerianBox()
 		
 		!Set Initial Aerosol Concentrations to background
 		CALL SortAerosolAtGridPointForCoagulation () 
-		current => particles()%first
+		current => particles%first
 		Env => BoundaryParticles%first
 		I = 1
 		DO WHILE(associated(current))
@@ -408,39 +391,39 @@ SUBROUTINE EulerianBox()
 		END DO
 		!mol/m2/s
 		q = FindChem("H2O",1)
-		AqMassFlux(1,q) = sourcemassconc(1,1)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,1)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,1)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
+		AqMassFlux(1,q) = sourcemassconc(1,1)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(2,q) = sourcemassconc(2,1)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(3,q) = sourcemassconc(3,1)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
 
 		q = FindChem("NH3",1)
-		AqMassFlux(1,q) = sourcemassconc(1,3)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,3)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,3)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
+		AqMassFlux(1,q) = sourcemassconc(1,3)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(2,q) = sourcemassconc(2,3)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(3,q) = sourcemassconc(3,3)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
 
 		q = FindChem("NH4Cl",1)
-		AqMassFlux(1,q) = sourcemassconc(1,6)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,6)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,6)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
+		AqMassFlux(1,q) = sourcemassconc(1,6)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(2,q) = sourcemassconc(2,6)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(3,q) = sourcemassconc(3,6)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
 
 		q = FindChem("NH4NO3",1)
-		AqMassFlux(1,q) = sourcemassconc(1,7)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,7)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,7)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
+		AqMassFlux(1,q) = sourcemassconc(1,7)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(2,q) = sourcemassconc(2,7)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(3,q) = sourcemassconc(3,7)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
 
 		q = FindChem("(NH4)2SO4",1)
-		AqMassFlux(1,q) = sourcemassconc(1,8)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,8)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,8)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
+		AqMassFlux(1,q) = sourcemassconc(1,8)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(2,q) = sourcemassconc(2,8)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(3,q) = sourcemassconc(3,8)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
 
 		q = FindChem("KCl",1)
-		AqMassFlux(1,q) = sourcemassconc(1,10)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,10)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,10)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
+		AqMassFlux(1,q) = sourcemassconc(1,10)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(2,q) = sourcemassconc(2,10)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(3,q) = sourcemassconc(3,10)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
 
 		q = FindChem("K2SO4",1)
-		AqMassFlux(1,q) = sourcemassconc(1,12)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,12)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,12)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/AqMolecularMass(q)
+		AqMassFlux(1,q) = sourcemassconc(1,12)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(2,q) = sourcemassconc(2,12)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
+		AqMassFlux(3,q) = sourcemassconc(3,12)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
 
 		ALLOCATE(OrgMassFlux(NumBins,NumOrgChems))
 		DO q = 1, NumBins
@@ -450,19 +433,19 @@ SUBROUTINE EulerianBox()
 		END DO
 
 		q = FindChem("BC",2)
-		OrgMassFlux(1,q) = sourcemassconc(1,24)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/OrgMolecularMass(q)
-		OrgMassFlux(2,q) = sourcemassconc(2,24)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/OrgMolecularMass(q)
-		OrgMassFlux(3,q) = sourcemassconc(3,24)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/OrgMolecularMass(q)
+		OrgMassFlux(1,q) = sourcemassconc(1,24)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
+		OrgMassFlux(2,q) = sourcemassconc(2,24)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
+		OrgMassFlux(3,q) = sourcemassconc(3,24)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
 
 		q = FindChem("POA1",2)
-		OrgMassFlux(1,q) = sourcemassconc(1,25)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/OrgMolecularMass(q)
-		OrgMassFlux(2,q) = sourcemassconc(2,25)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/OrgMolecularMass(q)
-		OrgMassFlux(3,q) = sourcemassconc(3,25)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/OrgMolecularMass(q)
+		OrgMassFlux(1,q) = sourcemassconc(1,25)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
+		OrgMassFlux(2,q) = sourcemassconc(2,25)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
+		OrgMassFlux(3,q) = sourcemassconc(3,25)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
 
 		q = FindChem("CBIO",2)
-		OrgMassFlux(1,q) = sourcemassconc(1,44)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/OrgMolecularMass(q)
-		OrgMassFlux(2,q) = sourcemassconc(2,44)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/OrgMolecularMass(q)
-		OrgMassFlux(3,q) = sourcemassconc(3,44)*deltaCO*1.0e-3*GetAirDensity(X(1),X(2),X(3))/OrgMolecularMass(q)
+		OrgMassFlux(1,q) = sourcemassconc(1,44)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
+		OrgMassFlux(2,q) = sourcemassconc(2,44)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
+		OrgMassFlux(3,q) = sourcemassconc(3,44)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
 
 		ALLOCATE(AqOrgMassFlux(NumBins,NumAqOrgChems))
 		DO q = 1, NumBins
@@ -472,7 +455,7 @@ SUBROUTINE EulerianBox()
 		END DO
 
 		!Get particle number conc. and radii for hetero. rate calculation
-		current => particles()%first
+		current => particles%first
 		I = 1
 		DO WHILE(associated(current))
 			HeteroNumberConc(I) = current%NumberofParticles
@@ -486,18 +469,16 @@ SUBROUTINE EulerianBox()
 		CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .TRUE.)
 		CALL RecalculatePhotoRates(ut, .TRUE.)
 					
-	
-
 		ALLOCATE(OutFH(3+NumBins))
 		DO I = 1, 3+Numbins
 			OutFH(I) = GetFileHandle()
 		END DO
 	
-		OPEN(UNIT = OutFH(1), FILE=TRIM(OutputDeckSubDir)//"GasOut1.txt", STATUS="REPLACE")
+		OPEN(UNIT=OutFH(1), FILE=TRIM(OutputDeckSubDir)//"GasOut1.txt", STATUS="REPLACE")
 		WRITE(OutFH(1), FMT='(A4,A11)', ADVANCE='NO') "Time", " "
-		OPEN(UNIT = OutFH(2), FILE=TRIM(OutputDeckSubDir)//"GasOut2.txt", STATUS="REPLACE")
+		OPEN(UNIT=OutFH(2), FILE=TRIM(OutputDeckSubDir)//"GasOut2.txt", STATUS="REPLACE")
 		WRITE(OutFH(2), FMT='(A4,A11)', ADVANCE='NO') "Time", " "
-		OPEN(UNIT = OutFH(3), FILE=TRIM(OutputDeckSubDir)//"GasOut3.txt", STATUS="REPLACE")
+		OPEN(UNIT=OutFH(3), FILE=TRIM(OutputDeckSubDir)//"GasOut3.txt", STATUS="REPLACE")
 		WRITE(OutFH(3), FMT='(A4,A11)', ADVANCE='NO') "Time", " "
 	
 		DO q = 1, HowManyGasChems
@@ -578,7 +559,7 @@ SUBROUTINE EulerianBox()
 		WRITE(OutFH(2), FMT='(A1)') ""
 		WRITE(OutFH(3), FMT='(A1)') ""
 			
-		current => particles()%first
+		current => particles%first
 		DO I = 4, 3+NumBins
 			WRITE(OutFH(I),FMT='(7ES13.5E2)', ADVANCE='NO') t/60
 				
@@ -737,7 +718,7 @@ SUBROUTINE EulerianBox()
 			!WRITE(*,*) "Photo Okay"
 
 			!Get particle number conc. and radii for hetero. rate calculation
-			current => particles()%first
+			current => particles%first
 			I = 1
 			DO WHILE(associated(current))
 				HeteroNumberConc(I) = current%NumberofParticles
@@ -799,7 +780,7 @@ SUBROUTINE EulerianBox()
 
 			!Step Dilution and Deposition of Particles
 			CALL SortAerosolAtGridPointForCoagulation () 
-			current => particles()%first
+			current => particles%first
 			Env => BoundaryParticles%first
 			I = 1
 			DO WHILE(associated(current))
@@ -906,7 +887,7 @@ SUBROUTINE EulerianBox()
 			!WRITE(*,*) "AOD: ", AerosolOpticalDepth ()	
 			!WRITE(*,*) "Dilution Okay"	
 			!CALL SpillBeans()
-			CALL AerosolOptProp (ExtCoeff, SingScat, Assym)
+			CALL AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSSA, 0)
 			
 			!Write Output to file every minute 
 			IF (MOD(t,10.0) .LT. 0.01) THEN
@@ -939,7 +920,7 @@ SUBROUTINE EulerianBox()
 				WRITE(OutFH(3), FMT='(A1)') ""
 			
 				GridTotalSOA = 0.0
-				current => particles()%first
+				current => particles%first
 				DO I = 4, 3+NumBins
 					WRITE(OutFH(I),FMT='(7ES13.5E2)', ADVANCE='NO') t/60
 				

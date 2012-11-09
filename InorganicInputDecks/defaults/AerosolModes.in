@@ -47,7 +47,7 @@ F !!
 !! (0) mass fraction (Sectional Distribution) or
 !! (1) total mass abundance in ug/m3 (Bulk or Monodisperse Distribution)
 !!
-0 !!
+1 !!
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Next, specify the CHARACTERISTICS of the SECTIONAL DISTRIBUTION
@@ -134,30 +134,30 @@ F !!
 !CBIO; 8.
 !CPD3; 1.
 !
-34000; 0.11; 1.91;  
-Timbavati Size Test;
-KCl; 13.58; 
-NH4Cl; 20.46; 
+!34000; 0.11; 1.91;  
+!Timbavati Size Test;
+!KCl; 13.58; 
+!NH4Cl; 20.46; 
 !KCl; 421;
 !HCl; 139.4;
-NH4NO3; 1.76; 
-(NH4)2SO4; 3.43; 
-BC; 3.50; 
-POA1; 9.66; 
-CBIO; 27.83;
+!NH4NO3; 1.76; 
+!(NH4)2SO4; 3.43; 
+!BC; 3.50; 
+!POA1; 9.66; 
+!CBIO; 27.83;
 !
 !
-66000 ; 0.02 ; 1.175; 
-RemConMode1; 
-KCl; 13.58;
-NH4Cl; 20.46;  
+!66000 ; 0.02 ; 1.175; 
+!RemConMode1; 
+!KCl; 13.58;
+!NH4Cl; 20.46;  
 !KCl; 421;
 !HCl; 139.4;
-NH4NO3; 1.76; 
-(NH4)2SO4; 3.43;  
-BC; 3.50;
-POA1; 9.66; 
-CBIO; 27.83; 
+!NH4NO3; 1.76; 
+!(NH4)2SO4; 3.43;  
+!BC; 3.50;
+!POA1; 9.66; 
+!CBIO; 27.83; 
 !
 !
 !0; 0.2; 1.4
@@ -218,30 +218,30 @@ CBIO; 27.83;
 !NH4NO3; 9.28
 !(NH4)2SO4; 12.48
 !
-!0; 0.2; 1.4
+!0; 0.2; 1.4!
 !Urban Case ISORROPIA
-!NH3; 3.4
-!H2SO4; 9.143
-!HNO3; 1.953
+!NH3; 3.4!
+!H2SO4; 9.143!
+!HNO3; 1.953!
 !
-!0; 0.2; 1.4
+!0; 0.2; 1.4!
 !High Sulfate
-!NH3; 5.11
-!H2SO4; 19.61
+!NH3; 5.11!
+!H2SO4; 19.61!
 !
-!0; 0.2; 1.4
-!Marine Case ISORROPIA
-!NH3; 0.02
-!H2SO4; 0.510
-!HNO3; 0.163
-!NaCl; 5.01
-!HCl; 0.002
+!0; 0.2; 1.4!
+!Marine Case ISORROPIA!
+!NH3; 0.02!
+!H2SO4; 0.510!
+!HNO3; 0.163!
+!NaCl; 5.01!
+!HCl; 0.002!
 !
-!0; 0.2; 1.4
+!0; 0.2; 1.4!
 !Remote Case ISORROPIA
-!NH3; 4.25
-!H2SO4; 11.270
-!HNO3; 0.145
+!NH3; 4.25!
+!H2SO4; 11.270!
+!HNO3; 0.145!
 !
 !0; 0.2; 1.4
 !WaterTest
@@ -253,10 +253,10 @@ CBIO; 27.83;
 !HCl; 1.189
 !NH3; 16.73 
 !
-!0; 0.2; 1.4
-!ThermoTests
+0; 0.2; 1.4
+ThermoTests
 !KCl; 74.55;
-!NH4Cl; 155.9;
+NH4Cl; 155.9;
 !NH4NO3; 233.25;
 !KNO3; 101.1;
 !K2SO4; 17.43;

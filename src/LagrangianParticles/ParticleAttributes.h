@@ -63,6 +63,8 @@
 !!                                  to particle density.
 !! 05/03  2012   Matt Alvarado     Fixed calculation of hemispherical
 !!                                  backscattering coefficient in AerosolOptProp
+!  08/17  2012   Matt Alvarado     Added capability for external mixtures to ShellRefIndAndRad
+!! 11/08  2012   Matt Alvarado     Added Maxwell-Garnett mixing rule to ShellRefIndAndRad
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1233,6 +1235,7 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
 ! 08/30/2010 Changed for the Photolyis Wavebands MJA
 ! 02/27/2012 Changed to wavelength-dependent refractive indices
 ! 08/17/2012 Added capability for external mixtures
+! 11/08/2012 Added Maxwell Garnett mixing rule
 	USE ModelParameters
 	USE Chemistry, ONLY : AqMolecularMass, &
 			        SolidSaltDensity, AqPhaseChemicalNames, &
@@ -1259,6 +1262,7 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
 	REAL*8	:: Er, Ei, SumEr, SumEi, Wavelength, Sum
 	REAL*8	:: SolnMolWeight, MolalRefraction, MolVol, & 
                    TotalVolConc, Rshell, ShellVolumeConc
+        REAL*8  :: ErBC, EiBC, ErVA, EiVA, bcvolrat, ErMG, EiMG
 
 	REAL*8, ALLOCATABLE	:: AqVolConc(:), &
 				OrgVolConc(:), AqOrgVolConc(:), MolFrac(:)
@@ -1278,7 +1282,8 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
         REAL*8 :: DUST_REAL(61), DUST_IMAG(61)
         REAL*8 :: a_w, b_w, n_real, n_imag, V_molal, R_molal
 
-	COMPLEX	:: SolarShellInd, SolarCoreInd, IRShellInd, IRCoreInd
+	COMPLEX :: SolarShellInd, SolarCoreInd, IRShellInd, IRCoreInd, VAInd
+        COMPLEX :: Eshell, EBC, Factor2, EMG, MGInd
 	REAL*8	:: Angles(MaxAng), CosAng(MaxAng), M1( MaxAng, 2), &
 			M2( MaxAng, 2 ), S21( MaxAng, 2 ), &
 		D21( MaxAng, 2 ), SolutionRefracIndex(2), SolutionVolConc
@@ -1699,6 +1704,7 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
 		SumEi = SumEi + (AqOrgVolConc(I)/ShellVolumeConc)*Ei
 	     END DO
 
+            !!For core-in-shell mixing rule
 	    Factor = SQRT(SumEr**2 + SumEi**2)
 	    InParticle%ShellRealRefracInd(ib) = SQRT((Factor + SumEr)/2.0)
 	    InParticle%ShellImagRefracInd(ib) = SQRT((Factor - SumEr)/2.0)
@@ -1721,7 +1727,36 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
                IF(InParticle%AbsCoreRad .GT. 0.9999*InParticle%EffectiveRadius) & 
                 InParticle%AbsCoreRad = 0.9999*InParticle%EffectiveRadius
             ENDIF
+
+            !!For volume average dielectric constant mixing rule
+	    n_real = a_w*SOOT_REAL(w_ind_low)+b_w*SOOT_REAL(w_ind_low+1)
+            n_imag = -1.0*(a_w*SOOT_IMAG(w_ind_low)+b_w*SOOT_IMAG(w_ind_low+1))
+            ErBC = n_real**2 - n_imag**2
+            EiBC = 2*n_real*n_imag
+            BCVolRat = (InParticle%AbsCoreRad/InParticle%EffectiveRadius)**3.0
+            ErVA = ErBC*BCVolRat+SumEr*(1.0-BCVolRat)
+            EiVA = EiBC*BCVolRat+SumEi*(1.0-BCVolRat)
+            Factor = SQRT(ErVA**2 + EiVA**2)
+	    InParticle%VARealRefracInd(ib) = SQRT((Factor + ErVA)/2.0)
+	    InParticle%VAImagRefracInd(ib) = SQRT((Factor - ErVA)/2.0)            
+            VAInd = CMPLX(InParticle%VARealRefracInd(ib),-1.0*InParticle%VAImagRefracInd(ib))
+
+            !!For Maxwell-Garnett mixing rule
+            Eshell =  CMPLX(SumEr,-1.0*SumEi)
+            EBC =  CMPLX(ErBC,-1.0*EiBC)
+            Factor2 = (EBC-Eshell)/(EBC-2.0*Eshell)
+            EMG = Eshell*(1.0+(3.0*BCVolRat*Factor2/(1.0-BCVolRat*Factor2)))
+            ErMG = REAL(EMG)
+            EiMG = AIMAG(EMG)
+            Factor = SQRT(ErMG**2 + EiMG**2)
+	    InParticle%MGRealRefracInd(ib) = SQRT((Factor + ErMG)/2.0)
+	    InParticle%MGImagRefracInd(ib) = SQRT((Factor - ErMG)/2.0)            
+            MGInd = CMPLX(InParticle%MGRealRefracInd(ib),-1.0*InParticle%MGImagRefracInd(ib))
           ENDIF
+
+
+
+
 	  NumAng = 0.
 
           !DMiLay needs 2*Pi divided by the wavelength
@@ -1803,6 +1838,7 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
 !                  D21(j,1) refers to angle with cosine MU(j); 
 !                  D21(j,2) refers to supplement of that angle.
 
+!          WRITE(*,*) "Call 1"
 	  CALL DMiLay( InParticle%AbsCoreRad, &
 			InParticle%EffectiveRadius, &
 			Wavelength, &
@@ -1829,6 +1865,7 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
 
           !Now call for a hypothetical particle of
           !same effective size but all BC
+!          WRITE(*,*) "Call 2"
 	  CALL DMiLay( InParticle%AbsCoreRad, &
 			InParticle%EffectiveRadius, &
 			Wavelength, &
@@ -1849,6 +1886,7 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
 
           !Now call for a hypothetical particle of
           !same effective size but all shell
+!          WRITE(*,*) "Call 3"
 	  CALL DMiLay( InParticle%AbsCoreRad, &
 			InParticle%EffectiveRadius, &
 			Wavelength, &
@@ -1866,6 +1904,45 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
 	   !So divide by scattering efficiency here (MJA, 10/15/07)
 	   InParticle%AssymParamShell(ib) = &
                 InParticle%AssymParamShell(ib)/InParticle%ScaEffShell(ib)
+
+!          WRITE(*,*) "Call 4"
+          !Now call for volume average dielectric constant mixing rule
+	  CALL DMiLay( InParticle%AbsCoreRad, &
+			InParticle%EffectiveRadius, &
+			Wavelength, &
+			VAInd, & 
+			VAInd, &
+			CosAng, &
+			NumAng, &
+			InParticle%ExtEffVA(ib), &
+			InParticle%ScaEffVA(ib), &
+			InParticle%BackScaEffVA(ib), &
+			InParticle%AssymParamVA(ib), & 
+                        M1, M2, S21, D21, MAXANG )
+
+	   !DMiLay gives the assymetry parameter times the scattering eff.
+	   !So divide by scattering efficiency here (MJA, 10/15/07)
+	   InParticle%AssymParamVA(ib) = &
+                InParticle%AssymParamVA(ib)/InParticle%ScaEffVA(ib)
+
+          !Now call for Maxwell-Garnett mixing rule
+	  CALL DMiLay( InParticle%AbsCoreRad, &
+			InParticle%EffectiveRadius, &
+			Wavelength, &
+			MGInd, & 
+			MGInd, &
+			CosAng, &
+			NumAng, &
+			InParticle%ExtEffMG(ib), &
+			InParticle%ScaEffMG(ib), &
+			InParticle%BackScaEffMG(ib), &
+			InParticle%AssymParamMG(ib), & 
+                        M1, M2, S21, D21, MAXANG )
+
+	   !DMiLay gives the assymetry parameter times the scattering eff.
+	   !So divide by scattering efficiency here (MJA, 10/15/07)
+	   InParticle%AssymParamMG(ib) = &
+                InParticle%AssymParamMG(ib)/InParticle%ScaEffMG(ib)
           
 	END DO
 
@@ -1908,31 +1985,39 @@ END FUNCTION AerosolOpticalDepth
 !average assymetry factor 
 !for a grid point at 18 radiative bands.
 SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, &
-                          SubExtCoeff, SubSingScat, &
-                          ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
-                          SubExtCoeffSep, SubSingScatSep)
+                          SubExtCoeff, SubSingScat, Flag)!&
+                          !ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
+                          !SubExtCoeffSep, SubSingScatSep)
 ! 08/30/2010 Changed for the photolysis wavebands MJA
 ! 02/27/2012 Changed for photolysis radiation bins MJA	
 ! 05/03/2012 Changed to calculate backscattering coefficient, units
 !             for extcoeff and backscatcoeff now Mm^-1
 ! 08/16/2012 Fixed backscattering coefficient, added submicron extinction & SSA
 ! 08/17/2012 Added capability for external mixtures
+! 11/08/2012 Added flag to decide between mixing rules
+!            Flag = 0, core-in-shell (default)
+!            Flag = 1, external mixture of BC and rest
+!            Flag = 2, volume average dielectric constant mixing rule
+!            Flag = 3, Maxwell-Garnett mixing rule
+!
 	USE ModelParameters, ONLY : PI, InversionHeight
 
 	IMPLICIT NONE
 
+        !Input Variables
+        INTEGER :: Flag
 	!Output Variables
 	REAL*8, DIMENSION(451) :: ExtCoeff, SingScat, Assym, BackScatCoeff
 	REAL*8, DIMENSION(451) :: SubExtCoeff, SubSingScat
         !Below are for external mixture of BC and "shell"
-	REAL*8, DIMENSION(451) :: ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep
-	REAL*8, DIMENSION(451) :: SubExtCoeffSep, SubSingScatSep
+!	REAL*8, DIMENSION(451) :: ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep
+!	REAL*8, DIMENSION(451) :: SubExtCoeffSep, SubSingScatSep
 
 	!Internal variables
 	INTEGER :: ib
 	REAL*8, DIMENSION(451) :: ScatCoeff, SubScatCoeff
-	REAL*8, DIMENSION(451) :: ScatCoeffSep, SubScatCoeffSep
-	REAL*8 :: AssymSum, AssymSumSep, xxx, hbs_frac, assym_sq, bc_vol_frac
+!	REAL*8, DIMENSION(451) :: ScatCoeffSep, SubScatCoeffSep
+	REAL*8 :: AssymSum,xxx, hbs_frac, assym_sq, bc_vol_frac
 	Type(Particle),POINTER :: Particle
 
         DO ib = 1, 451
@@ -1942,12 +2027,12 @@ SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, &
 		SubExtCoeff(ib) = 0.0
 		SubScatCoeff(ib) = 0.0
                 AssymSum = 0.0
-		ExtCoeffSep(ib) = 0.0
-		ScatCoeffSep(ib) = 0.0
-		BackScatCoeffSep(ib) = 0.0
-		SubExtCoeffSep(ib) = 0.0
-		SubScatCoeffSep(ib) = 0.0
-                AssymSumSep = 0.0
+!		ExtCoeffSep(ib) = 0.0
+!		ScatCoeffSep(ib) = 0.0
+!		BackScatCoeffSep(ib) = 0.0
+!		SubExtCoeffSep(ib) = 0.0
+!		SubScatCoeffSep(ib) = 0.0
+!                AssymSumSep = 0.0
 		Particle => Particles%First
 
 	10	IF (ASSOCIATED(Particle)) THEN
@@ -1956,60 +2041,84 @@ SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, &
                      ELSE
                        bc_vol_frac = 0.0
                      ENDIF
-			
-                        xxx = Particle%NumberofParticles*(PI*Particle%EffectiveRadius**2)
+		     xxx = Particle%NumberofParticles*(PI*Particle%EffectiveRadius**2)
+
+                     IF (FLAG .EQ. 0) THEN !Core in Shell  
 			ExtCoeff(ib) = ExtCoeff(ib) + xxx*Particle%ExtEff(ib)
 			ScatCoeff(ib) = ScatCoeff(ib) + xxx*Particle%ScaEff(ib)
 			AssymSum = AssymSum + xxx*Particle%ScaEff(ib)*Particle%AssymParam(ib)
-
-                        ExtCoeffSep(ib) = ExtCoeffSep(ib) + &
-                                        bc_vol_frac*xxx*Particle%ExtEffBC(ib) &
-                                        +(1.0-bc_vol_frac)*xxx*Particle%ExtEffShell(ib)
-			ScatCoeffSep(ib) = ScatCoeffSep(ib) + &
-                                        bc_vol_frac*xxx*Particle%ScaEffBC(ib) &
-                                        +(1.0-bc_vol_frac)*xxx*Particle%ScaEffShell(ib)
-			AssymSumSep = AssymSumSep + &
-                                        bc_vol_frac*xxx*Particle%ScaEffBC(ib)*Particle%AssymParamBC(ib) &
-                                       +(1.0-bc_vol_frac)*xxx* &
-                                       Particle%ScaEffShell(ib)*Particle%AssymParamShell(ib)
 
                         !Particles with diameters less than 1 micron
                         IF (2*Particle%EffectiveRadius .LT. 1.0e-4) THEN
  			  SubExtCoeff(ib) = SubExtCoeff(ib) + xxx*Particle%ExtEff(ib)
 			  SubScatCoeff(ib) = SubScatCoeff(ib) + xxx*Particle%ScaEff(ib)
-                          SubExtCoeffSep(ib) = SubExtCoeffSep(ib) + &
+                        ENDIF
+                     ELSE IF (Flag .EQ. 1) THEN !External mixture
+                        ExtCoeff(ib) = ExtCoeff(ib) + &
                                         bc_vol_frac*xxx*Particle%ExtEffBC(ib) &
                                         +(1.0-bc_vol_frac)*xxx*Particle%ExtEffShell(ib)
-			  SubScatCoeffSep(ib) = SubScatCoeffSep(ib) + &
+			ScatCoeff(ib) = ScatCoeff(ib) + &
                                         bc_vol_frac*xxx*Particle%ScaEffBC(ib) &
                                         +(1.0-bc_vol_frac)*xxx*Particle%ScaEffShell(ib)
-
+			AssymSum = AssymSum + &
+                                        bc_vol_frac*xxx*Particle%ScaEffBC(ib)*Particle%AssymParamBC(ib) &
+                                       +(1.0-bc_vol_frac)*xxx* &
+                                       Particle%ScaEffShell(ib)*Particle%AssymParamShell(ib) 
+                        !Particles with diameters less than 1 micron
+                        IF (2*Particle%EffectiveRadius .LT. 1.0e-4) THEN	
+                          SubExtCoeff(ib) = SubExtCoeff(ib) + &
+                                        bc_vol_frac*xxx*Particle%ExtEffBC(ib) &
+                                        +(1.0-bc_vol_frac)*xxx*Particle%ExtEffShell(ib)
+			  SubScatCoeff(ib) = SubScatCoeff(ib) + &
+                                        bc_vol_frac*xxx*Particle%ScaEffBC(ib) &
+                                        +(1.0-bc_vol_frac)*xxx*Particle%ScaEffShell(ib)
                         ENDIF
-					
-			IF (ASSOCIATED(Particle%Next)) THEN
-				Particle => Particle%Next
-				GOTO 10
-			END IF
+	              ELSE IF (FLAG .EQ. 2) THEN !Volume-averaged internal mixture
+			ExtCoeff(ib) = ExtCoeff(ib) + xxx*Particle%ExtEffVA(ib)
+			ScatCoeff(ib) = ScatCoeff(ib) + xxx*Particle%ScaEffVA(ib)
+			AssymSum = AssymSum + xxx*Particle%ScaEffVA(ib)*Particle%AssymParamVA(ib)
+
+                        !Particles with diameters less than 1 micron
+                        IF (2*Particle%EffectiveRadius .LT. 1.0e-4) THEN
+ 			  SubExtCoeff(ib) = SubExtCoeff(ib) + xxx*Particle%ExtEffVA(ib)
+			  SubScatCoeff(ib) = SubScatCoeff(ib) + xxx*Particle%ScaEffVA(ib)
+                        ENDIF
+                      ELSE IF (FLAG .EQ. 3) THEN !Maxwell-Garnett internal mixture
+			ExtCoeff(ib) = ExtCoeff(ib) + xxx*Particle%ExtEffMG(ib)
+			ScatCoeff(ib) = ScatCoeff(ib) + xxx*Particle%ScaEffMG(ib)
+			AssymSum = AssymSum + xxx*Particle%ScaEffMG(ib)*Particle%AssymParamMG(ib)
+
+                        !Particles with diameters less than 1 micron
+                        IF (2*Particle%EffectiveRadius .LT. 1.0e-4) THEN
+ 			  SubExtCoeff(ib) = SubExtCoeff(ib) + xxx*Particle%ExtEffMG(ib)
+			  SubScatCoeff(ib) = SubScatCoeff(ib) + xxx*Particle%ScaEffMG(ib)
+                        ENDIF
+                      ENDIF
+
+	              IF (ASSOCIATED(Particle%Next)) THEN
+			Particle => Particle%Next
+			GOTO 10
+		      END IF
 	
 		END IF
 
 		!Formula from p.327, eqn 9.103 of Jacobson, 2nd ed. "Fundamentals of Atm. Modeling"
 		SingScat(ib) = ScatCoeff(ib)/ExtCoeff(ib)
 		SubSingScat(ib) = SubScatCoeff(ib)/SubExtCoeff(ib)                
-		SingScatSep(ib) = ScatCoeffSep(ib)/ExtCoeffSep(ib)
-		SubSingScatSep(ib) = SubScatCoeffSep(ib)/SubExtCoeffSep(ib)   
+!		SingScatSep(ib) = ScatCoeffSep(ib)/ExtCoeffSep(ib)
+!		SubSingScatSep(ib) = SubScatCoeffSep(ib)/SubExtCoeffSep(ib)   
 		!IF(ib .EQ. 419 .OR. ib .EQ. 420) WRITE(*,*) "SingScat: ", SingScat(ib), ScatCoeff(ib), ExtCoeff(ib) 
 		
 		!Formula from p.329, eqn 9.117 of Jacobson, 2nd ed. "Fundamentals of Atm. Modeling"
 		Assym(ib) = AssymSum/ScatCoeff(ib)
-		AssymSep(ib) = AssymSumSep/ScatCoeffSep(ib)
+!		AssymSep(ib) = AssymSumSep/ScatCoeffSep(ib)
 		!IF(ib .EQ. 61) WRITE(*,*) "Assym: ", Assym(1)
 
 		!Convert ExtCoeff and BackScatCoeff from 1/cm to 1/Mm
 		ExtCoeff(ib) = 1.0e8*ExtCoeff(ib)
 		SubExtCoeff(ib) = 1.0e8*SubExtCoeff(ib)
-		ExtCoeffSep(ib) = 1.0e8*ExtCoeffSep(ib)
-		SubExtCoeffSep(ib) = 1.0e8*SubExtCoeffSep(ib)
+!		ExtCoeffSep(ib) = 1.0e8*ExtCoeffSep(ib)
+!		SubExtCoeffSep(ib) = 1.0e8*SubExtCoeffSep(ib)
 
 
 		!hbs_frac = hemispherical backscattering fraction
@@ -2020,10 +2129,10 @@ SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, &
 		BackScatCoeff(ib) = hbs_frac*ScatCoeff(ib)
                 BackScatCoeff(ib) = 1.0e8*BackScatCoeff(ib)
 
-                assym_sq = assymSep(ib)**2
-                hbs_frac = 0.5*((assym_sq-1)/assymSep(ib))*(1.0/SQRT(assym_sq+2*assymSep(ib)+1)-1.0/SQRT(assym_sq+1))
-		BackScatCoeffSep(ib) = hbs_frac*ScatCoeffSep(ib)
-                BackScatCoeffSep(ib) = 1.0e8*BackScatCoeffSep(ib)
+!                assym_sq = assymSep(ib)**2
+!                hbs_frac = 0.5*((assym_sq-1)/assymSep(ib))*(1.0/SQRT(assym_sq+2*assymSep(ib)+1)-1.0/SQRT(assym_sq+1))
+!		BackScatCoeffSep(ib) = hbs_frac*ScatCoeffSep(ib)
+!                BackScatCoeffSep(ib) = 1.0e8*BackScatCoeffSep(ib)
 		!IF(ib .EQ. 61) WRITE(*,*) "ExtCoeff: ", ExtCoeff(1)
 
 	END DO

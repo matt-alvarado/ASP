@@ -2336,7 +2336,7 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 
 	USE Time, ONLY : CurrentTime, BeginningTime
 
-	USE InfrastructuralCode, ONLY : ERROR, WARN, INT2STR, REAL2STR
+	USE InfrastructuralCode, ONLY : ERROR, WARN, INT2STR, REAL2STR,Transcript
 
 	IMPLICIT NONE
 
@@ -2346,8 +2346,9 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 	!! Internal Variables
 	LOGICAL :: Equilibrated, RxnEquilibrated, LocalEquilibrateWater
 	LOGICAL :: LocalWaterOpenSystem, ParticleEquilibrated
-	REAL*8  :: Temperature
+	REAL*8  :: Temperature, II
 	INTEGER :: I, K, HowManyLinks, ReturnType
+	REAL*4  :: etimearray(2), etime
 	TYPE(Particle),POINTER :: Current
 
 	LocalEquilibrateWater = EquilibrateWater
@@ -2397,6 +2398,11 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 				!Ross Eqn
 				CALL EquilibriumWaterContentAll (Current, LocalWaterOpenSystem, ReturnType, ForceEquilibrium=.FALSE.)
 			END IF
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ii = etime(etimearray)
+!	     CALL TRANSCRIPT("")
+!	     CALL TRANSCRIPT("CPU time after Water Eq "//trim(real2str(ii)))
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 			IF(ReturnType .NE. 2) ParticleEquilibrated = .FALSE.
 			!WRITE(*,*) "WaterReturnType", ReturnType, Current%AqChems(1)	
@@ -2405,7 +2411,11 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 			!Give up on inorganic eq after 10 iterations
 			IF(ReturnType .NE. 2 .AND. K .LE. 5) ParticleEquilibrated = .FALSE.
 			!WRITE(*,*) "InOrganicReturnType", ReturnType	
-				
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ii = etime(etimearray)
+!	     CALL TRANSCRIPT("")
+!	     CALL TRANSCRIPT("CPU time after Electrolyte Eq "//trim(real2str(ii)))
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!				
 			CALL EquilibrateOrganicParticle (Current, Temperature, ReturnType, OptErrorTolerance=AqThermoEquilibriumError/2.)
 			IF(ReturnType .NE. 2) ParticleEquilibrated = .FALSE.
 			!WRITE(*,*) "OrganicReturnType", ReturnType	
@@ -2414,6 +2424,11 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 			if (associated(current%next)) then
 				current => current%next
 			end if
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ii = etime(etimearray)
+!	     CALL TRANSCRIPT("")
+!	     CALL TRANSCRIPT("CPU time after Org Eq "//trim(real2str(ii)))
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		END DO
 		
 		IF (K .GT. 200) THEN

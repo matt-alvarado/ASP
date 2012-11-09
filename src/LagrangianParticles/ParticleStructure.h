@@ -18,12 +18,19 @@
 !!                                 to allow 60 bins between 290 nm and 410 nm!!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
-!!! 02/16  2012   Matt Alvarado     Changed dimensions of optical properties !!
+!! 02/16  2012   Matt Alvarado     Changed dimensions of optical properties !!
 !!                                 to allow 451 bins from 250 nm to 700 nm.  !!
-!!  08/17  2012  Matt Alvarado     Add extinction and scattering efficiency 
+!! 08/17  2012   Matt Alvarado     Add extinction and scattering efficiency 
 !!                                  and asymm param for a particle
 !!                                  with the same effective size but 
 !!                                  (a) all BC or (b) all shell.
+!! 11/08  2012   Matt Alvarado     Add extinction and scattering efficiency 
+!!                                  and asymm param for a particle using
+!!                                  MaxWell -Garnett mixing rule
+!! 11/08  2012   Matt Alvarado     Add extinction and scattering efficiency 
+!!                                  and asymm param for a particle using
+!!                                  volume average dielectric constant mixing
+!!                                  rule.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -111,6 +118,14 @@ TYPE Particle
         !Solar (550 nm) and IR (10 um)
 	REAL*8, DIMENSION(451) :: ShellImagRefracInd 
         !Solar (550 nm) and IR (10 um)
+	REAL*8, DIMENSION(451) :: MGRealRefracInd 
+        !Solar (550 nm) and IR (10 um)
+	REAL*8, DIMENSION(451) :: MGImagRefracInd 
+        !Solar (550 nm) and IR (10 um)
+	REAL*8, DIMENSION(451) :: VARealRefracInd 
+        !Solar (550 nm) and IR (10 um)
+	REAL*8, DIMENSION(451) :: VAImagRefracInd 
+        !Solar (550 nm) and IR (10 um)
 	REAL*8				  :: AbsCoreRad
 !In the CRM6 radiation scheme, six  and  12 bands are selected for solar 
 ! and thermal IR regions, respectively. The spectral division is below: 
@@ -156,6 +171,18 @@ TYPE Particle
 	REAL*8, DIMENSION(451) :: ScaEffShell !Scattering Efficiency
 	REAL*8, DIMENSION(451) :: BackScaEffShell !Back-Scattering Efficiency
 	REAL*8, DIMENSION(451) :: AssymParamShell !Assymetry Parameter
+
+        !MJA 11-08-2012 Below for Maxwell-Garnett Mixing (MG)
+	REAL*8, DIMENSION(451) :: ExtEffMG !Extinction Efficiency
+	REAL*8, DIMENSION(451) :: ScaEffMG !Scattering Efficiency
+	REAL*8, DIMENSION(451) :: BackScaEffMG !Back-Scattering Efficiency
+	REAL*8, DIMENSION(451) :: AssymParamMG !Assymetry Parameter
+
+        !MJA 11-08-2012 Below for Volume average dielectric constant mixing (VA)
+	REAL*8, DIMENSION(451) :: ExtEffVA !Extinction Efficiency
+	REAL*8, DIMENSION(451) :: ScaEffVA !Scattering Efficiency
+	REAL*8, DIMENSION(451) :: BackScaEffVA !Back-Scattering Efficiency
+	REAL*8, DIMENSION(451) :: AssymParamVA !Assymetry Parameter
 	
 	!! These area stored as linked lists
 	TYPE (Particle), POINTER :: Next

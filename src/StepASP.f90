@@ -33,6 +33,8 @@
 !!                                  SubExtCoeff and SubSSA
 !! 08/17  2012   Matt Alvarado     Updated call to AerosolOptProps to include
 !!                                  SubExtCoeff and SubSSA
+!! 11/08  2012   Matt Alvarado     Updated call to AerosolOptProps to include
+!!                                  mixing flag
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -425,10 +427,8 @@ MODULE StepASP
 				
 		END DO
 
-		!Output Average Aerosol optical properties
-		CALL AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSSA, &
-                                     ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
-                                     SubExtCoeffSep, SubSSASep)
+		!Output Average Aerosol optical properties, 0 flag assumes core in shell mixing
+		CALL AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSSA, 0)
 		!WRITE(*,*) ExtCoeff(1), SingScat(1), Assym(1)
 		!PAUSE
 

@@ -19,6 +19,8 @@
 !! 02/15  2012   Matt Alvarado     Removed Eulerian coordinates
 !! 03/01  2012   Matt Alvarado     Made it so AverageAerosolDensity can be 
 !!                                  set and reset automatically.
+!! 11/06  2012   Matt Alvarado     Updated main input deck to give model more!!
+!!                                 flexibility without recompiling.          !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -55,6 +57,25 @@
 !!25. SUBROUTINE SetAmmoniaFlux(iAmmoniaFlux)
 !!26. SUBROUTINE SetIgnoreDiffuseCorrect(iDiffuseCorrect)
 !!27. SUBROUTINE SetInitialDens(iDens)
+!!28. SUBROUTINE SetLagrangianParcelModel(iMod)
+!!29. SUBROUTINE SetEulerianBoxModel(iMod)
+!!30. SUBROUTINE SetSmogChamberModel(iMod)
+!!31. SUBROUTINE SetOpticalPropertiesModel(iMod)
+!!32. SUBROUTINE SetThermoTest(iMod)
+!!33. SUBROUTINE SetCoagTest(iMod)
+!!34. SUBROUTINE SetCondTest(iMod)
+!!35. SUBROUTINE SetSubroutineModel(iMod)
+!!36. SUBROUTINE SetStartTime(UTC)
+!!37. SUBROUTINE SetRunLength(time)
+!!38. SUBROUTINE SetChemStep(step)
+!!39. SUBROUTINE SetMixStep(step)
+!!40. SUBROUTINE SetCondStep(step)
+!!41. SUBROUTINE SetCoagStep(step)
+!!42. SUBROUTINE SetInversionHeight(height)
+!!43. SUBROUTINE SetHetero(num, rad)
+!!44. SUBROUTINE SetLagrangianMix(mix)
+!!45. SUBROUTINE SetEulerianBox(wind,length,width)
+!!46. SUBROUTINE SetIncludeAerosols(flag)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !! This one holds all of the physical constants that are used in the code
@@ -217,7 +238,7 @@ MODULE ModelParameters
 	REAL*8, PARAMETER :: MinimumWater  = 5.0e-21   ! If particle water content is this small (mol/particle), ignore aqueous equilibrium
 	REAL*8, Parameter :: CosContactAngle = 0.      !Cosine of contact angle of water embryo with insoluble sphere														
 	REAL*8, Parameter :: CoagKernel = 1.0e-9   !Kernel in cm3/s for constant kernel cases
-	REAL*8, PARAMETER :: InversionHeight = 1.0*km !Height of inversion layer (stored as cm)
+	REAL*8 :: InversionHeight ! = 1.0*km !Height of inversion layer (stored as cm)
 	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! The extent of the physical DOMAIN is the same for all grids	!!
@@ -258,8 +279,36 @@ MODULE ModelParameters
 	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!!!Added to allow user to input Background RH in main input deck!
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	REAL*8 :: Back_RH
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!Set Model Run Type using logical variables (MJA, 11/06/2012) !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        LOGICAL :: LagrangianParcelModel
+        LOGICAL :: EulerianBoxModel
+        LOGICAL :: SmogChamberModel      
+        LOGICAL :: OpticalPropertiesModel
+        LOGICAL :: ThermoTest
+        LOGICAL :: CoagTest
+        LOGICAL :: CondTest
+        LOGICAL :: SubroutineModel 
+        LOGICAL :: IncludeAerosols
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!Set start time, run length, and time steps (MJA, 11/06/2012) !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+        REAL*8  :: UTCStartTime, RunLength, ChemStep, MixStep, CondStep, CoagStep
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!Set Lagrangian Parecl Parameters (MJA, 11/06/2012)           !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        REAL*8  :: b_mix, hetero_num, hetero_rad  
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!Set Eulerian Box Parameters (MJA, 11/06/2012)                !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        REAL*8  :: windspeed, boxlength, boxwidth      
 
 	!!!!!!! DEFINE SUBROUTINES !!!!!!!
 	CONTAINS
@@ -582,7 +631,221 @@ MODULE ModelParameters
 
 	END SUBROUTINE SetInitialDens
 
+	SUBROUTINE SetLagrangianParcelModel(iMod)
+		
+		IMPLICIT NONE
 
+		INTEGER :: iMod
+
+		IF (iMod .EQ. 1) THEN 
+                    LagrangianParcelModel = .TRUE.
+                ELSE 
+                    LagrangianParcelModel = .FALSE.
+                ENDIF
+
+	END SUBROUTINE SetLagrangianParcelModel
+
+	SUBROUTINE SetEulerianBoxModel(iMod)
+		
+		IMPLICIT NONE
+
+		INTEGER :: iMod
+
+		IF (iMod .EQ. 1) THEN 
+                    EulerianBoxModel = .TRUE.
+                ELSE 
+                    EulerianBoxModel = .FALSE.
+                ENDIF
+
+	END SUBROUTINE SetEulerianBoxModel
+
+	SUBROUTINE SetSmogChamberModel(iMod)
+		
+		IMPLICIT NONE
+
+		INTEGER :: iMod
+
+		IF (iMod .EQ. 1) THEN 
+                    SmogChamberModel = .TRUE.
+                ELSE 
+                    SmogChamberModel = .FALSE.
+                ENDIF
+
+	END SUBROUTINE SetSmogChamberModel
+
+	SUBROUTINE SetOpticalPropertiesModel(iMod)
+		
+		IMPLICIT NONE
+
+		INTEGER :: iMod
+
+		IF (iMod .EQ. 1) THEN 
+                   OpticalPropertiesModel = .TRUE.
+                ELSE 
+                   OpticalPropertiesModel = .FALSE.
+                ENDIF
+
+	END SUBROUTINE SetOpticalPropertiesModel
+
+	SUBROUTINE SetThermoTest(iMod)
+		
+		IMPLICIT NONE
+
+		INTEGER :: iMod
+
+		IF (iMod .EQ. 1) THEN 
+                   ThermoTest = .TRUE.
+                ELSE 
+                   ThermoTest = .FALSE.
+                ENDIF
+
+	END SUBROUTINE SetThermoTest
+
+	SUBROUTINE SetCoagTest(iMod)
+		
+		IMPLICIT NONE
+
+		INTEGER :: iMod
+
+		IF (iMod .EQ. 1) THEN 
+                    CoagTest = .TRUE.
+                ELSE 
+                    CoagTest = .FALSE.
+                ENDIF
+
+	END SUBROUTINE SetCoagTest
+
+	SUBROUTINE SetCondTest(iMod)
+		
+		IMPLICIT NONE
+
+		INTEGER :: iMod
+
+		IF (iMod .EQ. 1) THEN 
+                    CondTest = .TRUE.
+                ELSE 
+                    CondTest = .FALSE.
+                ENDIF
+
+	END SUBROUTINE SetCondTest
+
+	SUBROUTINE SetSubroutineModel(iMod)
+		
+		IMPLICIT NONE
+
+		INTEGER :: iMod
+
+		IF (iMod .EQ. 1) THEN 
+                      SubroutineModel = .TRUE.
+                ELSE 
+                     SubroutineModel = .FALSE.
+                ENDIF
+	END SUBROUTINE SetSubroutineModel
+
+	SUBROUTINE SetStartTime(UTC)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: UTC
+
+		UTCStartTime = UTC
+	END SUBROUTINE SetStartTime
+
+	SUBROUTINE SetRunLength(time)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: time !!In min
+
+		RunLength = time
+	END SUBROUTINE SetRunLength
+
+	SUBROUTINE SetChemStep(step)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: step !!in sec
+
+		ChemStep = step
+	END SUBROUTINE SetChemStep
+
+	SUBROUTINE SetMixStep(step)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: step !!in sec
+
+		MixStep = step
+	END SUBROUTINE SetMixStep
+
+	SUBROUTINE SetCondStep(step)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: step !!in sec
+
+		CondStep = step
+	END SUBROUTINE SetCondStep
+
+	SUBROUTINE SetCoagStep(step)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: step !!in sec
+
+		CoagStep = step
+	END SUBROUTINE SetCoagStep
+
+	SUBROUTINE SetInversionHeight(height)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: height !!in km
+
+		InversionHeight = height
+	END SUBROUTINE SetInversionHeight
+
+	SUBROUTINE SetHetero(num, rad)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: num !!in cm-3
+		REAL*8 :: rad !!in um
+		hetero_num = num
+                hetero_rad = rad*1.0e6 !Convert to m
+	END SUBROUTINE SetHetero
+
+	SUBROUTINE SetLagrangianMix(mix)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: mix !!in s
+
+		b_mix = mix
+	END SUBROUTINE SetLagrangianMix
+
+	SUBROUTINE SetEulerianBox(wind,length,width)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: wind !!in m/s
+		REAL*8 :: length, width !!in km
+		windspeed = wind
+		boxlength = length
+                boxwidth = width                
+	END SUBROUTINE SetEulerianBox
+
+	SUBROUTINE SetIncludeAerosols(flag)
+		
+		IMPLICIT NONE
+
+		INTEGER :: flag 
+	        IF (flag .EQ. 1) THEN 
+                    IncludeAerosols = .TRUE.
+                ELSE 
+                    IncludeAerosols = .FALSE.
+                ENDIF
+	END SUBROUTINE SetIncludeAerosols
 
 end module ModelParameters
 

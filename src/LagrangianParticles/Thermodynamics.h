@@ -41,8 +41,11 @@
 !! 10/09  2007    Matt Alvarado     Set MeanActivity to reset any negative 
 !!                                  molalities to 0.
 !! 10/14  2010    Matt Alvarado     Removed OPTIONAL type declarations
-!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!! 02/16  2012    Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 11/08  2012    Matt Alvarado     Removed some activity coefficient updates 
+!!                                  in FindElectrolyteEquilibrium to speed 
+!!                                  it up
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -660,7 +663,8 @@ SUBROUTINE FindElectrolyteEquilibrium (InParticle, UpdateThermo, &
 	 	ELSE
 			InitiallyEquilibrated(I) = .TRUE.
 		END IF
-		IF (UpdateThermo) CALL KusikMeissner (InParticle)
+		!MJA 11-08-2012
+                !IF (UpdateThermo) CALL KusikMeissner (InParticle)
 	END DO
 
 	IF (Scaffolding) WRITE(*,*) "First Loop Okay.", AlreadyEquilibrated
@@ -684,9 +688,10 @@ SUBROUTINE FindElectrolyteEquilibrium (InParticle, UpdateThermo, &
 		DO I = 1, HowManyAqEqReactions
 			!IF (Scaffolding) WRITE(*,*) I,K
 			CALL EquilibrateAqueousDissociationReaction (I, InParticle, OptErrorTolerance = ErrorTol, ReturnType = J)
-			!IF (Scaffolding) WRITE(*,*) "Dissociation Okay"
-			IF (UpdateThermo) CALL KusikMeissner (InParticle)
-			!IF (Scaffolding) WRITE(*,*) "KusikMeissner Okay"
+			IF (Scaffolding) WRITE(*,*) "Dissociation Okay"
+                        !MJA 11-08-2012
+			!IF (UpdateThermo) CALL KusikMeissner (InParticle)
+			IF (Scaffolding) WRITE(*,*) "KusikMeissner Okay"
 		END DO
 	END DO
 
