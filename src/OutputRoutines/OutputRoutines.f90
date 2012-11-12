@@ -1137,9 +1137,13 @@ SUBROUTINE SizeDistOutput(t, Filename)
 				Nai, NaNO3i, NaCli, NaHSO4i, Na2SO4i, &
 				NH3i, NH4i, NH4NO3i, NH4Cli, NH4HSO4i, NH42SO4i, &
 				Cli, NO3i, SO4i, HSO4i, K2SO4i, PotassiumIndex, &
-				K2SO4Index, FH, NumBins	, COi, Traceri
+				K2SO4Index, FH, NumBins	, COi, Traceri, Cai, &
+                                KOHi, NaOHi, Mgi, MgNO32i, MgCl2i, MgHSO42i, &
+                                MgSO4i, MgOH2i, CaNO32i, CaCl2i, CaHSO42i, CaSO4i, &
+                                CaOH2i, LEVi
 	REAL*8 :: TotalPOA, TotalSOA, TotalK, TotalNa, TotalNH4, TotalCl, &
-			  TotalNO3, TotalSO4, DeltaLogRad, Mgas, TotalOrgCar		
+			  TotalNO3, TotalSO4, DeltaLogRad, Mgas, TotalOrgCar, &
+                  TotalMg, TotalCa		
 					
 	
 	!Find chemical indices for later
@@ -1149,12 +1153,28 @@ SUBROUTINE SizeDistOutput(t, Filename)
 	KHSO4i = FindChem("KHSO4", 1)
 	K2SO4Index = FindChem("K2SO4", 1)
 	K2SO4i = K2SO4Index
+        KOHi = FindChem("KOH", 1)
 		
 	Nai = FindChem("Na+", 1)
 	NaNO3i = FindChem("NaNO3", 1)
 	NaCli = FindChem("NaCl", 1)
 	NaHSO4i = FindChem("NaHSO4", 1)
 	Na2SO4i = FindChem("Na2SO4", 1)
+        NaOHi = FindChem("NaOH", 1)
+
+	Mgi = FindChem("Mg++", 1)
+	MgNO32i = FindChem("Mg(NO3)2", 1)
+	MgCl2i = FindChem("MgCl2", 1)
+	MgHSO42i = FindChem("Mg(HSO4)2", 1)
+	MgSO4i = FindChem("MgSO4", 1)
+        MgOH2i = FindChem("Mg(OH)2", 1)
+
+	Cai = FindChem("Ca++", 1)
+	CaNO32i = FindChem("Ca(NO3)2", 1)
+	CaCl2i = FindChem("CaCl2", 1)
+	CaHSO42i = FindChem("Ca(HSO4)2", 1)
+	CaSO4i = FindChem("CaSO4*2H2O", 1)
+        CaOH2i = FindChem("Ca(OH)2", 1)
 		
 	NH3i = FindChem("NH3", 1)
 	NH4i = FindChem("NH4+", 1)
@@ -1162,6 +1182,7 @@ SUBROUTINE SizeDistOutput(t, Filename)
 	NH4Cli = FindChem("NH4Cl", 1)
 	NH4HSO4i = FindChem("NH4HSO4", 1)
 	NH42SO4i = FindChem("(NH4)2SO4", 1)
+	LEVi = FindChem("(NH4)3H(SO4)2", 1)
 
 	Cli = FindChem("Cl-", 1)
 	NO3i = FindChem("NO3-", 1)
@@ -1215,6 +1236,8 @@ SUBROUTINE SizeDistOutput(t, Filename)
 	WRITE(FH,FMT='(A5, A8)', ADVANCE='NO') "TotCl", " "
 	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotNO3", " "
 	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotSO4", " "
+	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotMg", " "
+	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotCa", " "
 			
 	WRITE(FH, FMT='(A1)') ""
 		
@@ -1285,7 +1308,7 @@ SUBROUTINE SizeDistOutput(t, Filename)
 			!K+ Mass Conc (ug/m3)
 			TotalK = 0.		
 			DO J = 1, NumAqChems
-				IF (J .EQ. PotassiumIndex .OR. J .EQ. KNO3i .OR. J .EQ. KCli .OR. J .EQ. KHSO4i) THEN
+				IF (J .EQ. PotassiumIndex .OR. J .EQ. KNO3i .OR. J .EQ. KCli .OR. J .EQ. KHSO4i .OR. J .EQ. KOHi) THEN
 					TotalK = TotalK + Current%Aqchems(J)*Current%numberofparticles*1.0e12
 				ELSE IF (J .EQ. K2SO4Index) THEN
 					TotalK = TotalK + 2*Current%Aqchems(J)*Current%numberofparticles*1.0e12
@@ -1298,7 +1321,7 @@ SUBROUTINE SizeDistOutput(t, Filename)
 			!Na+ Mass Conc (ug/m3)
 			TotalNa = 0.		
 			DO J = 1, NumAqChems
-				IF (J .EQ. Nai .OR. J .EQ. NaNO3i .OR. J .EQ. NaCli .OR. J .EQ. NaHSO4i) THEN
+				IF (J .EQ. Nai .OR. J .EQ. NaNO3i .OR. J .EQ. NaCli .OR. J .EQ. NaHSO4i .OR. J .EQ. NaOHi) THEN
 					TotalNa = TotalNa + Current%Aqchems(J)*Current%numberofparticles*1.0e12
 				ELSE IF (J .EQ. Na2SO4i) THEN
 					TotalNa = TotalNa + 2*Current%Aqchems(J)*Current%numberofparticles*1.0e12
@@ -1315,6 +1338,8 @@ SUBROUTINE SizeDistOutput(t, Filename)
 					TotalNH4 = TotalNH4 + Current%Aqchems(J)*Current%numberofparticles*1.0e12
 				ELSE IF (J .EQ. NH42SO4i) THEN
 					TotalNH4 = TotalNH4 + 2*Current%Aqchems(J)*Current%numberofparticles*1.0e12
+                                ELSE IF (J .EQ. LEVi) THEN
+                                        TotalNH4 = TotalNH4 + 3*Current%Aqchems(J)*Current%numberofparticles*1.0e12
 				END IF
 			END DO
 			!Convert from umol/m3 to ug/m3
@@ -1326,7 +1351,9 @@ SUBROUTINE SizeDistOutput(t, Filename)
 			DO J = 1, NumAqChems
 				IF (J .EQ. Cli .OR. J .EQ. NH4Cli .OR. J .EQ. KCli .OR. J .EQ. NaCli) THEN
 						TotalCl = TotalCl + Current%Aqchems(J)*Current%numberofparticles*1.0e12
-				END IF
+				ELSE IF (J .EQ. MgCl2i .OR. J .EQ. CaCl2i) THEN
+						TotalCl = TotalCl + 2*Current%Aqchems(J)*Current%numberofparticles*1.0e12
+                                END IF
 			END DO
 			!Convert from umol/m3 to ug/m3
 			TotalCl = TotalCl*AqMolecularMass(Cli)
@@ -1337,7 +1364,9 @@ SUBROUTINE SizeDistOutput(t, Filename)
 			DO J = 1, NumAqChems
 				IF (J .EQ. NO3i .OR. J .EQ. NH4NO3i .OR. J .EQ. KNO3i .OR. J .EQ. NaNO3i) THEN
 					TotalNO3 = TotalNO3 + Current%Aqchems(J)*Current%numberofparticles*1.0e12
-				END IF
+				ELSE IF (J .EQ. MgNO32i .OR. J .EQ. CaNO32i) THEN
+					TotalNO3 = TotalNO3 + 2*Current%Aqchems(J)*Current%numberofparticles*1.0e12
+                                END IF
 			END DO
 			!Convert from umol/m3 to ug/m3
 			TotalNO3 = TotalNO3*AqMolecularMass(NO3i)
@@ -1347,8 +1376,11 @@ SUBROUTINE SizeDistOutput(t, Filename)
 			TotalSO4 = 0.
 			DO J = 1, NumAqChems
 				IF (J .EQ. SO4i .OR. J .EQ. NH42SO4i .OR. J .EQ. K2SO4i .OR. J .EQ. Na2SO4i &
-				    .OR. J .EQ. HSO4i .OR. J .EQ. NH4HSO4i .OR. J .EQ. KHSO4i .OR. J .EQ. NaHSO4i) THEN
+				    .OR. J .EQ. HSO4i .OR. J .EQ. NH4HSO4i .OR. J .EQ. KHSO4i .OR. J .EQ. NaHSO4i &
+                                    .OR. J .EQ. CaSO4i .OR. J .EQ. MgSO4i) THEN
 					TotalSO4 = TotalSO4 + Current%Aqchems(J)*Current%numberofparticles*1.0e12
+                                ELSE IF (J .EQ. LEVi .OR. J .EQ. MgHSO42i .OR. J .EQ. CaHSO42i) THEN
+					TotalSO4 = TotalSO4 + 2*Current%Aqchems(J)*Current%numberofparticles*1.0e12
 				END IF
 			END DO
 			!Convert from umol/m3 to ug/m3
@@ -1356,6 +1388,30 @@ SUBROUTINE SizeDistOutput(t, Filename)
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalSO4
 
 			
+			!Mg++ Mass Conc (ug/m3)
+			TotalMg = 0.		
+			DO J = 1, NumAqChems
+				IF (J .EQ. Mgi .OR. J .EQ. MgNO32i .OR. J .EQ. MgCl2i .OR. J .EQ. MgHSO42i .OR. J .EQ. MgOH2i &
+                                     .OR. J .EQ. MgSO4i) THEN
+					TotalMg = TotalMg + Current%Aqchems(J)*Current%numberofparticles*1.0e12
+				END IF
+			END DO
+			!Convert from umol/m3 to ug/m3
+			TotalMg = TotalMg*AqMolecularMass(Mgi)
+			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalMg
+
+			!Ca++ Mass Conc (ug/m3)
+			TotalCa = 0.		
+			DO J = 1, NumAqChems
+				IF (J .EQ. Cai .OR. J .EQ. CaNO32i .OR. J .EQ. CaCl2i .OR. J .EQ. CaHSO42i .OR. J .EQ. CaOH2i &
+                                     .OR. J .EQ. CaSO4i) THEN
+					TotalCa = TotalCa + Current%Aqchems(J)*Current%numberofparticles*1.0e12
+				END IF
+			END DO
+			!Convert from umol/m3 to ug/m3
+			TotalCa = TotalCa*AqMolecularMass(Cai)
+			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalCa
+
 			WRITE(FH, FMT='(A1)') ""
 					
 			IF (associated(Current%next)) THEN
