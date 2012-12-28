@@ -449,12 +449,13 @@ PROGRAM ASP
 			END DO
 			t = t + MixTimestep
 			ut = ut + (MixTimestep/3600.0)
-	        IF(ut .GE. 24.0) ut = 0.0
-                IF(t .GE. 600) THEN !Reset to input mix time after 600 s
-                   ChemTimestep = ChemStep
-		   MixTimestep = MixStep    
-                ENDIF
-		WRITE(*,*) t		
+	        
+                        IF(ut .GE. 24.0) ut = 0.0
+                        IF(t .GE. 600) THEN !Reset to input mix time after 600 s
+                             ChemTimestep = ChemStep
+		             MixTimestep = MixStep    
+                        ENDIF
+		        WRITE(*,*) t,  hetero_rad	
 		END DO !Time Loop
 
 	    ELSE !Bulk, Mono, or Size dist aerosols

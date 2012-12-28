@@ -21,6 +21,7 @@
 !!                                  set and reset automatically.
 !! 11/06  2012   Matt Alvarado     Updated main input deck to give model more!!
 !!                                 flexibility without recompiling.          !!
+!! 12/28  2012   Matt Alvarado     Fixed units conversion bug in SetHetero
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -812,7 +813,7 @@ MODULE ModelParameters
 		REAL*8 :: num !!in cm-3
 		REAL*8 :: rad !!in um
 		hetero_num = num
-                hetero_rad = rad*1.0e6 !Convert to m
+                hetero_rad = rad/1.0e6 !Convert to m
 	END SUBROUTINE SetHetero
 
 	SUBROUTINE SetLagrangianMix(mix)
