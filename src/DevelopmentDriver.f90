@@ -30,8 +30,10 @@
 !! 08/1   2012   Tara Soni         Minor Changes                             !!
 !! 11/06  2012   Matt Alvarado     Updated main input deck to give model more!!
 !!                                 flexibility without recompiling.          !!
-!! 11/08  2012   Matt Alvarado     Updated call to AerosolOptProps to include
-!!                                  mixing flag
+!! 11/08  2012   Matt Alvarado     Updated call to AerosolOptProps to include!!
+!!                                  mixing flag                              !!
+!! 12/28  2012   Matt Alvarado     Set Lagrangian Parcel to always use 1 s   !!
+!!                                  time step in first 10 minutes of run     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 PROGRAM ASP
@@ -360,9 +362,9 @@ PROGRAM ASP
 		WRITE(OutFH(3), FMT='(A1)') ""
 	
 		t=0
-		ChemTimestep = ChemStep
-		MixTimestep = MixStep !Should always be an integer multiple!
-		DO r = 1, INT(RunLength*60/MixTimestep)+1
+		ChemTimestep = 1
+		MixTimestep = 1 !Always start as 1s for first 600 seconds, MJA 12-28-2012
+		DO r = 1, INT(600+((RunLength-10)*60/MixStep))+1
 		
 			!Write Output to file in units of ppb
 			IF (MOD(t,60.0)<=0.05) THEN
@@ -448,7 +450,11 @@ PROGRAM ASP
 			t = t + MixTimestep
 			ut = ut + (MixTimestep/3600.0)
 	        IF(ut .GE. 24.0) ut = 0.0
-				
+                IF(t .GE. 600) THEN !Reset to input mix time after 600 s
+                   ChemTimestep = ChemStep
+		   MixTimestep = MixStep    
+                ENDIF
+		WRITE(*,*) t		
 		END DO !Time Loop
 
 	    ELSE !Bulk, Mono, or Size dist aerosols
