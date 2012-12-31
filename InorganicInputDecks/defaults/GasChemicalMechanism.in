@@ -597,14 +597,14 @@ PROLNO3 + OH	 => CH3CHOHCHO + NO2				; 1.7e-12;	0.;	0.;	1.;
 CH2OO + CO	 => HCHO					; 1.20e-15;	0.;	0.;	1.;
 CH2OO + NO	 => HCHO + NO2					; 1.00e-14;	0.;	0.;	1.;
 CH2OO + NO2	 => HCHO + NO3					; 1.00e-15;	0.;	0.;	1.;
-CH2OO + SO2	 => HCHO + SO3					; 7.00e-14;	0.;	0.;	1.;
+CH2OO + SO2	 => HCHO + H2SO4					; 7.00e-14;	0.;	0.;	1.;
 CH2OO + H2O	 => Formic_Acid					; 6.00e-18;	0.;	0.;	1.;
 CH2OO + H2O	 => HCHO + H2O2					; 1.00e-17;	0.;	0.;	1.;
 !
 CH3CHOO + CO	 => Acetaldehyde				; 1.20e-15;	0.;	0.;	1.;
 CH3CHOO + NO	 => Acetaldehyde + NO2				; 1.00e-14;	0.;	0.;	1.;
 CH3CHOO + NO2	 => Acetaldehyde + NO3				; 1.00e-15;	0.;	0.;	1.;
-CH3CHOO + SO2	 => Acetaldehyde + SO3				; 7.00e-14;	0.;	0.;	1.;
+CH3CHOO + SO2	 => Acetaldehyde + H2SO4				; 7.00e-14;	0.;	0.;	1.;
 CH3CHOO + H2O	 => CH3CO2H					; 6.00e-18;	0.;	0.;	1.;
 CH3CHOO + H2O	 => Acetaldehyde + H2O2				; 1.00e-17;	0.;	0.;	1.;
 !
@@ -816,7 +816,7 @@ CH2OOA		 => 0.37 CH2OO + 0.63 CO + 0.13 HO2 + 0.13 OH 	; 1.00e06;	0.;	0.;	1.;
 GLYOO + CO	 => GLY						; 1.2e-15; 	0.;	0.;	1.;
 GLYOO + NO	 => GLY + NO2					; 1.0e-14;	0.;	0.;	1.;
 GLYOO + NO2	 => GLY + NO3					; 1.00e-15;	0.;	0.;	1.;
-GLYOO + SO2	 => GLY + SO3					; 7.0e-14;	0.;	0.;	1.;
+GLYOO + SO2	 => GLY + H2SO4					; 7.0e-14;	0.;	0.;	1.;
 GLYOO + H2O	 => GLY + H2O2					; 6.0e-18;	0.;	0.;	1.;
 GLYOO + H2O	 => HCOCO2H					; 1.0e-17;	0.;	0.;	1.;
 !
@@ -1251,7 +1251,7 @@ NBUTOLANO3 + OH	 => MEKCOH + NO2				; 1.27e-12;	0.;	0.;	1.;
 C2H5CHOO + CO	 => Propanal					; 1.20e-15;	0.;	0.;	1.;
 C2H5CHOO + NO	 => Propanal + NO2				; 1.00e-14;	0.;	0.;	1.;
 C2H5CHOO + NO2   => Propanal + NO3				; 1.00e-15;	0.;	0.;	1.;
-C2H5CHOO + SO2	 => Propanal + SO3				; 7.00e-14;	0.;	0.;	1.;
+C2H5CHOO + SO2	 => Propanal + H2SO4				; 7.00e-14;	0.;	0.;	1.;
 C2H5CHOO + H2O	 => Propanal + H2O2				; 6.00e-18;	0.;	0.;	1.;
 C2H5CHOO + H2O	 => PROPACID					; 1.00e-17;	0.;	0.;	1.;
 !
@@ -1319,7 +1319,7 @@ MPRBNO3CHO 	 => M2PROPAL2O + NO2				; 0.; 18.;
 CH3CCH3OO + CO	 => Acetone					; 1.20e-15;	0.;	0.;	1.;
 CH3CCH3OO + NO	 => Acetone + NO2				; 1.00e-14;	0.;	0.;	1.;
 CH3CCH3OO + NO2  => Acetone + NO3				; 1.00e-15;	0.;	0.;	1.;
-CH3CCH3OO + SO2	 => Acetone + SO3				; 7.00e-14;	0.;	0.;	1.;
+CH3CCH3OO + SO2	 => Acetone + H2SO4				; 7.00e-14;	0.;	0.;	1.;
 CH3CCH3OO + H2O	 => Acetone + H2O2				; 6.00e-18;	0.;	0.;	1.; 
 !
 IBUTOLBO2H + OH	 => IBUTOLBO2					; 8.10e-12;	0.;	0.;	1.;
