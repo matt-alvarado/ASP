@@ -28,6 +28,7 @@
 !! 10/15  2010   Matt Alvarado    Remove Optional Arguments
 !! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 01/02  2013   Matt Alvarado    Replaced UR21 with CH3COCO2H
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -228,7 +229,7 @@ SUBROUTINE CalculateSurrogateGasConc(SOA1MassFracs, SOA2MassFracs, &
 			SOA7MassFracs(8), SOA8MassFracs(3), SOA9MassFracs(4), &
 			SO10MassFracs(4), InitialBurden(10),  Sum
 	
-	UR21i = FindChem("UR21", 0)
+	UR21i = FindChem("CH3COCO2H", 0)
 	UR28i = FindChem("UR28", 0)
 	SOA1i = FindChem("SOA1", 0)
 
@@ -683,7 +684,7 @@ SUBROUTINE UpdateGasPhaseOrganics(S1MassFracs, S2MassFracs, &
 	!Update gas-phase concentrations of primary organics
 	
 	!Surrogate 1
-	UR21i = FindChem("UR21", 0)
+	UR21i = FindChem("CH3COCO2H", 0)
 	UR28i = FindChem("UR28", 0)
 
 	UR21DeltaBurden = (Avogadro/1.0e12)*(S1DeltaMassConc(1)/GasMolecularMass(UR21i))
