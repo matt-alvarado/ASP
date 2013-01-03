@@ -22,6 +22,10 @@
 !!                                 in SetWaterVaporField		     !!
 !! 02/15  2012   Matt Alvarado     Removing Eulerian grids, making ASP       !!
 !!                                 a one-box model or subroutine.            !!
+!! 01/03  2012   Matt Alvarado     Fixed second order "+ M" reactions from   !!
+!!                                   MCM v3.2 to act as pseudo-1st order     !!
+!!                                   and added IUPAC style 3-body rxn rates  !!
+!!                                   to ResetGasPhaseReactionRates           !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -62,7 +66,7 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
   INTEGER :: L
   REAL*8	:: Temp,Mgas,X(3),k0,ki, Y_o, Y_o_term, Y_inf_term, Z, F, &
   	   alpha, beta, m_o, m_inf, Ratio, Scale, P, k1, k2, k3, kf, Keq, &
-	   KO, KINF, MO
+	   KO, KINF, MO, NCD, FD
 
   !! Loop over all reactions
   DO L = 1, ArraySize(1)
@@ -147,7 +151,16 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 10) THEN
 	   TEMP = GetTemp()
 	   GasPhaseChemicalRates(L) = 0.9*4.62e7/Temp/60
-							
+  
+        !reaction form k0 = a*exp(B/T) (cm3/molec/s) and ki = c*exp(D/T) (1/s)
+        !From MCM v3.2 for PAN degradation
+        !See KBPAN on http://mcm.leeds.ac.uk/MCM/parameters/complex.htt
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 11) THEN
+	  k0 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP) * Mgas
+	  ki = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
+	  NCD = 0.75-1.27*(DLOG10(ReactionRates(L,8)))
+          FD = 10.**(DLOG10(ReactionRates(L,8))/(1.+(DLOG10(k0/ki)/NCD)**2))
+          GasPhaseChemicalRates(L) = FD*(k0*ki)/(k0+ki)
 	ELSE
 	   CALL ERROR("Error in ResetGasPhaseReactionRates - your 1st order rate constant doesn't make sense")								
 	END IF
@@ -241,15 +254,6 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
           k2 = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
           GasPhaseChemicalRates(L) = k1*(1 - k2) 
 
-        !reaction form k0 = a*exp(B/T) and ki = c*exp(D/T)
-        ! where CH3O2NO2 + M =>
-	ELSE IF (INT(ReactionRates(L,3)) .EQ. 10) THEN
-	  
-	  k0 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP) * Mgas
-	  ki = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
-	  GasPhaseChemicalRates(L) = (k0*ki)/(k0+ki) * ReactionRates(L,8)** &
-					(1./(1.+(DLOG10(k0/ki)**2.)))
-
         END IF
 
      !! Three body reactions, using the troe pressure-broadening 
@@ -265,17 +269,16 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 	IF (INT(ReactionRates(L,3)) .EQ. 1) THEN
 	   GasPhaseChemicalRates(L) = ReactionRates(L,4)*(Temp/300.)**(-1.*ReactionRates(L,5)) * Mgas
 						
-        !PAN reactions of the form: k0 = a*exp(B/T) and ki = c*exp(D/T)
-        ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN
-							
-	  k0 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP) * Mgas
-	  ki = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
-	  GasPhaseChemicalRates(L) = (k0*ki)/(k0+ki) * ReactionRates(L,8)** &
-					(1./(1.+(DLOG10(k0/ki)**2.)))
-							
+        !From MCM v3.2 for PAN formation (Also IUPAC format?)
+        !See KFPAN on http://mcm.leeds.ac.uk/MCM/parameters/complex.htt
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN
+	  k0 = ReactionRates(L,4)*(Temp/300.)**(-1.*ReactionRates(L,5)) * Mgas
+	  ki = ReactionRates(L,6)*(Temp/300.)**(-1.*ReactionRates(L,7))
+	  NCD = 0.75-1.27*(DLOG10(ReactionRates(L,8)))
+          FD = 10.**(DLOG10(ReactionRates(L,8))/(1.+(DLOG10(k0/ki)/NCD)**2))
+          GasPhaseChemicalRates(L) = FD*(k0*ki)/(k0+ki)													
 	!Calculate pseudo-2nd order rate constant
-	ELSE
-							
+	ELSE !JPL Style							
 	  k0 = ReactionRates(L,3)*(Temp/300.)**(-1.*ReactionRates(L,4)) * Mgas
 	  ki = ReactionRates(L,5)*(Temp/300.)**(-1.*ReactionRates(L,6))
 	  GasPhaseChemicalRates(L) = (k0*ki)/(k0+ki) * ReactionRates(L,7)** &

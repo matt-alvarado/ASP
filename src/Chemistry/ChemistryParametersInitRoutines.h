@@ -17,6 +17,8 @@
 !!				     NULLIFY(POINTER) to fit pgf90	     !!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 01/03  2012   Matt Alvarado     Fixed second order "+ M" reactions from   !!
+!!                                   MCM v3.2 to act as pseudo-1st order     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -289,7 +291,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			END DO
 
 
-		!PAN Degradation Case (Flag = 1)
+		!NOT USED: Old PAN Degradation Case (Flag = 1)
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 1) THEN	
 	                !! This number should match the number of rate inputs 
                         !! for this reaction type
@@ -456,7 +458,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			END DO
 			
 		!HNO4 case - 
-                !this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+                !this is hard-wired in ResetGasPhaseReactionRates (Flag = 6)
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 6) THEN
 			!! This number should match the number of rate inputs 
                         !! for this reaction type
@@ -477,7 +479,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			END IF
 			
 		!N2O5 case - 
-                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 7)
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 7) THEN
 			!! This number should match the number of rate inputs 
                         !! for this reaction type
@@ -498,7 +500,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			END IF
 			
 		!O1D case - 
-                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 8)
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 8) THEN
 			!! This number should match the number of rate inputs 
                         !! for this reaction type
@@ -519,7 +521,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			END IF
 			
 		!O + O2 + M case 
-                ! - this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+                ! - this is hard-wired in ResetGasPhaseReactionRates (Flag = 9)
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 9) THEN
 			!! This number should match the number of rate inputs 
                         !! for this reaction type
@@ -540,7 +542,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			END IF
 			
 		!RAD* + O2 case - 
-                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 10)
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 10) THEN
 			!! This number should match the number of rate inputs 
                         !! for this reaction type
@@ -560,7 +562,38 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 			
-			
+			!MCM v3.2 PAN Degradation Case (Flag = 11)
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 11) THEN	
+	                !! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 6
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("  The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//": >>"//TRIM(FullLine)//"<<")
+				
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+			END IF
+
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				      RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+				      CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						 "apparently has a bad rate expression ("//		&
+						 Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO	
 		END IF
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -914,7 +947,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 		CALL GetToken(Rates,";",Rate)		
 			
 		!If the first term is below 1, 
-                ! assume it is a pseudo-2nd order reaction
+                ! assume it is a pseudo-2nd order reaction (JPL Style)
 		IF(INT(STR2REAL(StripToken(Rate))) .EQ. 0) THEN
 			
 			!! This number should match the number of rate inputs 
@@ -977,7 +1010,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				END IF
 			END DO
 	
-	        !THIRD ORDER PAN degradation 
+	        !THIRD ORDER IUPAC Style
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 3) THEN
 			NumbRateFacs = 6
 
