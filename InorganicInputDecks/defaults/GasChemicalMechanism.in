@@ -1,7 +1,6 @@
 !! UpdatedGasChemicalMechanism.in
-!! NOTE; This file is in the process of being updated for unlumping organic reactions, 2012 by Tara Soni (tsoni@aer.com)
 !! ASP
-!! Matt Alvarado, 2004-2006 (c)
+!! Matt Alvarado, 2004-2013 (c)
 !! Based on MELAM by Donnan Steele, 2000-2004 (c)
 !! This is a gas phase mechanism input deck for ASP.
 !! Each chemical must be typed the same way each time, and 
@@ -603,8 +602,6 @@ CHOPRNO3 + OH	 => PRNO3CO3 + RO2_T				; 3.55e-12;	0.;	0.;	1.;
 CHOPRNO3 	 => HO2 + CO + Acetaldehyde + NO2		; 0.; 18.;
 CHOPRNO3 	 => PROPALO + NO2				; 0.; 18.;
 !
-PROPOLNO3 + OH 	 => ACETOL + NO2 				; 9.16e-13;	0.;	0.;	1.;
-!
 PR2O2HNO3 + OH 	 => NOA + OH					; 3.47e-12;	0.;	0.;	1.;
 PR2O2HNO3 + OH 	 => PRONO3BO2  + RO2_T				; 1.90e-12;	0.;	190.;	1.;
 PR2O2HNO3  	 => PRONO3BO + OH 				; 0.; 15.;
@@ -615,8 +612,6 @@ PRONO3BO + O2	 => NOA + HO2					; 2.50e-14;	0.;	-300.;	1.;
 NOA + OH	 => MGLY + NO2					; 1.0e-12;	0.;	0.;	1.;
 NOA		 => CH3CO3 + HCHO + NO2	+ RO2_T			; 0.; 18.;	
 NOA 		 => CH3COCH2O + NO2				; 0.; 18.;
-!
-PROLNO3 + OH	 => CH3CHOHCHO + NO2				; 1.7e-12;	0.;	0.;	1.;
 !
 CH2OO + CO	 => HCHO					; 1.20e-15;	0.;	0.;	1.;
 CH2OO + NO	 => HCHO + NO2					; 1.00e-14;	0.;	0.;	1.;
@@ -1401,26 +1396,7 @@ MPRNO3CO3H	 => Acetone + NO2 + OH				; 0.; 15.;
 MPRBNO3PAN + OH	 => Acetone + CO + NO2 + NO2			; 5.44e-14;	0.;	0.;	1.;
 MPRBNO3PAN	 => MPRBNO3CO3 + NO2 + RO2_T			; 11.; 4.9e-3; 	-12100.; 	5.4e16; -13830.; 0.3;
 !
-NO3CH2CO3 + HO2	 => 0.44 HCHO + 0.44 NO2 + 0.44 OH + 0.15 NO3CH2CO2H + 0.15 O3 + 0.41 NO3CH2CO3H + -1.0 RO2_T ; 5.2e-13;	0.;	980.;	1.;
-NO3CH2CO3 + NO	 => HCHO + NO2 + NO2 + -1.0 RO2_T		; 7.5e-12;	0.;	290.;	1.;
-NO3CH2CO3 + NO2 + M => NO3CH2PAN + -1.0 RO2_T			; 3.; 2.7e-28; 	7.1;	1.2e-11; 0.9;	0.3;
-NO3CH2CO3 + NO3	 => HCHO + NO2 + NO2 + -1.0 RO2_T		; 4.0e-12;	0.;	0.;	1.;
-NO3CH2CO3 + RO2_T => 0.7 HCHO + 0.7 NO2 + 0.3 NO3CH2CO2H	; 1.00e-11;	0.;	0.;	1.;
-!
-CO23C3CHO	 => CH3CO3 + CO + CO + HO2 + RO2_T		; 0.; 22.;
-CO23C3CHO	 => CH3CO3 + HCOCO3 + 2.0 RO2_T			; 0.; 23.;
-CO23C3CHO + NO3	 => CH3CO3 + CO + CO + HNO3 + RO2_T		; 5.6e-12;	0.;	-1860.;	1.; 
-CO23C3CHO + OH	 => CH3CO3 + CO + CO + RO2_T			; 1.23e-11;	0.;	0.;	1.;
-!
 HO2CO3C4O	 => HCHO + CH3CHOHCO3 + RO2_T			; 5.; 1.00e06;
-!
-NO3CH2CO2H + OH	 => HCHO + NO2					; 1.68e-13;	0.;	0.;	1.;
-!
-NO3CH2CO3H + OH	 => NO3CH2CO3 + RO2_T				; 3.63e-12;	0.;	0.;	1.;
-NO3CH2CO3H	 => HCHO + NO2 + OH				; 0.; 15.;
-!
-NO3CH2PAN + OH	 => HCHO + CO + NO2 + NO2			; 1.12e-14;	0.;	0.;	1.;
-NO3CH2PAN	 => NO3CH2CO3 + NO2 + RO2_T			; 11.; 4.9e-3; 	-12100.; 	5.4e16; -13830.; 0.3;
 !
 n-Butane + OH	 => 0.127 NC4H9O2 + 0.873 SC4H9O2 + RO2_T	; 9.8e-12;	0.;	-425.;	1.;
 !
