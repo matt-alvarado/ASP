@@ -426,7 +426,7 @@ PROGRAM ASP
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(HNO3i)-GasPhaseBackground(HNO3i))/del_CO
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(PANi)-GasPhaseBackground(PANi))/del_CO
                                 del_PAN = 0.0
-                                DO q = 0,34
+                                DO q = 0,33
                                     del_PAN = del_PAN+Chem(PANi+q)-GasPhaseBackground(PANi+q)
                                 END DO 
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') del_PAN/del_CO
