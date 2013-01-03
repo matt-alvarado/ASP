@@ -373,7 +373,8 @@ PROGRAM ASP
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dO3/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dNOx/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dHNO3/dCO"
-		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dPANs/dCO"
+		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dPAN/dCO"
+		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dTotPNs/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dNO3/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dN2O5/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dHONO/dCO"
@@ -384,7 +385,7 @@ PROGRAM ASP
                 NOi = FindChem("NO", 0)
                 NO2i = FindChem("NO2", 0)
                 HNO3i = FindChem("HNO3", 0)
-                PANi =  FindChem("PAN1", 0)              
+                PANi =  FindChem("PAN", 0)              
                 NO3i = FindChem("NO3", 0)
                 N2O5i = FindChem("N2O5", 0)
                 HONOi = FindChem("HONO", 0)
@@ -423,8 +424,9 @@ PROGRAM ASP
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(NOi)-GasPhaseBackground(NOi) &
                                                                                  +Chem(NO2i)-GasPhaseBackground(NO2i))/del_CO
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(HNO3i)-GasPhaseBackground(HNO3i))/del_CO
+                                WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(PANi)-GasPhaseBackground(PANi))/del_CO
                                 del_PAN = 0.0
-                                DO q = 0,11
+                                DO q = 0,34
                                     del_PAN = del_PAN+Chem(PANi+q)-GasPhaseBackground(PANi+q)
                                 END DO 
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') del_PAN/del_CO
