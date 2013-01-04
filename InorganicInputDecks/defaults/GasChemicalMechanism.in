@@ -174,41 +174,84 @@
 !!    to these reactions with increments every 15 minutes.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 !
-NO2                  => NO    + O                               ; 0. ; 4.;
-NO3		     => NO    + O2            			; 0. ; 5.;
-NO3		     => NO2   + O             			; 0. ; 6.;
-O3		     => O     + O2           			; 0. ; 2.;
-O3		     => O1D   + O2           			; 0. ; 1.;
-HONO             => 0.9 OH  + 0.9 NO + 0.1 HO2 + 0.1 NO2        ; 0. ; 7.;
-H2O2		     => OH    + OH            			; 0. ; 3.;
-HCHO             => HO2   + HO2 + CO  				; 0. ; 8.;
-HCHO             => H2    + CO	      			        ; 0. ; 9.;
-!Used Acetaldehyde for photolysis rate (propanal higher - index 17)
-ALD2             => CO + HO2 + RO2_5 + RO2_T                    ; 0. ; 10.;
-!Assumed the same as ALD2
-RPR1             => CO + HO2 + RO2_20 + RO2_T                   ; 0. ; 10.;
-!Assumed the same as ALD2
-RPR3             => CO + 2.0 HO2 + UR4                          ; 0. ; 10.;
-!Assumed the same as ALD2
-RPR8             => CO + HO2 + RO2_9 + RO2_T                    ; 0. ; 10.;
-!Assumed the same as ALD2
-RPR8             => HO2 + RO2_57 + RO2_T                        ; 0. ; 10.;
-!Assumed the same as ALD2
-RP10             => UR25                                        ; 0. ; 10.;
-!Assumed photolysis same as acetone
-KETL		     => RO2_5 + CH3CO3 + 2.0 RO2_T		; 0. ; 13.;
-!Assumed photolysis same as acetone
-KETH		     => RO2_5 + CH3CO3 + 2.0 RO2_T		; 0. ; 13.;
-!Assumed the same as MGLY
-HCOCO2H          => 2.0 CO + OH + HO2                          ; 0. ; 22.; 
-!N2O5             => NO3 + NO2                                  ; 0. ; 13.;
-!HNO3             => OH + NO2                                   ; 0. ; 14.;
-!HNO4             => HO2 + NO2                                  ; 0. ; 15.;
-!HNO4             => OH + NO3                                   ; 0. ; 16.;
-!!  GLY =>        						; 0. ; 18.;
-!!  CH3OOH => HCHO + HO2 + OH 					; 0. ; 19.;
-!!  CH3ONO2 => HCHO + HO2 + NO2 				; 0. ; 20.;
-!PAN             => CH3CO3 + RO2_T + NO2                        ; 0. ; 21.;           
+O3		     => O1D   + O2           			; 0.; 1.;
+O3		     => O     + O2           			; 0.; 2.;
+H2O2		     => OH    + OH            			; 0.; 3.;
+NO2                  => NO    + O                               ; 0.; 4.;
+NO3		     => NO    + O2            			; 0.; 5.;
+NO3		     => NO2   + O             			; 0.; 6.;
+HONO                 => 0.9 OH  + 0.9 NO + 0.1 HO2 + 0.1 NO2    ; 0.; 7.;
+HCHO                 => HO2   + HO2 + CO  		        ; 0.; 8.;
+HCHO                 => H2    + CO	      			; 0.; 9.;
+!
+Acetaldehyde 	 => CH3O2 + RO2_T + HO2 + CO			; 0.; 10.;
+!Used Acetaldehyde for ALD2 photolysis rate 
+!(but propanal higher!)
+ALD2             => CO + HO2 + RO2_5 + RO2_T                    ; 0.; 10.;
+!
+!These are assumed the same as ALD2
+!**********************************************
+RPR1             => CO + HO2 + RO2_20 + RO2_T                   ; 0.; 10.;
+RPR3             => CO + 2.0 HO2 + UR4                          ; 0.; 10.;
+RPR8             => CO + HO2 + RO2_9 + RO2_T                    ; 0.; 10.;
+RPR8             => HO2 + RO2_57 + RO2_T                        ; 0.; 10.;
+RP10             => UR25                                        ; 0.; 10.;
+RP20        => 0.4 UR25 + 0.6 RO2_60 + 0.6 HO2 + 0.6 RO2_T      ; 0.; 10.; 
+!**********************************************
+HOCH2CHO 	 => HO2 + HCHO + HO2 + CO			; 0.; 11.;
+HCOCH2OOH	 => HO2 + CO + HCHO + OH			; 0.; 11.;
+HCOCO3H 	 => HO2 + CO + OH				; 0.; 11.;
+!
+!
+!These are assumed the same as acetone
+!**********************************************
+KETL		     => RO2_5 + CH3CO3 + 2.0 RO2_T		; 0.; 13.;
+KETH		     => RO2_5 + CH3CO3 + 2.0 RO2_T		; 0.; 13.;
+!**********************************************
+!
+Acetone 	 => CH3CO3 + CH3O2 + 2.0 RO2_T			; 0.; 13.;
+ACETOL		 => CH3CO3 + HCHO + HO2 + RO2_T			; 0.; 14.;
+HYPERACET	 => CH3CO3 + HCHO + OH + RO2_T			; 0.; 14.;
+HYPERACET	 => CH3COCH2O + OH 				; 0.; 15.;
+CH3OOH 		 => CH3O + OH					; 0.; 15.;
+CH3CO3H 	 => CH3CO3 + OH	+ RO2_T				; 0.; 15.;
+HCOCH2OOH	 => HCOCH2O + OH				; 0.; 15.;
+HCOCO3H 	 => HO2 + CO + OH				; 0.; 15.;
+HOCH2CO3H	 => HCHO + HO2 + OH				; 0.; 15.;
+C2H5OOH 	 => C2H5O + OH					; 0.; 15.;
+HYETHO2H 	 => HOCH2CH2O + OH				; 0.; 15.;
+NC3H7OOH 	 => NC3H7O + OH					; 0.; 15.;
+CH3NO3 		 => CH3O + NO2 					; 0.; 16.;
+C2H5NO3 	 => C2H5O + NO2					; 0.; 17.;
+NC3H7NO3 	 => NC3H7O + NO2				; 0.; 17.;
+GLY		 => CO + CO + H2				; 0.; 9.;
+GLY		 => CO + CO + HO2 + HO2				; 0.; 21.;
+GLY		 => HCHO + CO					; 0.; 20.;
+HOC2H4CHO 	 => HOCH2CH2O2 + HO2 + CO + RO2_T		; 0.; 11.;
+HYPROPO2H 	 => HYPROPO + OH				; 0.; 15.;
+!
+!These are assumed the same as MGLY
+!**********************************************
+HCOCO2H          => 2.0 CO + OH + HO2                           ; 0.; 22.; 
+CH3COCO2H        => CH3CO3 + HO2 + RO2_T                        ; 0.; 22.;
+HCOCO2H		 => HO2 + HO2 + CO				; 0.; 22.;
+MGLY		 => CH3CO3 + CO + HO2 + RO2_T			; 0.; 22.;
+!**********************************************
+Propanal 	 => C2H5O2 + HO2 + CO + RO2_T			; 0.; 11.;
+PERPROACID	 => C2H5O2 + OH	+ RO2_T				; 0.; 15.;
+IC3H7OOH 	 => IC3H7O + OH					; 0.; 15.;
+IC3H7NO3 	 => IC3H7O + NO2				; 0.; 17.;
+IPROPOLO2H 	 => IPROPOLO + OH				; 0.; 15.;
+CH3CHOHCHO 	 => Acetaldehyde + HO2 + CO + HO2		; 0.; 11.;
+HO1C3OOH	 => HO1C3O + OH					; 0.; 15.;
+HO1C3NO3 	 => HO1C3O + NO2 				; 0.; 17.;
+IPROPOLPER	 => Acetaldehyde + HO2 + OH 			; 0.; 15.;
+HOC2H4CO3H 	 => HOCH2CH2O2 + OH + RO2_T			; 0.; 15.;
+!N2O5             => NO3 + NO2                                  ; 0.; 13.;
+!HNO3             => OH + NO2                                   ; 0.; 14.;
+!HNO4             => HO2 + NO2                                  ; 0.; 15.;
+!HNO4             => OH + NO3                                   ; 0.; 16.;
+!PAN             => CH3CO3 + RO2_T + NO2                        ; 0.; 21.;           
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!HETERO. RXNS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -217,16 +260,13 @@ N2O5              => 2.0 HNO3                               ; 3. ; 0.02;    108.
 !NO2               => 1.0 HONO 				     ; 3. ; 1.0e-3; 46.0;  1.0e-5;
 !HO2               => 0.5 H2O2                               ; 3. ; 0.1;    33.0;  1.0e-5;
 !NO3               => HNO3                                   ; 3. ; 1.0e-3; 62.0;  1.0e-5;  
-!HO2                => ACID                                  ; 3. ; 0.1;    33.0; 1.0e-5;
-!O3                => ACID                                   ; 3. ; 2.0e-4;  48.0; 1.0e-5;
-!MEOH + NO2        => HO2 + HCHO + HNO3 + NO + -1.0 NO2		; 6. ; 4.33e-12;
-!MEOH + OH         => HO2 + HCHO + H2O					; 6. ; 3.68e-8;
-!SO2			=> H2SO4						;3.   ; 2.5e-4; 64.0; 1.0e-5;
+!SO2		   => H2SO4			             ;3.   ; 2.5e-4; 64.0; 1.0e-5;
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!END HETERO. RXNS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !Furan Reactions  - stoichiometry from MCM of University of Leeds (http://mcm.leeds.ac.uk/MCM/)
 FURAN  + OH        =>  HO2 + RP20			    ; 6.2e-11; 	0.; 	0.;  1.;
 RP20   + OH        => 0.17 RO2_59 + 0.83 RO2_60 + RO2_T     ; 5.6e-11;  0.;   0.;         1.;
-RP20               => 0.4 UR25 + 0.6 RO2_60 + 0.6 HO2	+ 0.6 RO2_T      ; 0. ; 10.; 
 RP20 + NO3         => RO2_60 + HNO3 + RO2_T                 ; 5.76e-12 ; 0.; -1862; 1.;
 RP20 + O3 => 1.0675 GLY + 0.82 HO2 + 0.57 OH + 1.265 CO + 0.0675 H2O2 + 0.125 HCHO + 0.1125 HCOCO2H ; 2.0e-18 ; 0.; 0.; 1.; 
 RO2_59 + NO        => NO2 + HO2 + 2.0 GLY + -1.0 RO2_T          ; 2.46e-12; 0.;   180.0;      1.;
@@ -316,17 +356,14 @@ CH3O2 + NO3	 => CH3O + NO2 + -1.0 RO2_T			; 1.2e-12;	0.;	0.;	1.;
 CH3O2 + RO2_T	 => CH3O 					; 1.480e-12;	0.;	-520.;	1.;
 CH3O2 + RO2_T	 => 0.5 Formic_Acid + 0.5 HCHO			; 9.; 	2.06e-13; 365.; 7.18; -885.;
 !
-CH3OOH 		 => CH3O + OH					; 0.; 15.;
 CH3OOH + OH 	 => 0.6 CH3O2 + 0.6 RO2_T + 0.4 HCHO + 0.4 OH	; 5.3e-12;	0.;	190.;	1.;
 !
-CH3NO3 		 => CH3O + NO2 					; 0.; 16.;
 CH3NO3 + OH	 => HCHO + NO2					; 4.0e-13; 	0.;	-845.; 	1.;
 !
 CH3O + O2	 => HCHO + HO2 					; 7.2e-14;	0.;	-1080.;	1.;	
 !
 CH3O2NO2	 => CH3O2 + NO2	+ RO2_T				; 11.;	 9.0e-5; -9690.; 1.1e16; -10560.; 0.6; 
 !
-Acetaldehyde 	 => CH3O2 + RO2_T + HO2 + CO			; 0.; 10.;
 Acetaldehyde + NO3 => HNO3 + CH3CO3 + RO2_T			; 1.4e-12; 	0.;	-1860.;	1.; 
 Acetaldehyde + OH => 0.95 CH3CO3 + 0.05 HCOCH2O2+ RO2_T 	; 4.7e-12;	0.;	345.;	1.;
 !
@@ -343,24 +380,17 @@ HCOCH2O2 + NO3	 => HCOCH2O + NO3 + -1.0 RO2_T			; 2.3e-12;	0.;	0.;	1.;
 HCOCH2O2 + RO2_T => 0.6 HCOCH2O + 0.2 HOCH2CHO + 0.2 GLY 	; 2.0e-12;	0.;	0.;	1.;
 ! 
 CH3CO3H + OH 	 => CH3O2 + RO2_T				; 3.70e-12; 	0.;	0.;	1.;
-CH3CO3H 	 => CH3CO3 + OH	+ RO2_T				; 0.; 15.;
 !
 HCOCH2OOH + OH	 => GLY + OH					; 2.91e-11;	0.;	0.;	1.;
 HCOCH2OOH + OH   => HCOCH2O2 + RO2_T				; 1.90e-12;	0.;	190.;	1.;
-HCOCH2OOH	 => HCOCH2O + OH				; 0.; 15.;
-HCOCH2OOH	 => HO2 + CO + HCHO + OH			; 0.; 11.;
 !
-HCOCH2O + RO2_T	 => HCHO + CO + HO2 + RO2_T			; 1.00e06;	0.;	0.;	1.;
+HCOCH2O 	 => HCHO + CO + HO2 + RO2_T			; 5.; 1.00e06;
 !
-GLY		 => CO + CO + H2				; 0.; 9.;
-GLY		 => CO + CO + HO2 + HO2				; 0.; 21.;
-GLY		 => HCHO + CO					; 0.; 20.;
 GLY + NO3 	 => 0.6 CO + 0.6 CO +0.6 HO2 + HNO3 + 0.4 HCOCO3 + 0.4 RO2_T ; 1.4e-14 ;	0.;	-1860.;	1.;
 GLY + OH 	 => 0.6 CO + 0.6 CO +0.6 HO2 + 0.4 HCOCO3 + 0.4 RO2_T	     ; 3.1e-12;	0.;	340.;	1.;
 !
 HOCH2CHO + NO3	 => HOCH2CO3 + HNO3 + RO2_T			; 1.4e-14 ;	0.;	-1860.;	1.;
 HOCH2CHO + OH	 => 0.2 GLY + 0.2 HO2 + 0.8 HOCH2CO3 + 0.8 RO2_T	; 1.0e-11 ;	0.;	0.;	1.;
-HOCH2CHO 	 => HO2 + HCHO + HO2 + CO			; 0.; 11.;
 !
 HCOCO3 + HO2	 => 0.15 HCOCO2H + 0.15 O3 + 0.41 HCOCO3H + 0.44 HO2 + 0.44 CO + 0.44 OH + -1.0 RO2_T ; 5.2e-13; 0.;	980.; 	1.;
 HCOCO3 + NO	 => HO2 + CO + OH + -1.0 RO2_T			; 7.5e-12; 	0.;	290.;	1.;
@@ -375,17 +405,13 @@ HOCH2CO3 + NO2 + M => PHAN + -1.0 RO2_T				; 3.; 2.7e-28; 	7.1;	1.2e-11; 0.9;	0.
 HOCH2CO3 + NO3	 => NO2 + HO2 + HCHO + -1.0 RO2_T		; 4.0e-12;	0.;	0.;	1.;
 HOCH2CO3 + RO2_T => 0.7 HCHO + 0.7 HO2 + 0.3 HOCH2CO2H		; 1.00e-11; 	0.;	0.;	1.;
 !
-HCOCO2H		 => HO2 + HO2 + CO				; 0.; 22.;
 HCOCO2H + OH	 => CO + HO2 					; 1.23e-11; 	0.; 	0.; 	1.;
 !
-HCOCO3H 	 => HO2 + CO + OH				; 0.; 15.;
-HCOCO3H 	 => HO2 + CO + OH				; 0.; 11.;
 HCOCO3H + OH	 => HCOCO3					; 1.58e-11; 	0.;	0.;	1.;
 !
 HOCH2CO2H + OH	 => HCHO + HO2					; 2.73e-12; 	0.;	0.;	1.;
 ! 
 HOCH2CO3H + OH 	 => HOCH2CO3					; 6.19e-12; 	0.;	0.;	1.;
-HOCH2CO3H	 => HCHO + HO2 + OH				; 0.; 15.;
 !
 PHAN + OH 	 => HCHO + CO + NO2				; 1.12e-12; 	0.;	0.;	1.;
 PHAN    	 => HOCH2CO3 + NO2 + RO2_T			; 11.; 4.9e-3; 	-12100.; 	5.4e16; -13830.; 0.3; 	
@@ -397,11 +423,9 @@ C2H5O2 + NO 	 => 0.009 C2H5NO3 + 0.991 C2H5O + 0.991 NO2 + -1.0 RO2_T	; 2.55e-12
 C2H5O2 + NO2 	 => C2H5O + NO2	+ -1.0 RO2_T				; 2.3e-12;	0.;	0.;	1.;
 C2H5O2 + RO2_T 	 => 0.6 C2H5O + 0.2 ETOH + 0.2 Acetaldehyde	; 1.62e-13;	0.;	182.5;	1.;
 !
-C2H5OOH 	 => C2H5O + OH					; 0.; 15.;
 C2H5OOH + OH 	 => C2H5O2 + RO2_T				; 1.9e-12;	0.;	190.;	1.; 
 C2H5OOH + OH 	 => Acetaldehyde + OH				; 8.01e-12;	0.;	0.;	1.;
 !
-C2H5NO3 	 => C2H5O + NO2					; 0.; 17.;
 C2H5NO3 + OH	 => Acetaldehyde + NO2				; 6.7e-13;	0.;	-395.;	1.;
 !
 C2H5O + O2 	 => Acetaldehyde + HO2 				; 2.4e-14; 	0.; 	-325.;	1.;
@@ -411,7 +435,6 @@ HOCH2CH2O2 + NO  => 0.005 ETHOHNO3 + 0.995 HOCH2CH2O + 0.995 NO2 + -1.0 RO2_T ; 
 HOCH2CH2O2 + NO3 => HOCH2CH2O + NO2 + -1.0 RO2_T			; 2.3e-12; 	0.; 	0.;	1.;
 HOCH2CH2O2 + RO2_T => 0.2 ETHGLY + 0.6 HOCH2CH2O + 0.2 HOCH2CHO ; 2.54e-13;	0.; 	682.5; 	1.;
 !
-HYETHO2H 	 => HOCH2CH2O + OH				; 0.; 15.;
 HYETHO2H + OH 	 => HOCH2CH2O2 + RO2_T				; 1.90e-12; 	0.;	190.;	1.;
 HYETHO2H + OH 	 => HOCH2CHO + OH 				; 1.3e-11; 	0.;	0.;	1.;
 !
@@ -423,30 +446,24 @@ HOCH2CH2O + O2	 => HO2 + HOCH2CHO				; 2.50e-14; 	0.;	-300.;	1.;
 ETHGLY + OH 	 => HOCH2CHO + HO2				; 1.45e-11;	0.;	0.;	1.;
 !
 Acetone + OH	 => CH3COCH2O2 + RO2_T				; 9.; 8.8e-12;	-1320.;	-1.7e-14;	423.;
-Acetone 	 => CH3CO3 + CH3O2 + 2.0 RO2_T			; 0.; 13.;
 !
 CH3COCH2O2 + HO2 => 0.15 CH3COCH2O + 0.15 OH + 0.85 HYPERACET + -1.0 RO2_T	; 1.36e-13; 	0.;	1250.;	1.;
 CH3COCH2O2 + NO	 => CH3COCH2O + NO2 + -1.0 RO2_T				; 2.7e-12; 	0.; 	360.;	1.;
 CH3COCH2O2 + NO3 => CH3COCH2O + NO2 + -1.0 RO2_T				; 2.3e-12; 	0.; 	0.;	1.;
 CH3COCH2O2 + RO2_T => 0.2 ACETOL + 0.6 CH3COCH2O + 0.2 MGLY	; 3.35e-12;	0.;	0.;	1.;
 !
-CH3COCH2O 	 => CH3CO3 + HCHO + RO2_T			; 1.00e06; 	0.;	0.;	1.;
+CH3COCH2O 	 => CH3CO3 + HCHO + RO2_T			; 5.; 1.00e06;
 !
 HYPERACET + OH	 => CH3COCH2O2 + RO2_T 				; 1.90e-12; 	0.;	190.;	1.;
 HYPERACET + OH	 => MGLY + OH 					; 8.39e-12; 	0.; 	0.;	1.;
-HYPERACET	 => CH3CO3 + HCHO + OH + RO2_T			; 0.; 14.;
-HYPERACET	 => CH3COCH2O + OH 				; 0.; 15.;
 !	
 ACETOL + OH 	 => MGLY + HO2 					; 1.6e-12; 	0.;	305.;	1.;
-ACETOL		 => CH3CO3 + HCHO + HO2 + RO2_T			; 0.; 14.;
 !
-MGLY		 => CH3CO3 + CO + HO2 + RO2_T			; 0.; 22.;
 MGLY + NO3	 => CH3CO3 + CO + HNO3 + RO2_T			; 3.36e-12; 	0.; 	-1860.;	1.;
 MGLY + OH	 => CH3CO3 + CO	+ RO2_T				; 1.9e-12; 	0.;	575.;	1.;
 !
 Propanal + NO3	 => C2H5CO3 + HNO3 + RO2_T			; 3.24e-12;	0.;	-1860.;	1.;	
 Propanal + OH	 => C2H5CO3 + RO2_T				; 4.9e-12; 	0.;	405.;	1.;
-Propanal 	 => C2H5O2 + HO2 + CO + RO2_T			; 0.; 11.;
 !
 C2H5CO3 + HO2	 => 0.44 C2H5O2 + 0.44 OH + 0.41 PERPROACID + 0.15 PROPACID + 0.15 O3 + -0.56 RO2_T ; 5.2e-13; 0.;	980.;	1.;
 C2H5CO3 + NO	 => C2H5O2 + NO					; 6.7e-12;	0.;	340.;	1.;
@@ -456,7 +473,6 @@ C2H5CO3 + NO3	 => C2H5O2 + NO2				; 4.0e-12;	0.;	0.;	1.;
 C2H5CO3 + RO2_T	 => 0.7 C2H5O2 + 0.3 PROPACID + -0.3 RO2_T	; 1.00e-11;	0.;	0.;	1.;
 !
 PERPROACID + OH	 => C2H5CO3 + RO2_T				; 4.42e-12; 	0.;	0.;	1.;
-PERPROACID	 => C2H5O2 + OH	+ RO2_T				; 0.; 15.;
 !
 PROPACID + OH	 => C2H5O2 + RO2_T				; 1.2e-12;	0.;	0.;	1.;
 !
@@ -472,22 +488,18 @@ NC3H7O2 + NO	 => 0.020 NC3H7NO3 + 0.980 NC3H7O + 0.980 NO2 + -1.0 RO2_T	; 2.9e-1
 NC3H7O2 + NO3	 => NC3H7O + NO2 + -1.0 RO2_T			; 2.3e-12;	0.;	0.;	1.;
 NC3H7O2 + RO2_T	 => 0.2 Propanal + 0.6 NC3H7O + 0.2 NPROPOL	; 6.48e-13;	0.;	0.;	1.;
 !
-IC3H7OOH 	 => IC3H7O + OH					; 0.; 15.;
 IC3H7OOH + OH	 => Acetone + OH 				; 1.66e-11; 	0.; 	0.;	1.;
 IC3H7OOH + OH	 => IC3H7O2 + RO2_T				; 1.90e-12;	0.;	190.;	1.;
 !
-IC3H7NO3 	 => IC3H7O + NO2				; 0.; 17.;
 IC3H7NO3 + OH	 => Acetone + NO2				; 6.2e-13; 	0.;	-230.;	1.;
 !
 IC3H7O + O2	 => Acetone + HO2				; 1.5e-14; 	0.;	-230.;	1.;
 !
 IPROPOL + OH	 => 0.861 Acetone + 0.861 HO2 + 0.139 IPROPOLO2 + 0.139 RO2_T ; 2.6e-12; 	0.;	200.;	1.;
 !
-NC3H7OOH 	 => NC3H7O + OH					; 0.; 15.;
 NC3H7OOH + OH	 => Propanal + OH 				; 1.10e-11; 	0.; 	0.;	1.;
 NC3H7OOH + OH	 => NC3H7O2 + RO2_T					; 1.90e-12;	0.;	190.;	1.;
 !
-NC3H7NO3 	 => NC3H7O + NO2				; 0.; 17.;
 NC3H7NO3 + OH	 => Propanal + NO2				; 5.8e-13; 	0.;	0.;	1.;
 !
 NC3H7O + O2	 => Propanal + HO2				; 2.6e-14; 	0.;	-255.;	1.;
@@ -511,38 +523,32 @@ HYPROPO2 + RO2_T => 0.6 ACETOL + 0.2 HYPROPO + 0.2 PROPGLY	; 8.80e-13;	0.;	0.;	1
 !
 IPROPOLO2H + OH  => CH3CHOHCHO + OH 				; 1.83e-11; 	0.;	0.;	1.;
 IPROPOLO2H + OH  => IPROPOLO2 + RO2_T				; 1.90e-12;	0.;	0.;	1.;
-IPROPOLO2H 	 => IPROPOLO + OH				; 0.; 15.;
 !
-IPROPOLO	 => Acetaldehyde + HCHO + HO2			; 2.00e14;	0.;	-5505.;	1.;
+IPROPOLO	 => Acetaldehyde + HCHO + HO2			; 2.; 2.00e14;	0.;	-5505.;	1.;
 !
 PROLNO3 + OH	 => CH3CHOHCHO + NO2				; 1.71e-12; 	0.;	0.;	1.;
 !
 CH3CHOHCHO + NO3 => CH3CHOHCO3 + HNO3 + RO2_T			; 3.36e-12; 	0.; 	-1860.;	1.;
 CH3CHOHCHO + OH  => CH3CHOHCO3 + RO2_T				; 1.71e-11;	0.;	0.;	1.;
-CH3CHOHCHO 	 => Acetaldehyde + HO2 + CO + HO2		; 0.; 11.;
 !
 PROPGLY + OH 	 => 0.613 ACETOL + HO2 + 0.387 CH3CHOHCHO	; 1.20e-11;	0.;	0.;	1.;
 !
-HO1C3OOH	 => HO1C3O + OH					; 0.; 15.;	
 HO1C3OOH + OH	 => HO1C3O2 + RO2_T				; 1.90e-12;	0.;	190.;	1.;
 HO1C3OOH + OH	 => HOC2H4CHO + OH				; 1.52e-11;	0.;	0.;	1.;
 !
-HO1C3NO3 	 => HO1C3O + NO2 				; 0.; 17.;
 HO1C3NO3 + OH	 => HOC2H4CHO + NO2				; 4.4e-12;	0.;	0.;	1.;
 !
 HO1C3O + O2	 => HOC2H4CHO + HO2				; 2.5e-14;	0.;	-300.;	1.;
 !
-HOC2H4CHO 	 => HOCH2CH2O2 + HO2 + CO + RO2_T		; 0.; 11.;
 HOC2H4CHO + NO3	 => HOC2H4CO3 + HNO3 + RO2_T			; 3.36e-12; 	0.; 	-1860.;	1.;
 HOC2H4CHO + OH	 => HOC2H4CO3 + RO2_T				; 3.06e-11;	0.;	0.;	1.;
 !
 HOC3H6OH + OH 	 => HOC2H4CHO + HO2				; 9.73e-12; 	0.;	0.;	1.;
 !
 HYPROPO2H + OH	 => ACETOL + OH					; 2.44e-11; 	0.;	0.;	1.;
-HYPROPO2H + OH	 => HYPROPO2 + RO2_T					; 1.9e-12; 	0.;	190.;	1.;
-HYPROPO2H 	 => HYPROPO + OH				; 0.; 15.;
+HYPROPO2H + OH	 => HYPROPO2 + RO2_T				; 1.9e-12; 	0.;	190.;	1.;
 !
-HYPROPO		 => Acetaldehyde + HCHO + HO2			; 2.00e14; 	0.;	-6410.;	1.;
+HYPROPO		 => Acetaldehyde + HCHO + HO2			; 2.; 2.00e14; 	0.;	-6410.;	1.;
 !
 PROPOLNO3 + OH 	 => ACETOL + NO2				; 9.16e-13; 	0.; 	0.;	1.;
 !
@@ -559,14 +565,12 @@ HOC2H4CO3 + NO3  => HOCH2CH2O2 + NO2				; 4.0e-12;	0.;	0.;	1.;
 HOC2H4CO3 + RO2_T  => 0.3 HOC2H4CO2H + 0.7 HOCH2CH2O2 + 0.7 RO2_T ; 1.0e-11;	0.;	0.;	1.;
 !
 IPROPOLPER + OH	 => CH3CHOHCO3 + RO2_T				; 9.34e-12; 	0.;	0.;	1.;		
-IPROPOLPER	 => Acetaldehyde + HO2 + OH 			; 0.; 15.;
 !
 IPROPOLPAN + OH	 => Acetaldehyde + CO + NO2			; 2.34e-12;	0.;	0.;	1.;
 IPROPOLPAN 	 => CH3CHOHCO3 + NO2 + RO2_T			; 11.; 4.9e-3; 	-12100.; 	5.4e16; -13830.; 0.3; 
 !
 HOC2H4CO2H + OH	 => HOCH2CH2O2 + RO2_T				; 1.39e-11; 	0.;	0.;	1.;
 !
-HOC2H4CO3H 	 => HOCH2CH2O2 + OH + RO2_T			; 0.; 15.;
 HOC2H4CO3H + OH	 => HOC2H4CO3 + RO2_T				; 1.73e-11; 	0.; 	0.;	 1.;
 !
 C3PAN1		 => HOC2H4CO3 + NO2 + RO2_T			; 11.; 4.9e-3; 	-12100.; 	5.4e16; -13830.; 0.3; 
@@ -586,9 +590,9 @@ PRONO3BO2 + NO	 => PRONO3BO + NO2 + -1.0 RO2_T			; 2.7e-12;	0.;	360.;	1.;
 PRONO3BO2 + NO3	 => PRONO3BO + NO2 + -1.0 RO2_T			; 2.3e-12;	0.;	0.;	1.;
 PRONO3BO2 + RO2_T => 0.2 NOA + 0.6 PRONO3BO + 0.2 PROLNO3 	; 4.0e-14; 	0.;	0.;	1.;
 !
-CH2OOB 		 => 0.24 CH2OO + 0.76 CO + 0.36 HO2 + 0.36 OH 	; 1.00e06;	0.;	0.;	1.;
+CH2OOB 		 => 0.24 CH2OO + 0.76 CO + 0.36 HO2 + 0.36 OH 	; 5.; 1.00e06;
 !
-CH3CHOOA	 => 0.24 CH3CHOO + 0.56 CH3O2 + 0.56 RO2_T + 0.36 CO + 0.36 OH + 0.20 HO2 + 0.20 CH4 ; 1.00e06;	0.;	0.;	1.;
+CH3CHOOA	 => 0.24 CH3CHOO + 0.56 CH3O2 + 0.56 RO2_T + 0.36 CO + 0.36 OH + 0.20 HO2 + 0.20 CH4 ; 5.; 1.00e06;
 !
 PR1O2HNO3 + OH 	 => CHOPRNO3 + OH				; 1.69e-12; 	0.;	0.;	1.;
 PR1O2HNO3 + OH 	 => PRONO3AO2 + RO2_T				; 1.90e-12;	0.;	190.;	1.;
@@ -637,7 +641,7 @@ PRNO3CO3 + NO2 + M => PRNO3PAN	+ -1.0 RO2_T				; 3.; 2.7e-28; 	7.1;	1.2e-11; 0.9
 PRNO3CO3 + NO3 	 => Acetaldehyde + NO2 + NO2 + -1.0 RO2_T			; 4.0e-12;	0.;	0.;	1.;
 PRNO3CO3 + RO2_T => 0.7 Acetaldehyde + 0.7 NO2 + 0.3 PRNO3CO2H + -1.0 RO2_T	; 1.00e-11;	0.;	0.;	1.;
 !
-PROPALO 	 => Acetaldehyde + CO + HO2 			; 1.00e06;	0.;	0.;	1.;
+PROPALO 	 => Acetaldehyde + CO + HO2 			; 5.; 1.00e06;
 !
 PRNO3CO2H + OH	 => Acetaldehyde + NO2 				; 3.14e-13;	0.;	0.;	1.;
 !
@@ -689,7 +693,7 @@ MEKBOOH + OH	 => MEKBO2 + RO2_T				; 1.90e-12;	0.;	190.;	1.;
 MEKBOOH 	 => CH3CO3 + RO2_T + OH + Acetaldehyde		; 0.; 14.;
 MEKBOOH 	 => MEKBO + OH					; 0.; 15.;
 !
-MEKBO 		 => Acetaldehyde + CH3CO3 + RO2_T		; 1.00e06;	0.;	0.;	1.;
+MEKBO 		 => Acetaldehyde + CH3CO3 + RO2_T		; 5.; 1.00e06;
 !
 BIACET		 => CH3CO3 + CH3CO3 + 2 RO2_T			; 0.; 23.;
 BIACET + OH 	 => BIACETO2 + RO2_T				; 1.40e-18;	2;	194.;	1.; 
@@ -702,7 +706,7 @@ MEKCOOH + OH	 => MEKCO2 + RO2_T				; 1.90e-12;	0.;	190.;	1.;
 MEKCOOH 	 => C2H5CO3 + HCHO + RO2_T			; 0.; 14.;
 MEKCOOH 	 => MEKCO + OH					; 0.; 15.;
 !
-MEKCO 		 => HCHO + C2H5CO3 + RO2_T			; 1.00e06;	0.;	0.;	1.;
+MEKCO 		 => HCHO + C2H5CO3 + RO2_T			; 5.; 1.00e06;
 !
 EGLYOX		 => C2H5CO3 + CO + HO2+ RO2_T			; 0.; 22.;
 EGLYOX + NO3	 => C2H5CO3 + CO + HNO3	+ RO2_T			; 5.6e-12;	0.;	-1860.;	1.;
@@ -732,7 +736,7 @@ HOCO3C4OOH + OH  => HO1CO3CHO + OH				; 2.16e-11;	0.;	0.;	1.;
 HOCO3C4OOH 	 => HO1CO3C4O + OH				; 0.; 15.;
 HOCO3C4OOH 	 => HO1CO3C4O + OH				; 0.; 14.;
 !
-HO1CO3C4O	 => HOC2H4CO3 + HCHO + RO2_T			; 1.00e06;	0.;	0.;	1.;
+HO1CO3C4O	 => HOC2H4CO3 + HCHO + RO2_T			; 5.; 1.00e06;
 !
 HO14CO2C4 + OH	 => HO1CO3CHO + HO2				; 1.57e-11;	0.;	0.;	1.;
 HO14CO2C4 	 => HOCH2CO3 + HOCH2CH2O2 + 2.0 RO2_T		; 0.; 14.;
@@ -751,7 +755,7 @@ CO2C3PAN	 => CO2C3CO3 + NO2 + RO2_T			; 11.; 4.9e-3; 	-12100.; 	5.4e16; -13830.;
 BIACETOOH	 => BIACETO + OH				; 0.; 15.;
 BIACETOOH	 => BIACETO + OH				; 0.; 23.;
 !
-BIACETO 	 => CH3CO3 + HCHO + CO + RO2_T		 	; 1.00e06;	0.;	0.;	1.;
+BIACETO 	 => CH3CO3 + HCHO + CO + RO2_T		 	; 5.; 1.00e06;
 !
 BIACETOH	 => CH3CO3 + HOCH2CO3 + 2.0 RO2_T		; 0.; 23.;
 BIACETOH + OH 	 => CO23C3CHO + HO2				; 2.69e-12;	0.;	0.;	1.;
@@ -786,7 +790,7 @@ ETHE + NO3 	 => ETHENO3O2 + RO2_T				; 3.3e-12;	0.;	-2880.;	1.;
 ETHE + O3 	 => HCHO + CH2OOA				; 9.1e-15;	0.;	-2580.;	1.;
 ETHE + OH + M	 => HOCH2CH2O2 + RO2_T				; 3.; 8.6e-29;	3.1;	9.0e-12; 0.85;	0.48;
 !
-GLYOOB		 => 0.24 GLYOO + 0.20 HCHO + 0.76  HO2 + 0.36 OH + 0.92 CO ; 1.00e06;	0.;	0.;	1.;
+GLYOOB		 => 0.24 GLYOO + 0.20 HCHO + 0.76  HO2 + 0.36 OH + 0.92 CO ; 5.; 1.00e06;
 !
 ACO2H + OH	 => HO2 + CO + HCHO				; 8.66e-12;	0.;	0.;	1.;
 !
@@ -799,7 +803,7 @@ ACRPAN + OH	 => HOCH2CHO + CO + NO2				; 8.63e-12;	0.;	0.;	1.;
 HOCHOCOOH + OH	 => HOCH2COCHO + OH				; 4.77e-11;	0.;	0.;	1.;
 HOCHOCOOH 	 => CHOCOHCO + OH				; 0.; 15.;
 !
-CHOCOHCO 	 => HOCH2CHO + HO2 + CO				; 1.00e06;	0.;	0.;	1.;
+CHOCOHCO 	 => HOCH2CHO + HO2 + CO				; 5.; 1.00e06;
 !
 HOCH2COCHO	 => HOCH2CO3 + CO + HO2 + RO2_T			; 0.; 22.;
 HOCH2COCHO + NO3 => HOCH2CO3 + CO + HNO3 + RO2_T		; 3.36e-12;	0.;	-1860.;	1.;
@@ -816,14 +820,14 @@ OCCOHCOOH	 => OCCOHCO + OH				; 0.; 15.;
 C42AOH		 => HO2 + CO + HO2 + NO3CH2CHO			; 0.; 11.;
 C42AOH + OH	 => NMGLYOX + HO2				; 2.92e-11;	0.;	0.;	1.;
 !
-OCCOHCO		 => HCHO + GLY + HO2				; 1.00e06;	0.;	0.;	1.;
+OCCOHCO		 => HCHO + GLY + HO2				; 5.; 1.00e06;
 !
 ETHENO3O2 + HO2	 => ETHO2HNO3 + -1.0 RO2_T			; 1.13e-13;	0.;	1300.;	1.;
 ETHENO3O2 + NO	 => ETHENO3O + NO2 + -1.0 RO2_T			; 2.7e-12;	0.;	360.;	1.;
 ETHENO3O2 + NO3	 => ETHENO3O + NO2 + -1.0 RO2_T			; 2.3e-12;	0.;	0.;	1.; 
 ETHENO3O2 + RO2_T => 0.6 ETHENO3O + 0.2 ETHOHNO3 + 0.2 NO3CH2CHO ;6.00e-13;	0.;	0.;	1.;
 !
-CH2OOA		 => 0.37 CH2OO + 0.63 CO + 0.13 HO2 + 0.13 OH 	; 1.00e06;	0.;	0.;	1.;
+CH2OOA		 => 0.37 CH2OO + 0.63 CO + 0.13 HO2 + 0.13 OH 	; 5.; 1.00e06;
 !
 GLYOO + CO	 => GLY						; 1.2e-15; 	0.;	0.;	1.;
 GLYOO + NO	 => GLY + NO2					; 1.0e-14;	0.;	0.;	1.;
@@ -861,7 +865,7 @@ ETHO2HNO3	 => ETHENO3O + OH				; 0.; 15.;
 ETHENO3O 	 => NO2 + HCHO + HCHO 				; 5.; 7.00e03;
 ETHENO3O + O2	 => NO3CH2CHO + HO2				; 2.50e-14;	0.;	-300.;	1.;
 !
-A2PANO		 => HOCH2CHO + HO2				; 1.00e06;	0.;	0.;	1.;
+A2PANO		 => HOCH2CHO + HO2				; 5.; 1.00e06;
 !
 C2OHOCO2H + OH	 => C3DIOLO2 + RO2_T				; 1.867e-11;	0.;	0.;	1.;
 !
@@ -937,7 +941,7 @@ BUTALNO3 + OH	 => CO2C3CHO + NO2				; 2.25e-11;	0.;	0.;	1.;
 BUTALNO3	 => NO2 + BUTALO				; 0.; 17.;
 BUTALNO3	 => NO2 + BUTALO				; 0.; 11.;
 !
-BUTALO		 => Acetaldehyde + HCOCH2O2 + RO2_T		; 2.70e14;	0.;	-7398.;	1.;
+BUTALO		 => Acetaldehyde + HCOCH2O2 + RO2_T		; 2.; 2.70e14;	0.;	-7398.;	1.;
 !
 HO2C3CO3 + HO2	 => 0.15 HO2C3CO2H + 0.15 O3 + 0.41 HO2C3CO3H + 0.44 IPROPOLO2 + 0.44 OH + -0.56 RO2_T ; 5.2e-13;	0.;	980.;	1.;
 HO2C3CO3 + NO	 => IPROPOLO2 + NO2				; 2.7e-12;	0.;	360.;	1.;
@@ -1220,9 +1224,9 @@ MPRBNO3O2 + NO	 => MPRBNO3O + NO2 + -1.0 RO2_T			; 2.7e-12;	0.;	360.;	1.;
 MPRBNO3O2 + NO3	 => MPRBNO3O + NO2 + -1.0 RO2_T			; 2.3e-12;	0.;	0.;	1.;
 MPRBNO3O2 + RO2_T => 0.6 MPRBNO3O + 0.2 IBUTOLBNO3 + 0.2 MPRBNO3CHO ; 6.7e-15;	0.;	0.;	1.;
 !
-CH2OOC 		 => 0.18 CH2OO + 0.82 HO2 + 0.82 CO + 0.82 OH	; 1.00e06;	0.;	0.;	1.;
+CH2OOC 		 => 0.18 CH2OO + 0.82 HO2 + 0.82 CO + 0.82 OH	; 5.; 1.00e06;
 !
-CH3CCH3OOA	 => 0.18 CH3CCH3OO + 0.82 CH3COCH2O2 + 0.82 OH	; 1.00e06;	0.;	0.;	1.;
+CH3CCH3OOA	 => 0.18 CH3CCH3OO + 0.82 CH3COCH2O2 + 0.82 OH	; 5.; 1.00e06;
 !
 IBUTOLBO2 + HO2	 => IBUTOLBO2H + -1.0 RO2_T			; 1.81e-13;	0.;	1300.;	1.;
 IBUTOLBO2 + NO	 => 0.012 IBUTOLBNO3 + 0.988 IBUTOLBO + 0.988 NO2  + -1.0 RO2_T; 2.7e-12;	0.;	360.;	1.; 
@@ -1489,7 +1493,7 @@ HO1C4OOH + OH	 => HOC3H6CHO + OH				; 1.66e-11;	0.;	0.;	1.;
 HO1C4NO3	 => HO1C4O + NO2				; 0.; 17.;
 HO1C4NO3 + OH	 => HOC3H6CHO + NO2				; 5.85e-12;	0.;	0.;	1.;
 !
-HO1C4O 	 	 => HOC3H6CHO + HO2				; 8.74e11;	0.;	-3430.;	1.;
+HO1C4O 	 	 => HOC3H6CHO + HO2				; 2.; 8.74e11;	0.;	-3430.;	1.;
 !
 HOC3H6CHO	 => HO1C3O2 + HO2 + CO + RO2_T			; 0.; 11.; 
 HOC3H6CHO + NO3	 => HOC3H6CO3 + HNO3 + RO2_T			; 5.6e-12;	0.;	-1860.;	1.; 
@@ -1534,18 +1538,31 @@ HOC3H6CO3H + OH	 => HOC3H6CO3 + RO2_T				; 1.31e-11;	0.;	0.;	1.;
 C4PAN1		 => HOC3H6CO3 + NO2 + RO2_T			; 11; 4.9e-3; 	-12100.; 	5.4e16; -13830.; 0.3;
 C4PAN1 + OH	 => HOC2H4CHO + CO + NO2			; 5.92e-12;	0.;	0.;	1.;
 !
-!
 !MCM v3.2 for MVK
-!MVK              => Propene + CO                                ;
-MVK    + OH      => RO2_49 + RO2_T                          	; 4.14e-12;	0.;	452.9;	1.;
-MVK    + O3      => 0.56 CO + 0.2 CO2 + 0.28 HO2 + 0.36 OH + 0.5 MGLY + 0.5 HCHO + 0.12 ACID ; 7.5e-16; 0.; -1519.9; 1.;
-MVK    + O3      => MVK + O3 + 0.1 ALD2 + 0.12 CH3COCO2H + 0.28 CH3CO3 + 0.28 RO2_T + 0.2 H2O ; 7.5e-16; 0.; -1519.9; 1.;
-MVK    + O       => 0.85 KETL + 0.15 RO2_4 + 0.15 CH3CO3 + 0.3 RO2_T ; 4.32e-12; 0.; 0.; 	1.;
+!Equal quantum yields from the two pathways
+MVK             => 0.5 Propene + 0.5 CH3CO3 + 0.5 RO2_T + 0.5 HCHO + 0.5 HO2 + CO  ;0. ; 14.;
+MVK     + O3    => 0.5 MGLOOA + 0.5 HCHO + 0.5 MGLY + CH2OOB 	; 8.5e-16; 	0.;   -1520.; 	1.;
+MVK     + OH    => 0.3 HMVKAO2 + 0.7 HMVKBO2 + RO2_T		; 2.6e-12;	0.;	610.;	1.;
 !
-MCR    + OH      => 0.3 RO2_50 + 0.3 H2O + 0.7 RO2_51 + RO2_T ; 1.86e-11; 0.;	176.1;	1.;
-MCR    + NO3     => 0.3 HNO3 + 0.3 RO2_50 + 0.7 RO2_52 + RO2_T ; 1.5e-12; 0.; 	-1726.2;	1.;
-MCR    + O3      => 0.41 CO + 0.41 HO2 + 0.82 OH + 0.5 HCHO + 0.59 MGLY + 0.09 ACID + 0.41 RO2_53 + 0.41 RO2_T ; 1.36e-15; 0.; -2113.7; 1.;
-MCR    + O       => 0.15 CO + 0.15 HO2 + 0.85 ALD2 + 0.15 RO2_7 + 0.15 RO2_T ;6.34e-12; 0.; 0.; 1.;
+!MCM v3.2 for MCR
+!Equal quantum yields from the two pathways
+MCR             => 0.5 CH3C2H2O2 + 0.5 CO + 0.5 MACO3 + HO2 + RO2_T 	;0. ;12.;
+MCR     + NO3   => MACO3 + HNO3 					; 3.4e-15; 	0.;	0.;	1.;
+MCR     + O3    => 0.12 HCHO + 0.12 MGLYOOB + 0.88 MGLY + 0.88 CH2OOG 	; 1.4e-15;	0; -2100.;	1.;
+MCR     + OH    => 0.45 MACO3 + 0.47 MACRO2 + 0.08 MACROHO2		; 8.0e-12 ; 0.;	380.0; 	1.;
+!
+!
+!MVK from CACM
+!MVK    + OH      => RO2_49 + RO2_T                          	; 4.14e-12;	0.;	452.9;	1.;
+!MVK    + O3      => 0.56 CO + 0.2 CO2 + 0.28 HO2 + 0.36 OH + 0.5 MGLY + 0.5 HCHO + 0.12 ACID ; 7.5e-16; 0.; -1519.9; 1.;
+!MVK    + O3      => MVK + O3 + 0.1 ALD2 + 0.12 CH3COCO2H + 0.28 CH3CO3 + 0.28 RO2_T + 0.2 H2O ; 7.5e-16; 0.; -1519.9; 1.;
+!MVK    + O       => 0.85 KETL + 0.15 RO2_4 + 0.15 CH3CO3 + 0.3 RO2_T ; 4.32e-12; 0.; 0.; 	1.;
+!
+!MCR from CACM
+!MCR    + OH      => 0.3 RO2_50 + 0.3 H2O + 0.7 RO2_51 + RO2_T ; 1.86e-11; 0.;	176.1;	1.;
+!MCR    + NO3     => 0.3 HNO3 + 0.3 RO2_50 + 0.7 RO2_52 + RO2_T ; 1.5e-12; 0.; 	-1726.2;	1.;
+!MCR    + O3      => 0.41 CO + 0.41 HO2 + 0.82 OH + 0.5 HCHO + 0.59 MGLY + 0.09 ACID + 0.41 RO2_53 + 0.41 RO2_T ; 1.36e-15; 0.; -2113.7; 1.;
+!MCR    + O       => 0.15 CO + 0.15 HO2 + 0.85 ALD2 + 0.15 RO2_7 + 0.15 RO2_T ;6.34e-12; 0.; 0.; 1.;
 !
 OLEL  + OH       => RO2_2 + RO2_T				; 5.86e-12; 0.; 	500.3; 	1.;
 OLEL  + NO3      => RO2_3 + RO2_T                           	; 1.0e-13;	0.;	-800.2;	1.;
@@ -1844,7 +1861,6 @@ PAN4             => RO2_48 + NO2 + RO2_T	      		; 4. ; 9.7e-29 ; 5.6 ; 9.3e-12 
 !Note: Replaced UR21 (keto-propanoic acid) with CH3COCO2H
 !and added chemistry from MCM v3.2 
 RO2_48 + HO2     => O3 + CH3COCO2H + -1.0 RO2_T 		; 9.743e-14; 0.;	800.2;	1.;
-CH3COCO2H        => CH3CO3 + HO2 + RO2_T                        ; 0. ; 22.;
 CH3COCO2H + OH   => CH3CO3 + RO2_T                              ; 8.0e-13 ; 0.;	0.;	1.;
 RO2_48 + RO2_T   => CO2 + CH3CO3 + RO2_T + O2			; 1.0e-15; 0.;	0.;		1.;
 !
