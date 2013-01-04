@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -17,8 +17,10 @@
 !!				     NULLIFY(POINTER) to fit pgf90	     !!
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
-!! 01/03  2012   Matt Alvarado     Fixed second order "+ M" reactions from   !!
+!! 01/03  2013   Matt Alvarado     Fixed second order "+ M" reactions from   !!
 !!                                   MCM v3.2 to act as pseudo-1st order     !!
+!! 01/04  2013   Matt Alvarado     Fixed PrintODESet to allow                !!
+!!                                   reaction numbers greater than 1000      !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1453,7 +1455,7 @@ END SUBROUTINE MakeODESet
 				IF (Current%LeadingFactor .NE. -2 .AND. Current%LeadingFactor .NE. -1 .AND. Current%LeadingFactor .NE. 1) &
 				WRITE (FH,'(F5.3)',advance='no') Current%LeadingFactor 
 
-				WRITE (FH,'(a,i3,a)',advance='no') "k(",Current%ReactionNumber,")"
+				WRITE (FH,'(a,i4,a)',advance='no') "k(",Current%ReactionNumber,")"
 				
 				CurrentChem => Current%DerefChem
 20				IF(Associated(CurrentChem)) THEN
