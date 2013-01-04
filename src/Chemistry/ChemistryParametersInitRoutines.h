@@ -21,6 +21,8 @@
 !!                                   MCM v3.2 to act as pseudo-1st order     !!
 !! 01/04  2013   Matt Alvarado     Fixed PrintODESet to allow                !!
 !!                                   reaction numbers greater than 1000      !!
+!! 01/04  2013   Matt Alvarado     Made MakeODESet print reaction and        !!
+!!                                   rxn number to Transcript.TXT            !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -126,6 +128,9 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 		CALL ERROR("The following input Line to MakeODESet() from "//TRIM(InputDeck)//" Parsed incorrectly:"// &
 		"    "//TRIM(FullLine))
 
+           !!Print Reaction to transcript with reaction number
+           CALL TRANSCRIPT("Rxn #"//TRIM(INT2STR(NumbReactions))// &
+		"    "//TRIM(FullLine))
 	   !!!!!!!!!!!!!!!
 	   !! REACTANTS !!
 	   !!!!!!!!!!!!!!!
@@ -270,19 +275,19 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			" had the wrong number of rate terms.  Expected "//	 &
 			 TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
 			 //"<<")
-
+                        WRITE(*,*) Rate
 			IF (IsReal(StripToken(Rate))) THEN
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          "  apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 				
 			DO I = 2, NumbRateFacs
 
 				CALL GetToken(Rates,";",Rate)
-
+                                WRITE(*,*) Rate
 				IF (IsReal(StripToken(Rate))) THEN
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
