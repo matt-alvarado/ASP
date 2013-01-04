@@ -11,6 +11,9 @@
 !!																				!!
 !! Month  Year   Name              Description									!!
 !! 07     2006   Matt Alvarado     Began Update History							!!
+!! 01/04  2013   Matt Alvarado     Expanded length of allowed lines from 
+!!                                   512 to 1024 characters. Needed to 
+!!                                   allow 50 photo rxns.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -25,7 +28,7 @@
 !! This Function Gets the next real line stripped of leading	!!
 !! whitespace and trailing comments								!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CHARACTER (len=512) FUNCTION GetLine(FileHandle) RESULT (OutLine)
+CHARACTER (len=1024) FUNCTION GetLine(FileHandle) RESULT (OutLine)
 
 	USE ModelParameters
 

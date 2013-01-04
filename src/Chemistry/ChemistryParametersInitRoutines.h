@@ -275,7 +275,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			" had the wrong number of rate terms.  Expected "//	 &
 			 TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
 			 //"<<")
-                        WRITE(*,*) Rate
+                        !WRITE(*,*) Rate
 			IF (IsReal(StripToken(Rate))) THEN
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
@@ -287,7 +287,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			DO I = 2, NumbRateFacs
 
 				CALL GetToken(Rates,";",Rate)
-                                WRITE(*,*) Rate
+                                !WRITE(*,*) Rate
 				IF (IsReal(StripToken(Rate))) THEN
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE

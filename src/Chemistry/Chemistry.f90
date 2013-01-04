@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -25,6 +25,7 @@
 !!                                  SetAqPhaseChemistry to indicate what     !!
 !!                                  refractive index should be used for an   !!
 !!                                  electrolyte.                             !!
+!! 01/04  2013   Matt Alvarado     Changed ReadPhotoRates to allow 50 rxns   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -148,7 +149,7 @@ MODULE Chemistry
 ! This holds reaction rate information
 	REAL*8,		    ALLOCATABLE :: GasPhaseBackground(:)
 	REAL*8,		    ALLOCATABLE :: GasPhaseDepVel(:)		
-	REAL*8				:: PhotoRates(96,25)
+	REAL*8				:: PhotoRates(96,50)
 
 	INTEGER :: GasConcInputTypeFlag
 
@@ -556,9 +557,9 @@ MODULE Chemistry
 	!! I = INT(UT*4 + 1), where UT is universal time in hours
 	!! J = reaction rate index
 	!! The file must contain 96 lines of data (every quarter hour)
-	!! and 23 columns, with the first being the time in UT
+	!! and 50 columns, with the first being the time in UT
         !! the second being solar zenith angle (sza)
-	!! and the next 21 being the reaction in the order given in the header 
+	!! and the next 50 being the reaction in the order given in the header 
         !! of PhotoRates.in
 	!! The lines must start at UT = 0.0
 		
@@ -574,7 +575,7 @@ MODULE Chemistry
 		FH = GetFileHandle()
 	    OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//"PhotoRates.in", STATUS='OLD')
 		
-		!The input file must have 96 lines and 25 reactions (27 column total, first one time, second solar zenith angle)
+		!The input file must have 96 lines and 50 reactions (52 column total, first one time, second solar zenith angle)
 		
 		DO I = 1, 96
 			!! Get a new data line (non-comment) from the input deck
@@ -585,9 +586,10 @@ MODULE Chemistry
 			CALL GetToken(CurrLine," ", Sza)
 
 			!Do for each photolysis reaction
-			DO J = 1, 25
-                                write(*,*) I,J
+			DO J = 1, 50
+                                !write(*,*) I,J
 				CALL GetToken(CurrLine," ", Token)
+                                !write(*,*) Token
 				Token = StripToken(Token)		
 				PhotoRates(I,J) = STR2REAL(Token)
 				!IF (J .EQ.25 ) WRITE(*,*) I, PhotoRates(I,J)
