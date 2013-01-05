@@ -23,11 +23,11 @@
 !!  For 1ST ORDER RXNS, the reaction rate is proportional to concentration.
 !!  So:
 !!    1. Reaction Rate (sec^-1) (should be less than 1)
-!!	
+!!
 !!	*IF the first term is 0., this is a photolysis reaction, and the
 !!	the second term should be the index of the appropriate column in PhotoRates.in
 !!	(ignoring the first time column). These should correspond to the reaction indices
-!!	of TUV v4.1		
+!!	of TUV v4.1
 !!
 !!	*OR if the first term is 2., that is a flag for an isomerization, and next 4 terms follow
 !!	the two-body formula k = A * T^B exp(C/T)^D but rate is in 1/s
@@ -195,8 +195,10 @@ Acetaldehyde 	 => CH3O2 + RO2_T + HO2 + CO			; 0.; 19.;
 Propanal 	 => C2H5O2 + HO2 + CO + RO2_T			; 0.; 22.;
 HOCH2CHO 	 => HO2 + HCHO + HO2 + CO			; 0.; 23.;
 ACR 		 => 0.3 ACO3 + 0.4 ETHE + 0.7 CO + 0.3 HCHO + 0.3 HO2 + 0.3 RO2_T	; 0.; 24.;
+!Equal quantum yields from the two MCR pathways
 MCR              => 0.5 CH3C2H2O2 + 0.5 CO + 0.5 MACO3 + HO2 + RO2_T 	;0. ;25.;
 Acetone 	 => CH3CO3 + CH3O2 + 2.0 RO2_T			; 0.; 26.;
+!Equal quantum yields from the two MVK pathways
 MVK             => 0.5 Propene + 0.5 CH3CO3 + 0.5 RO2_T + 0.5 HCHO + 0.5 HO2 + CO  ;0. ; 27.;
 MEK 	 	 => Acetaldehyde + C2H5O2 + RO2_T		; 0.; 28.;
 CH3OOH 		 => CH3O + OH					; 0.; 31.;
@@ -238,8 +240,18 @@ PRPAL2CO2H 	 => PROPALO2 + HO2 + RO2_T 			; 0.; 22.;
 PRPAL2CO3H 	 => PROPALO2 + HO2 + RO2_T 			; 0.; 22.;
 BUTAL2NO3	 => Propanal + HO2 + CO + NO2			; 0.; 22.;
 IBUTALOH	 => Acetone + HO2 + HO2 + CO			; 0.; 22.;
+MACROOH          => ACETOL + CO + HO2 + OH                      ; 0.; 22.;
+MACROH           => ACETOL + CO + 2.0 HO2                       ; 0.; 22.; 
+MACROHOOH        => IBUTALOH + CO + HO2 + OH                    ; 0.; 22.;  
+MACROHNO3        => NOA + 2.0 HO2 + CO                          ; 0.; 22.;
+CHOMOHCO3H       => MGLY + OH + HO2                             ; 0.; 22.;
+!This reaction repeats to get 2*J<17>
+C3MDIALOH        => MGLY + HO2 + CO + HO2                       ; 0.; 22.;
+C3MDIALOH        => MGLY + HO2 + CO + HO2                       ; 0.; 22.;
+!
 !2-Buteneal assumed to act as MCR
 2-Butenal 	 => CO + HO2 + CO + HO2 + Acetaldehyde		; 0.; 25.;
+!
 !These are all MCM v3.2 J<22> rxns, that should follow MEK (TUV # 28)
 ACETOL		 => CH3CO3 + HCHO + HO2 + RO2_T			; 0.; 28.;
 HYPERACET	 => CH3CO3 + HCHO + OH + RO2_T			; 0.; 28.;
@@ -255,6 +267,7 @@ HO14CO2C4 	 => HOCH2CO3 + HOCH2CH2O2 + 2.0 RO2_T		; 0.; 28.;
 CO2C3CO3H  	 => CH3COCH2O2 + OH + RO2_T			; 0.; 28.;
 CO2H3CO3H	 => CH3CO3 + HO2 + HCOCO3H + RO2_T		; 0.; 28.;
 BUT2OLO		 => Acetaldehyde + CH3CO3 + HO2 + RO2_T		; 0.; 28.;
+HO12CO3C4        => CH3CO3 + HOCH2CHO + HO2                     ; 0.; 28.;
 !Lumped Ketones also assumed to act as MEK
 KETL		 => RO2_5 + CH3CO3 + 2.0 RO2_T			; 0.; 28.;
 KETH		 => RO2_5 + CH3CO3 + 2.0 RO2_T			; 0.; 28.;
@@ -326,6 +339,12 @@ NBUTOLBOOH 	 => NBUTOLBO + OH				; 0.; 31.;
 IBUTOLCO2H 	 => IBUTOLCO + OH				; 0.; 31.;
 IBUTOLCNO3	 => IBUTOLCO + NO2				; 0.; 31.;
 HOC3H6CO3H 	 => HO1C3O2 + O2 + RO2_T			; 0.; 31.;
+HMVKAOOH         => HMVKAO + OH                                 ; 0.; 31.;
+HMVKBOOH         => HMVKBO + OH                                 ; 0.; 31.; 
+MACO3H           => CH3C2H2O2 + RO2_T + OH                      ; 0.; 31.; 
+MACROOH          => MACRO + OH                                  ; 0.; 31.;
+MACROHOOH        => MACROHO + OH                        	; 0.; 31.;    
+CHOMOHCO3H       => MGLY + OH + HO2                             ; 0.; 31.;
 !Since NC3H7NO3 isn't in TUV, and cross sections are very similar,
 !we use C2H5NO3 for these reactions
 NC3H7NO3 	 => NC3H7O + NO2				; 0.; 35.;
@@ -360,6 +379,7 @@ CO3C4NO3OH	 => HO2CO3C4O + NO2				; 0.; 38.;
 C4CONO3CO	 => C4CO2O + NO2				; 0.; 39.;
 C4CONO3OOH	 => C4CO2O + NO2				; 0.; 39.;
 COCCOHNO3 	 => CO + HO2 + NO2 + CH3CHOHCHO			; 0.; 39.;
+MACROHNO3        => MACROHO + NO2                               ; 0.; 39.;
 !These use MCM v3.2 J<34>, and so follow MGLY
 HCOCO2H          => 2.0 CO + OH + HO2                           ; 0.; 46.;
 CH3COCO2H        => CH3CO3 + HO2 + RO2_T                        ; 0.; 46.;
@@ -1557,17 +1577,105 @@ C4PAN1		 => HOC3H6CO3 + NO2 + RO2_T			; 11; 4.9e-3; 	-12100.; 	5.4e16; -13830.; 
 C4PAN1 + OH	 => HOC2H4CHO + CO + NO2			; 5.92e-12;	0.;	0.;	1.;
 !
 !MCM v3.2 for MVK
-!Equal quantum yields from the two pathways
-MVK     + O3    => 0.5 MGLOOA + 0.5 HCHO + 0.5 MGLY + CH2OOB 	; 8.5e-16; 	0.;   -1520.; 	1.;
-MVK     + OH    => 0.3 HMVKAO2 + 0.7 HMVKBO2 + RO2_T		; 2.6e-12;	0.;	610.;	1.;
+MVK     + O3     => 0.5 MGLOOA + 0.5 HCHO + 0.5 MGLY + CH2OOB 	; 8.5e-16; 	0.;   -1520.; 	1.;
+MVK     + OH     => 0.3 HMVKAO2 + 0.7 HMVKBO2 + RO2_T		; 2.6e-12;	0.;	610.;	1.;
 !
 !MCM v3.2 for MCR
-!Equal quantum yields from the two pathways
-MCR     + NO3   => MACO3 + HNO3 					; 3.4e-15; 	0.;	0.;	1.;
-MCR     + O3    => 0.12 HCHO + 0.12 MGLYOOB + 0.88 MGLY + 0.88 CH2OOG 	; 1.4e-15;	0; -2100.;	1.;
-MCR     + OH    => 0.45 MACO3 + 0.47 MACRO2 + 0.08 MACROHO2		; 8.0e-12 ; 0.;	380.0; 	1.;
+MCR     + NO3    => MACO3 + HNO3 					; 3.4e-15; 	0.;	0.;	1.;
+MCR     + O3     => 0.12 HCHO + 0.12 MGLYOOB + 0.88 MGLY + 0.88 CH2OOG 	; 1.4e-15;	0; -2100.;	1.;
+MCR     + OH     => 0.45 MACO3 + 0.47 MACRO2 + 0.08 MACROHO2		; 8.0e-12 ; 0.;	380.0; 	1.;
 !
+MGLOOA  => 0.2 Acetaldehyde + 0.56 CH3CO3 + 0.2 HCHO + 0.2 HO2 + 0.24 MGLOO + 0.36 OH + 0.36 CO + 0.56 RO2_T ; 5.; 1.00e+06; 
 !
+HMVKAO2 + HO2    => HMVKAOOH + -1.0 RO2_T					; 1.82e-13;     0.;  1300.;     1.;
+HMVKAO2 + NO     => 0.017 HMVKANO3 + 0.983 HMVKAO + 0.983 NO2 + -1.0 RO2_T	; 2.70e-12;     0.;   360.;     1.;
+HMVKAO2 + NO3    => HMVKAO + NO2 + -1.0 RO2_T					; 2.30e-12;     0.;     0.;     1.;
+HMVKAO2 + RO2_T  => 0.2 CO2H3CHO + 0.6 HMVKAO + 0.2 HO12CO3C4			; 2.00e-12;     0.;     0.;     1.;
+!
+HMVKBO2 + HO2    => HMVKBOOH + -1.0 RO2_T					; 1.82e-13;     0.;  1300.;     1.;
+HMVKBO2 + NO     => HMVKBO + NO2 + -1.0 RO2_T					; 2.70e-12;     0.;   360.;     1.;
+HMVKBO2 + NO3    => HMVKBO + NO2 + -1.0 RO2_T					; 2.30e-12;     0.;     0.;     1.;
+HMVKBO2 + RO2_T  => 0.2 BIACETOH + 0.6 HMVKBO + 0.2 HO12CO3C4			; 8.80e-13;     0.;     0.;     1.;
+!
+CH3C2H2O2        => 0.35 CH3CO3 + 0.65 CH3O2 + CO + HCHO                        ; 5.; 1.00e+06;
+!
+MACO3   + HO2     => 0.44 CH3C2H2O2 + 0.44 OH + 0.15 MACO2H + 0.15 O3 + 0.41 MACO3H + -0.56 RO2_T ; 5.2e-13; 0.; 980.; 1.;
+MACO3   + NO      => CH3C2H2O2 + NO2  						; 8.70e-12;     0.;   290.;     1.; 
+MACO3   + NO2 + M => MPAN + -1.0 RO2_T    					; 3.; 2.7e-28; 	7.1;	1.2e-11; 0.9;	0.3;
+MACO3   + NO3     => CH3C2H2O2 + NO2                                            ; 4.00e-12;     0.;    0.;     1.;   
+MACO3   + RO2_T   => 0.7 CH3C2H2O2 + 0.3 MACO2H + 0.7 RO2_T                     ; 1.00e-11;     0.;    0.;     1.; 
+!
+MGLYOOB           => 0.18 MGLYOO + 0.82 CH3CO3 + 0.82 CO + 0.82 OH + 0.82 RO2_T ; 5.; 1.00e+06;
+!
+CH2OOG            => 0.37 CH2OO + 0.47 CO + 0.16 HO2 + 0.16 CO + 0.16 OH        ; 5.; 1.00e+06;
+!
+MACRO2  + HO2     => MACROOH + -1.0 RO2_T                                       ; 1.82e-13;     0.;  1300.;     1.;
+MACRO2  + NO      => MACRO + NO2 + -1.0 RO2_T  					; 2.70e-12;     0.;   360.;     1.;
+MACRO2  + NO3     => MACRO + NO2 + -1.0 RO2_T  					; 2.30e-12;     0.;     0.;     1.;
+MACRO2  + RO2_T   => 0.7 MACRO + 0.3 MACROH                                     ; 9.20e-14;     0.;     0.;     1.;
+!
+MACROHO2 + HO2    => MACROHOOH + -1.0 RO2_T                                     ; 1.82e-13;     0.;  1300.;     1.; 
+MACROHO2 + NO     => 0.017 MACROHNO3 + 0.983 MACROHO + 0.983 NO2 + -1.0 RO2_T   ; 2.70e-12;     0.;   360.;     1.; 
+MACROHO2 + NO3    => MACROHO + NO2 + -1.0 RO2_T  				; 2.30e-12;     0.;     0.;     1.; 
+MACROHO2 + RO2_T  => 0.6 MACROHO + 0.2 MACROH + 0.2 C3MDIALOH                   ; 1.40e-12;     0.;     0.;     1.;
+!
+MGLOO + CO	 => MGLY					; 1.2e-15; 	0.;	0.;	1.;
+MGLOO + NO	 => MGLY + NO2					; 1.0e-14;	0.;	0.;	1.;
+MGLOO + NO2	 => MGLY + NO3					; 1.00e-15;	0.;	0.;	1.;
+MGLOO + SO2	 => MGLY + H2SO4				; 7.0e-14;	0.;	0.;	1.;
+MGLOO + H2O	 => MGLY + H2O2					; 6.0e-18;	0.;	0.;	1.;
+MGLOO + H2O	 => CH3COCO2H					; 1.0e-17;	0.;	0.;	1.;
+!
+HMVKAOOH + OH    => CO2H3CHO + OH                               ; 5.77e-11;	0.;	0.;	1.;
+!
+HMVKANO3 + OH    => CO2H3CHO + NO2                              ; 2.23e-12;	0.;	0.;	1.;
+!
+HMVKAO           => MGLY + HCHO + HO2                           ; 1.00e+06;     0.;     0.;     1.;
+!
+HO12CO3C4 + OH   => BIACETOH + HO2                              ; 1.88e-11;     0.;     0.;     1.;
+!
+HMVKBOOH + OH    => BIACETOH + OH                               ; 3.95e-11;     0.;     0.;     1.;
+!
+HMVKBO           => CH3CO3 + HOCH2CHO + RO2_T                   ; 5.; 1.00e+6;
+!
+MACO2H  + OH     => CH3C2H2O2 + RO2_T                           ; 1.51e-11;     0.;     0.;     1.;
+!
+MACO3H  + OH     => MACO3 + RO2_T                               ; 1.661e-11;     0.;     0.;     1.;
+!
+MPAN             => MACO3 + NO2 + RO2_T                         ; 2.; 1.6e+16; 0.; -13500.; 1.;   
+MPAN    + O3     => HCHO + CH3CO3 + NO3 + RO2_T                 ; 8.20e-18;     0.;     0.;     1.;
+MPAN    + OH     => ACETOL + CO + NO2                  		; 2.90e-11;     0.;     0.;     1.;                 
+!
+MGLYOO + CO	 => MGLY					; 1.2e-15; 	0.;	0.;	1.;
+MGLYOO + NO	 => MGLY + NO2					; 1.0e-14;	0.;	0.;	1.;
+MGLYOO + NO2	 => MGLY + NO3					; 1.00e-15;	0.;	0.;	1.;
+MGLYOO + SO2	 => MGLY + H2SO4				; 7.0e-14;	0.;	0.;	1.;
+MGLYOO + H2O	 => MGLY + H2O2					; 6.0e-18;	0.;	0.;	1.;
+!
+MACROOH + OH     => ACETOL + CO + OH                            ; 3.77e-11;	0.;	0.;	1.; 
+!
+MACRO            => ACETOL + CO + HO2                   	; 5.; 1.00e+6;
+!     
+MACROH  + OH     => C3MDIALOH + HO2                             ; 3.42e-11;	0.;	0.;	1.;
+!
+MACROHOOH + OH   => C3MDIALOH + OH                              ; 5.55e-11;	0.;	0.;	1.;
+!
+MACROHNO3 + OH   => NOA + CO + HO2                              ; 2.18e-11;	0.;	0.;	1.;
+!
+MACROHO          => MGLY + HCHO + HO2                           ; 5.; 1.00e+6;
+!
+C3MDIALOH + OH   => CHOMOHCO3 + RO2_T                           ; 1.32e-10;	0.;	0.;	1.;
+!
+CHOMOHCO3 + HO2  => 0.56 CHOMOHCO3H + 0.44 MGLY + 0.44 HO2 + 0.44 OH + -1.0 RO2_T ;5.2e-13;	0.;	980.;	1.;   
+CHOMOHCO3 + NO   => MGLY + NO2 + HO2 + -1.0 RO2_T 				  ;7.5e-12;	0.;	290.;	1.;
+CHOMOHCO3 + NO2 + M => CHOMOHPAN + -1.0 RO2_T    				; 3.; 2.7e-28; 	7.1;	1.2e-11; 0.9;	0.3; 
+CHOMOHCO3 + NO3  => MGLY + NO2 + HO2 + -1.0 RO2_T                                 ;4.00e-12;	0.;	0.;	1.;
+CHOMOHCO3 + RO2_T => MGLY + HO2                                                   ;1.00e-11;	0.;	0.;	1.;
+!
+CHOMOHCO3H + OH  => CHOMOHCO3 + RO2_T                            ; 6.99e-11;	0.;	0.;	1.; 
+!  
+CHOMOHPAN + OH   => MGLY + CO + NO2                              ; 6.64e-11;	0.;	0.;	1.;
+CHOMOHPAN        => CHOMOHCO3 + NO2 + RO2_T                      ; 11.; 4.9e-3; -12100.; 	5.4e16; -13830.; 0.3;         
 !MVK from CACM
 !MVK    + OH      => RO2_49 + RO2_T                          	; 4.14e-12;	0.;	452.9;	1.;
 !MVK    + O3      => 0.56 CO + 0.2 CO2 + 0.28 HO2 + 0.36 OH + 0.5 MGLY + 0.5 HCHO + 0.12 ACID ; 7.5e-16; 0.; -1519.9; 1.;
