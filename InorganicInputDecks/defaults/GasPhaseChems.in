@@ -31,6 +31,8 @@
 !! Use the same name here as in the aerosol chemistry input deck to 
 !! assure proper matching between the two
 !! NOTE: Values below are for Yokelson Williams Fire (California)
+!! Put CO first to use gasphasechems_scale.pro
+CO		;1	;28.		;10000.		;129.213	; 0.; 
 O2		;0	; 32.		;210000000.	;210000000.	; 0.;
 N2		;0	; 28.		;790000000.	;790000000.	; 0.;
 OffGas      	;0    	; 12.       	;1000.      	;1000.		; 0.; 
@@ -62,7 +64,6 @@ H2		;1	;2.		;0.0		;0.		; 0.;
 !C1 Parent Compounds
 !
 CH4		;1	;16.		;2761.1		;1900.		; 0.;
-CO		;1	;28.		;10000.		;129.213	; 0.; 
 HCHO	   	;1 	;30. 		;162.9		;0.329		; 0.; 
 MEOH		;1	;32.		;164.9		;0.		; 0.; 
 CO2		;1	;43.984		;570000.	;390000.	; 0.; 
