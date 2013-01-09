@@ -522,6 +522,12 @@ Acetic_Acid + OH => CH3O2 + RO2_T				; 8.00e-13;	0.;	0.;	1.;
 !MCM v3.2 for MEOH
 MEOH  + OH       => HO2   + HCHO + H2O    			; 2.85e-12;	0.;	-345.;	1.;
 !
+!HCN rxn rate from IUPAC, chemistry form Cicerone and Zellner, JGR 88, 10689-10696, 1983
+HCN   + OH       => NO2 + HO2   + CO                            ; 1.20e-13;     0.;     -400.;  1.;
+!
+!MCM v3.2 for Acetylene (C2H2, F_c at 290 K value
+Acetylene + OH + M => 0.636 GLY + 0.636 OH + 0.364 HCOOH + 0.364 CO + 0.364 HO2 ; 3. ; 5.0e-30;	1.5;	1.0e-12; 0.; 0.384;
+!
 !MCM v3.2 for ETOH
 ETOH  + OH       => 0.9 HO2 + 0.9 Acetaldehyde + 0.05 C2H5O + 0.05 HOCH2CH2O2 + 0.05 RO2_T; 3.0e-12; 0.; 20.; 1.; 
 !
