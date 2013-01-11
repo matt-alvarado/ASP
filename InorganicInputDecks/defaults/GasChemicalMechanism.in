@@ -369,6 +369,9 @@ C41OOH           => C41O + OH                                   ; 0.; 31.;
 HC3CO3H          => HOCH2CHO + CO + HO2 + OH                    ; 0.; 31.;
 HC3CCO3H         => HO2 + ACR + OH                              ; 0.; 31.;
 H13CO2CO3H       => HOCH2COCHO + HO2 + OH                       ; 0.; 31.;
+INPN             => OH + HO2 + ALD2 + NO2                       ; 0.; 31.;
+ISNP             => OH + HO2 + ALD2 + NO2                       ; 0.; 31.;
+RIP              => OH + HO2 + 0.71 HCHO + 0.425 MVK + 0.285 MCR + 0.29 HC5        ; 0.; 31.; 	
 !Since NC3H7NO3 isn't in TUV, and cross sections are very similar,
 !we use C2H5NO3 for these reactions
 NC3H7NO3 	 => NC3H7O + NO2				; 0.; 35.;
@@ -401,11 +404,14 @@ CO23C4NO3	 => BIACETO + NO2				; 0.; 38.;
 CO23C4NO3	 => HCHO + CH3CO3 + NO2 + CO + RO2_T		; 0.; 38.;
 CO3C4NO3OH	 => CH3CHOHCO3 + HCHO + NO2 + RO2_T		; 0.; 38.;
 CO3C4NO3OH	 => HO2CO3C4O + NO2				; 0.; 38.;
+MVKN             => HOCH2CHO + NO2 + CH3CO3                     ; 0.; 38.;
 !Based on TCH4H9NO3
+ISOPND           => HC5 + NO2 + HO2                             ; 0.; 39.;
 C4CONO3CO	 => C4CO2O + NO2				; 0.; 39.;
 C4CONO3OOH	 => C4CO2O + NO2				; 0.; 39.;
 COCCOHNO3 	 => CO + HO2 + NO2 + CH3CHOHCHO			; 0.; 39.;
 MACROHNO3        => MACROHO + NO2                               ; 0.; 39.;
+ISOPNB      => HC5 + NO2 + HO2 	                                ; 0.;  39.;
 !These use MCM v3.2 J<34>, and so follow MGLY
 HCOCO2H          => 2.0 CO + OH + HO2                           ; 0.; 46.;
 CH3COCO2H        => CH3CO3 + HO2 + RO2_T                        ; 0.; 46.;
@@ -467,6 +473,9 @@ RPR8             => CO + HO2 + RO2_9 + RO2_T                    ; 0.; 49.;
 RPR8             => HO2 + RO2_57 + RO2_T                        ; 0.; 49.;
 RP10             => UR25                                        ; 0.; 49.;
 RP20        => 0.4 UR25 + 0.6 RO2_60 + 0.6 HO2 + 0.6 RO2_T      ; 0.; 49.;
+!HPALD(1,2) as 100*MCR
+HPALD1              => 2 OH + CH3CO3 + GLY + HO2                            ; 0.; 51.;
+HPALD2              => 2 OH + CH3CO3 + GLY + HO2                            ; 0.; 51.;
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!HETERO. RXNS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1675,7 +1684,7 @@ HMVKAOOH + OH    => CO2H3CHO + OH                               ; 5.77e-11;	0.;	
 !
 HMVKANO3 + OH    => CO2H3CHO + NO2                              ; 2.23e-12;	0.;	0.;	1.;
 !
-HMVKAO           => MGLY + HCHO + HO2                           ; 1.00e+06;     0.;     0.;     1.;
+HMVKAO           => MGLY + HCHO + HO2                           ; 5.; 1.00e+06;
 !
 HO12CO3C4 + OH   => BIACETOH + HO2                              ; 1.88e-11;     0.;     0.;     1.;
 !
@@ -1964,6 +1973,91 @@ H13CO2CO3H + OH  => H13CO2CO3 + RO2_T                           ; 9.43e-12;	0.;	
 C4PAN10           => H13CO2CO3 + NO2 + RO2_T                    ; 11.; 4.9e-3; -12100.; 	5.4e16; -13830.; 0.3;
 C4PAN10    + OH   => HOCH2COCHO + CO + NO2                      ; 5.83e-12;	0.;	0.;	1.; 
 !
+!Quasi-unlumped isoprene
+!Paulot et al., ACP, 2009 and Peeters et al, PCCP, 2010 Isoprene, as in GEOS-Chem v8-03-01
+ISOP + O3    => 0.387 MCR + 0.159 MVK + 0.1 O3 + 0.27 OH + 0.07 Propene + 0.9 HCHO + 0.06 HO2 + 0.05 CO ;1.5e-14; 0.; -2000.; 1.;
+ISOP + NO3   => INO2 + RO2_T                                    ; 3.15e-12;     0.;     -450.;  1.;
+ISOP + OH    => 0.667 ISOPBO2+ 0.333 ISOPDO2 + RO2_T            ; 2.70e-11;     0.;      390.;  1.;
+!
+!Use NCH4H9NO3 for R4N2, ALD2 for RCHO, and ALCH for ROH, CH3O2 for MO2
+INO2 + HO2   => INPN + 0.5 ISOPND + 0.5 OH + 0.5 HO2 + -1.0 RO2_T           ; 2.05e-13;     0.;     1300.;  1.;
+INO2 + CH3O2 => 0.55 NO2 + 0.40 HO2 + 0.425  NC4H9NO3 + 0.025 NO2 + 0.05 MCR + 0.83 HCHO + 0.03 MVK + 0.25 ALD2 + 0.25 MEOH + 0.25 ALCH + 0.5 HO2 + -1.0 RO2_T ; 8.37e-14 ; 0.; 0.; 1.;
+INO2 + CH3CO3 => CH3O2 +0.10 NO2 + 0.80 HO2 +0.85 HNO3 + 0.05 NO2 +0.10 MCR + 0.15 HCHO +0.05 MVK ; 1.68e-12; 0.; 500.; 1.; 
+!
+INPN + OH    => OH + NO2 + MEK                                  ; 1.90e-11;     0.;      390.;  1.;
+INPN + OH    => 0.36 INO2 + 0.64  NC4H9NO3 + 0.64 OH            ; 5.18e-12;     0.;      200.;  1.;
+!
+!NOA for PROPNN, NO3CH3CHO for ETHLN, HOCH2CHO for GLYC and ACETOL for HAC
+ISOPND + O3  => 0.5 NOA + 0.5 NO3CH2CHO + 0.27 OH + 0.5 HOCH2CHO + 0.5 ACETOL ; 5.30e-17;     0.;      200.;  1.;
+ISOPND + OH  => ISOPNDO2                                        ; 2.64e-11;     0.;      380.;  1.;
+!
+!MACROHNO3 for MACRN, nitrate yield set to value for tertiary at 298 K, 900 mbar
+ISOPNDO2 + NO => 0.07 MACROHNO3 + 0.31 Formic_Acid + 0.44 ACETOL + 0.13 NO3CH2CHO + 0.65 HCHO + 1.34 NO2 + 0.15 HOCH2CHO + 0.31 NO3 + 0.15 NOA + 0.34 MEK + 0.35 HO2 + -1.0 RO2_T; 2.61e-12; 0.; 350.; 1.;
+ISOPNDO2 + NO => HNO3 + -1.0 RO2_T ; 8.64e-14; 0.; 350.; 1.; 
+ISOPNDO2 + HO2 => 0.35 MACROHNO3 + 0.155 Formic_Acid + 0.22 ACETOL + 0.065 NO3CH2CHO + 0.325 HCHO + 0.17 NO2 + 0.075 HOCH2CHO + 0.155 NO3 + 0.075 NOA + 0.17 MEK + 0.175 HO2 + 0.5 OH + 0.5 ISNP + -1.0 RO2_T  ; 2.05e-13;     0.;     1300.;  1.;
+!
+HC5 + O3 => 0.60 MGLY + 0.10 OH + 0.12 HCHO + 0.28 HOCH2CHO + 0.30 O3 + 0.40 CO + 0.20 H2 + 0.20 ACETOL + 0.20 Formic_Acid ; 6.16e-15; 0.; -1814.; 1.; 
+HC5 + OH => HC5OO 	; 3.35e-11; 0.; 380.; 1.; 
+!
+!nitrate yield set to value for tertiary at 298 K, 900 mbar
+HC5OO + NO => NO2 + 0.216 GLY + 0.234 MGLY + 0.234 HOCH2CHO + 0.216 ACETOL + 0.290 DHMOB + 0.170 MOBA + 0.090 ALD2 + HO2 + 0.090 CO + -1.0 RO2_T ; 2.61e-12; 0.; 350.; 1.;
+HC5OO + NO => HNO3+ -1.0 RO2_T  ; 8.64e-14; 0.; 350.; 1.;	
+HC5OO + HO2 => 0.1 IAP + 0.9 OH + 0.9 MGLY + 0.9 HOCH2CHO + 0.9 HO2 + -1.0 RO2_T ; 2.05e-13;     0.;     1300.;  1.;
+HC5OO + CH3O2 => 0.50 HO2 + 0.33 CO + 0.09 H2 + 0.18 ACETOL + 0.13 HOCH2CHO + 0.29 MGLY + 0.25 MEK + 0.95 HCHO + 0.25 MEOH + 0.25 ALCH + 0.5 HO2 + -2.0 RO2_T	;8.37e-14;	0.;	0.;	1.; 
+HC5OO + CH3CO3 => 0.216 GLY + 0.234 MGLY + 0.234 HOCH2CHO + 0.216 ACETOL + 0.29 DHMOB + 0.17 MOBA + 0.09 ALD2 + HO2 + 0.09 CO + CH3O2 + -1.0 RO2_T ; 1.68e-12; 0.; 500.; 1.; 
+!
+DHMOB + OH => 1.5 CO + HO2 + 0.5 ACETOL + 0.500 MEK             ; 2.52e-11;     0.;     410.;   1;
+!
+MOBA  + O3 => OH + HO2 + CO2 + MEK                              ; 2.00e-17;     0.;       0.;   1.; 
+MOBA  + OH => MOBAOO                                            ; 2.79e-11;     0.;     380.;   1.; 		
+!
+!NC4H9OOH for R4P, nitrate yield set to value for tertiary at 298 K, 900 mbar
+MOBAOO + HO2 => 0.5 OH + 0.5 HO2 + 0.5 ALD2 + 0.500 NC4H9OOH + -1.0 RO2_T 	; 2.05e-13;     0.;     1300.;  1.;
+MOBAOO + NO  => ALD2 + CO2 + HO2 + NO2 + -1.0 RO2_T                          ; 2.61e-12;     0.;     350.;   1.;
+MOBAOO + NO  => HNO3 + -1.0 RO2_T                                           ; 8.64e-14; 0.; 350.; 1.;	
+!
+! NCH4H9O2 for R4N1
+ISNP   + OH  => 0.612 OH + 0.612 NC4H9O2 +0.193 ISOPNBO2 + 0.193 ISOPNDO2 + RO2_T ; 4.75e-12; 0.; 200.; 1.; 
+!
+! nitrate yield set to value for tertiary at 298 K, 900 mbar
+ISOPNBO2 + HO2 => 0.3 HOCH2CHO + 0.3 ACETOL + 0.2 HCHO + 0.13 MACROHNO3 + 0.07 MVKN + 0.3 NO2 + 0.2 HO2 + 0.5 OH + 0.5 ISNP + -1.0 RO2_T ; 2.05e-13;     0.;     1300.;  1.; 
+ISOPNBO2 + NO => 0.6 HOCH2CHO + 0.6 ACETOL + 0.4 HCHO + 1.6 NO2 + 0.26 MACROHNO3 + 0.4 HO2 + 0.14 MVKN + -1.0 RO2_T ; 2.61e-12; 0.; 350.;   1.; 
+ISOPNBO2 + NO => HNO3 + -1.0 RO2_T                                                    ; 8.64e-14; 0.; 350.; 1.; 
+!
+!Using Crounse et al. PCCP (2011) rates for Peeters et al PCCP (2010) mechanism
+ISOPBO2       => HPALD1 + HO2 + -1.0 RO2_T                                   ; 2.; 8.12e7; 0.; -7302. ; 1.;
+ISOPDO2       => HPALD2 + HO2 + -1.0 RO2_T                                   ; 2.; 1.70e8; 0.; -7432. ; 1.;
+!ISOPBO2       => MVK + HCHO + OH + -1.0 RO2_T                                ; 2.; 2.08e11; 0.; -8993.; 1.;
+!ISOPDO2       => MCR + HO2 + OH + -1.0 RO2_T                                ; 2.; 2.08e11; 0.; -8993.; 1.;
+ISOPBO2   + HO2    => RIP + -1.0 RO2_T                                       ; 2.05e-13;     0.;     1300.;  1.;
+ISOPDO2   + HO2    => RIP + -1.0 RO2_T                                       ; 2.05e-13;     0.;     1300.;  1.;
+ISOPBO2   + NO     => 0.93 NO2 + 0.07 ISOPNB + 0.93 HCHO + 0.93 MVK + 0.93 HO2 + -1.0 RO2_T ; 2.70e-12;     0.;     350.;   1.;
+ISOPDO2   + NO     => 0.93 NO2 + 0.07 ISOPNB + 0.93 HCHO + 0.93 MCR + 0.93 HO2 + -1.0 RO2_T ; 2.70e-12;     0.;     350.;   1.; 
+ISOPBO2   + CH3O2  => 1.4 HO2 + 0.7 MVK + 1.7 HCHO + 0.3 ALCH + -1.0 RO2_T ; 8.37e-14;     0.;       0.;   1.;
+ISOPDO2   + CH3O2  => HO2 + 0.5 MCR + 1.250 HCHO + 0.25 MEOH + 0.25 HC5 + 0.25 ALCH  + -1.0 RO2_T ; 8.37e-14;     0.;       0.;   1.; 
+ISOPBO2   + ISOPBO2 => 2.0 MVK + 2.0 HCHO + 2.0 HO2 + -2.0 RO2_T            ; 1.54e-13;     0.;       0.;   1.;
+ISOPDO2   + ISOPDO2 => 2.0 HO2 + HCHO + MCR + 0.5 HC5 + 0.5 ALCH + -2.0 RO2_T ; 1.54e-13;     0.;       0.;   1.; 
+ISOPBO2   + ISOPDO2 => 0.7 MVK + 0.3 MCR + 1.4 HCHO + 0.3 HC5 + 0.3 ALCH + 1.4 HO2 + -2.0 RO2_T ; 1.54e-13;     0.;       0.;   1.; 
+ISOPBO2   + CH3CO3  => MVK + HCHO + CH3O2 + HO2 + -1.0 RO2_T                ; 1.68e-12;     0.;     500.;   1.;
+ISOPDO2   + CH3CO3  => MCR + HCHO + CH3O2 + HO2 + -1.0 RO2_T                ; 1.68e-12;     0.;     500.;   1.;
+ISOPDO2   + CH3CO3  => HC5 + Acetic_Acid  + -2.0 RO2_T                      ; 1.87e-13;     0.;     500.;   1.;
+!	
+RIP + OH => OH + IEPOX 	                                                    ; 1.90e-11;   0.;  390.; 1.;
+RIP + OH => 0.258 ISOPBO2 + 0.613 OH + 0.613 HC5 + 0.128 ISOPDO2            ; 4.75e-12;     0.;     200.;   1.;
+!
+ISOPNB + O3 => 0.61 MVKN + 0.39 MACROHNO3 + 0.27 OH + HCHO 	            ; 1.06e-16;     0.;       0.;   1.; 
+ISOPNB + OH => ISOPNBO2 	                                            ; 3.61e-12;     0.;     380.;   1.;	
+!
+IEPOX  + OH => IEPOXOO + RO2_T	                                            ; 5.78e-11;     0.;    -400.;   1.; 
+!
+IEPOXOO + NO => 0.725 ACETOL + 0.275 HOCH2CHO + 0.275 GLY + 0.275 MGLY + 0.125 OH  + 0.825 HO2 + 0.375 HCHO + 0.074 Formic_Acid +0.251 CO + NO2 + -1.0 RO2_T ; 2.70e-12; 0.; 350.; 1.; 
+IEPOXOO + HO2 => 0.725 ACETOL + 0.275 HOCH2CHO + 0.275 GLY + 0.275 MGLY + 1.125 OH + 0.825 HO2 + 0.375 HCHO +0.074 Formic_Acid + 0.251 CO + -1.0 RO2_T ; 2.05e-13;     0.;     1300.;  1.; 
+!
+!CH3COCO2H for PYAC
+MVKN    + OH => 0.65 Formic_Acid + NO3 + 0.65 MGLY + 0.35 HCHO + 0.350 CH3COCO2H ; 1.50e-12;     0.;     380.;   1.; 		 	
+!
+IAP     + OH => 0.654 OH + 0.654 DHMOB + 0.346 HC5OO            ; 5.31e-12; 0.;  200.; 1.; 
+!
 OLEL  + OH       => RO2_2 + RO2_T				; 5.86e-12; 0.; 	500.3; 	1.;
 OLEL  + NO3      => RO2_3 + RO2_T                           	; 1.0e-13;	0.;	-800.2;	1.;
 OLEL + O3 => 0.56 CO + 0.2 CO2 + 0.36 OH + 0.28 HO2 + 0.5 HCHO + 0.5 ALD2 + 0.24 ACID + 0.1 ALKL + 0.28 RO2_5 + 0.28 RO2_T ; 1.0e-17; 0.; 0.; 1.;	
@@ -1976,14 +2070,6 @@ ALD2  + NO3	 => HNO3 + RO2_6 + RO2_T			; 3.0e-13;	0.;	-1427.;	1.;
 !
 KETL  + OH       => RO2_7 + RO2_T + H2O                     	; 4.91e-12; 0.; 	0.; 		1.; 
 !
-ISOP + OH 	     => 0.66 RO2_9 + 0.34 RO2_10 + RO2_T	; 2.55e-11;	0.;	410.2;	1.;
-ISOP + NO3	     => 0.66 RO2_11 + 0.34 RO2_12 + RO2_T	; 3.02e-12;	0.;	-445.9;	1.;
-!
-!I had to split this into 2 reactions, but stoichiometry still works
-ISOP + O3 => 0.068 CO2 + 0.461 CO + 0.5 HCHO + 0.664 OH + 0.366 HO2 + 0.054 OLEL + 0.121 ACID + 0.389 MVK + 0.17 MCR ; 7.86e-15;	0.;	-1912.9;	1.;
-ISOP + O3 => ISOP + O3 + 0.271 RO2_13 + 0.095 RO2_14 + 0.366 RO2_T ; 7.86e-15;	0.;	-1912.9;	1.;
-!
-ISOP + O         => 0.925 OLEL + 0.075 ALD2			; 3.5e-11;	0.;	0.;		1.;
 !
 !From structure-activity relationship (Kwok and Atkinson, 1995)
 ALCH + OH        => RO2_2 + RO2_T + H2O                     	; 6.87e-18; 2.; 	909.16;	1.;
