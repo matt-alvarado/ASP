@@ -26,6 +26,7 @@
 !!                                  refractive index should be used for an   !!
 !!                                  electrolyte.                             !!
 !! 01/04  2013   Matt Alvarado     Changed ReadPhotoRates to allow 50 rxns   !!
+!! 01/11  2013   Matt Alvarado     Changed ReadPhotoRates to allow 51 rxns   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -149,7 +150,7 @@ MODULE Chemistry
 ! This holds reaction rate information
 	REAL*8,		    ALLOCATABLE :: GasPhaseBackground(:)
 	REAL*8,		    ALLOCATABLE :: GasPhaseDepVel(:)		
-	REAL*8				:: PhotoRates(96,50)
+	REAL*8				:: PhotoRates(96,51)
 
 	INTEGER :: GasConcInputTypeFlag
 
@@ -557,9 +558,9 @@ MODULE Chemistry
 	!! I = INT(UT*4 + 1), where UT is universal time in hours
 	!! J = reaction rate index
 	!! The file must contain 96 lines of data (every quarter hour)
-	!! and 50 columns, with the first being the time in UT
+	!! and 51 columns, with the first being the time in UT
         !! the second being solar zenith angle (sza)
-	!! and the next 50 being the reaction in the order given in the header 
+	!! and the next 51 being the reaction in the order given in the header 
         !! of PhotoRates.in
 	!! The lines must start at UT = 0.0
 		
@@ -586,7 +587,7 @@ MODULE Chemistry
 			CALL GetToken(CurrLine," ", Sza)
 
 			!Do for each photolysis reaction
-			DO J = 1, 50
+			DO J = 1, 51
                                 !write(*,*) I,J
 				CALL GetToken(CurrLine," ", Token)
                                 !write(*,*) Token
