@@ -26,6 +26,8 @@
 !!                                   MCM v3.2 to act as pseudo-1st order     !!
 !!                                   and added IUPAC style 3-body rxn rates  !!
 !!                                   to ResetGasPhaseReactionRates           !!
+!! 01/18  2012   Matt Alvarado     Removed hardwired CO + OH reaction and    !!
+!!                                  replaced with a K1 + K2 reaction         !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -208,15 +210,11 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 				   EXP(ReactionRates(L,6)/Temp)**	&
 				   ReactionRates(L,7)
 							
-	!This is a CO + OH reaction
+	!This is a k = k1 + k2 case
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN	
-	!! JPL  
-	!!k1 = 1.50E-13
-	!!k2 = 5.90E-33
-	!! IUPAC
-	  k1 = 1.44E-13
-	  k2 = 2.92E-32
-	  GasPhaseChemicalRates(L) = k1 + k2*Mgas
+	  k1 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP)
+	  k2 = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
+          GasPhaseChemicalRates(L) = k1 + k2
 							
 	!This is a k = k1 + k2*M case 
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 4) THEN

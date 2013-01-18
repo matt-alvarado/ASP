@@ -23,6 +23,8 @@
 !!                                   reaction numbers greater than 1000      !!
 !! 01/04  2013   Matt Alvarado     Made MakeODESet print reaction and        !!
 !!                                   rxn number to Transcript.TXT            !!
+!! 01/18  2012   Matt Alvarado     Removed hardwired CO + OH reaction and    !!
+!!                                  replaced with a K1 + K2 reaction         !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -716,12 +718,11 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				END IF
 			END DO
 			
-		!CO + OH case - 
-                ! this is hard-wired in ResetGasPhaseReactionRates (Flag = 3)
+		!K = K1 + K2
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 3) THEN
 			!! This number should match the number of rate inputs 
                         ! for this reaction type
-			NumbRateFacs = 1
+			NumbRateFacs = 5
 
 			IF (J .NE. NumbRateFacs) &
 				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
@@ -736,6 +737,19 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				          " apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN	
+			               RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
 		
 		!k = k1 + k2*M case (Flag = 4)
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 4) THEN
