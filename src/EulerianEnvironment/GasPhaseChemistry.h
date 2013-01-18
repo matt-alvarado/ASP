@@ -261,7 +261,7 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 	   GasPhaseChemicalRates(L) = ReactionRates(L,4)*(Temp/300.)**(-1.*ReactionRates(L,5)) * Mgas
 						
         !Thermal 3rd order rate constant
-	ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 2) THEN
            GasPhaseChemicalRates(L) = Mgas*ReactionRates(L,3)*	&
 					Temp**ReactionRates(L,4)    *	&
 					EXP(ReactionRates(L,5)/Temp)**	&
