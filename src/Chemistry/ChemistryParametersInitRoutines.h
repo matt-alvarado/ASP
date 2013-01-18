@@ -25,6 +25,7 @@
 !!                                   rxn number to Transcript.TXT            !!
 !! 01/18  2012   Matt Alvarado     Removed hardwired CO + OH reaction and    !!
 !!                                  replaced with a K1 + K2 reaction         !!
+!! 01/18  2012   Matt Alvarado    Addeda thermal 3rd order rate constant     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1004,6 +1005,36 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 		!Use third-order rate constant (as in O + O2 + M)
 		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 1) THEN
 			NumbRateFacs = 3
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR(" The following line from "//Trim(InputDeck)//		&
+					   " had the wrong number of rate terms.  Expected "//	&
+					   TRIM(INT2STR(NumbRateFacs))//"  >>"//TRIM(FullLine)//"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+		        ELSE
+				CALL ERROR("The following line from "//Trim(InputDeck)//	&
+					   "apparently has a bad rate expression ("//		&
+					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+	        	END IF
+				
+		        DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+  				      RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   " apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
+						   //"):  "//TRIM(FullLine))
+				END IF
+			END DO
+
+		!Use third-order thermal rate constant 
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 2) THEN
+			NumbRateFacs = 5
 
 			IF (J .NE. NumbRateFacs) &
 				CALL ERROR(" The following line from "//Trim(InputDeck)//		&

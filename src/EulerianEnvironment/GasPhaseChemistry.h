@@ -28,6 +28,9 @@
 !!                                   to ResetGasPhaseReactionRates           !!
 !! 01/18  2012   Matt Alvarado     Removed hardwired CO + OH reaction and    !!
 !!                                  replaced with a K1 + K2 reaction         !!
+!! 01/18  2012   Matt Alvarado    Added  thermal 3rd order rate constant     !!
+!!                                 and fixed N2O5 and O1D hardwired rxns     !!
+!!                                 and made one call to GetM per chem step   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -68,8 +71,11 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
   INTEGER :: L
   REAL*8	:: Temp,Mgas,X(3),k0,ki, Y_o, Y_o_term, Y_inf_term, Z, F, &
   	   alpha, beta, m_o, m_inf, Ratio, Scale, P, k1, k2, k3, kf, Keq, &
-	   KO, KINF, MO, NCD, FD
+	   KO, KINF, NCD, FD
 
+  Temp = GetTemp()
+  Mgas = GetM   ()
+  
   !! Loop over all reactions
   DO L = 1, ArraySize(1)
       !! Use Select to Differentiate Reaction Types
@@ -80,8 +86,6 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
       CASE(1)
         !PAN Degradation case (NOT USED! Use type 4!)
         IF (INT(ReactionRates(L,3)) .EQ. 1) THEN
-	  TEMP = GetTemp()
-	  Mgas = GetM   ()
 	  k0   = ReactionRates(L,4)*EXP(ReactionRates(L,5)/Temp)* Mgas
 	  ki   = ReactionRates(L,6)*EXP(ReactionRates(L,7)/Temp)
 	  GasPhaseChemicalRates(L) = (k0*ki)/(k0+ki) * ReactionRates(L,8)** &
@@ -104,10 +108,7 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 	  GasPhaseChemicalRates(L) = 0.0 
 
 	!Equilibrium Degradation case
-	ELSE IF (INT(ReactionRates(L,3)) .EQ. 4) THEN
-          TEMP = GetTemp()
-	  Mgas = GetM   ()
-								
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 4) THEN			
 	  k0  = ReactionRates(L,4)*(Temp/300.)**(-1.*ReactionRates(L,5)) * Mgas
 	  ki  = ReactionRates(L,6)*(Temp/300.)**(-1.*ReactionRates(L,7))
 	  kf  =	(k0*ki)/(k0+ki) * ReactionRates(L,8)**			&
@@ -121,37 +122,33 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 	  GasPhaseChemicalRates(L) = ReactionRates(L,4)
 							
 						
-	!HNO4 Thermal degradation
+	!HNO4 Thermal degradation (obsolete!)
         ELSE IF (INT(ReactionRates(L,3)) .EQ. 6) THEN
-	  TEMP = GetTemp()
-          MO = GetM   ()
-          KO = 4.1E-5*EXP(-10649.2/TEMP)
+          KO = 4.1E-5*EXP(-10649.2/TEMP)*Mgas
 	  KINF = 5.7E+15*EXP(-11172.6/TEMP)
-	  GasPhaseChemicalRates(L) = KO*MO/(1.0+(KO*MO/KINF)) &
-				 *0.5**(1.0+(LOG10(KO*MO/KINF))**2)**(-1)
+	  GasPhaseChemicalRates(L) = KO/(1.0+(KO/KINF)) &
+				 *0.5**(1.0+(LOG10(KO/KINF))**2)**(-1)
 							
-	!N2O5 Thermal degradation
+	!N2O5 Thermal degradation - IUPAC 2012
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 7) THEN
-	  TEMP = GetTemp()
-	  MO = GetM   ()
-	  KO = 1.0E-3*(300.0/TEMP)**3.5*EXP(-11001.5/TEMP)
+	  KO = Mgas*1.0E-3*(300.0/TEMP)**3.5*EXP(-11001.5/TEMP)
 	  KINF = 9.7E+14*(TEMP/300.0)**0.1*EXP(-11082.0/TEMP)
-	  GasPhaseChemicalRates(L) = KO*MO/(1.0+(KO*MO/KINF)) &
-				*0.45**(1.0+(LOG10(KO*MO/KINF))**2)**(-1)
+          NCD = 0.75-1.27*(DLOG10(ReactionRates(L,8)))
+          FD = 10.**(DLOG10(ReactionRates(L,8))/(1.+(DLOG10(k0/ki)/NCD)**2))
+          GasPhaseChemicalRates(L) = FD*(k0*ki)/(k0+ki)	
 							
-        !O1D Thermal deactivation
+        !O1D Thermal deactivation - IUPAC 2012, 
+        !Assuming N2 = 0.8*Mgas and O2 = 0.2*Mgas
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 8) THEN
-	   TEMP = GetTemp()
-	   GasPhaseChemicalRates(L) = (1.53e11/Temp)*exp(95.6/Temp)
+	   GasPhaseChemicalRates(L) = Mgas *(0.2*3.2e-11*exp(67./TEMP) &
+                                            +0.8*2.0e-11*exp(130./TEMP))
 				
 	!O + O2 + M => O3 + M 
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 9) THEN
-	   TEMP = GetTemp()
 	   GasPhaseChemicalRates(L) = (5.53e16/(Temp**4.8))
 							
 	!RAD* + O2  
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 10) THEN
-	   TEMP = GetTemp()
 	   GasPhaseChemicalRates(L) = 0.9*4.62e7/Temp/60
   
         !reaction form k0 = a*exp(B/T) (cm3/molec/s) and ki = c*exp(D/T) (1/s)
@@ -170,8 +167,6 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 					
       !! Two body reactions (units are 1 / ppb / s)
       CASE(2)
-	TEMP = GetTemp()
-	Mgas = GetM   ()
 						
 	!Normal 2-Body Case
 	IF (INT(ReactionRates(L,3)) .EQ. 0) THEN
@@ -259,14 +254,19 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
      !! This yields an effective second-order rate constant.
      !! Rates are set in 1 / ppb / ppb / sec 
       CASE(3)
-	TEMP = GetTemp()
-	Mgas = GetM   ()
      
-     !Case for third-order rate constant
+        !Case for third-order rate constant
 	!(like for O + O2 + M => O3 + M) (NOT USED - see first order class 9)
 	IF (INT(ReactionRates(L,3)) .EQ. 1) THEN
 	   GasPhaseChemicalRates(L) = ReactionRates(L,4)*(Temp/300.)**(-1.*ReactionRates(L,5)) * Mgas
 						
+        !Thermal 3rd order rate constant
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN
+           GasPhaseChemicalRates(L) = Mgas*ReactionRates(L,3)*	&
+					Temp**ReactionRates(L,4)    *	&
+					EXP(ReactionRates(L,5)/Temp)**	&
+					ReactionRates(L,6)
+
         !From MCM v3.2 for PAN formation (Also IUPAC format?)
         !See KFPAN on http://mcm.leeds.ac.uk/MCM/parameters/complex.htt
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN
