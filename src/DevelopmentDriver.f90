@@ -61,7 +61,7 @@ PROGRAM ASP
 				NH3i, NH4i, NH4NO3i, NH4Cli, NH4HSO4i, NH42SO4i, &
 				Cli, NO3i, SO4i, HSO4i, K2SO4i,LevAeroIndex, AmSulfAeroIndex, H2SO4AeroIndex, N, HNO3Index, &
 				NH3Gas, HNO3Gas, HClGas, H2SO4Gas, NumAqOrgChems, ReturnType, Hi, NumModes, &
-                   COi, O3i, HNO3i, NOi, NO2i, PANi, N2O5i, HONOi
+                   COi, O3i, HNO3i, NOi, NO2i, PANi, N2O5i, HONOi, ANi
 	real*8  :: ii, jj, kk, y(200), Dum1
 	real*8  :: T_mix, Tau_Dep, slope, b, ChemTimestep, MixTimestep, &
 				CoagTimeStep, CondTimeStep, t, Mgas, Temp, &
@@ -78,7 +78,7 @@ PROGRAM ASP
 	REAL*8, DIMENSION(451) :: ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSingScat, &
                                            ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
                                            SubExtCoeffSep, SubSSASep
-	REAL*8	:: Term(250), Total, Yield, Store_H2O, Store_Dens, Del_co, del_PAN
+	REAL*8	:: Term(250), Total, Yield, Store_H2O, Store_Dens, Del_co, del_PAN, del_AN
 	INTEGER :: GP(3), clock, time(8)
         INTEGER, ALLOCATABLE :: outFH(:), OFH(:)
 
@@ -375,6 +375,7 @@ PROGRAM ASP
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dHNO3/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dPAN/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dTotPNs/dCO"
+		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dTotANs/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dNO3/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dN2O5/dCO"
 		WRITE(OutFH(4), FMT='(A13)', ADVANCE='NO') "dHONO/dCO"
@@ -386,6 +387,7 @@ PROGRAM ASP
                 NO2i = FindChem("NO2", 0)
                 HNO3i = FindChem("HNO3", 0)
                 PANi =  FindChem("PAN", 0)              
+                ANi =  FindChem("CH3NO3", 0)
                 NO3i = FindChem("NO3", 0)
                 N2O5i = FindChem("N2O5", 0)
                 HONOi = FindChem("HONO", 0)
@@ -426,10 +428,15 @@ PROGRAM ASP
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(HNO3i)-GasPhaseBackground(HNO3i))/del_CO
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(PANi)-GasPhaseBackground(PANi))/del_CO
                                 del_PAN = 0.0
-                                DO q = 0,34
+                                DO q = 0,32
                                     del_PAN = del_PAN+Chem(PANi+q)-GasPhaseBackground(PANi+q)
                                 END DO 
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') del_PAN/del_CO
+                                del_AN = 0.0
+                                DO q = 0,76
+                                    del_AN = del_AN+Chem(ANi+q)-GasPhaseBackground(ANi+q)
+                                END DO 
+                                WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') del_AN/del_CO
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(NO3i)-GasPhaseBackground(NO3i))/del_CO
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(N2O5i)-GasPhaseBackground(N2O5i))/del_CO
                                 WRITE(OutFH(4),FMT='(7ES13.5E2)', ADVANCE='NO') (Chem(HONOi)-GasPhaseBackground(HONOi))/del_CO
