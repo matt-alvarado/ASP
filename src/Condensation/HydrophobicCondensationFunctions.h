@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -28,7 +28,9 @@
 !! 10/15  2010   Matt Alvarado    Remove Optional Arguments
 !! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
-!! 01/02  2013   Matt Alvarado    Replaced UR21 with CH3COCO2H
+!! 01/02  2013   Matt Alvarado    Replaced UR21 with CH3COCO2H               !!
+!! 01/23  2013   Matt Alvarado    Added flag to SetOrganicDissolution to     !!
+!!                                  decide between two vaopr pressure methods!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -76,20 +78,21 @@ REAL*8 FUNCTION SaturationVaporPressure  (Temperature, OrganicDissolutionRxn)
 	REAL*8  :: Temperature, TempRatio
 	INTEGER :: OrganicDissolutionRxn
 
-	!Boiling point divided by Temperature
-	TempRatio = OrganicDissolutionData(OrganicDissolutionRxn,5)/Temperature
 
-	!Units of mbar, see Myrdal and Yalkowski and Schwarzenbach et al.,
-	!"Environmental Organic Chemistry"
-        IF (OrganicDissolutionRxn .LT. 23) THEN
-                 SaturationVaporPressure  = 1000*EXP ( -1.0*(21.2 + 0.3*OrganicDissolutionData(OrganicDissolutionRxn,6) &
+        IF(OrganicDissolutionData(OrganicDissolutionRxn,2) .LT. 0.005) THEN
+	    !Boiling point divided by Temperature
+	    TempRatio = OrganicDissolutionData(OrganicDissolutionRxn,5)/Temperature
+
+	    !Units of mbar, see Myrdal and Yalkowski and Schwarzenbach et al.,2003
+	    !"Environmental Organic Chemistry"
+            SaturationVaporPressure  = 1000*EXP ( -1.0*(21.2 + 0.3*OrganicDissolutionData(OrganicDissolutionRxn,6) &
 	                                 + 177.0*OrganicDissolutionData(OrganicDissolutionRxn,7) ) &
 					 *(TempRatio - 1.0) + (10.8 + 0.25*OrganicDissolutionData(OrganicDissolutionRxn,6)) &
 					 *LOG(TempRatio) ) / OrganicDissolutionData(OrganicDissolutionRxn,8)
         ELSE
         
-        SaturationVaporPressure = OrganicDissolutionData(OrganicDissolutionRxn,5)*(300.0/Temperature) & 
-                                  *exp(OrganicDissolutionData(OrganicDissolutionRxn,6)*(1000.0/8.314)*(1.0/300.0-1.0/Temperature))
+            SaturationVaporPressure = OrganicDissolutionData(OrganicDissolutionRxn,14)*(300.0/Temperature) & 
+                                  *exp(OrganicDissolutionData(OrganicDissolutionRxn,15)*(1000.0/8.314)*(1.0/300.0-1.0/Temperature))
         END IF   
 
 	RETURN

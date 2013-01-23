@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -14,6 +14,8 @@
 !! 06/27  2007   Matt Alvarado     Initially zero out DissolutionData        !!
 !! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
+!! 01/23  2013   Matt Alvarado     Added flag to SetOrganicDissolution to    !!
+!!                                  decide between two vaopr pressure methods!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -912,31 +914,34 @@ END SUBROUTINE SetAllDissolution
 		IF (Transcribe) CALL TRANSCRIPT("_The_Following_Organic_Dissolution_Reactions_Are_Defined_")
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! Allocation the key ORGANIC DISSOLUTION Arrays									!!
-		!!																			!!
-		!! The primary one is OrganicDissolutionData(i,j), in which i is the				!!
-		!! reaction and j is some data:												!!
-		!!																			!!
-		!! OrganicDissolutionData(i,1)  : Index in Gas Phase of Primay Chemical			!!
-		!! OrganicDissolutionData(i,2)  : Empty											!!
-		!! OrganicDissolutionData(i,3)  : Index in Aqueous Phase of Primary Chemical		!!
-		!! OrganicDissolutionData(i,4)  : Empty											!!
-		!! OrganicDissolutionData(i,5)  : Boiling Point (K)								!!
-		!! OrganicDissolutionData(i,6)  : # of Effective Torsional Bonds					!!
-		!! OrganicDissolutionData(i,7)  : Hydrogen Bond Number								!!
-		!! OrganicDissolutionData(i,8)  : Vapor Pressure Correction Factor											!!
-		!! OrganicDissolutionData(i,9)  : Blank											!!
-		!! OrganicDissolutionData(i,10) : Mass Accommodation Coefficient					!!
-		!! OrganicDissolutionData(i,11) : Reaction Type	(For StepCondensation)								!!
-		!! OrganicDissolutionData(i,12) : Blank											!!
-		!! OrganicDissolutionData(i,13) : Stoicheometry of r.h.s. slot 1					!!
-		!! OrganicDissolutionData(i,14) : Blank											!!!
-		!! OrganicDissolutionData(i,15) : Blank											 !!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		!! There is only one reaction type:											!!
-		!!																				!!														!!
-		!! 8. Direct dissolution of a single species not incorporating dissociation.	!!
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		!! Allocation the key ORGANIC DISSOLUTION Arrays			    !!
+		!!									    !!
+		!! The primary one is OrganicDissolutionData(i,j), in which i is the	    !!
+		!! reaction and j is some data:						    !!
+		!!									    !!
+		!! OrganicDissolutionData(i,1)  : Index in Gas Phase of Primary Chemical    !!
+		!! OrganicDissolutionData(i,2)  : Flag: 0 for Myrdal and Yalkowski (1997)   !!
+                !!                                method; 1 for Psat(300K) and Hvap method  !!
+		!! OrganicDissolutionData(i,3)  : Index in Organic Phase of Primary Chemical!!
+		!! OrganicDissolutionData(i,4)  : Blank					    !!
+		!! OrganicDissolutionData(i,5)  : Boiling Point (K) (for flag = 0)	    !!
+		!! OrganicDissolutionData(i,6)  : # of Effective Torsional Bonds            !!
+                !!                                (for flag = 0)	                    !!
+		!! OrganicDissolutionData(i,7)  : Hydrogen Bond Number (for flag = 0)       !!
+		!! OrganicDissolutionData(i,8)  : Vapor Pressure Correction Factor	    !!
+                !!                                (for flag = 0)	                    !!
+		!! OrganicDissolutionData(i,9)  : Blank					    !!
+		!! OrganicDissolutionData(i,10) : Mass Accommodation Coefficient	    !!
+		!! OrganicDissolutionData(i,11) : Reaction Type	(For StepCondensation)	    !!
+		!! OrganicDissolutionData(i,12) : Blank					    !!
+		!! OrganicDissolutionData(i,13) : Stoicheometry of r.h.s. slot 1	    !!
+		!! OrganicDissolutionData(i,14) : Psat at 300 K (mbar)		            !!
+		!! OrganicDissolutionData(i,15) : DeltaHvap (kJ/mol)		            !!
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		!! There is only one reaction type:					    !!
+		!!									    !!
+		!! 8. Direct dissolution of a single species not incorporating dissociation !!
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		
 		ALLOCATE (OrganicDissolutionData(HowManyOrganicDissolutionReactions,15), stat = allocation_error)
 		if (allocation_error > 0) CALL ERROR("Allocation of OrganicDissolutionData could not proceed in SetOrganicDissolution()")
@@ -975,8 +980,6 @@ END SUBROUTINE SetAllDissolution
 
 			!! Presume reaction type 8
 			OrganicDissolutionData(I,11) = 8.
-			OrganicDissolutionData(i,15) = 0.
-
 			OrganicDissolutionData(i,3) = FindChem(TRIM(StripToken(AqIon1)),2,SuppressError=.TRUE.)	
 			OrganicDissolutionData(i,13) = 1.0
 				IF (OrganicDissolutionData(i,3) .EQ. 0.) &
@@ -1016,23 +1019,42 @@ END SUBROUTINE SetAllDissolution
 			END IF
 
 
-			!! ---	3, 4., 5 VAPOR PRESSURE PARAMETERS, following Myrdal and Yalkowski
-			
-			!BOILING POINT in K
-			CALL GetToken(CurrLine,";",Token) 
-			OrganicDissolutionData(i,5) = STR2REAL (Token)
-			
-			!TORSIONAL BOND NUMBER
-			CALL GetToken(CurrLine,";",Token) 
-			OrganicDissolutionData(i,6) = STR2REAL (Token)
+                        !! --- 3. Flag:  0 for Myrdal and Yalkowski (1997) method; 1 for Psat(300K) and Hvap method  !!
+                        CALL GetToken(CurrLine,";",Token) 
+			OrganicDissolutionData(i,2) = STR2REAL (Token)
 
-			!HYDROGEN BOND NUMBER
-			CALL GetToken(CurrLine,";",Token) 
-			OrganicDissolutionData(i,7) = STR2REAL (Token)
+                        IF (OrganicDissolutionData(i,2) .LT. 0.005) THEN
 
-			!Vapor Pressure Correction Factor
-			CALL GetToken(CurrLine,";",Token) 
-			OrganicDissolutionData(i,8) = STR2REAL (Token)
+			    !! ---	4, 5, 6, 7,  VAPOR PRESSURE PARAMETERS, following Myrdal and Yalkowski
+			
+			    !4. BOILING POINT in K
+			    CALL GetToken(CurrLine,";",Token) 
+			    OrganicDissolutionData(i,5) = STR2REAL (Token)
+			
+			    !5. TORSIONAL BOND NUMBER
+			    CALL GetToken(CurrLine,";",Token) 
+			    OrganicDissolutionData(i,6) = STR2REAL (Token)
+
+			    !6. HYDROGEN BOND NUMBER
+			    CALL GetToken(CurrLine,";",Token) 
+			    OrganicDissolutionData(i,7) = STR2REAL (Token)
+
+			    !7. Vapor Pressure Correction Factor
+			    CALL GetToken(CurrLine,";",Token) 
+			    OrganicDissolutionData(i,8) = STR2REAL (Token)
+                        ELSE
+
+			    !! ---	4, 5   Psat(300K) and Hvap (KJ/mol)
+			
+			    !4. Psat at 300 K in mbar
+			    CALL GetToken(CurrLine,";",Token) 
+			    OrganicDissolutionData(i,14) = STR2REAL (Token)
+			
+			    !5. Delta Hvap in KJ/mol
+			    CALL GetToken(CurrLine,";",Token) 
+			    OrganicDissolutionData(i,15) = STR2REAL (Token)
+
+                        ENDIF
 
 			!! Report the particular reaction
 			Token = TRIM(GasPhaseChemicalNames(INT(OrganicDissolutionData(i,1)))) // " (g)"
