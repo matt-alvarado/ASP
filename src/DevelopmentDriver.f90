@@ -1,5 +1,5 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!  ASP Model (c) 2004-2012 Matt Alvarado (malvarad@aer.com)		     !!
+!!  ASP Model (c) 2004-2013 Matt Alvarado (malvarad@aer.com)		     !!
 !!  Developed by Matt Alvarado (mjalvara@mit.edu) for his thesis             !!
 !!  with Prof. R.G. Prinn (rprinn@mit.edu) at MIT. (2004-2008)		     !!
 !!									     !!
@@ -745,11 +745,7 @@ PROGRAM ASP
 					
 			!POA Mass Conc (ug/m3)
 			TotalPOA = 0.
-			DO J = 2, 9
-				TotalPOA = TotalPOA + current%Orgchems(J)*current%numberofparticles*1.0e12*OrgMolecularMass(J)
-				TotalPOA = TotalPOA + current%AqOrgchems(J-1)*current%numberofparticles*1.0e12*AqOrgMolecularMass(J-1)
-			END DO
-			DO J = 20, NumOrgChems
+			DO J = 2, 14
 				TotalPOA = TotalPOA + current%Orgchems(J)*current%numberofparticles*1.0e12*OrgMolecularMass(J)
 				TotalPOA = TotalPOA + current%AqOrgchems(J-1)*current%numberofparticles*1.0e12*AqOrgMolecularMass(J-1)
 			END DO
@@ -757,7 +753,7 @@ PROGRAM ASP
 
 			!SOA Mass Conc (ug/m3)
 			TotalSOA = 0.
-			DO J = 10, 19
+			DO J = 15, 23
 				TotalSOA = TotalSOA + current%Orgchems(J)*current%numberofparticles*1.0e12*OrgMolecularMass(J)
 				TotalSOA = TotalSOA + current%AqOrgchems(J-1)*current%numberofparticles*1.0e12*AqOrgMolecularMass(J-1)
 			END DO
@@ -856,14 +852,14 @@ PROGRAM ASP
 		Slope = 2.0 
 		b = b_mix 
 			
-		ChemTimestep = ChemStep
-		MixTimestep = Mixstep !Should always be an integer multiple!
+		ChemTimestep = 1
+		MixTimestep = 1 !Always start as 1s for first 600 seconds, MJA 12-28-2012
 		CoagTimeStep = CoagStep
 		CondTimeStep = CondStep
 		
-		!Run the main loop with above timesteps
-		DO r = 1, INT(RunLength*60/MixTimestep)
-			!WRITE(*,*) "In Loop"
+		!Run the main loop with above timesteps (1s timestep to start)
+		DO r = 1, INT(600+((RunLength-10)*60/MixStep))
+			WRITE(*,*) "In Loop"
 			
 			!Calculate Temperature
 			TEMP = GetTemp()
@@ -876,13 +872,12 @@ PROGRAM ASP
 			
 			!Recalculate Photolysis Rates
 			CALL RecalculatePhotoRates(ut, .FALSE.)
-			!WRITE(*,*) "Photo Okay"
+			WRITE(*,*) "Photo Okay"
 
-			!Get particle number conc. and radii for hetero. rate calculation
-		        IF(ThermoBulkMode) THEN
-		            HeteroNumberConc(1) = hetero_num 
-	  	            HeteroRadii(1) = hetero_rad ! in m
-                        ELSE
+		        !Step Dilution of bulk "particles" for heterogeneous chemistry
+			IF (ThermoBulkMode) THEN
+				if (r .NE. 1) HeteroNumberConc(1) = HeteroNumberConc(1)/(1+ MixTimestep/T_mix)
+                        ELSE!Get particle number conc. and radii for hetero. rate calculation		            
                           current => particles%first
 			  I = 1
 			  DO WHILE(associated(current))
@@ -896,11 +891,11 @@ PROGRAM ASP
 	
 			!Calculate Heterogeneous rates from size dist. info
 			CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .FALSE.)
-			!WRITE(*,*) "Hetero Okay"
+			WRITE(*,*) "Hetero Okay"
 						
 			!Step Gas Chemistry
 			CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep))
-			!WRITE(*,*) "StepGasChem Okay"
+			WRITE(*,*) "StepGasChem Okay"
 			
 			!Step Condensation
 			IF (MOD(t,CondTimeStep) .LT. 0.01 .AND. t .NE. 0.0) THEN
@@ -908,9 +903,10 @@ PROGRAM ASP
 				IF(.TRUE.) THEN
 					CALL RegridAerosol ()
 					CALL FindAqElectrolyteEquilibriumForGridPoint ( UpdateThermo = .TRUE.) 
-					CALL StepCondensationAll (CondTimeStep,  1)
+					WRITE(*,*) t, "AqEq Okay"
+                                        CALL StepCondensationAll (CondTimeStep,  1)
 					!Note above calls RegridAerosol automatically
-					!WRITE(*,*) t, "Cond Okay"
+					WRITE(*,*) t, "Cond Okay"
 				END IF
 			END IF
 
@@ -922,7 +918,7 @@ PROGRAM ASP
 				IF (DoTestCoagulation) THEN	
 					CALL StepSectionalCoagulationJacobson(CoagTimeStep)
 					!Note that above already calls RegridAerosol
-					!WRITE(*,*) t, "Coag Okay"
+					WRITE(*,*) t, "Coag Okay"
 				END IF
 					
 			END IF
@@ -1002,11 +998,8 @@ PROGRAM ASP
 				!WARNING: This is a kludge, since the program is calculating
 				!a huge temperature for the largest particles, and I'm not sure why
 				current%Temperature = TEMP
-				
-				!Recalculate optical parameters
-				!WRITE(*,*) "Call Optical"
-				CALL ShellRefIndAndRad(Current)
-				!WRITE(*,*) "Optical Okay"
+
+				CALL RecalculateRadius(current)
 				
 				I = I + 1
 		
@@ -1014,14 +1007,24 @@ PROGRAM ASP
 				Env => Env%next
 				
 			END DO !END STEP PARTICLE DILUTION
-			!WRITE(*,*) "Before AOD"
-			!WRITE(*,*) "AOD: ", AerosolOpticalDepth ()	
-			!WRITE(*,*) "Dilution Okay"	
-			!CALL SpillBeans()
-			CALL AerosolOptProp ( ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSingScat, 0)
+
+                        
+		        WRITE(*,*) "Before AOD"
+
+                        !Only call AOD every cond time step
+			IF (MOD(t,CondTimeStep) .LT. 0.01 .AND. t .NE. 0.0) THEN
+                            current => particles%first
+		 	    I = 1
+			    DO WHILE(associated(current))
+                                 CALL ShellRefIndAndRad(Current)
+                                 I = I + 1
+                                 current => current%next
+                            END DO
+                            CALL AerosolOptProp ( ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSingScat, 0)
+                        ENDIF
 			
 			!Write Output to file every minute 
-			IF (MOD(t,10.0) .LT. 0.01) THEN
+			IF (MOD(t,60.0) .LT. 0.01) THEN
 				
 				!Write current time in minutes
 				WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') (t)/60
@@ -1076,11 +1079,7 @@ PROGRAM ASP
 					
 					!POA Mass Conc (ug/m3)
 					TotalPOA = 0.
-					DO J = 2, 9
-						TotalPOA = TotalPOA + current%Orgchems(J)*current%numberofparticles*1.0e12*OrgMolecularMass(J)
-						TotalPOA = TotalPOA + current%AqOrgchems(J-1)*current%numberofparticles*1.0e12*AqOrgMolecularMass(J-1)
-					END DO
-					DO J = 20, NumOrgChems
+					DO J = 2, 14
 						TotalPOA = TotalPOA + current%Orgchems(J)*current%numberofparticles*1.0e12*OrgMolecularMass(J)
 						TotalPOA = TotalPOA + current%AqOrgchems(J-1)*current%numberofparticles*1.0e12*AqOrgMolecularMass(J-1)
 					END DO
@@ -1088,7 +1087,7 @@ PROGRAM ASP
 
 					!SOA Mass Conc (ug/m3)
 					TotalSOA = 0.
-					DO J = 10, 19
+					DO J = 15, 23
 						TotalSOA = TotalSOA + current%Orgchems(J)*current%numberofparticles*1.0e12*OrgMolecularMass(J)
 						TotalSOA = TotalSOA + current%AqOrgchems(J-1)*current%numberofparticles*1.0e12*AqOrgMolecularMass(J-1)
 					END DO
@@ -1190,7 +1189,11 @@ PROGRAM ASP
 			!Update time
 			t = t + MixTimestep
 			ut = ut + MixTimeStep/3600.
-
+                        IF(t .GE. 600) THEN !Reset to input mix time after 600 s
+                             ChemTimestep = ChemStep
+		             MixTimestep = MixStep    
+                        ENDIF
+                        write(*,*) t
 			IF (MOD(t,CoagTimeStep)<=0.01) THEN
 				WRITE(*,*) trim(real2str(t/60)), " minutes done"
 			END IF

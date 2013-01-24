@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -7,12 +7,12 @@
 !! organic activity coefficients in the aqueous phase.
 !! Original file provided by Rob Griffin, UNH
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																	!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							!!
+!!									!!
+!! Month  Year   Name              Description				!!
+!! 07     2006   Matt Alvarado     Began Update History			!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 C         Include file : unifacparamMattAq.h
 C
@@ -29,8 +29,9 @@ C             biomarker compound
 C             4-carboxybenzoic acid
 C             C18 acid
 C             1,5-ditertbutyl-4,8-di(dimethylpropyl)-decalin
-C       + 10 secondary compounds at 25C
-C       + 5 biomass burning compounds (Fig. 6 of Decesari et al, ACP 6, 375-402, 2006.)
+C       + 10 secondary compounds at 25C (See Pun et al., 2002) 
+C       + 5 biomass burning compounds 
+C         (Fig. 6 of Decesari et al, ACP 6, 375-402, 2006.)
 C       (Data of Lyman, Reehl, Rosenblatt, 1990)
 C
 C       NMOL and NFUNC need to match DIMMOL and DIMFUN in unidrivb.f
@@ -41,8 +42,9 @@ C                   2. Modified by Betty Pun, AER, December, 1999
 C                      under CARB funding for Type B module
 C                   3. updated for new POA mix and proper structures
 C                      and for use in fortran, Rob Griffin, CIT 1/00
-C					4. order of compounds revised, Matt Alvarado, MIT, 4/06
-C                   5. Added 5 biomass burning markers and water, fixed errors, Matt Alvarado, MIT, 6/06
+C		    4. order of compounds revised, Matt Alvarado, MIT, 4/06
+C                   5. Added 5 biomass burning markers and water, 
+C                      fixed errors, Matt Alvarado, MIT, 6/06
           REAL RG(20), QG(20), A(20,20)
           INTEGER NU(24,20)
 C

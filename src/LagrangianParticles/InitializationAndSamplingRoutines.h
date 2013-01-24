@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -29,6 +29,9 @@
 !! 06/04  2012   Matt Alvarado     Modified the Jacobson init in 
 !!                                    PopulateParticlesSectionsRightAway
 !!                                    to ignore smallest bin
+!! 01/24  2013   Matt Alvarado     Modified the Jacobson init in 
+!!                                    PopulateParticlesSectionsRightAway
+!!                                    to set smallest bin number and conc to 0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -913,6 +916,8 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
                                            sum_num = sum_num + new_num
                                            Current%NumberOfParticles = Current%NumberOfParticles + new_num
                                          endif
+                                    else
+                                         Current%NumberOfParticles = 0.0 !Skip first bin for now
                                     endif
 
                                     !Jacobson, Eq. 13.21: Mass of particles
@@ -924,9 +929,13 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
                                        if(new_num .gt. 1.0e-6) then !Skip bins with less than 1e-6 particles/cm3
                                           sum_mass = sum_mass+mass_bin
                                        endif
+                                    else
+                                       sum_mass = 0.0
                                     endif
 
-                                    if(new_num .gt. 1.0e-6) then !Skip bins with less than 1e-6 particles/cm3
+                                    if(Current%NumberOfParticles .gt. 1.0e-6 .and. Current%Edges(1) .NE. 0.0) then 
+                                     !Skip bins with less than 1e-6 particles/cm3
+                                     !and first bin
 	                              DO J = 1, HowManyAqChems !MJA, 02-28-2012
                                         !WRITE(*,*) "MakeParticle: ", AverageAerosolDensity
                                          Current%AqChems(J) = (Current%AqChems(J)*store_num &
@@ -938,6 +947,15 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 				         Current%OrgChems(J) = (Current%OrgChems(J)*store_num &
                                                               + AerosolModes(I,3+HowManyAqChems+J) *mass_bin/OrgMolecularMass(J)) &
 							     /Current%NumberOfParticles
+			              END DO
+                                    else
+                                      DO J = 1, HowManyAqChems
+                                        !WRITE(*,*) "MakeParticle: ", AverageAerosolDensity
+                                         Current%AqChems(J) = 0.0
+			              END DO
+			
+			              DO J = 1, HowManyOrgChems
+				         Current%OrgChems(J) = 0.0
 			              END DO
                                     endif
 

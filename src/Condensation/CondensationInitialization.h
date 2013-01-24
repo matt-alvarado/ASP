@@ -16,6 +16,8 @@
 !!                                 a one-box model or subroutine.            !!
 !! 01/23  2013   Matt Alvarado     Added flag to SetOrganicDissolution to    !!
 !!                                  decide between two vaopr pressure methods!!
+!! 01/24  2013   Matt Alvarado     Added flag to SetOrganicDissolution to    !!
+!!                                  decide between two org act. coeff.methods!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -920,23 +922,23 @@ END SUBROUTINE SetAllDissolution
 		!! reaction and j is some data:						    !!
 		!!									    !!
 		!! OrganicDissolutionData(i,1)  : Index in Gas Phase of Primary Chemical    !!
-		!! OrganicDissolutionData(i,2)  : Flag: 0 for Myrdal and Yalkowski (1997)   !!
+		!! OrganicDissolutionData(i,2)  : Flag1: 0 for Myrdal and Yalkowski (1997)  !!
                 !!                                method; 1 for Psat(300K) and Hvap method  !!
 		!! OrganicDissolutionData(i,3)  : Index in Organic Phase of Primary Chemical!!
-		!! OrganicDissolutionData(i,4)  : Blank					    !!
-		!! OrganicDissolutionData(i,5)  : Boiling Point (K) (for flag = 0)	    !!
+		!! OrganicDissolutionData(i,4)  : Blank                                     !!
+		!! OrganicDissolutionData(i,5)  : Boiling Point (K) (for flag1 = 0)	    !!
 		!! OrganicDissolutionData(i,6)  : # of Effective Torsional Bonds            !!
-                !!                                (for flag = 0)	                    !!
-		!! OrganicDissolutionData(i,7)  : Hydrogen Bond Number (for flag = 0)       !!
+                !!                                (for flag1 = 0)	                    !!
+		!! OrganicDissolutionData(i,7)  : Hydrogen Bond Number (for flag1 = 0)      !!
 		!! OrganicDissolutionData(i,8)  : Vapor Pressure Correction Factor	    !!
-                !!                                (for flag = 0)	                    !!
-		!! OrganicDissolutionData(i,9)  : Blank					    !!
+                !!                                (for flag1 = 0)	                    !!
+		!! OrganicDissolutionData(i,9)  : Blank                 		    !!
 		!! OrganicDissolutionData(i,10) : Mass Accommodation Coefficient	    !!
 		!! OrganicDissolutionData(i,11) : Reaction Type	(For StepCondensation)	    !!
-		!! OrganicDissolutionData(i,12) : Blank					    !!
+		!! OrganicDissolutionData(i,12) : Blank                                     !!
 		!! OrganicDissolutionData(i,13) : Stoicheometry of r.h.s. slot 1	    !!
-		!! OrganicDissolutionData(i,14) : Psat at 300 K (mbar)		            !!
-		!! OrganicDissolutionData(i,15) : DeltaHvap (kJ/mol)		            !!
+		!! OrganicDissolutionData(i,14) : Psat at 300 K (mbar) (for flag1 = 1)      !!
+		!! OrganicDissolutionData(i,15) : DeltaHvap (kJ/mol) (for flag1 = 1)        !!
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! There is only one reaction type:					    !!
 		!!									    !!
@@ -1042,6 +1044,7 @@ END SUBROUTINE SetAllDissolution
 			    !7. Vapor Pressure Correction Factor
 			    CALL GetToken(CurrLine,";",Token) 
 			    OrganicDissolutionData(i,8) = STR2REAL (Token)
+                                 
                         ELSE
 
 			    !! ---	4, 5   Psat(300K) and Hvap (KJ/mol)
@@ -1053,7 +1056,7 @@ END SUBROUTINE SetAllDissolution
 			    !5. Delta Hvap in KJ/mol
 			    CALL GetToken(CurrLine,";",Token) 
 			    OrganicDissolutionData(i,15) = STR2REAL (Token)
-
+                            
                         ENDIF
 
 			!! Report the particular reaction

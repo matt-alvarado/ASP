@@ -29,8 +29,14 @@
 !! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
 !! 01/02  2013   Matt Alvarado    Replaced UR21 with CH3COCO2H               !!
-!! 01/23  2013   Matt Alvarado    Added flag to SetOrganicDissolution to     !!
+!! 01/23  2013   Matt Alvarado    Added flag to SaturationVaporPressure to   !!
 !!                                  decide between two vaopr pressure methods!!
+!! 01/24  2013   Matt Alvarado     Added flag to UpdateHydrophobicUNIFAC to  !!
+!!                                  decide between two org act. coeff.methods!!
+!! 01/24  2013   Matt Alvarado    Removed calls to CalculateSurrogateGasConc !!
+!!                                 and UpdateGasPhaseOrganics from           !!
+!!                                 EquilibrateHydrophobicPhaseAtGridPoint    !!
+!!                                 and EquilibrateAllOrganicsAtGridPoint     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -133,57 +139,61 @@ END FUNCTION TotalMolesOM
 
 !! This subroutine provides the link between the main model and the 
 !! UNIFAC hydrophobic driver file soa_unidriv.f
-!! Note that the order of the hydrophobic organic compounds in 
-!! unifacparam.h and in OrgPhaseChems.in must be the same! 
 SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
 
-	USE Chemistry,				ONLY :	HowManyOrgChems
+	USE Chemistry,		ONLY :	HowManyOrgChems, OrgActivityFlag, OrgActivityIndex
 
 	IMPLICIT NONE
 
-	INTEGER :: I, N
+	INTEGER :: I, N, Q
 	TYPE(PARTICLE),POINTER :: InParticle
 	REAL*8, ALLOCATABLE :: XPASS(:), GAMMA(:)
-	REAL*8 :: TotalOM, Temperature
+	REAL*8 :: TotalOM, Temperature, TotalOM_unifac
 	
 
-	IF (1 .EQ. 0) THEN !UNIFAC
-		N = 23 !Number of compounds
-		ALLOCATE(XPASS(0:N-1), GAMMA(0:N-1))
+
+	N = 23 !Number of compounds in UNIDRIV and unifacparams.h
+	ALLOCATE(XPASS(0:N-1), GAMMA(0:N-1))
 	
-		!Calculate mole fractions, putting them in an array ordered from 0:N-1
-		TotalOM = TotalMolesOM(InParticle)
+	!Calculate mole fractions, putting them in an array ordered from 0:N-1
+	TotalOM = TotalMolesOM(InParticle)
 		
-		!If no organic is present, set to 1.0
-		IF(TotalOM .LE. 0.0) THEN
-			DO I = 0, N-1
-				InParticle%HydrophobicActivityCoeffs(I+2) = 1.0
-			END DO
-			RETURN
-		END IF
-
-		DO I = 0, N-1
-			!Note the I+2 since OrgChems is ordered from 1 to 24 with BC as the first compound
-			XPASS(I) = InParticle%OrgChems(I+2)/TotalOM
+	!If minimum organic is present, set activity coefficients to 1.0
+	IF(TotalOM .LE. 1.0E-25) THEN
+		DO I = 2, HowManyOrgChems !Skip BC
+	 	    InParticle%HydrophobicActivityCoeffs(I) = 1.0
 		END DO
+	        RETURN
+        ELSE !Calculate Activity Coefficients	
+                DO I = 2, HowManyOrgChems 
+                   IF (OrgActivityFlag(I) .LT. 0.005) THEN !UNIFAC
+                       Q = NINT(OrgActivityIndex(I)-1.0) !Index in XPASS and GAMMA, starting with 0
+                       XPASS(Q) = InParticle%OrgChems(I)
+                   ELSE !Constant Activity Coefficients
+                          InParticle%HydrophobicActivityCoeffs(I) = OrgActivityIndex(I) 
+                   ENDIF
+                ENDDO  
+                 
+                !Normalize XPASS based only on UNIFAC compounds
+                TotalOM_unifac = 0.0
+                DO Q = 0, N-1
+                    TotalOM_unifac = TotalOM_unifac+XPASS(Q)
+                ENDDO
+                DO Q = 0, N-1
+                    XPASS(Q) = XPASS(Q)/TotalOM_unifac
+                ENDDO
 
 		!Call UNIFAC, placing activity coefficients in GAMMA(0:N-1)
 		CALL UNIDRIV(XPASS,GAMMA,N,Temperature)
 	
-		!Place activity coefficients into particle array
-		DO I = 0, N-1
-			InParticle%HydrophobicActivityCoeffs(I+2) = GAMMA(I)
+		!Place UNIFAC activity coefficients into particle array
+		DO I = 2, HowManyOrgChems !Skip BC
+		    IF (OrgActivityFlag(I) .LT. 0.005) THEN !UNIFAC	
+                        Q = NINT(OrgActivityIndex(I)-1.0)
+                        InParticle%HydrophobicActivityCoeffs(I) = GAMMA(Q)
+                    ENDIF
 		END DO
-	
-	ELSE !Assume activity coefficients equal unity
-
-		N = HowManyOrgChems-1
-
-		DO I = 0, N-1
-			InParticle%HydrophobicActivityCoeffs(I+2) = 1.0
-		END DO
-		
-	END IF
+	ENDIF
 
 	RETURN
 END SUBROUTINE UpdateHydrophobicUNIFAC
@@ -933,9 +943,9 @@ SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint()
 	!Calculate surrogate concentrations and 
 	!mass fractions of organics contributing to surrogates, and
 	!Store initial surrogate gas phase burdens in a dummy vector
-	CALL CalculateSurrogateGasConc(S1MassFracs, S2MassFracs, &
-                S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+	!CALL CalculateSurrogateGasConc(S1MassFracs, S2MassFracs, &
+        !        S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
+	!S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 
 	!! Sort the gridcell, pushing all empty sections to the end
 	CALL SortAerosolAtGridPointForCondensation ()
@@ -1040,9 +1050,9 @@ SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint()
 
 	!WRITE(*,*) "Before org update"
 	!Update Concentrations of individual organics
-	CALL UpdateGasPhaseOrganics( S1MassFracs, S2MassFracs, &
-                S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+	!CALL UpdateGasPhaseOrganics( S1MassFracs, S2MassFracs, &
+        !        S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
+	!S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 	!WRITE(*,*) "aFTER org update"
 
 	RETURN
@@ -1803,9 +1813,9 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint()
 	!Calculate surrogate concentrations and 
 	!mass fractions of organics contributing to surrogates, and
 	!Store initial surrogate gas phase burdens in a dummy vector
-	CALL CalculateSurrogateGasConc( S1MassFracs, S2MassFracs, &
-                S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+	!CALL CalculateSurrogateGasConc( S1MassFracs, S2MassFracs, &
+        !        S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
+	!S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 
 	!! Sort the gridcell, pushing all empty sections to the end
 	CALL SortAerosolAtGridPointForCondensation ()
@@ -1974,9 +1984,9 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint()
 
 	!WRITE(*,*) "Before org update"
 	!Update Gas Phase Concentrations of individual organics
-	CALL UpdateGasPhaseOrganics(S1MassFracs, S2MassFracs, &
-                S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+	!CALL UpdateGasPhaseOrganics(S1MassFracs, S2MassFracs, &
+        !        S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
+	!S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 	!WRITE(*,*) "After org update"
 
 	RETURN
@@ -2356,7 +2366,7 @@ END SUBROUTINE EquilibrateOrganicParticle
 
 REAL*8 FUNCTION BinaryWaterActivityOrganic(InParticle, WhichRxn, Temp)
 !! This function calculates the water activity for a binary solution 
-!! of aqueous organic and water (uding UNIFAC) when the organic 
+!! of aqueous organic and water (using UNIFAC) when the organic 
 !! is at the same 
 !! molality as in the complex solution. This is later used to 
 !! calculate the total water activity of the 

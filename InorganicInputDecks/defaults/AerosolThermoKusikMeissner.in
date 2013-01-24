@@ -1,6 +1,6 @@
 !! AerosolThermoKusikMeissner.in
 !! ASP
-!! Matt Alvarado, 2004-2006 (c)
+!! Matt Alvarado, 2004-2013 (c)
 !! Based on MELAM by Donnan Steele, 2000-2004 (c)
 !! This Input Deck Details the thermodynamic Kusik-Meissner data for  !!
 !! the available electrolytes.					      !!
@@ -23,8 +23,6 @@
 !! Please use H2O for water, H+ for protons, and an ampersand
 !! to separate species.
 !!
-!! Surface tension I took from Li and Lu
-!! Density I fit on my own using data and excel
 !!    Reaction             ;  q_r   ;   q_T   
 !! ------------------------------------------
 !! 

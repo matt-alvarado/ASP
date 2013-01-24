@@ -115,10 +115,13 @@
 !! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
 !! 02/17  2012   Matt Alvarado     Removed out-of-date and unused subroutines!!
-!!                                 GasSatConcAll,
-!!                                  BigCondensationJacobianEvaluator,
-!!                                 BigCondensationODEEvaluator, and
-!!                                 BigStepInorgCondensation.
+!!                                 GasSatConcAll,                            !!
+!!                                  BigCondensationJacobianEvaluator,        !!
+!!                                 BigCondensationODEEvaluator, and          !!
+!!                                 BigStepInorgCondensation.                 !!
+!! 01/24  2013   Matt Alvarado     Removed CalculateSurrogateGasConc and     !!
+!!                                  UpdateGasPhaseOrganics from              !!
+!!                                  StepCondensationAll                      !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -192,10 +195,10 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 			CALL SortAerosolAtGridPointForCondensation ()
 		
 			!Calculate surrogate organic concentrations
-			IF(DoHydrophobicOrgDissolutionFlag .OR. DoHydrophilicOrgDissolutionFlag) &
-				CALL CalculateSurrogateGasConc(S1MassFracs, S2MassFracs, &
-					S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-					S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+			!IF(DoHydrophobicOrgDissolutionFlag .OR. DoHydrophilicOrgDissolutionFlag) &
+				!CALL CalculateSurrogateGasConc(S1MassFracs, S2MassFracs, &
+				!	S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
+				!	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 	
 			DO I = 1, NumTimeSteps
 				!WRITE(*,*) "StepDissolutionAll Check 0"
@@ -213,14 +216,14 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 			END DO
 
 			!Update individual gas-phase concentrations
-			IF(DoHydrophobicOrgDissolutionFlag .OR. &
-                             DoHydrophilicOrgDissolutionFlag) &
-				CALL UpdateGasPhaseOrganics(S1MassFracs, & 
-                                        S2MassFracs, S3MassFracs, &
-                                         S4MassFracs, S5MassFracs, &
-                                         S6MassFracs, S7MassFracs, &
-                                         S8MassFracs, S9MassFracs, &
-                                         S10MassFracs, InitialBurden)
+			!IF(DoHydrophobicOrgDissolutionFlag .OR. &
+                        !     DoHydrophilicOrgDissolutionFlag) &
+			!	CALL UpdateGasPhaseOrganics(S1MassFracs, & 
+                        !                S2MassFracs, S3MassFracs, &
+                        !                 S4MassFracs, S5MassFracs, &
+                        !                 S6MassFracs, S7MassFracs, &
+                        !                 S8MassFracs, S9MassFracs, &
+                        !                 S10MassFracs, InitialBurden)
 		END IF
 
 		!WRITE(*,*) "StepDissolutionAll Check 4"

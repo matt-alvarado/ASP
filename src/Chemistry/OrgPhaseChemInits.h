@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -18,9 +18,11 @@
 !!                                  hardcoded in SUBROUTINE                  !!
 !!                                  ShellRefIndAndRad(InParticle) in file    !!
 !!                                  ParticleAttributes.h                     !!
-!! 11/09  2012   Matt Alvarado     Changed BC density to 1.8 g/cm3 to match
-!!                                  density assumed for SP2 measurements 
-!!                                  in ARCTAS
+!! 11/09  2012   Matt Alvarado     Changed BC density to 1.8 g/cm3 to match  !!
+!!                                  density assumed for SP2 measurements     !!
+!!                                  in ARCTAS                                !!
+!! 01/24  2013   Matt Alvarado     Changed SetOrgPhaseChemistry to read      !!
+!!                                  activity coefficient parameters.         !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -126,6 +128,21 @@ SUBROUTINE SetOrgPhaseChemistry ()
 	!!! -- DENSITY (grams / cm3) -- !!!
 	ALLOCATE (OrgDensity(HowManyOrgChems), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of OrgDensity could not proceed in SetOrgChemistryParams()")
+
+        !! ACTIVITY COEFF. FLAG
+        !!         if 0. - number than follows is the index (starting at 1) 
+        !!                 of the compound in unifacparams.h and the 
+        !!                 subroutine UNIDRIV
+        !!         if 1. - number that follows is a constant 
+        !!                 organic activity coefficient (usually 1.0)
+        !!         NOTE: It is safest to set these flags the same for all compounds
+        !!         considered. Otherwise the UNIFAC compunds are treated as their 
+        !!         own solution that doesn't inteact with the constant compounds.
+	ALLOCATE (OrgActivityFlag(HowManyOrgChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of OrgDensity could not proceed in SetOrgChemistryParams()")
+
+	ALLOCATE (OrgActivityIndex(HowManyOrgChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of OrgDensity could not proceed in SetOrgChemistryParams()")
 			
 	!! SCSCSCSCSC
 	IF (Scaffolding) CALL Transcript (">>Importing Org Phase Species Info<<")
@@ -140,8 +157,10 @@ SUBROUTINE SetOrgPhaseChemistry ()
 		
 	!Hard code values for BC
 	OrgPhaseChemicalNames(1)	= "BC"
-	OrgMolecularMass(1)			= 200.0* grams / moles
-	OrgDensity(1)				= 1.8 * grams / cm / cm / cm 
+	OrgMolecularMass(1)		= 200.0* grams / moles
+	OrgDensity(1)			= 1.8 * grams / cm / cm / cm 
+        OrgActivityFlag(1)              = 1.0
+        OrgActivityIndex(1)             = 1.0
         !ARCTAS SP2 observations used this density
 
 	DO i = 2, HowManyOrgChems
@@ -197,6 +216,26 @@ SUBROUTINE SetOrgPhaseChemistry ()
 		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In OrgPhaseChems.in, the density appears to be missing on "//   &
 						TRIM(OrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
 		OrgDensity(CurrIndex) = STR2REAL(Token) * grams / cm / cm / cm
+
+		!! --- 5. Activity Coefficent Flag
+                !!         if 0. - number than follows is the index (starting at 1) 
+                !!                 of the compound in unifacparams.h and the 
+                !!                 subroutine UNIDRIV
+                !!         if 1. - number that follows is a constant 
+                !!                 organic activity coefficient (usually 1.0)
+                !!         NOTE: It is safest to set these flags the same for all compounds
+                !!         considered. Otherwise the UNIFAC compunds are treated as their 
+                !!         own solution that doesn't inteact with the constant compounds.
+		CALL GetToken(CurrLine,";",Token)
+		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In OrgPhaseChems.in, the acxtivity coeff. flag appears to be missing on "//   &
+						TRIM(OrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
+		OrgActivityFlag(CurrIndex) = STR2REAL(Token)
+
+		!! --- 6. Activity Coefficent Index
+		CALL GetToken(CurrLine,";",Token)
+		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In OrgPhaseChems.in, the acxtivity coeff. index appears to be missing on "//   &
+						TRIM(OrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
+		OrgActivityIndex(CurrIndex) = STR2REAL(Token)			
 			
 		!! Transcript
 		IF (Transcribe) CALL Transcript(OrgPhaseChemicalNames(CurrIndex))

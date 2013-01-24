@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -7,12 +7,12 @@
 !! organic activity coefficients in the hydrophobic phase.
 !! Original file provided by Rob Griffin, UNH
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																	!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY						        !!
+!!									!!
+!! Month  Year   Name              Description				!!
+!! 07     2006   Matt Alvarado     Began Update History			!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 C         Include file : unifacparam.h
 C
@@ -41,8 +41,9 @@ C                   2. Modified by Betty Pun, AER, December, 1999
 C                      under CARB funding for Type B module
 C                   3. updated for new POA mix and proper structures
 C                      and for use in fortran, Rob Griffin, CIT 1/00
-C					4. order of compounds revised, Matt Alvarado, MIT, 4/06
-C                   5. Added 5 biomass burning markers and fixed errors, Matt Alvarado, MIT, 6/06
+C		    4. order of compounds revised, Matt Alvarado, MIT, 4/06
+C                   5. Added 5 biomass burning markers and fixed errors, 
+C                      Matt Alvarado, MIT, 6/06
           REAL RG(19), QG(19), A(19,19)
           INTEGER NU(23,19)
 C

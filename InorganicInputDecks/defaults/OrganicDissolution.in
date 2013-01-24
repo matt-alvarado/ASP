@@ -22,7 +22,7 @@
 !!	BOILING POINT (K)(From ACD/Boiling Point Software)
 !!      TORSIONAL BOND NUMBER (From Rob Griffin)
 !!      HYDROGEN BOND NUMBER
-!!      Correction Factor (divide calculated vapor pressure by this factor - 
+!!      Correction Factor (CF) (divide calculated vapor pressure by this factor - 
 !!                         see discussion in Griffin et al 2005, JGR 101, D05304,
 !!				   doi:10.1029/2004JD005219)
 !!       
@@ -31,8 +31,8 @@
 !! VAPOR PRESSURE at 300 K (mbar)
 !! HEAT OF VAPORIZATION (KJ/mol)
 !!
-! Reaction           	; Mass Acc ; Flag; Tb(K)    ; Tau  ; HBN     ; Correction Factor;
-POA1 <=> POA1		; 0.1;          0.;    714.0;  26. ;       0.; 1.0; 
+! Reaction           	; Mass Acc ; Flag; Tb(K)    ; Tau  ; HBN     ; CF ;
+POA1 <=> POA1		; 0.1;          0.;    714.0;  26. ;       0.; 1.0;
 POA2 <=> POA2		; 0.1;          0.;    509.0;   2. ; 1.20e-2 ; 1.0; 
 POA3 <=> POA3		; 0.1;          0.;    710.0;   0.5; 6.55e-3 ; 1.0; 
 POA4 <=> POA4		; 0.1;          0.;    797.0;   0. ; 0.      ; 1.0; 
@@ -59,7 +59,7 @@ CPD2 <=> CPD2		; 0.1;          0.;    850.0; 0.   ; 4.25e-3 ; 1.0;
 CPD3 <=> CPD3		; 0.1;          0.;    1232.0; 16.5; 3.35e-3 ; 1.0;
 !
 !     
-! Reaction           	; Mass Acc ; Flag       ; Psat(300K)     ; Delta Hvap (KJ/mol)  ;
+! Reaction      ; Mass Acc ; Flag       ; Psat(300K)    ; Delta Hvap (KJ/mol) 
 IVOC1 <=> IVOC1	; 0.1;          1.	; 1.00e-9	; 112.  ;
 IVOC2 <=> IVOC2	; 0.1;          1.	; 1.00e-8	; 106.  ;
 IVOC3 <=> IVOC3	; 0.1;          1.	; 1.00e-7	; 100.  ; 
@@ -67,6 +67,6 @@ IVOC4 <=> IVOC4	; 0.1;          1.	; 1.00e-6	; 94.  ;
 IVOC5 <=> IVOC5	; 0.1;          1.	; 1.00e-5	; 88.  ; 
 IVOC6 <=> IVOC6	; 0.1;          1.	; 1.00e-4	; 82.  ; 
 IVOC7 <=> IVOC7	; 0.1;          1.	; 1.00e-3	; 76.  ; 
-IVOC8 <=> IVOC8	; 0.1;          1.	; 1.00e-2	; 70.  ;
-IVOC9 <=> IVOC9	; 0.1;          1.	; 1.00e-1	; 64.  ;
+IVOC8 <=> IVOC8	; 0.1;          1.	; 1.00e-2	; 70.  ; 
+IVOC9 <=> IVOC9	; 0.1;          1.	; 1.00e-1	; 64.  ; 
 !

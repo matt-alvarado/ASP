@@ -1049,10 +1049,13 @@ SUBROUTINE SpillBeans(Env)
 		
 		print *, "Temperature ", trim(real2str(currentparticle%temperature))
 		
-		SaltConc = HypotheticalElectrolyteConcentrations (currentparticle)
+		if (currentparticle%numberofparticles .GT. 0.0) then
+                    SaltConc = HypotheticalElectrolyteConcentrations (currentparticle)
+                endif    
 		DO A = 1, NumAqChems		
 			IF(currentparticle%aqchems(A) .GT. 1e-40) THEN
 				write(*,*) trim(int2str(A))," : ",AqPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%aqchems(A)*currentparticle%numberofparticles))
+                                WRITE(*,*) currentparticle%aqchems(A)
 				!IF(A .LE. HowManyAqChems) THEN
 				!write(*,*) trim(int2str(A))," : ",AqPhaseChemicalNames(A) ," (ppbm): ", trim(real2str((SaltConc(A)+currentparticle%aqchems(A))*currentparticle%numberofparticles* &
 				!																						AqMolecularMass(A)*1.0e9/Dens))
@@ -1067,6 +1070,7 @@ SUBROUTINE SpillBeans(Env)
 		DO A = 1, NumOrgChems		
 			IF(currentparticle%Orgchems(A) .GT. 1e-40) THEN
 				write(*,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles))
+                                WRITE(*,*) currentparticle%Orgchems(A)
 				!write(*,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (ppbm): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles* &
 				!																							OrgMolecularMass(A)*1.0e9/Dens))
 				!write(*,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (ppbm/ppbm CO): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles* &
@@ -1077,6 +1081,7 @@ SUBROUTINE SpillBeans(Env)
 		DO A = 1, HowManyAqOrgChems		
 			IF(currentparticle%AqOrgchems(A) .GT. 1e-40) THEN
 				write(*,*) trim(int2str(A))," : ",AqOrgPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%AqOrgchems(A)*currentparticle%numberofparticles))
+                                WRITE(*,*) currentparticle%AqOrgchems(A)
 				!write(*,*) trim(int2str(A))," : ",AqOrgPhaseChemicalNames(A) ," (ppbm): ", trim(real2str(currentparticle%AqOrgchems(A)*currentparticle%numberofparticles* &
 				!																							AqOrgMolecularMass(A)*1.0e9/Dens))
 				!write(*,*) trim(int2str(A))," : ",AqOrgPhaseChemicalNames(A) ," (ppbm/ppbm CO): ", trim(real2str(currentparticle%AqOrgchems(A)*currentparticle%numberofparticles* &

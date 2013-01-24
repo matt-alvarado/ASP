@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -65,6 +65,8 @@
 !!                                  backscattering coefficient in AerosolOptProp
 !  08/17  2012   Matt Alvarado     Added capability for external mixtures to ShellRefIndAndRad
 !! 11/08  2012   Matt Alvarado     Added Maxwell-Garnett mixing rule to ShellRefIndAndRad
+!! 01/24  2013   Matt Alvarado     Updated OrgCurvatureCorrection to give 1.0
+!!                                  if particle number = 0.0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1127,7 +1129,7 @@ REAL*8 FUNCTION OrgCurvatureCorrection (InParticle)
 	REAL*8 :: TotalDens, SurfTens, Radius
 	
 	!Ignore this for bulk mode or no insoluble species
-	IF (ThermoBulkMode .OR. IgnoreCorrectionstoDiffusivity) THEN
+	IF (ThermoBulkMode .OR. IgnoreCorrectionstoDiffusivity .OR. InParticle%NumberofParticles .EQ. 0.0) THEN
 		OrgCurvatureCorrection = 1.
 
 	ELSE

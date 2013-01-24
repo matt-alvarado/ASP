@@ -27,6 +27,7 @@
 !!                                  electrolyte.                             !!
 !! 01/04  2013   Matt Alvarado     Changed ReadPhotoRates to allow 50 rxns   !!
 !! 01/11  2013   Matt Alvarado     Changed ReadPhotoRates to allow 51 rxns   !!
+!! 01/24  2013   Matt Alvarado     Added OrgActivityFlag and OrgActivityIndex!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -108,6 +109,8 @@ MODULE Chemistry
 			OrgPhaseChemicalNames,          &
 			OrgMolecularMass,               &
 			OrgDensity,			&
+                        OrgActivityFlag,                &
+                        OrgActivityIndex,               &
 			AqOrgPhaseChemicalNames,        &
 			AqOrgMolecularMass,             &
 			AqOrgDensity,			&
@@ -279,18 +282,20 @@ MODULE Chemistry
 	!! These are indexed by the ORGANIC PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: OrgPhaseChemicalNames(:) 
 	REAL*8,		ALLOCATABLE :: OrgMolecularMass(:)		   
-! Molecular Mass (g / mole)
+        ! Molecular Mass (g / mole)
 	REAL*8,		ALLOCATABLE :: OrgDensity(:)		   
-! Molecular Mass (g / mole)
+        ! Density (g / cm3)
+	REAL*8,		ALLOCATABLE :: OrgActivityFlag(:)
+        REAL*8,		ALLOCATABLE :: OrgActivityIndex(:)
+
 
 	!! These are indexed by the HYDROPHILIC ORGANIC COMPOUND INDEX
 	CHARACTER (len=15), ALLOCATABLE :: AqOrgPhaseChemicalNames(:) 
 	REAL*8,		ALLOCATABLE :: AqOrgMolecularMass(:)		   
-! Molecular Mass (g / mole)
+        ! Molecular Mass (g / mole)
 	REAL*8,		ALLOCATABLE :: AqOrgDensity(:)		   
-! Molecular Mass (g / mole)
+        ! Density (g / cm3)
 	INTEGER,	ALLOCATABLE :: AqOrgNumCarbon(:)		   
-! Molecular Mass (g / mole)
 	
         !! Each array is sized by the number of evolving chemicals,
 	!! but only a certain subset of these will evolve (placed first
