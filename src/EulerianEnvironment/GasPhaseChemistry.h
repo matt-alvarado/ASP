@@ -22,15 +22,18 @@
 !!                                 in SetWaterVaporField		     !!
 !! 02/15  2012   Matt Alvarado     Removing Eulerian grids, making ASP       !!
 !!                                 a one-box model or subroutine.            !!
-!! 01/03  2012   Matt Alvarado     Fixed second order "+ M" reactions from   !!
+!! 01/03  2013   Matt Alvarado     Fixed second order "+ M" reactions from   !!
 !!                                   MCM v3.2 to act as pseudo-1st order     !!
 !!                                   and added IUPAC style 3-body rxn rates  !!
 !!                                   to ResetGasPhaseReactionRates           !!
-!! 01/18  2012   Matt Alvarado     Removed hardwired CO + OH reaction and    !!
+!! 01/18  2013   Matt Alvarado     Removed hardwired CO + OH reaction and    !!
 !!                                  replaced with a K1 + K2 reaction         !!
-!! 01/18  2012   Matt Alvarado    Added  thermal 3rd order rate constant     !!
+!! 01/18  2013   Matt Alvarado    Added  thermal 3rd order rate constant     !!
 !!                                 and fixed N2O5 and O1D hardwired rxns     !!
 !!                                 and made one call to GetM per chem step   !!
+!! 01/25  2013   Matt Alvarado    Added GetTotalPeroxy to top of             !!
+!!                                 ResetGasPhaseReactionRates and converted  !!
+!!                                 + RO2_T reactions to special first order  !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -59,7 +62,7 @@
 !! Each timestep the reaction rates are recalculated !!
 !! This subroutine performs that service.	     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
+SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy)
 
   Use ModelParameters
   USE InfrastructuralCode, ONLY : Transcript, ERROR, Int2Str, Real2Str
@@ -67,14 +70,16 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 
   REAL*8,  INTENT(in) :: ReactionRates(:,:)
   INTEGER, INTENT(in) :: ArraySize(2)
+  REAL*8              :: TotalPeroxy
 
   INTEGER :: L
   REAL*8	:: Temp,Mgas,X(3),k0,ki, Y_o, Y_o_term, Y_inf_term, Z, F, &
   	   alpha, beta, m_o, m_inf, Ratio, Scale, P, k1, k2, k3, kf, Keq, &
-	   KO, KINF, NCD, FD
+	   KO, KINF, NCD, FD, RO2_T
 
   Temp = GetTemp()
   Mgas = GetM   ()
+  RO2_T = TotalPeroxy
   
   !! Loop over all reactions
   DO L = 1, ArraySize(1)
@@ -84,8 +89,13 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 
       !! One body reactions (units are per-second)
       CASE(1)
+        
+	!Photolysis Case
+	IF (INT(ReactionRates(L,3)) .EQ. 0) THEN
+	  GasPhaseChemicalRates(L) = ReactionRates(L,3)
+
         !PAN Degradation case (NOT USED! Use type 4!)
-        IF (INT(ReactionRates(L,3)) .EQ. 1) THEN
+        ELSE IF (INT(ReactionRates(L,3)) .EQ. 1) THEN
 	  k0   = ReactionRates(L,4)*EXP(ReactionRates(L,5)/Temp)* Mgas
 	  ki   = ReactionRates(L,6)*EXP(ReactionRates(L,7)/Temp)
 	  GasPhaseChemicalRates(L) = (k0*ki)/(k0+ki) * ReactionRates(L,8)** &
@@ -96,12 +106,7 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 	  GasPhaseChemicalRates(L) = ReactionRates(L,4) *		&
 					 Temp**ReactionRates(L,5)    *	&
 					 EXP(ReactionRates(L,6)/Temp)**	&
-					 ReactionRates(L,7)
-							
-	!Photolysis Case
-	ELSE IF (INT(ReactionRates(L,3)) .EQ. 0) THEN
-	  GasPhaseChemicalRates(L) = ReactionRates(L,3)
-						
+					 ReactionRates(L,7)					
 	!Heterogeneous Case
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN
 	  !Temporary - call ResetHeteroRates to set rate!
@@ -160,6 +165,13 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize)
 	  NCD = 0.75-1.27*(DLOG10(ReactionRates(L,8)))
           FD = 10.**(DLOG10(ReactionRates(L,8))/(1.+(DLOG10(k0/ki)/NCD)**2))
           GasPhaseChemicalRates(L) = FD*(k0*ki)/(k0+ki)
+
+        !+ RO2_T pseudo-1st order Case (MJA, 01-25-2013)
+	ELSE IF (INT(ReactionRates(L,3)) .EQ. 12) THEN
+	  GasPhaseChemicalRates(L) = RO2_T*ReactionRates(L,4) *		&
+					 Temp**ReactionRates(L,5)    *	&
+					 EXP(ReactionRates(L,6)/Temp)**	&
+					 ReactionRates(L,7)	
 	ELSE
 	   CALL ERROR("Error in ResetGasPhaseReactionRates - your 1st order rate constant doesn't make sense")								
 	END IF

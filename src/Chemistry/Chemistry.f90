@@ -28,9 +28,11 @@
 !! 01/04  2013   Matt Alvarado     Changed ReadPhotoRates to allow 50 rxns   !!
 !! 01/11  2013   Matt Alvarado     Changed ReadPhotoRates to allow 51 rxns   !!
 !! 01/24  2013   Matt Alvarado     Added OrgActivityFlag and OrgActivityIndex!!
-!! 01/25  2013   Matt Alvarado     Added GasPhasePeroxy array                 !!
+!! 01/25  2013   Matt Alvarado     Added GasPhasePeroxy array                !!
 !! 01/25  2013   Matt Alvarado     Added functions GetTotalPeroxy and        !!
 !!                                       GetTotalAcylPeroxy                  !!
+!! 01/25  2013   Matt Alvarado    Changed RecalculateReactionRates to pass   !!
+!!                                  total peroxy concentration.              !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -448,11 +450,18 @@ MODULE Chemistry
 
 		!! Input Variables
 		LOGICAL :: IFGAS,IFAQ
+  
+                !!Internal Variables
+                REAL*8 :: dum_peroxy
 
+                
 		!!!!!!!!!!!!!!!
 		!! Gas Phase !!
-		IF (IFGAS) CALL ResetGasPhaseReactionRates (GasPhaseReactionRates,GasPhaseReactionRateArraySize)
-			
+		IF (IFGAS) THEN
+                   dum_peroxy = GetTotalPeroxy() !Also resets RO2_T in chem array
+                   CALL ResetGasPhaseReactionRates (GasPhaseReactionRates,GasPhaseReactionRateArraySize, dum_peroxy)
+                   dum_peroxy = GetTotalAcylPeroxy() !Also resets RCO3_T in chem array
+		END IF	
 		
 		!!!!!!!!!!!!!!!!!!!
 		!! Aqueous Phase !!
@@ -947,7 +956,7 @@ MODULE Chemistry
         !! MJA, 01/25/2013
 	REAL*8  FUNCTION GetTotalPeroxy()
                
-                USE GridPointFields, ONLY : GridGasChem, UpdateChemicalConcentrations
+                USE GridPointFields, ONLY : GridGasChem, ReplaceGridCellChemBurden
 
 		IMPLICIT NONE           
 
@@ -968,7 +977,8 @@ MODULE Chemistry
                !Place in RO2_T slot
                ind = FindChem("RO2_T", 0)
                Chem(ind) = GetTotalPeroxy
-               CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
+               CALL ReplaceGridCellChemBurden (ind,Chem(ind)) 
+
 
                !Return value
                RETURN
@@ -981,7 +991,7 @@ MODULE Chemistry
         !! MJA, 01/25/2013
 	REAL*8  FUNCTION GetTotalAcylPeroxy()
 
-                USE GridPointFields, ONLY : GridGasChem, UpdateChemicalConcentrations
+                USE GridPointFields, ONLY : GridGasChem, ReplaceGridCellChemBurden
 
 		IMPLICIT NONE           
 
@@ -1002,7 +1012,7 @@ MODULE Chemistry
                !Place in RCO3_T slot
                ind = FindChem("RCO3_T", 0)
                Chem(ind) = GetTotalAcylPeroxy
-               CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
+               CALL ReplaceGridCellChemBurden (ind,Chem(ind)) 
 
                !Return value
                RETURN

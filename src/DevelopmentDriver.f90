@@ -443,11 +443,7 @@ PROGRAM ASP
 				WRITE(OutFH(4), FMT='(A1)') ""
 			END IF !Write Output
 
-			
-			!NOTE: Right now, pressure and temperature are assumed to be 
-			!constant, so we don't recalculate the rest of the reaction rates
-			!in order to save computer time (including this doubles computer time)
-			!CALL RecalculateReactionRates(IFGAS,IFAQ)
+			CALL RecalculateReactionRates(IFGAS,IFAQ)
 			!WARNING: You MUST call RecalculatePhotoRates and RecalculateHeteroRates
 			!after this step, or those rates will be set to 0!
 			
@@ -491,17 +487,17 @@ PROGRAM ASP
 			!Step Dilution of Chems
 			DO q = 1, HowManyGasChems
 				Chem(q) = GridGasChem(q)
-                                if(q .EQ. 6 .or. q .eq. 7 .or. (q .GE. 388 .and. q .LE. 507) .or. (q .GE. 509 .and. q .LE. 513) ) then
-                                  write(*,*) q, chem(q)*1e9/Mgas
-                                  sum_peroxy = sum_peroxy + chem(q)*1e9/Mgas !ppb
-                                endif
+                        !        if(q .EQ. 6 .or. q .eq. 7 .or. (q .GE. 388 .and. q .LE. 507) .or. (q .GE. 509 .and. q .LE. 513) ) then
+                                  !write(*,*) q, chem(q)*1e9/Mgas
+                        !          sum_peroxy = sum_peroxy + chem(q)*1e9/Mgas !ppb
+                        !        endif
 				Chem(q) = (Chem(q) + (GasPhaseBackground(q)*MixTimestep/T_mix))/(1+ MixTimestep/T_mix)
 			END DO		
-                        dum_peroxy = GetTotalPeroxy()*1e9/Mgas
-		        WRITE(*,*) "sum_peroxy:  ", sum_peroxy, dum_peroxy
-                        dum_peroxy = GetTotalAcylPeroxy()*1e9/Mgas
-                        WRITE(*,*) dum_peroxy
-                         Chem(4) = dum_peroxy*Mgas/1e9 
+                        !dum_peroxy = GetTotalPeroxy()*1e9/Mgas
+		        !WRITE(*,*) "sum_peroxy:  ", sum_peroxy, dum_peroxy
+                        !dum_peroxy = GetTotalAcylPeroxy()*1e9/Mgas
+                        !WRITE(*,*) dum_peroxy
+                        ! Chem(4) = dum_peroxy*Mgas/1e9 
 			!Update chemical concentrations
 			CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 			
@@ -873,9 +869,8 @@ PROGRAM ASP
 			!Calculate Temperature
 			TEMP = GetTemp()
 
-			!NOTE: Right now, pressure and temperature are assumed to be 
-			!constant, so we don't have to recalculate the rest of the reaction rates
-			!CALL RecalculateReactionRates(IFGAS,IFAQ)
+
+			CALL RecalculateReactionRates(IFGAS,IFAQ)
 			!WARNING: You MUST call RecalculatePhotoRates and RecalculateHeteroRates
 			!after this step, or those rates will be set to 0!
 			
