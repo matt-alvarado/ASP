@@ -23,9 +23,11 @@
 !!                                   reaction numbers greater than 1000      !!
 !! 01/04  2013   Matt Alvarado     Made MakeODESet print reaction and        !!
 !!                                   rxn number to Transcript.TXT            !!
-!! 01/18  2012   Matt Alvarado     Removed hardwired CO + OH reaction and    !!
+!! 01/18  2013   Matt Alvarado     Removed hardwired CO + OH reaction and    !!
 !!                                  replaced with a K1 + K2 reaction         !!
-!! 01/18  2012   Matt Alvarado    Addeda thermal 3rd order rate constant     !!
+!! 01/18  2013   Matt Alvarado    Addeda thermal 3rd order rate constant     !!
+!! 01/24  2013   Matt Alvarado    Expanded Product arrays in MakeODESet to 40!!
+!!                                  and increased size of string variables   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -75,14 +77,14 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 
 	!! Local Variables
 	INTEGER		  :: FH, allocation_error, I, J
-	INTEGER		  :: Reacts(10),Prods(10),ReactionType,NumbRateFacs
+	INTEGER		  :: Reacts(10),Prods(40),ReactionType,NumbRateFacs
 	INTEGER		  :: NumbProducts,NumbReactants,NumbReactions, & 
                              MaxNumbRateFacs
-	REAL*8		  :: ReactFactors(10),ProdFactors(10), II, RateFacs(20)
+	REAL*8		  :: ReactFactors(10),ProdFactors(40), II, RateFacs(20)
 	character (len=1024)      :: FullLine,CurrLine
-	character (len=512)	  :: Token,Reactants,Reactant
-	character (len=512)	  :: Products,Product
-	character (len=512)	  :: Rates,Rate
+	character (len=1024)	  :: Token,Reactants,Reactant
+	character (len=1024)	  :: Products,Product
+	character (len=1024)	  :: Rates,Rate
 	TYPE(DiffEqTerm), POINTER :: Current, New
 	TYPE(ChemTerm),   POINTER :: CurrentChem, NewChem
 	TYPE(ReactRate),  POINTER :: FirstRate,CurrentRate,NewRate

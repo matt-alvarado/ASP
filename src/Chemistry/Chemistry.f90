@@ -28,6 +28,7 @@
 !! 01/04  2013   Matt Alvarado     Changed ReadPhotoRates to allow 50 rxns   !!
 !! 01/11  2013   Matt Alvarado     Changed ReadPhotoRates to allow 51 rxns   !!
 !! 01/24  2013   Matt Alvarado     Added OrgActivityFlag and OrgActivityIndex!!
+!! 01/25  2013   Matt Alvarado     Added GasPhasPeroxy array                 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -141,11 +142,15 @@ MODULE Chemistry
 			GasPhaseDepVel,                 &
                         CationIonicRefraction,          &
                         AnionIonicRefraction,           &
-                        RefIndFlag
+                        RefIndFlag,                     &
+                        GasPhasePeroxy
 					!     "
 	!! These are indexed by the GAS PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: GasPhaseChemicalNames(:)	   !
-	REAL*8,		    ALLOCATABLE :: EnthalpyOfVaporization(:)   
+	REAL*8,		    ALLOCATABLE :: EnthalpyOfVaporization(:) 
+! Peroxy Radical Flag, 2 if should be included in RO2_T and RCO3_T sums (acyl peroxy),
+!                         1 if should be included in RO2_T sum only, 0 if not
+	REAL*8,		    ALLOCATABLE :: GasPhasePeroxy(:)   
 ! The Latent Heat of Evaporation of Each Species (J/g)
 	REAL*8,		    ALLOCATABLE :: GasMolecularMass(:)		   
 ! Molecular Mass (g / mole)

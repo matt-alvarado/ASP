@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2013, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -19,6 +19,9 @@
 !!				 SetGasPhaseChemistry - removed eps from calc!!
 !! 02/15  2012   Matt Alvarado     Removing Eulerian grids, making ASP       !!
 !!                                 a one-box model or subroutine.            !!
+!! 01/24  2013   Matt Alvarado   Added GasPhasePeroxy array to subroutine    !!
+!!                                 SetGasPhaseChemistry to read and store    !!
+!!                                 peroxy radical flag.                      !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -133,13 +136,19 @@ SUBROUTINE SetGasPhaseChemistry ()
 	if (allocation_error > 0) &
 		CALL ERROR("Allocation of GasPhaseChemicalNames could not proceed in SetChemistryParams()")
 
-	!!! -- ENTHALPY OF VAPORIZATION (Latent Heat) in J/g -- !!!
+	!!! -- ENTHALPY OF VAPORIZATION (Latent Heat) in J/g -- !!! For H2O only!
 	ALLOCATE (EnthalpyOfVaporization(1), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of EnthalpyOfVaporization could not proceed in SetChemistryParams()")
 
 	!!! -- MOLECULAR MASS in g / mole -- !!!
 	ALLOCATE (GasMolecularMass(HowManyGasChems), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of GasMolecularMass could not proceed in SetChemistryParams()")
+
+        !!! -- PEROXY RADICAL FLAG --!!
+        !!! -- 2 if should be included in RO2_T and RCO3_T sums (acyl peroxy) -- !!!
+        !!! -- 1 if should be included in RO2_T sum only, 0 if not -- !!!
+	ALLOCATE (GasPhasePeroxy(HowManyGasChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseBackground could not proceed in SetChemistryParams()")
 		
 	!!! -- GAS PHASE LATERAL BACKGROUND CONCENTRATION in ppb -- !!!
 	ALLOCATE (GasPhaseBackground(HowManyGasChems), stat = allocation_error)
@@ -216,14 +225,18 @@ SUBROUTINE SetGasPhaseChemistry ()
 		!! Now Place Name in Correct Slot
 		GasPhaseChemicalNames(CurrIndex) = Trim(StripToken(Name))
 
-		!! ---  3. Molecular Mass of the Gas
+		!! ---  3. Peroxy Radical Flag
+		CALL GetToken(CurrLine, ";", Token)
+		GasPhasePeroxy(CurrIndex) = STR2REAL (Token)
+
+		!! ---  4. Molecular Mass of the Gas
 		CALL GetToken(CurrLine, ";", Token)
 		GasMolecularMass(CurrIndex) = STR2REAL (Token) * grams
 
-		!! ---	4. Initial Concentration (mixing ratio)
+		!! ---	5. Initial Concentration (mixing ratio)
 		CALL GetToken(CurrLine,";",Token) 
 
-		!! The entire background will be set
+		!! The entire box will be set
                 !! to that value homogeneously.
 	        IF (GasConcInputTypeFlag .EQ. 0) THEN
 		   CALL SetHomogeneousChemFieldPPB (CurrIndex, STR2REAL(Token)*ppb)
@@ -235,14 +248,14 @@ SUBROUTINE SetGasPhaseChemistry ()
 		IF (Transcribe) CALL Transcript(GasPhaseChemicalNames(CurrIndex)//" ("//TRIM(REAL2STR(STR2REAL(Token),5))//" ppb)")
 	
 		
-		!! ---  5. Background Conc. of the Gas
+		!! ---  6. Background Conc. of the Gas
 
 		Mgas = GetM   ()
 		CALL GetToken(CurrLine, ";", Token)
 		GasPhaseBackground(CurrIndex) = STR2REAL (Token) * Mgas/1e9 
                 ! convert from ppb to molecules/cm3
 		
-		!! ---  6. Deposition Velocity of the gas (cm/s)
+		!! ---  7. Deposition Velocity of the gas (cm/s)
 		CALL GetToken(CurrLine, ";", Token)
 		GasPhaseDepVel(CurrIndex) = STR2REAL (Token)
 	END DO
