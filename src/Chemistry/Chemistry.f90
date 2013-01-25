@@ -445,22 +445,23 @@ MODULE Chemistry
 	SUBROUTINE RecalculateReactionRates(IFGAS, IFAQ)
 
 		USE Time, ONLY : CurrentTime, BeginningTime
-		USE GridPointFields, ONLY : ResetGasPhaseReactionRates
+		USE GridPointFields, ONLY : ResetGasPhaseReactionRates, GridGasChem
 		implicit none
 
 		!! Input Variables
 		LOGICAL :: IFGAS,IFAQ
   
                 !!Internal Variables
-                REAL*8 :: dum_peroxy
+                REAL*8 :: RO2_T, RCO3_T, C_H2O
 
                 
 		!!!!!!!!!!!!!!!
 		!! Gas Phase !!
 		IF (IFGAS) THEN
-                   dum_peroxy = GetTotalPeroxy() !Also resets RO2_T in chem array
-                   CALL ResetGasPhaseReactionRates (GasPhaseReactionRates,GasPhaseReactionRateArraySize, dum_peroxy)
-                   dum_peroxy = GetTotalAcylPeroxy() !Also resets RCO3_T in chem array
+                   RO2_T = GetTotalPeroxy() !molecules/cm3, Also resets RO2_T in chem array
+                   RCO3_T = GetTotalAcylPeroxy() !molecules/cm3,Also resets RCO3_T in chem array
+                   C_H2O = GridGasChem(1) !molecules/cm3
+                   CALL ResetGasPhaseReactionRates (GasPhaseReactionRates,GasPhaseReactionRateArraySize, RO2_T, RCO3_T, C_H2O)
 		END IF	
 		
 		!!!!!!!!!!!!!!!!!!!

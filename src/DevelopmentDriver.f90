@@ -2498,9 +2498,8 @@ LevAeroIndex = FindChem("(NH4)3H(SO4)2", Aq)
 		
 			TEMP = GetTemp()
 
-			!NOTE: Right now, pressure and temperature are assumed to be 
-			!constant, so we don't recalculate the rest of the reaction rates
-			!CALL RecalculateReactionRates(IFGAS,IFAQ)
+			
+			CALL RecalculateReactionRates(IFGAS,IFAQ)
 			!WARNING: You MUST call RecalculatePhotoRates and RecalculateHeteroRates
 			!after this step, or those rates will be set to 0!
 			

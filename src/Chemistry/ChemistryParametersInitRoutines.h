@@ -30,6 +30,7 @@
 !!                                  and increased size of string variables   !!
 !! 01/25  2013   Matt Alvarado    Converted                                  !!
 !!                                 + RO2_T reactions to special first order  !!
+!! 01/25  2013   Matt Alvarado    Added reactions like HO2 + HO2 + H2O       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -985,8 +986,40 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
+		!Flag 10, k = C_H2O*(A1*exp(C1/T)+Mgas*A2*exp(C2/T)	
+		ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 10) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 5
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				       RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO
 			
-			
+				
 		END IF
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

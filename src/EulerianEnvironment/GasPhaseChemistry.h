@@ -34,6 +34,7 @@
 !! 01/25  2013   Matt Alvarado    Added GetTotalPeroxy to top of             !!
 !!                                 ResetGasPhaseReactionRates and converted  !!
 !!                                 + RO2_T reactions to special first order  !!
+!! 01/25  2013   Matt Alvarado    Added reactions like HO2 + HO2 + H2O       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -62,7 +63,7 @@
 !! Each timestep the reaction rates are recalculated !!
 !! This subroutine performs that service.	     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy)
+SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, TotalAcylPeroxy, H2Oconc)
 
   Use ModelParameters
   USE InfrastructuralCode, ONLY : Transcript, ERROR, Int2Str, Real2Str
@@ -70,17 +71,19 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy)
 
   REAL*8,  INTENT(in) :: ReactionRates(:,:)
   INTEGER, INTENT(in) :: ArraySize(2)
-  REAL*8              :: TotalPeroxy
+  REAL*8              :: TotalPeroxy, TotalAcylPeroxy, H2OConc
 
   INTEGER :: L
   REAL*8	:: Temp,Mgas,X(3),k0,ki, Y_o, Y_o_term, Y_inf_term, Z, F, &
   	   alpha, beta, m_o, m_inf, Ratio, Scale, P, k1, k2, k3, kf, Keq, &
-	   KO, KINF, NCD, FD, RO2_T
+	   KO, KINF, NCD, FD, RO2_T, RCO3_T, C_H2O
 
   Temp = GetTemp()
   Mgas = GetM   ()
   RO2_T = TotalPeroxy
-  
+  RCO3_T = TotalAcylPeroxy  
+  C_H2O = H2Oconc
+
   !! Loop over all reactions
   DO L = 1, ArraySize(1)
       !! Use Select to Differentiate Reaction Types
@@ -259,6 +262,11 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy)
           k2 = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
           GasPhaseChemicalRates(L) = k1*(1 - k2) 
 
+	!k = C_H2O*(A1*exp(C1/T)+Mgas*A2*exp(C2/T)
+       ELSE IF (INT(ReactionRates(L,3)) .EQ. 10) THEN
+	  k1 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP)
+          k2 = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
+          GasPhaseChemicalRates(L) = C_H2O*(k1+Mgas*k2)
         END IF
 
      !! Three body reactions, using the troe pressure-broadening 

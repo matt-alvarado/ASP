@@ -148,10 +148,13 @@
 !!		i.e. CH3O2 + HO2 => HCHO
 !!
 !!     *OR if the first term is 9., that is the flag for a 2nd order rxn of the form:
-!!		k = A*exp(B/T)*(1-C*exp(D/T)) 
-!!		i.e. CH3O2 + RO2_T => 0.5 CH3OH + 0.5 HCHO
+!!		k = A*exp(B/T)*(1-C*exp(D/T))
+!!		i.e. CH3O2 + RO2_T  => 0.5 CH3OH + 0.5 HCHO
 !!
-!!
+!!     *OR if the first term is 10., that is the flag for a pseudo-2nd order rxn with H2O of the form:
+!!          k = C_H2O*(A1*exp(C1/T)+Mgas*A2*exp(C2/T)
+!!          where A1, C1, A2, and C2 are given in that order, and C_H2O is the water concentration in molcules/cm3
+!!     i.e., HO2 + HO2 + H2O => H2O2 + H2O  + O2, 3.08E-34*EXP(2800./TEMP)+2.59E-54*CM*EXP(3180./TEMP)
 !!
 !!  For Third order reactions, assume the form: ("JPL" Style)
 !!     k = (k_0*M* k_inf) / (k_0*M + k_inf) * F_c^((1+log10(k_0*M/k_inf)^2)^-1)
@@ -622,6 +625,8 @@ HNO3  + OH       => NO3   + H2O           			; 5.; 2.4e-14; 460.0; 2.7e-17; 2199
 !
 HO2   + HO2      => H2O2  + O2	      				; 4.; 2.2e-13; 600.; 1.9e-33; 980.;
 !
+HO2  +  HO2      => H2O2  + O2                                  ; 10.; 3.08e-34; 2800.; 2.59e-54; 3180.;
+!
 N2O5             => NO2   + NO3					; 7.;
 !
 HNO4             => NO2   + HO2					; 11.;	 4.10e-5; -10650.; 4.8e15; -11170.; 0.6;
@@ -913,7 +918,7 @@ C3PAN1 + OH	 => HOCH2CHO + CO + NO2				; 4.51e-12;	0.;	0.;	1.;
 !
 Propene + NO3	 => 0.35 PRONO3AO2 + 0.65 PRONO3BO2 	; 4.6e-13;	0.;	-1155.;	1.;
 Propene + O3	 => 0.5 CH2OOB + 0.5 Acetaldehyde + 0.5 CH3CHOOA + 0.5 HCHO ; 5.5e-15; 	0.;	-1880.;	1.;
-Propene + OH	 => 0.87 HYPROPO2 + 0.13 IPROPOLO2 	; 10.; 8.0e-27;	3.5;	3.0e-11;	1;	0.5;
+Propene + OH + M => 0.87 HYPROPO2 + 0.13 IPROPOLO2 	; 3.; 8.0e-27;	3.5;	3.0e-11;	1.0;	0.5;
 !
 PRONO3AO2 + HO2	 => PR1O2HNO3 			; 1.51e-13;	0.;	1300.;	1.;
 PRONO3AO2 + NO	 => PRONO3AO + NO2 			; 2.7e-12;	0.;	360.;	1.;
