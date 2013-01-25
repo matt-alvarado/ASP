@@ -78,7 +78,7 @@ PROGRAM ASP
 	REAL*8, DIMENSION(451) :: ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSingScat, &
                                            ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
                                            SubExtCoeffSep, SubSSASep
-	REAL*8	:: Term(250), Total, Yield, Store_H2O, Store_Dens, Del_co, del_PAN, del_AN, sum_peroxy
+	REAL*8	:: Term(250), Total, Yield, Store_H2O, Store_Dens, Del_co, del_PAN, del_AN, sum_peroxy, dum_peroxy
 	INTEGER :: GP(3), clock, time(8)
         INTEGER, ALLOCATABLE :: outFH(:), OFH(:)
 
@@ -491,15 +491,17 @@ PROGRAM ASP
 			!Step Dilution of Chems
 			DO q = 1, HowManyGasChems
 				Chem(q) = GridGasChem(q)
-				Chem(q) = (Chem(q) + (GasPhaseBackground(q)*MixTimestep/T_mix))/(1+ MixTimestep/T_mix)
-                                if(q .EQ. 5 .or. q .eq. 6 .or. (q .GE. 388 .and. q .LE. 507) .or. (q .GE. 509 .and. q .LE. 513) ) then
+                                if(q .EQ. 6 .or. q .eq. 7 .or. (q .GE. 388 .and. q .LE. 507) .or. (q .GE. 509 .and. q .LE. 513) ) then
                                   write(*,*) q, chem(q)*1e9/Mgas
                                   sum_peroxy = sum_peroxy + chem(q)*1e9/Mgas !ppb
                                 endif
+				Chem(q) = (Chem(q) + (GasPhaseBackground(q)*MixTimestep/T_mix))/(1+ MixTimestep/T_mix)
 			END DO		
-                        !Force RO2_T to sum
-                        Chem(4) = sum_peroxy*Mgas/1e9 
-		        WRITE(*,*) "sum_peroxy:  ", sum_peroxy
+                        dum_peroxy = GetTotalPeroxy()*1e9/Mgas
+		        WRITE(*,*) "sum_peroxy:  ", sum_peroxy, dum_peroxy
+                        dum_peroxy = GetTotalAcylPeroxy()*1e9/Mgas
+                        WRITE(*,*) dum_peroxy
+                         Chem(4) = dum_peroxy*Mgas/1e9 
 			!Update chemical concentrations
 			CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 			

@@ -585,3 +585,4 @@ SUBROUTINE SetWaterVaporField (RH)
 	TemporaryWaterArray  = ChemScale * SPress * RH * GetM() / GetPress()  
 
 END SUBROUTINE SetWaterVaporField
+

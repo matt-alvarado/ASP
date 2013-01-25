@@ -28,7 +28,9 @@
 !! 01/04  2013   Matt Alvarado     Changed ReadPhotoRates to allow 50 rxns   !!
 !! 01/11  2013   Matt Alvarado     Changed ReadPhotoRates to allow 51 rxns   !!
 !! 01/24  2013   Matt Alvarado     Added OrgActivityFlag and OrgActivityIndex!!
-!! 01/25  2013   Matt Alvarado     Added GasPhasPeroxy array                 !!
+!! 01/25  2013   Matt Alvarado     Added GasPhasePeroxy array                 !!
+!! 01/25  2013   Matt Alvarado     Added functions GetTotalPeroxy and        !!
+!!                                       GetTotalAcylPeroxy                  !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -68,6 +70,8 @@
 !!11. FUNCTION FindIon(InChem, SuppressError) RESULT (IonIndex)
 !!12. FUNCTION FindAnion(InChem)
 !!13. FUNCTION FindCation(InChem)
+!!14. FUNCTION GetTotalPeroxy
+!!14. FUNCTION GetAcylPeroxy
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 MODULE Chemistry
@@ -143,7 +147,9 @@ MODULE Chemistry
                         CationIonicRefraction,          &
                         AnionIonicRefraction,           &
                         RefIndFlag,                     &
-                        GasPhasePeroxy
+                        GasPhasePeroxy,                 &
+                        GetTotalPeroxy,                 &
+                        GetTotalAcylPeroxy  
 					!     "
 	!! These are indexed by the GAS PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: GasPhaseChemicalNames(:)	   !
@@ -935,6 +941,73 @@ MODULE Chemistry
 	END FUNCTION
 
 
+        !! This function calculates the concentration (molecules/cm3)
+        !! of total peroxy radicals (GasPhasePeroxy flags 1 or 2)
+        !! and places it in RO2_T slot and returns as the value
+        !! MJA, 01/25/2013
+	REAL*8  FUNCTION GetTotalPeroxy()
+               
+                USE GridPointFields, ONLY : GridGasChem, UpdateChemicalConcentrations
+
+		IMPLICIT NONE           
+
+                INTEGER :: q, ind
+                REAL*8, ALLOCATABLE  :: Chem(:)
+                
+                ALLOCATE(CHEM(HowManyGasChems))
+                
+                GetTotalPeroxy = 0.0
+		!Calculate peroxy sum
+		DO q = 1, HowManyGasChems
+		   IF(GasPhasePeroxy(q) .gt. 0.005) THEN
+                       Chem(q) = GridGasChem(q)
+                       GetTotalPeroxy = GetTotalPeroxy + Chem(q) !ppb
+                   ENDIF
+	        END DO	
+               
+               !Place in RO2_T slot
+               ind = FindChem("RO2_T", 0)
+               Chem(ind) = GetTotalPeroxy
+               CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
+
+               !Return value
+               RETURN
+   
+        END FUNCTION GetTotalPeroxy
+
+        !! This function calculates the concentration (molecules/cm3)
+        !! of total acyl peroxy radicals (GasPhasePeroxy flag 2)
+        !! and places it in RCO3_T slot and returns as the value
+        !! MJA, 01/25/2013
+	REAL*8  FUNCTION GetTotalAcylPeroxy()
+
+                USE GridPointFields, ONLY : GridGasChem, UpdateChemicalConcentrations
+
+		IMPLICIT NONE           
+
+                INTEGER :: q, ind
+                REAL*8, ALLOCATABLE  :: Chem(:)
+
+                ALLOCATE(CHEM(HowManyGasChems))
+
+                GetTotalAcylPeroxy = 0.0
+		!Calculate peroxy sum
+		DO q = 1, HowManyGasChems
+		   IF(GasPhasePeroxy(q) .gt. 1.005) THEN
+                       Chem(q) = GridGasChem(q)
+                       GetTotalAcylPeroxy = GetTotalAcylPeroxy + Chem(q) !ppb
+                   ENDIF
+	        END DO	
+
+               !Place in RCO3_T slot
+               ind = FindChem("RCO3_T", 0)
+               Chem(ind) = GetTotalAcylPeroxy
+               CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
+
+               !Return value
+               RETURN
+   
+        END FUNCTION GetTotalAcylPeroxy
 END MODULE Chemistry
 
 
