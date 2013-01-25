@@ -32,6 +32,8 @@
 !! 01/24  2013   Matt Alvarado     Modified the Jacobson init in 
 !!                                    PopulateParticlesSectionsRightAway
 !!                                    to set smallest bin number and conc to 0
+!! 01/25  2013   Matt Alvarado     Added Particle%Dry = .FALSE. to 
+!!                                    MakeMonodisperse
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -798,7 +800,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	TYPE(Particle), POINTER :: NewSection
 	TYPE(Particle), POINTER :: Current, Trailer, SectionRunner
 
-	Scaffolding= .FALSE.
+	Scaffolding= .TRUE.
 	Transcribe = .TRUE.
         Jacobson = .TRUE. !Use Jacobson init or MELAM init
 
@@ -1630,6 +1632,7 @@ FUNCTION MakeMonodisperse()
 	!! As a token amount of water to avoid initial numerical problems, set the 
 	!! water mixing ratio at 0.5
 	MakeMonodisperse%AqChems(1) = II*1.
+        MakeMonodisperse%Dry = .FALSE.
 
 	NULLIFY(MakeMonodisperse%Next)
 	!MakeMonodisperse%Next => Null()
@@ -2250,7 +2253,8 @@ SUBROUTINE PopBoundaryPart ()
 				IF(Scaffolding) WRITE(*,*) "After Equilibrate"
 			CALL EquilibriumWaterContent  (Current, OpenSystem=.TRUE., ReturnType = Q, ForceEquilibrium=.FALSE.)
 				IF(Scaffolding) WRITE(*,*) "After Water EQ"
-			CALL ShellRefIndAndRad(Current)
+			!Not needed for boundary particles
+                        !CALL ShellRefIndAndRad(Current)
 				IF(Scaffolding) WRITE(*,*) "After ShellRefIndAndRad"
 		
 		END IF
