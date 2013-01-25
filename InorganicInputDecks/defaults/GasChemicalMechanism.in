@@ -156,6 +156,13 @@
 !!          where A1, C1, A2, and C2 are given in that order, and C_H2O is the water concentration in molcules/cm3
 !!     i.e., HO2 + HO2 + H2O => H2O2 + H2O  + O2, 3.08E-34*EXP(2800./TEMP)+2.59E-54*CM*EXP(3180./TEMP)
 !!
+!!    *OR if the first term is 11., that is the NO + HO2 reaction of the form:
+!!     k = TMP3*TMP4/100
+!!     TMP3 = 3.45E-12*EXP(270/TEMP) [A*exp(B/T)]
+!!     TMP4 = (530/TEMP)+(4.8E-6)*PRES-1.73 [C/T + D*PRES-F] 
+!!     PRES = ATMOSPHERIC PRESSURE IN PASCAL
+!!     where A, B, C, D, and F are given in that order
+!!
 !!  For Third order reactions, assume the form: ("JPL" Style)
 !!     k = (k_0*M* k_inf) / (k_0*M + k_inf) * F_c^((1+log10(k_0*M/k_inf)^2)^-1)
 !!  Each of k_0 and k_inf are temperature dependent, as follows:
@@ -614,6 +621,7 @@ PN11 + OH          => GLY + 2.0 CO + NO2                        ; 3.7e-11; 0. ; 
 !
 !!!!!!!!!!!!!!!Other Reactions - These are adjusted automatically!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !Calculated using IUPAC reccomendations, except for H2SO4 formation (JPL was used)
+! and HO2 + NO => HNO3 (RACM2 used)
 !
 !Non-typical reactions
 O => O3 ; 9.; 
@@ -650,10 +658,15 @@ NO    + OH + M   => HONO  + M             			; 3.; 7.40e-31;	2.4;	3.3e-11;	0.3;	
 OH    + NO2 + M  => HNO3  + M	      				; 3.; 3.30e-30;     3.0;    6.0e-11;        0.0;    0.4; 
 !
 O3    + OH       => HO2   + O2            			; 1.7e-12;	0.;	-940.;	1;.
+!
+NO   + HO2       => HNO3                                        ; 11.; 3.45e-12; 270.0; 530.0; 4.8e-6; -1.73; RACM2, Cariolle ET AL. 2008
+!
 HO2   + NO       => NO2   + OH	      				; 3.45e-12; 	0.;	270.;	1.;
+!
 NO2   + HO2 + M  => HNO4  + M             			; 3.; 1.4e-31;	3.1;	4.0e-12;	0.;	0.4;
 !
 HNO4  + OH       => NO2   + O2 + H2O      			; 3.2e-12;	0.;	690;	1.;
+!
 HO2   + O3       => OH    + O2  + O2  				; 9.71e-28; 	4.57;	693.;	1.;
 !
 NO3   + HO2      => 0.8 NO2   + 0.2 HNO3 + 0.8 OH  + O2 	; 4.0e-12;	0.;	0.;		1.;

@@ -75,11 +75,12 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 
   INTEGER :: L
   REAL*8	:: Temp,Mgas,X(3),k0,ki, Y_o, Y_o_term, Y_inf_term, Z, F, &
-  	   alpha, beta, m_o, m_inf, Ratio, Scale, P, k1, k2, k3, kf, Keq, &
+  	   alpha, beta, m_o, m_inf, Ratio, Scale, Pres, k1, k2, k3, kf, Keq, &
 	   KO, KINF, NCD, FD, RO2_T, RCO3_T, C_H2O
 
   Temp = GetTemp()
   Mgas = GetM   ()
+  Pres = GetPress() !mbar
   RO2_T = TotalPeroxy
   RCO3_T = TotalAcylPeroxy  
   C_H2O = H2Oconc
@@ -267,6 +268,15 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 	  k1 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP)
           k2 = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
           GasPhaseChemicalRates(L) = C_H2O*(k1+Mgas*k2)
+
+	!!     k = TMP3*TMP4/100
+        !!     TMP3 = A*exp(B/T)
+        !!     TMP4 = [C/T + D*PRES+F] 
+        !!     PRES = ATMOSPHERIC PRESSURE IN PASCAL
+       ELSE IF (INT(ReactionRates(L,3)) .EQ. 11) THEN
+	  k1 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP)
+          k2 = ReactionRates(L,6)/TEMP + ReactionRates(L,7)*PRES*100.0 + ReactionRates(L,8)
+          GasPhaseChemicalRates(L) = k1*k2/100.0
         END IF
 
      !! Three body reactions, using the troe pressure-broadening 

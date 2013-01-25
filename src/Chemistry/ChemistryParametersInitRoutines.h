@@ -1019,7 +1019,41 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				END IF
 			END DO
 			
-				
+		!Flag 11, k = TMP3*TMP4/100
+                !!     TMP3 = A*exp(B/T)
+                !!     TMP4 = [C/T + D*PRES+F] 
+                !!     PRES = ATMOSPHERIC PRESSURE IN PASCAL
+                ELSE IF (INT(STR2REAL(StripToken(Rate))) .EQ. 11) THEN
+			!! This number should match the number of rate inputs 
+                        !! for this reaction type
+			NumbRateFacs = 6
+
+			IF (J .NE. NumbRateFacs) &
+				CALL ERROR("The following line from "//Trim(InputDeck)//		 &
+					   " had the wrong number of rate terms.  Expected "//	 &
+					   TRIM(INT2STR(NumbRateFacs))//":    >>"//TRIM(FullLine) &
+					   //"<<")
+
+			IF (IsReal(StripToken(Rate))) THEN
+				RateFacs(1) = STR2REAL(StripToken(Rate))
+			ELSE
+				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
+				          " apparently has a bad rate expression ("//		&
+						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
+			END IF
+
+			DO I = 2, NumbRateFacs
+
+				CALL GetToken(Rates,";",Rate)
+
+				IF (IsReal(StripToken(Rate))) THEN
+				       RateFacs(I) = STR2REAL(StripToken(Rate))
+				ELSE
+					CALL ERROR("The following line from "//Trim(InputDeck)//	&
+						   "apparently has a bad rate expression ("//		&
+						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
+				END IF
+			END DO				
 		END IF
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
