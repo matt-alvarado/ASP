@@ -154,7 +154,9 @@ SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
 
 	N = 23 !Number of compounds in UNIDRIV and unifacparams.h
 	ALLOCATE(XPASS(0:N-1), GAMMA(0:N-1))
-	
+        DO Q = 0, N-1
+           XPASS(Q) = 0.0
+	ENDDO
 	!Calculate mole fractions, putting them in an array ordered from 0:N-1
 	TotalOM = TotalMolesOM(InParticle)
 		
@@ -164,11 +166,14 @@ SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
 	 	    InParticle%HydrophobicActivityCoeffs(I) = 1.0
 		END DO
 	        RETURN
-        ELSE !Calculate Activity Coefficients	
+        ELSE !Calculate Activity Coefficients
+                !WRITE(*,*) "Start UNIFAC"	
                 DO I = 2, HowManyOrgChems 
                    IF (OrgActivityFlag(I) .LT. 0.005) THEN !UNIFAC
                        Q = NINT(OrgActivityIndex(I)-1.0) !Index in XPASS and GAMMA, starting with 0
+                       !WRITE(*,*) Q
                        XPASS(Q) = InParticle%OrgChems(I)
+                       !WRITE(*,*) XPASS(q)
                    ELSE !Constant Activity Coefficients
                           InParticle%HydrophobicActivityCoeffs(I) = OrgActivityIndex(I) 
                    ENDIF
@@ -176,15 +181,20 @@ SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
                  
                 !Normalize XPASS based only on UNIFAC compounds
                 TotalOM_unifac = 0.0
-                DO Q = 0, N-1
+                 !WRITE(*,*) "TotalOM_unifac: ", TotalOM_unifac
+                 DO Q = 0, N-1
+                    !WRITE(*,*) XPASS(q)
                     TotalOM_unifac = TotalOM_unifac+XPASS(Q)
                 ENDDO
+                !WRITE(*,*) "TotalOM_unifac: ", TotalOM_unifac
                 DO Q = 0, N-1
                     XPASS(Q) = XPASS(Q)/TotalOM_unifac
                 ENDDO
 
 		!Call UNIFAC, placing activity coefficients in GAMMA(0:N-1)
+                !WRITE(*,*) "Before UNIDRIV", XPASS, TotalOM_unifac
 		CALL UNIDRIV(XPASS,GAMMA,N,Temperature)
+                !WRITE(*,*) "After UNIDRIV"
 	
 		!Place UNIFAC activity coefficients into particle array
 		DO I = 2, HowManyOrgChems !Skip BC
@@ -194,7 +204,7 @@ SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
                     ENDIF
 		END DO
 	ENDIF
-
+!WRITE(*,*) "Done!"
 	RETURN
 END SUBROUTINE UpdateHydrophobicUNIFAC
 

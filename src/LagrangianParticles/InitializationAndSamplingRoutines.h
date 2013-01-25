@@ -800,7 +800,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	TYPE(Particle), POINTER :: NewSection
 	TYPE(Particle), POINTER :: Current, Trailer, SectionRunner
 
-	Scaffolding= .TRUE.
+	Scaffolding= .FALSE.
 	Transcribe = .TRUE.
         Jacobson = .TRUE. !Use Jacobson init or MELAM init
 

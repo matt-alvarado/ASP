@@ -46,8 +46,11 @@
 !! 10/14  2010   Matt Alvarado     Removed "OPTIONAL" statements             !!
 !! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
 !!                                 a one-box model or subroutine.            !!
-!! 02/29  2012   Matt Alvarado     Changed EquilibrateInternallyatGridPoint
-!!                                   to skip dry (BC only) particles.
+!! 02/29  2012   Matt Alvarado     Changed EquilibrateInternallyatGridPoint  !!
+!!                                   to skip dry (BC only) particles.        !!
+!! 01/25  2013   Matt Alvarado     Changed EquilibrateGridPointAll to not use!!
+!!                                  CACM SOA functions UpdateGasPhaseOrganics!!
+!!                                  and CalculateSurrogateGasConc            !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1757,11 +1760,11 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 	!Calculate surrogate concentrations and 
 	!mass fractions of organics contributing to surrogates, and
 	!Store initial surrogate gas phase burdens in a dummy vector
-	IF(DoHydrophobicOrgDissolutionFlag.OR.DoHydrophilicOrgDissolutionFlag)&
-		CALL CalculateSurrogateGasConc(S1MassFracs, S2MassFracs, &
-                S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-		S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, &
-                InitialBurden)
+	!IF(DoHydrophobicOrgDissolutionFlag.OR.DoHydrophilicOrgDissolutionFlag)&
+	!	CALL CalculateSurrogateGasConc(S1MassFracs, S2MassFracs, &
+        !        S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
+	!	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, &
+        !        InitialBurden)
 
 	Temperature = GetTemp()
 
@@ -1996,9 +1999,10 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 						END DO			
 						
 						!Equilibrate one hydrophobic organic reaction for one particle
+                                                !WRITE(*,*) "Before Org Eq"
 						CALL EquilibrateHydrophobicReaction (GasPhaseBurden, OrgRxnIndex, Current, Temperature, ReturnType, &
 																	 OptErrorTolerance=AqThermoEquilibriumError/2.)							
-					
+					         !WRITE(*,*) "After Org Eq"
 						!! Make a more refined guess if still equilibrating late in the game
 						!! (That is, force it to equilibrate much closer to 1 each time through)
 						IF ((K .GT. 25 .OR. L .GT. 10) .AND. ReturnType .NE. 2) THEN
@@ -2013,8 +2017,9 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 						END IF
 
 						!Recalculate activity coefficients
-						CALL UpdateHydrophobicUNIFAC(Current, Temperature)
-
+						!WRITE(*,*) "Before UNIFAC"
+                                                CALL UpdateHydrophobicUNIFAC(Current, Temperature)
+                                                !WRITE(*,*) "After UNIFAC"
 							L = L+1
 					Current => Current%Next
 					END DO
@@ -2116,10 +2121,10 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 	END DO !NotinEq
 
 	!Update Gas Phase Concentrations of individual organics
-	IF(DoHydrophobicOrgDissolutionFlag .OR. DoHydrophilicOrgDissolutionFlag) &
-		CALL UpdateGasPhaseOrganics( S1MassFracs, S2MassFracs, &
-            S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-			S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)	
+	!IF(DoHydrophobicOrgDissolutionFlag .OR. DoHydrophilicOrgDissolutionFlag) &
+	!	CALL UpdateGasPhaseOrganics( S1MassFracs, S2MassFracs, &
+        !    S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
+	!		S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)	
 	
 	RETURN
 END SUBROUTINE EquilibrateGridPointAll
