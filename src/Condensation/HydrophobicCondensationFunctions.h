@@ -37,6 +37,9 @@
 !!                                 and UpdateGasPhaseOrganics from           !!
 !!                                 EquilibrateHydrophobicPhaseAtGridPoint    !!
 !!                                 and EquilibrateAllOrganicsAtGridPoint     !!
+!! 01/25  2013   Matt Alvarado    Created wrapper subroutines                !!
+!!                                 UpdateHydrophobicUNIFAC_all and           !!
+!!                                 UpdateHydrophilicUNIFAC_all               !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -65,6 +68,7 @@
 !!                 Temperature)
 !! 18. SUBROUTINE EquilibrateOrganicParticle
 !! 19. FUNCTION BinaryWaterActivityOrganic
+!! 20. SUBROUTINE UpdateHydrophobicUNIFAC_all
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2425,3 +2429,45 @@ REAL*8 FUNCTION BinaryWaterActivityOrganic(InParticle, WhichRxn, Temp)
 	RETURN
 	
 END FUNCTION BinaryWaterActivityOrganic
+
+!!This just updates the UNIFAC activity coefficients
+!!for all aprticles before a condensation step
+SUBROUTINE UpdateHydrophobicUNIFAC_all
+
+    USE GridPointFields, ONLY: GetTemp
+    USE Aerosols,		 ONLY : Particle, Particles
+
+    IMPLICIT NONE 
+    
+    TYPE(Particle), POINTER :: Current
+    REAL*8 :: Temp
+
+    Temp = GetTemp()
+
+    current => particles%first
+    DO WHILE(associated(current)) 
+         CALL UpdateHydrophobicUNIFAC(current, Temp)
+         current => current%next
+    END DO
+END SUBROUTINE UpdateHydrophobicUNIFAC_all
+
+!!This just updates the UNIFAC activity coefficients
+!!for all aprticles before a condensation step
+SUBROUTINE UpdateHydrophilicUNIFAC_all
+
+    USE GridPointFields, ONLY: GetTemp
+    USE Aerosols,		 ONLY : Particle, Particles
+
+    IMPLICIT NONE 
+    
+    TYPE(Particle), POINTER :: Current
+    REAL*8 :: Temp
+
+    Temp = GetTemp()
+
+    current => particles%first
+    DO WHILE(associated(current)) 
+         CALL UpdateHydrophilicUNIFAC(current, Temp)
+         current => current%next
+    END DO
+END SUBROUTINE UpdateHydrophilicUNIFAC_all

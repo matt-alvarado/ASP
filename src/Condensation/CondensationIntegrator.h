@@ -122,6 +122,7 @@
 !! 01/24  2013   Matt Alvarado     Removed CalculateSurrogateGasConc and     !!
 !!                                  UpdateGasPhaseOrganics from              !!
 !!                                  StepCondensationAll                      !!
+!! 01/25  2013   Matt Alvarado    Added UNIFAC cals to StepCondensationAll   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -206,12 +207,16 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 					CALL StepCondensation (TimestepSize, 1)
 		
 				!WRITE(*,*) "StepDissolutionAll Check 1"
-				IF(DoHydrophobicOrgDissolutionFlag) &
+				IF(DoHydrophobicOrgDissolutionFlag) THEN
+                                    CALL UpdateHydrophobicUNIFAC_all
 				    CALL StepOrgCondensation (TimestepSize, 1)
+                                ENDIF
 		
 				!WRITE(*,*) "StepDissolutionAll Check 2"
-				IF(DoHydrophilicOrgDissolutionFlag) &
+				IF(DoHydrophilicOrgDissolutionFlag) THEN
+                                   CALL UpdateHydrophilicUNIFAC_all
 				   CALL StepAqOrgCondensation (TimestepSize, 1)
+                                ENDIF
 				!WRITE(*,*) "StepDissolutionAll Check 3"
 			END DO
 
