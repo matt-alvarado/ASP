@@ -123,6 +123,7 @@
 !!                                  UpdateGasPhaseOrganics from              !!
 !!                                  StepCondensationAll                      !!
 !! 01/25  2013   Matt Alvarado    Added UNIFAC cals to StepCondensationAll   !!
+!! 01/28  2013   Matt Alvarado    Removed call to EquilibriumWaterContentAll !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1072,12 +1073,8 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 					DO WHILE (ReturnType .NE. 2)
 					
 						ABCD = CurrentParticle%AqChems(1)
-						IF(ZSROrgWater) THEN
-							CALL EqAllWater(CurrentParticle, ReturnType, OpenSystem)
-						ELSE
-							!Ross Eqn
-							CALL EquilibriumWaterContentAll (CurrentParticle, OpenSystem, ReturnType, ForceEquilibrium=.FALSE.)
-						END IF
+
+						CALL EqAllWater(CurrentParticle, ReturnType, OpenSystem)
 
 						IF(ReturnType .NE. 2) Equilibrated = .FALSE.
 						IF(LLLL .GT. 50 .AND. &
