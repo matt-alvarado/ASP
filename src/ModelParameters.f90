@@ -17,11 +17,13 @@
 !! 08/29  2007   Matt Alvarado     Fixed value of epsilon to match 
 !!                                   Jacobson value
 !! 02/15  2012   Matt Alvarado     Removed Eulerian coordinates
-!! 03/01  2012   Matt Alvarado     Made it so AverageAerosolDensity can be 
-!!                                  set and reset automatically.
+!! 03/01  2012   Matt Alvarado     Made it so AverageAerosolDensity can be   !!
+!!                                  set and reset automatically.             !!
 !! 11/06  2012   Matt Alvarado     Updated main input deck to give model more!!
 !!                                 flexibility without recompiling.          !!
-!! 12/28  2012   Matt Alvarado     Fixed units conversion bug in SetHetero
+!! 12/28  2012   Matt Alvarado     Fixed units conversion bug in SetHetero   !!
+!! 01/29  2013   Matt Alvarado     Changed AqThermoNumbAllowedIterations     !!
+!!                                    from 50000 to 100.                     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -206,16 +208,16 @@ MODULE ModelParameters
 	!! THERMODYNAMIC Variables !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	REAL*8, PARAMETER  :: MaxIonicStrKM = 50.0   !Matt put in new value 8/25/05
-									              !! The maximum ionic strength allowed by the Kusik-Meissner routine 
-														   !! (larger will just be done using this)
-	REAL*8, PARAMETER  :: ThermoTref  = 298.15			   !! The reference temperature for the Kusik-Meissner Calculations
-	REAL*8, PARAMETER  :: EqCoeffTref = 298			       !! The reference temperature for the Equilibrium 
-														   !! Coefficient Calculations
+					             !! The maximum ionic strength allowed by the Kusik-Meissner routine 
+						     !! (larger will just be done using this)
+	REAL*8, PARAMETER  :: ThermoTref  = 298.15	        !! The reference temperature for the Kusik-Meissner Calculations
+	REAL*8, PARAMETER  :: EqCoeffTref = 298			!! The reference temperature for the Equilibrium 
+								!! Coefficient Calculations
 	REAL*8, PARAMETER  :: AqThermoEquilibriumError = 0.0005 !! This is an error value for how close a dissociation reaction must be 
-														   !! to convergence to return.  It's in a Kcalc / Ksupplied value.	 If 
-														   !! it's too small, then no aq equilibrium reactions will be demoted and
-														   !! conflicts may occur.
-	INTEGER, PARAMETER :: AqThermoNumbAllowedIterations = 50000
+								!! to convergence to return.  It's in a Kcalc / Ksupplied value.	 If 
+								!! it's too small, then no aq equilibrium reactions will be demoted and
+								!! conflicts may occur.
+	INTEGER, PARAMETER :: AqThermoNumbAllowedIterations = 100
 	INTEGER, PARAMETER :: AqThermoNumbAllowedIterationsForHypLoop = 20
 	REAL*8, PARAMETER  :: AerosolWaterEquilibriumRHThreshold = 0.98 !! If RH is above this value, simply don't equilibrate the 
 																	!! water.  Trust what is there

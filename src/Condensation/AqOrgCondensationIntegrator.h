@@ -64,7 +64,6 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 					CalculateIonicStrength,		&
 				        KusikMeissner,			&
 					SortAerosolAtGridPointForCondensation,&
-					EquilibriumWaterContent, &
 				FindAqElectrolyteEquilibriumForGridPoint
 
 	USE Chemistry,		ONLY : HowManyGasChems,			&

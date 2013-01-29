@@ -74,7 +74,6 @@ PUBLIC	:: AerosolModeNames,			&
 		   OrgCurvatureCorrection,		&
 		   DumpParticleContentsAtError, &
    		   EqCoeff,						&
-   		   EquilibriumWaterContent,		&
 		   FindElectrolyteEquilibrium,	&
 		   FindAqElectrolyteEquilibriumForGridPoint, &
 		   HowManyAerosolModes,			&

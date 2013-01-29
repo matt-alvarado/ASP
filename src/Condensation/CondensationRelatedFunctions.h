@@ -53,6 +53,8 @@
 !!                                  and CalculateSurrogateGasConc            !!
 !! 01/28  2013   Matt Alvarado    Removed  EquilibriumWaterContentAll	     !!
 !!				UpdateWaterActivityAll and WaterResidualAll  !!
+!!                              Also removed call to EquilibriumWaterContent !!
+!!                                 in EquilibrateDissolutionReaction.        !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -532,8 +534,7 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 					Transcript,			&
 					ERROR, WARN
 
-	USE Aerosols,		ONLY :	EquilibriumWaterContent,	 &
-					DumpParticleContentsAtError,     &
+	USE Aerosols,		ONLY :	DumpParticleContentsAtError,     &
 					EqCoeff,			 &
 					MeanActivity,                    &
 					EquilibrateAqueousDissociationReaction
@@ -647,11 +648,9 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
                 !! then equilibrate it and return
 		IF (GetRelativeHumidity() .GT. &
 		    AerosolWaterEquilibriumRHThreshold) &
-		CALL ERROR("Passed EquilibrateDissolutionReaction() in CondensationRelatedFunctions.h the water equilibration " //  &
+		    CALL ERROR("Passed EquilibrateDissolutionReaction() in CondensationRelatedFunctions.h the water equilibration " //  &
 				   "reaction even though the RH is above the threshold you specify for allowable equilibration ("//			&
 				   TRIM(REAL2STR(AerosolWaterEquilibriumRHThreshold))//").  You must filter for that outside of this routine.")
-
-		CALL EquilibriumWaterContent (InParticle, OpenSystem=.FALSE., ReturnType=GG, ForceEquilibrium=.FALSE.)
 
 		RETURN
 
@@ -1083,7 +1082,6 @@ SUBROUTINE EquilibrateSulfate()
 					Particles,  &
 				FindAqElectrolyteEquilibriumForGridPoint, &
 					FindElectrolyteEquilibrium, &
-					EquilibriumWaterContent, &
 					KusikMeissner, &
 					UpdateWaterActivity, &
 					AerosolPH, &
@@ -1274,7 +1272,6 @@ SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, &
 				        Particles,  &
 				FindAqElectrolyteEquilibriumForGridPoint, &
 					FindElectrolyteEquilibrium, &
-					EquilibriumWaterContent, &
 					KusikMeissner, &
 					UpdateWaterActivity, &
 					AerosolPH, &
@@ -1681,7 +1678,6 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 				FindElectrolyteEquilibrium,		&
 				ReformElectrolyte,	&
 				RecalculateRadius,	&
-				EquilibriumWaterContent,&
 				SurfaceTension,		&
 				DumpParticleContentsAtError,		&
 				SortAerosolAtGridPointForCondensation,  &
@@ -1778,9 +1774,8 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 		Equilibrated = .TRUE.
 
 		!! Loop over the reactions
-		DO I = 1, HowManyDissolutionReactions+1+HowManyOrganicDissolutionReactions+HowManyAqOrganicDissolutionReactions						 
-			
-			
+		DO I = 1, HowManyDissolutionReactions+1+HowManyOrganicDissolutionReactions+HowManyAqOrganicDissolutionReactions			
+		
 			L = 0
 			RxnEquilibrated = .FALSE.
 			
@@ -1833,18 +1828,10 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 							!! equilibrate the first few times through but don't let it stagnate
 							!! (This step is ripe for oscillating non-convergence)
 							IF (LocalEquilibrateWater) THEN
-									!WRITE(*,*), "Water Content: ", Current%AqChems(1)
+								!WRITE(*,*), "Before EqAllWater"
 								CALL EqAllWater(Current, ReturnType = ReturnType,  &
 												   OpenSystem = LocalWaterOpenSystem)
-
-
-								!WRITE(*,*), "Water Content: ", Current%AqChems(1)
-								!Say this reaction is in eq. if too dry
-								!If water content is too low, skip dissolution reactions
-								!IF (((ThermoBulkMode .AND. Current%AqChems(1) .LT. 1.0e-16) & !Dry Bulk, <1e-4 umol/m3 H2O
-								!	 .OR. ( NOT(ThermoBulkMode) .AND. Current%AqChems(1) .LT. 0.0001*TotalMoles))) THEN  	
-								!	ReturnType = 2
-								!END IF
+                                                                !WRITE(*,*), "After EqAllWater"
 							ELSE
 								ReturnType = 2
 							END IF
@@ -1884,11 +1871,12 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 								!Equilibrate the reaction for one particle
 								!WRITE(*,*) I, GasphaseBurden
 								WaterSatBurden = GetSatVapBurden ()
+                                                                !WRITE(*,*) "Before EquilibrateDissolutionReaction"
                                                                 CALL EquilibrateDissolutionReaction (GasPhaseBurden, I, &
                                                                       Current, Temperature, ReturnType, &
                                                                       WaterSatBurden=WaterSatBurden, GasPhaseBurden2=0.0, OptErrorTolerance=AqThermoEquilibriumError/2.)				
-			
-								!WRITE(*,*) "Eq okay!"
+			                                        !WRITE(*,*) "After EquilibrateDissolutionReaction"
+
 							END IF
 
 							!! Make a more refined guess if still equilibrating late in the game
@@ -2306,7 +2294,6 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 				FindElectrolyteEquilibrium,	&
 				ReformElectrolyte,	&
 				RecalculateRadius,	&
-				EquilibriumWaterContent,&
 				SurfaceTension,		&
 				DumpParticleContentsAtError,	&
 				SortAerosolAtGridPointForCondensation, &
@@ -2528,7 +2515,6 @@ SUBROUTINE EquilibrateInorgGridPoint()
 				FindElectrolyteEquilibrium,	&
 				ReformElectrolyte,	&
 				RecalculateRadius,	&
-				EquilibriumWaterContent,	&
 				SurfaceTension,			&
 				DumpParticleContentsAtError,	&
 				SortAerosolAtGridPointForCondensation, &
@@ -2673,12 +2659,12 @@ SUBROUTINE EquilibrateInorgGridPoint()
 							
 							ELSE
 								!Equilibrate the reaction for one particle
-								!WRITE(*,*) I, GasphaseBurden
+								!WRITE(*,*) "Before EquilibrateDissolutionReaction"
 								WaterSatBurden = GetSatVapBurden () 
                                                                 CALL EquilibrateDissolutionReaction (GasPhaseBurden, I, &
                                                                       Current, Temperature, ReturnType, &
                                                                       WaterSatBurden=WaterSatBurden, GasPhaseBurden2=0.0, OptErrorTolerance=AqThermoEquilibriumError/2.)							
-								!WRITE(*,*) "Eq okay!"
+								!WRITE(*,*) "After EquilibrateDissolutionReaction"
 							END IF
 
 							!! Make a more refined guess if still equilibrating late in the game
@@ -2688,25 +2674,16 @@ SUBROUTINE EquilibrateInorgGridPoint()
 									CYCLE !Already equilibrated gas-solid reactions
 								ELSE
 									WaterSatBurden = GetSatVapBurden () 
+                                                                        !WRITE(*,*) "Before EquilibrateDissolutionReaction2"
                                                                         CALL EquilibrateDissolutionReaction (GasPhaseBurden, I, Current, Temperature, ReturnType, &
 									WaterSatBurden=WaterSatBurden, GasPhaseBurden2=0.0, OptErrorTolerance=AqThermoEquilibriumError/10.)
+                                                                        !WRITE(*,*) "After EquilibrateDissolutionReaction2"
 								END IF
 							END IF
 
 						!! HMDR+1 is a dummy saying "do the aqueous rxns."
 						ELSE IF (I .EQ. HowManyDissolutionReactions+1) THEN
 
-							!! Recalculation of KM can make it much more difficult to 
-							!! equilibrate (it is not formally necessarily possible).
-							!! But it is worth trying to do.  
-
-							!If water content is too low, skip dissociation reactions
-							!IF (((ThermoBulkMode .AND. Current%AqChems(1) .LT. 1.0e-17) & !Dry Bulk
-							!	.OR. ( NOT(ThermoBulkMode) .AND. Current%AqChems(1) .LT. 0.0001*TotalMoles))) CYCLE !Dry Particle (mole fraction of H2O < 0.01%) 
-
-							!WRITE(*,*) "Calling Electrolyte Eq"
-							!CALL FindElectrolyteEquilibrium(Current, .TRUE., ReturnType=ReturnType)
-							
 							!If Electrolyte equilibrium hasn't been reached
 							!after 50 times through particle list or 5 times through a single reaction
 							!, just give up on it.
@@ -2728,27 +2705,17 @@ SUBROUTINE EquilibrateInorgGridPoint()
 						Current => Current%Next
 					END DO !Particles
 
-				
+				        !WRITE(*,*) "Number Eq steps for Reaction # ", I, " = ", L
 
 					IF (L .GT. AqThermoNumbAllowedIterations) THEN
 						!Just exit after max iterations
 						RxnEquilibrated = .TRUE.
-						!CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle.txt") 
-
-						!CALL ERROR ("EquilibrateInorgGridPoint() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
-					    !       "of the particles (stored as "//TRIM(INT2STR(HowManyLinks))//" links) at a grid point "  // &
-						!		"to dissolution reaction "//TRIM(INT2STR(I))//" (first is water, the others are indexed "// &
-						!		"as input in Dissolution.in) and failed.  The contents of the first particle in that "   // &
-						!		"section are printed as UnEquilableParticle.txt")
 					END IF
 				END DO !RxnEq
 
 				!Matt Changed this!
 				IF (I .LE. HowManyDissolutionReactions) THEN
-					!WRITE(*,*) "Reaction: ", I, DissolutionData(I,11)
-					!WRITE(*,*) "Burden 1: ", GasPhaseBurden
-					!WRITE(*,*) "Burden 2: ", GasPhaseBurden2
-					
+
 					!! Replace the gas phase chemical concentrations
 					IF (INT(DissolutionData(I,1)) .LE. HowManyEvolveGasChems) THEN
 						CALL ReplaceGridCellChemBurden ( INT(DissolutionData(I,1)), GasPhaseBurden)
@@ -2759,18 +2726,11 @@ SUBROUTINE EquilibrateInorgGridPoint()
 				END IF	 
 			END IF
 		
-			!WRITE(*,*) I, RxnEquilibrated, Equilibrated
 		END DO !Rxn #
 			
 		!Just exit after 500 iterations
 		IF (K .GT. 500) THEN
 			Equilibrated = .TRUE.
-			!CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle.txt") 
-			!CALL ERROR ("EquilibrateInorgGridPoint() in CondensationRelatedFunctions.h tried to equilibrate all of the dissolution "// &
-			!		    "reactions, aerosol water content, and aerosol ionic content and failed.  Usually this implies an "// &
-			!			"unrealistic starting condition.  You may try to fix this by increasing AqThermoNumbAllowedIterations,"// &
-			!			" the maximum  allowed iterations of this type of routine.  Another problem may be an oscillation of "// &
-			!			"water content and a particular dissolving species.")
 		END IF
 
 	END DO !NotinEq

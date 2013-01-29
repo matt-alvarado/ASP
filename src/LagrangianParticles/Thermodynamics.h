@@ -41,11 +41,13 @@
 !! 10/09  2007    Matt Alvarado     Set MeanActivity to reset any negative 
 !!                                  molalities to 0.
 !! 10/14  2010    Matt Alvarado     Removed OPTIONAL type declarations
-!! 02/16  2012    Matt Alvarado     Removed Eulerian grids, making ASP        !!
+!! 02/16  2012    Matt Alvarado     Removed Eulerian grids, making ASP       !!
 !!                                 a one-box model or subroutine.            !!
-!! 11/08  2012    Matt Alvarado     Removed some activity coefficient updates 
-!!                                  in FindElectrolyteEquilibrium to speed 
-!!                                  it up
+!! 11/08  2012    Matt Alvarado     Removed some activity coefficient updates!! 
+!!                                  in FindElectrolyteEquilibrium to speed   !!
+!!                                  it up                                    !!
+!! 01/29  2013    Matt Alvarado     Removed EquilibriumWaterContent, replaced!!
+!!                                     with EquilibriumWaterContentAmount    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2367,207 +2369,6 @@ REAL*8 FUNCTION WaterResidual (InParticle, SpecifiedRH)
 	RETURN
 END FUNCTION WaterResidual
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Use Bisection to Match the ambient relative humidity            !!
-!! to the local water activity.				           !!
-!!								   !!
-!! ForceWaterEquilibrium will make the routine use the equilibrium !!
-!! approach no matter whether the RH is above the threshold that   !!
-!! would tell the routine to use the integration approach.         !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE EquilibriumWaterContent (InParticle, OpenSystem, ReturnType, &
-           ForceEquilibrium)
-
-	USE Chemistry,	     ONLY : HowManyAqCations, HowManyAqAnions,  &
-                                    HowManyAqChems
-
-	USE ModelParameters, ONLY : AqThermoNumbAllowedIterations,	&
-				    WaterContentPrecision,		&
-				    AerosolWaterEquilibriumRHThreshold, &
-				   OpenSystemForCondensation, Avogadro, &
-				    SmallestAerosolPossible
-
-	USE InfrastructuralCode, ONLY : Error
-
-	USE GridPointFields,	 ONLY : GetRelativeHumidity,  GetGasBurden, &
-					ReplaceGridCellChemBurden
-
-	USE Time,		 ONLY : CurrentTime, BeginningTime
-
-	IMPLICIT NONE
-
-	!! External Variables
-	TYPE(PARTICLE),POINTER :: InParticle
-	LOGICAL      :: OpenSystem, ForceEquilibrium
-	INTEGER      :: ReturnType
-
-	!! Internal Variables 
-	REAL*8  :: InitialWaterContent, Residual, Change, ChangeFac, II, XX(3), RH
-	INTEGER :: I, N, Direction, X, Y, Z
-	LOGICAL :: InternalOpenSystem, InternalForceEquilibrium
-
-	!! If this is an empty section, we have no truck with it
-	IF (InParticle%NumberOfParticles .EQ. 0 .OR. InParticle%Dry) RETURN
-
-	!IF (PRESENT(ReturnType)) ReturnType = 2
-        ReturnType = 2
-
-
-	RH = -1. ! Tell everyone to find it on their own
-
-	InternalForceEquilibrium = ForceEquilibrium
-
-	IF (InternalForceEquilibrium .OR. &
-	    RH .LT. AerosolWaterEquilibriumRHThreshold) THEN
-
-	InternalOpenSystem = OpenSystem
-
-	IF (.NOT.InternalOpenSystem .OR. .NOT.OpenSystemForCondensation) THEN
-		InitialWaterContent = InParticle%AqChems(1)
-	END IF
-
-
-	!! Decide on a direction and loop until the correct order of magnitude
-	Residual = WaterResidual (InParticle, RH)
-
-	!! If the particle is already in equilibrium, exit
-	IF (ABS(Residual) .LE. WaterContentPrecision) RETURN
-
-	!IF (PRESENT(ReturnType)) 
-        ReturnType = 1
-
-	IF (IsNaN(Residual)) THEN
-		CALL DumpParticleContentsAtError(InParticle, "UnEquilabrleParticle.txt",InDoSurfaceTension=.FALSE., &
-                      InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
-		      InDensity=.TRUE., InIonicStrength=.TRUE.)
-		CALL ERROR("In the initial call to WaterResidual, EquilibriumWaterContent() in Thermodynamics.h, the water residual "// &
-		           "calculation returned NaN.  Something is quite wrong.")
-	END IF
-
-	IF (Residual .GT. 0) THEN
-		Direction = -1
-		ChangeFac = 0.5
-	ELSE
-		Direction = 1
-		ChangeFac = 2.
-	END IF
-
-	!! Overshoot the correct value by one iteration (of doubling or halving)
-
-	N = 1
-	DO WHILE (Residual * Direction .LE. 0.) 
-
-
-
-		InParticle%AqChems(1) = InParticle%AqChems(1) * ChangeFac 
-		
-
-		Residual = WaterResidual (InParticle, RH)
-
-
-
-		IF (IsNaN(Residual)) THEN
-			CALL DumpParticleContentsAtError(InParticle, "UnEquilabrleParticle.txt",InDoSurfaceTension=.FALSE., &
-                      InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
-		      InDensity=.TRUE., InIonicStrength=.TRUE.)
-			CALL ERROR("In the initial search loop of EquilibriumWaterContent() in Thermodynamics.h, the water residual "// &
-					   "calculation returned NaN.  Something is quite wrong.")
-		END IF
-
-		IF (N .GT. AqThermoNumbAllowedIterations) THEN
-			CALL DumpParticleContentsAtError(InParticle, "UnEquilabrleParticle.txt",InDoSurfaceTension=.FALSE., &
-                      InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
-		      InDensity=.TRUE., InIonicStrength=.TRUE.)
-			CALL ERROR ("Took too many iterations to find the right order of magnitude for water content in "// &
-			            "EquilibriumWaterContent().  Increase AqThermoNumbAllowedIterations in ModelParameters.f90 "// &
-						"if you think nothing is wrong.  Perhaps this is called for too high of a relative humidity "// &
-						"(won't equilibrate if RH > S').")
-		END IF
-
-		N = N + 1
-	END DO
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Move on to a seconary loop that refines our search !!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Define Change initially as something that will retreat a full step   !!
-!! in less than infinite steps of dividing in half and walking (as      !!
-!! simply dividing the last step by two would)				!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	IF (ChangeFac .EQ. 0.5) THEN 
-		Change = InParticle%AqChems(1)
-	ELSE 
-		Change = InParticle%AqChems(1)/2.
-	END IF
-
-	!! Converge on the correct water content
-	N = 1
-	DO
-		!! If it is a closed system, then we must hold it to account
-		IF (.NOT.InternalOpenSystem .AND. .NOT.OpenSystemForCondensation) THEN
-			InitialWaterContent = GetGasBurden (1) + InParticle%NumberOfParticles * (InitialWaterContent - &
-								  InParticle%AqChems(1)) * Avogadro
-			CALL ReplaceGridCellChemBurden (1, InitialWaterContent)
-			InitialWaterContent = InParticle%AqChems(1)
-		END IF
-
-		!! Reduce the Step Size
-		Change = Change / 2.
-
-		!! Recalculate the Residual and Loop Again
-		Residual = WaterResidual (InParticle, RH)
-
-		!! If the appropriate precision has been reached, then return the solution
-		IF (ABS(Residual) .LE. WaterContentPrecision) EXIT
-
-		IF (IsNaN(Residual)) THEN
-			CALL DumpParticleContentsAtError(InParticle, "UnEquilabrleParticle.txt",InDoSurfaceTension=.FALSE., &
-                      InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
-		      InDensity=.TRUE., InIonicStrength=.TRUE.)
-			CALL ERROR("In the main search loop of EquilibriumWaterContent() in Thermodynamics.h, the water residual "// &
-					   "calculation returned NaN.  Something is quite wrong.")
-		END IF
-
-		!! Step in the correct direction
-		IF (Residual .GT. 0.) THEN
-			InParticle%AqChems(1) = InParticle%AqChems(1) - Change
-		ELSE 
-			InParticle%AqChems(1) = InParticle%AqChems(1) + Change
-		END IF
-
-
-		!! If the particle is smaller than a threshold radius, this equilibration becomes
-		!! increasingly difficult and decreasingly important.  So just give the old 
-		!! college try and then return.
-		IF ((N .GT. AqThermoNumbAllowedIterations/10.) .AND. (InParticle%EmbryoRadius .LT. SmallestAerosolPossible)) RETURN
-
-		!! Keep count of the number of loops and err if you take too many
-		IF (N .GT. AqThermoNumbAllowedIterations) THEN
-			CALL DumpParticleContentsAtError(InParticle, "UnEquilabrleParticle.txt",InDoSurfaceTension=.FALSE., &
-                      InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
-		      InDensity=.TRUE., InIonicStrength=.TRUE.)
-			CALL ERROR ("Took too many iterations to reach desired precision for water content in EquilibriumWaterContent().  "// &
-			            "Increase AqThermoNumbAllowedIterations in ModelParameters.f90 if you think nothing is wrong.  Perhaps"// &
-						" this is called for too high of a relative humidity (won't equilibrate if RH > S').")
-		END IF
-
-		N = N + 1
-
-		!! If it is a closed system, then we must hold it to account
-		IF(.NOT.OpenSystemForCondensation .AND. .NOT.InternalOpenSystem) THEN
-			InitialWaterContent = GetGasBurden (1) + InParticle%NumberOfParticles * (InitialWaterContent - &
-								  InParticle%AqChems(1)) * Avogadro
-			CALL ReplaceGridCellChemBurden (1, InitialWaterContent)
-			InitialWaterContent = InParticle%AqChems(1)
-		END IF
-
-	END DO
-
-	END IF !! End of is it below the threshold?
-
-	RETURN
-END SUBROUTINE EquilibriumWaterContent
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Use Bisection to Match the ambient relative humidity                 !!
 !! to the local water activity.					        !!
@@ -2591,7 +2392,8 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 					WaterContentPrecision,		&
 					AerosolWaterEquilibriumRHThreshold,  &
 					OpenSystemForCondensation, Avogadro, &
-					SmallestAerosolPossible
+					SmallestAerosolPossible,            &
+                                        MinimumWater
 
 	USE InfrastructuralCode, ONLY : Error
 
@@ -2644,8 +2446,10 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 
 	!! Decide on a direction and loop until the correct order of magnitude
 	InParticle%AqChems(1) = WaterContent
+        
 	CALL RecalculateRadius (InParticle)
 	Residual = WaterResidual (InParticle, RH)
+
 
 	!! If the particle is already in equilibrium, exit
 	IF (ABS(Residual) .LE. WaterContentPrecision) RETURN
@@ -2670,7 +2474,7 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 	END IF
 
 	!! Overshoot the correct value by one iteration (of doubling or halving)
-
+        !WRITE(*,*) "Before First Loop"
 	N = 1
 	DO WHILE (Residual * Direction .LE. 0.) 
 
@@ -2678,8 +2482,16 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 
 		!Calculate Residual
 		InParticle%AqChems(1) = WaterContent
+                !WRITE(*,*) " Before Rad in first loop:  ",InParticle%AqChems(1) 
 		CALL RecalculateRadius (InParticle)
 		Residual = WaterResidual (InParticle, RH)
+
+                !If particle is shrinking below the minimum water, stop loop 
+                !and return as if equilibrated
+                IF(Residual .GT. 0.0 .AND. InParticle%AqChems(1) .LT. MinimumWater) THEN
+                     ReturnType = 2
+                     RETURN
+                ENDIF
 		
 		IF (IsNaN(Residual)) THEN
 			CALL DumpParticleContentsAtError(InParticle, "UnEquilableParticle.txt",InDoSurfaceTension=.FALSE., &
@@ -2700,6 +2512,8 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 		END IF
 
 		N = N + 1
+                !WRITE(*,*) "First Loop: ", N
+
 	END DO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2715,6 +2529,8 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 		Change = WaterContent/2.
 	END IF
 
+        !WRITE(*,*) "Before Second Loop"
+
 	!! Converge on the correct water content
 	N = 1
 	DO
@@ -2726,6 +2542,13 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 		CALL RecalculateRadius (InParticle)
 		Residual = WaterResidual (InParticle, RH)
 		!WRITE(*,*) Residual, Change, InParticle%AqChems(1)
+
+                !If particle is shrinking below the minimum water, stop loop 
+                !and return as if equilibrated
+                IF(Residual .GT. 0.0 .AND. InParticle%AqChems(1) .LT. MinimumWater) THEN
+                     ReturnType = 2
+                     RETURN
+                ENDIF
 
 		!! If the appropriate precision has been reached, then return the solution
 		IF (ABS(Residual) .LE. WaterContentPrecision/10) EXIT
@@ -2765,12 +2588,12 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 		END IF
 
 		N = N + 1
-
+        !WRITE(*,*) "EquilibriumWaterContentAmount iterated ", N, " times."
 	END DO
 	
-	!WRITE(*,*) "EquilibriumWaterContentAmount iterated ", N, " times."
 	!Restore particle to initial state
 	InParticle%AqChems(1) = InitialWaterContent
+        !WRITE(*,*) "Last Rad Call"
 	CALL RecalculateRadius (InParticle)
 	RETURN
 END SUBROUTINE EquilibriumWaterContentAmount

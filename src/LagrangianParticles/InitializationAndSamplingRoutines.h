@@ -34,6 +34,7 @@
 !!                                    to set smallest bin number and conc to 0
 !! 01/25  2013   Matt Alvarado     Added Particle%Dry = .FALSE. to 
 !!                                    MakeMonodisperse
+!! 01/28  2013   Matt Alvarado     Removed calls to EquilibriumWaterContent
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -771,7 +772,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 					Monodisperse,                   &
                                         Pi, AverageAerosolDensity
 
-	USE GridPointFields,     ONLY : GetTemp
+	USE GridPointFields,     ONLY : GetTemp, GetRelativeHumidity
 
 	USE Chemistry,		ONLY :	HowManyAqChems,		        &
 					AqMolecularMass,	        &
@@ -790,10 +791,11 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	           SectionalParticles,	&
 		   LagrangianParticles
 
-	REAL*8  :: II, Temperature, ln_sigma_sq, vtot, mtot, d_mass_mean
+	REAL*8 :: II, Temperature, ln_sigma_sq, vtot, mtot, d_mass_mean
 	REAL*8 :: del_diam, vrat, diam, mass_bin, store_num, d_num_mean
 	REAL*8 :: sum_num, new_num, sum_mass, num_all_modes, rescale
-	REAL*8  :: RescalingFactors(HowManyAerosolModes,HowManyAqChems+HowManyOrgChems) 
+	REAL*8 :: RescalingFactors(HowManyAerosolModes,HowManyAqChems+HowManyOrgChems)
+        REAL*8 :: RH, InorgWaterContent
 
 	CHARACTER (len= 1024) :: str
 	LOGICAL :: Scaffolding, Transcribe, Jacobson
@@ -1105,8 +1107,10 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 
                            CALL FindElectrolyteEquilibrium(Current, .TRUE., FirstEquilibration=.TRUE., ReturnType = Q)
 			   IF(Scaffolding) WRITE(*,*) "After Equilibrate"
-		
-                           CALL EquilibriumWaterContent  (Current, OpenSystem=.TRUE., ReturnType = Q, ForceEquilibrium=.FALSE.)
+
+		           RH =  GetRelativeHumidity ()
+                           CALL EquilibriumWaterContentAmount (Current, RH, Q, .TRUE., InorgWaterContent)
+                           Current%AqChems(1) = InorgWaterContent
 			   IF(Scaffolding) WRITE(*,*) "After Water EQ"
 			ENDIF
                          WRITE(*,*) "H2O Second: ", Current%AqChems(1)
@@ -2054,13 +2058,14 @@ SUBROUTINE PopBoundaryPart ()
 
 	REAL*8  :: II, Temperature
 	REAL*8  :: RescalingFactors(HowManyAerosolModes,HowManyAqChems+HowManyOrgChems) 
+        REAL*8  :: RH, InorgWaterContent
 
 	CHARACTER (len= 1024) :: str
 	LOGICAL :: Scaffolding, Transcribe
 	TYPE(Particle), POINTER :: NewSection
 	TYPE(Particle), POINTER :: Current, Trailer, SectionRunner
 
-	Scaffolding= .FALSE.
+	Scaffolding= .TRUE.
 	Transcribe = .TRUE.
 
 	IF(Scaffolding .OR. TRANSCRIBE) CALL Transcript("")
@@ -2234,7 +2239,7 @@ SUBROUTINE PopBoundaryPart ()
 	NULLIFY(Trailer)
 	!Trailer => Null()
 
-30	IF (ASSOCIATED(Current)) THEN
+90	IF (ASSOCIATED(Current)) THEN
 
 		IF (Current%NumberOfParticles .GT. 0.0) THEN
 			II = 0.
@@ -2242,20 +2247,34 @@ SUBROUTINE PopBoundaryPart ()
 				!IF (Current%AqChems(I) .NE. 0.0) WRITE(*,*) AqPhaseChemicalNames(I)
 				II = II + Current%AqChems(I)
 			END DO
+			DO I = 2, HowManyOrgChems
+				!IF (Current%AqChems(I) .NE. 0.0) WRITE(*,*) AqPhaseChemicalNames(I)
+				II = II + Current%OrgChems(I)
+			END DO
 
-			!! As a token amount of water to avoid initial numerical problems
-			Current%AqChems(1) = II*1.
+                        WRITE(*,*) "H2O: ", Current%AqChems(1)
+			!! Add a token amount of water to avoid initial numerical problems
+			IF (II .GT. 0.0) THEN
+                           Current%AqChems(1) = II*1.
+                        ELSE
+                           !If only BC specified, particle is dry
+                           Current%Dry = .TRUE.
+                        ENDIF
 
 			!WRITE(*,*) Current%NumberOfParticles
-			CALL KusikMeissner (Current)
-				IF(Scaffolding) WRITE(*,*) "Before Equilibrate"
-			CALL FindElectrolyteEquilibrium(Current, .TRUE., FirstEquilibration=.TRUE., ReturnType=Q)
-				IF(Scaffolding) WRITE(*,*) "After Equilibrate"
-			CALL EquilibriumWaterContent  (Current, OpenSystem=.TRUE., ReturnType = Q, ForceEquilibrium=.FALSE.)
-				IF(Scaffolding) WRITE(*,*) "After Water EQ"
-			!Not needed for boundary particles
-                        !CALL ShellRefIndAndRad(Current)
-				IF(Scaffolding) WRITE(*,*) "After ShellRefIndAndRad"
+			IF (NOT(Current%Dry)) THEN 
+			   CALL KusikMeissner (Current)
+			   IF(Scaffolding) WRITE(*,*) "Before Equilibrate"
+			   
+                           CALL FindElectrolyteEquilibrium(Current, .TRUE., FirstEquilibration=.TRUE., ReturnType=Q)
+			   IF(Scaffolding) WRITE(*,*) "After Equilibrate"
+			   CALL EquilibriumWaterContentAmount (Current, RH, Q, .TRUE., InorgWaterContent)
+                           Current%AqChems(1) = InorgWaterContent
+			   IF(Scaffolding) WRITE(*,*) "After Water EQ"
+                        ENDIF
+			   !Not needed for boundary particles
+                           !CALL ShellRefIndAndRad(Current)
+		           !IF(Scaffolding) WRITE(*,*) "After ShellRefIndAndRad"
 		
 		END IF
 		
@@ -2267,7 +2286,7 @@ SUBROUTINE PopBoundaryPart ()
 		Trailer => Current
 		Current => Current%Next
 
-		GOTO 30
+		GOTO 90
 	END IF
 
 	!! Report what ended up with

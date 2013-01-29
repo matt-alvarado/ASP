@@ -594,7 +594,6 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 					CalculateIonicStrength,	        &
 				        KusikMeissner,			&
 					SortAerosolAtGridPointForCondensation,&
-					EquilibriumWaterContent,        &
 				FindAqElectrolyteEquilibriumForGridPoint, &
 				EquilibrateAqueousDissociationReaction
 

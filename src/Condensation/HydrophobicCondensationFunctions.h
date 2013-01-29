@@ -1104,8 +1104,7 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, &
 					Transcript,			&
 					ERROR, WARN
 
-	USE Aerosols,		ONLY :	EquilibriumWaterContent,	 &
-					DumpParticleContentsAtError, &
+	USE Aerosols,		ONLY :	DumpParticleContentsAtError, &
 					EqCoeff,			&
 					MeanActivity,&
 					EquilibrateAqueousDissociationReaction
@@ -1379,8 +1378,7 @@ SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, &
 						Transcript,		&
 						ERROR, WARN
 
-	USE Aerosols,		ONLY :	EquilibriumWaterContent,	 &
-					DumpParticleContentsAtError, &
+	USE Aerosols,		ONLY :	DumpParticleContentsAtError, &
 					EqCoeff,			&
 					MeanActivity,&
 					EquilibrateAqueousDissociationReaction
@@ -2050,8 +2048,7 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, &
 						Transcript,	&
 						ERROR, WARN
 
-	USE Aerosols,		ONLY :	EquilibriumWaterContent, &
-					DumpParticleContentsAtError, &
+	USE Aerosols,		ONLY :	DumpParticleContentsAtError, &
 					EqCoeff,		&
 					MeanActivity, &
 					EquilibrateAqueousDissociationReaction
@@ -2298,8 +2295,7 @@ SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, &
 					Transcript,	&
 					ERROR, WARN
 
-	USE Aerosols,		ONLY :	EquilibriumWaterContent,	 &
-					DumpParticleContentsAtError, &
+	USE Aerosols,		ONLY :	DumpParticleContentsAtError, &
 					EqCoeff,		&
 					MeanActivity,&
 					EquilibrateAqueousDissociationReaction
