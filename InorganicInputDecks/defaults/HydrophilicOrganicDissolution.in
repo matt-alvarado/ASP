@@ -1,6 +1,6 @@
 !! HydrophilicOrganicDissolution.in
 !! ASP
-!! Matt Alvarado, 2004-2006 (c)
+!! Matt Alvarado, 2004-2013 (c)
 !! Based on MELAM by Donnan Steele, 2000-2004 (c)
 !!
 !! This is the HYDROPHILIC ORGANIC DISSOLUTION INPUT DECK for ASP
@@ -55,15 +55,17 @@ CPD1 <=> CPD1       ;  0.1 ; 1.77e8 ; 15.   ; 0.      ; 0.5  ; 0.      ; 0.5;
 CPD2 <=> CPD2       ;  0.1 ; 7.59e-1; 15.   ; 0.      ; 0.5  ; 0.      ; 0.5; 
 CPD3 <=> CPD3       ;  0.1 ; 1.0e10 ; 15.   ; 0.      ; 0.5  ; 0.      ; 0.5; 
 !
-!For now, assume IVOCs like a long chain organic acid (POA7)
+!For now, assume IVOCs have O:C ratio of 0.25 (Donahue et al., ACP, 3303, 2011.)
+! and a Raoult's Law activity coefficient
+! of 1.0e7 at infinite dilution 
 !
-IVOC1 <=> IVOC1        ;  0.1 ; 5.140e-8 ; 15.   ; 7.08e-11 ; 0.5  ; 0.     ; 0.5 ; 
-IVOC2 <=> IVOC2        ;  0.1 ; 5.140e-8 ; 15.   ; 7.08e-11 ; 0.5  ; 0.     ; 0.5 ; 
-IVOC3 <=> IVOC3        ;  0.1 ; 5.140e-8 ; 15.   ; 7.08e-11 ; 0.5  ; 0.     ; 0.5 ; 
-IVOC4 <=> IVOC4        ;  0.1 ; 5.140e-8 ; 15.   ; 7.08e-11 ; 0.5  ; 0.     ; 0.5 ; 
-IVOC5 <=> IVOC5        ;  0.1 ; 5.140e-8 ; 15.   ; 7.08e-11 ; 0.5  ; 0.     ; 0.5 ; 
-IVOC6 <=> IVOC6        ;  0.1 ; 5.140e-8 ; 15.   ; 7.08e-11 ; 0.5  ; 0.     ; 0.5 ; 
-IVOC7 <=> IVOC7        ;  0.1 ; 5.140e-8 ; 15.   ; 7.08e-11 ; 0.5  ; 0.     ; 0.5 ; 
-IVOC8 <=> IVOC8        ;  0.1 ; 5.140e-8 ; 15.   ; 7.08e-11 ; 0.5  ; 0.     ; 0.5 ;
-IVOC9 <=> IVOC9        ;  0.1 ; 5.140e-8 ; 15.   ; 7.08e-11 ; 0.5  ; 0.     ; 0.5 ;
+IVOC1 <=> IVOC1        ;  0.1 ; 1.39e-4  ; 15.   ; 0.      ; 0.5  ; 0.     ; 0.5 ; 
+IVOC2 <=> IVOC2        ;  0.1 ; 1.39e-5  ; 15.   ; 0.      ; 0.5  ; 0.     ; 0.5 ; 
+IVOC3 <=> IVOC3        ;  0.1 ; 1.39e-6  ; 15.   ; 0.      ; 0.5  ; 0.     ; 0.5 ; 
+IVOC4 <=> IVOC4        ;  0.1 ; 1.39e-7  ; 15.   ; 0.      ; 0.5  ; 0.     ; 0.5 ; 
+IVOC5 <=> IVOC5        ;  0.1 ; 1.39e-8  ; 15.   ; 0.      ; 0.5  ; 0.     ; 0.5 ; 
+IVOC6 <=> IVOC6        ;  0.1 ; 1.39e-9  ; 15.   ; 0.      ; 0.5  ; 0.     ; 0.5 ; 
+IVOC7 <=> IVOC7        ;  0.1 ; 1.39e-10 ; 15.   ; 0.      ; 0.5  ; 0.     ; 0.5 ; 
+IVOC8 <=> IVOC8        ;  0.1 ; 1.39e-11 ; 15.   ; 0.      ; 0.5  ; 0.     ; 0.5 ;
+IVOC9 <=> IVOC9        ;  0.1 ; 1.39e-12 ; 15.   ; 0.      ; 0.5  ; 0.     ; 0.5 ;
 !
