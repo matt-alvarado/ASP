@@ -33,6 +33,8 @@
 !!                                       GetTotalAcylPeroxy                  !!
 !! 01/25  2013   Matt Alvarado    Changed RecalculateReactionRates to pass   !!
 !!                                  total peroxy concentration.              !!
+!! 01/24  2013   Matt Alvarado     Added AqOrgActivityFlag,AqOrgActivityIndex!!
+!!                                    Kappa, and GammaInf                    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -151,7 +153,11 @@ MODULE Chemistry
                         RefIndFlag,                     &
                         GasPhasePeroxy,                 &
                         GetTotalPeroxy,                 &
-                        GetTotalAcylPeroxy  
+                        GetTotalAcylPeroxy,             &
+                        AqOrgActivityFlag,              &
+                        AqOrgActivityIndex,             &
+                        Kappa,                          &
+                        GammaInf   
 					!     "
 	!! These are indexed by the GAS PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: GasPhaseChemicalNames(:)	   !
@@ -308,7 +314,11 @@ MODULE Chemistry
         ! Molecular Mass (g / mole)
 	REAL*8,		ALLOCATABLE :: AqOrgDensity(:)		   
         ! Density (g / cm3)
-	INTEGER,	ALLOCATABLE :: AqOrgNumCarbon(:)		   
+	INTEGER,	ALLOCATABLE :: AqOrgNumCarbon(:)
+	REAL*8,		ALLOCATABLE :: Kappa(:)
+	REAL*8,		ALLOCATABLE :: GammaInf(:)
+	REAL*8,		ALLOCATABLE :: AqOrgActivityFlag(:)
+        REAL*8,		ALLOCATABLE :: AqOrgActivityIndex(:)		   
 	
         !! Each array is sized by the number of evolving chemicals,
 	!! but only a certain subset of these will evolve (placed first

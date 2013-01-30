@@ -23,6 +23,9 @@
 !!                                  in ARCTAS                                !!
 !! 01/24  2013   Matt Alvarado     Changed SetOrgPhaseChemistry to read      !!
 !!                                  activity coefficient parameters.         !!
+!! 01/30  2013   Matt Alvarado     Changed SetHydrophilicOrgPhaseChemistry   !!
+!!                                  to read Kappa and                        !!
+!!                                  activity coefficient parameters.         !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -108,7 +111,6 @@ SUBROUTINE SetOrgPhaseChemistry ()
 		CALL Transcript("__Initializing_Organic_Phase_Chemicals_("//TRIM(INT2STR(HowManyOrgChems))//"_Species)_")
 	END IF
 
-	!!!!!!!!!!NEED TO FIX THIS!!!!!!!!!!!!!!!!!!!
 	!! Tell the ModelParameter Module How Many Org Chems There Are
 	CALL SetHowManyOrgChems(HowManyOrgChems)
 
@@ -326,7 +328,6 @@ SUBROUTINE SetHydrophilicOrgPhaseChemistry ()
 		CALL Transcript("__Initializing_Hydrophilic_Organic_Chemicals_("//TRIM(INT2STR(HowManyOrgChems))//"_Species)_")
 	END IF
 
-	!!!!!!!!!!NEED TO FIX THIS!!!!!!!!!!!!!!!!!!!
 	!! Tell the ModelParameter Module How Many Aq Org Chems There Are
 	CALL SetHowManyAqOrgChems(HowManyAqOrgChems)
 
@@ -350,6 +351,30 @@ SUBROUTINE SetHydrophilicOrgPhaseChemistry ()
 	!!! -- Number of Carbons per molecule -- !!!
 	ALLOCATE (AqOrgNumCarbon(HowManyAqOrgChems), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of AqOrgNumCarbon could not proceed in SetHydrophilicOrgChemistryParams()")
+
+	!!! -- Kappa parameter to calculate associated water -- !!!
+	ALLOCATE (Kappa(HowManyAqOrgChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of Kappa could not proceed in SetHydrophilicOrgChemistryParams()")
+
+       !!! -- Raoult's law activity coefficient at infinte dilution -- !!!
+       !!! -- Used to correct UNIFAC activity coefficient to Henry's law -- !!!
+	ALLOCATE (GammaInf(HowManyAqOrgChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of Kappa could not proceed in SetHydrophilicOrgChemistryParams()")
+
+        !! ACTIVITY COEFF. FLAG
+        !!         if 0. - number than follows is the index (starting at 1) 
+        !!                 of the compound in unifacparams.h and the 
+        !!                 subroutine UNIDRIV
+        !!         if 1. - number that follows is a constant 
+        !!                 organic activity coefficient (usually 1.0)
+        !!         NOTE: It is safest to set these flags the same for all compounds
+        !!         considered. Otherwise the UNIFAC compunds are treated as their 
+        !!         own solution that doesn't inteact with the constant compounds.
+	ALLOCATE (AqOrgActivityFlag(HowManyOrgChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of OrgDensity could not proceed in SetOrgChemistryParams()")
+
+	ALLOCATE (AqOrgActivityIndex(HowManyOrgChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of OrgDensity could not proceed in SetOrgChemistryParams()")
 		
 	!! SCSCSCSCSC
 	IF (Scaffolding) CALL Transcript (">>Importing Hydrophilic Org Phase Species Info<<")
@@ -420,7 +445,39 @@ SUBROUTINE SetHydrophilicOrgPhaseChemistry ()
 		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In HydrophilicOrgChems.in, the number of carbons appears to be missing on "//   &
 						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
 		AqOrgNumCarbon(CurrIndex) = STR2INT(Token)
+
+		!! --- 6. Kappa (see Petters and Kreidenweis, ACP, 7, 1961, 2007.)
+		CALL GetToken(CurrLine,";",Token)
+		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In HydrophilicOrgChems.in, the Kappa parameter appears to be missing on "//   &
+						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
+		Kappa(CurrIndex) = STR2REAL(Token)
+
+		!! --- 7. Raoult's Law Activity Coefficient at Infinite Dilution
+		CALL GetToken(CurrLine,";",Token)
+		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In HydrophilicOrgChems.in, the activity coeff. at infinite dilution appears to be missing on "//   &
+						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
+		GammaInf(CurrIndex) = STR2REAL(Token)
 			
+		!! --- 8. Activity Coefficent Flag
+                !!         if 0. - number than follows is the index (starting at 1) 
+                !!                 of the compound in unifacparams.h and the 
+                !!                 subroutine UNIDRIV
+                !!         if 1. - number that follows is a constant 
+                !!                 organic activity coefficient FOR HENRY's LAW (usually 1.0)
+                !!         NOTE: It is safest to set these flags the same for all compounds
+                !!         considered. Otherwise the UNIFAC compunds are treated as their 
+                !!         own solution that doesn't inteact with the constant compounds.
+		CALL GetToken(CurrLine,";",Token)
+		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In HydrophilicOrgChems.in, the activity coeff. flag appears to be missing on "//   &
+						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
+		AqOrgActivityFlag(CurrIndex) = STR2REAL(Token)
+
+		!! --- 9. Activity Coefficent Index
+		CALL GetToken(CurrLine,";",Token)
+		IF (LEN_TRIM(Token) .EQ. 0) CALL ERROR("In HydrophilicOrgChems.in, the activity coeff. index appears to be missing on "//   &
+						TRIM(AqOrgPhaseChemicalNames(CurrIndex))//".  Perhaps you don't have enough items on that line?")
+		AqOrgActivityIndex(CurrIndex) = STR2REAL(Token)
+
 		!! Transcript
 		IF (Transcribe) CALL Transcript(AqOrgPhaseChemicalNames(CurrIndex))
 	END DO

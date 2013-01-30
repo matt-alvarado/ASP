@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -1210,7 +1210,7 @@ SUBROUTINE EquilibrateSulfate()
 		I = 1
  33		if (associated(currentparticle)) then
     			Write(*,*) "Number of Particles", CurrentParticle%NumberofParticles					
-		   IF(CurrentParticle%NumberofParticles .GT. 1e-3) THEN
+		   IF(CurrentParticle%NumberofParticles .GT. 1e-9) THEN
                                         
 		        !Calculate correction for collision geometry 
 		        !and sticking probability (omega)
