@@ -608,7 +608,9 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 			IF (ISTATE .LT. -1) THEN
 				WRITE(*,*) "Reaction #", Rxn
 				WRITE(*,*) "Gas Conc : ", Y(1)
-				CALL ERROR("In StepOrgCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
+                                WRITE(*,*) "Compound: ", GasPhaseChemicalNames(INT(OrganicDissolutionData(Rxn,1)))
+                                WRITE(*,*) "Num Bins", HowManyLinks
+				CALL WARN("In StepOrgCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
 						TRIM(INT2STR(ISTATE))//".  Please investigate.")
 			END IF
 

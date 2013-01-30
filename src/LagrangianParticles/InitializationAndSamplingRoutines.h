@@ -35,25 +35,29 @@
 !! 01/25  2013   Matt Alvarado     Added Particle%Dry = .FALSE. to 
 !!                                    MakeMonodisperse
 !! 01/28  2013   Matt Alvarado     Removed calls to EquilibriumWaterContent
+!! 01/29  2013   Matt Alvarado     Added Boundary variable to MakeBulk and 
+!!                                    removed MakeBoundaryBulk
+!!                           Added Boundary variable to MakeMonodisperse and 
+!!                                    removed MakeBoundaryMonodisperse       !!
+!!                           Added Boundary variable to MakeParticle and 
+!!                                    removed MakeBoundaryParticle
+!!                    Added Boundary variable to MakeParticleExponential and 
+!!                                    removed MakeBoundaryParticleExponential
+!!          Added Boundary variable to PopulateParticlesSectionsRightAway and 
+!!                                    removed PopBoundaryPart
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:		!!
 !! 1. FUNCTION MakeSection(WhichPopulation, WhichBin)
 !! 2. SUBROUTINE MakeParticle(WhichPopulation, ResultInt, &
-!!      LagrangianOnly, StructuredDistribution)
-!! 3. SUBROUTINE MakeBoundaryParticle()
-!! 4. FUNCTION MakeBulk()
-!! 5. FUNCTION CreateBoundaryDistribution()
-!! 6. SUBROUTINE PopulateParticlesSectionsRightAway()
-!! 7. SUBROUTINE ReadDistributionsOrganic ()
-!! 8. FUNCTION MakeMonodisperse()
-!! 9. SUBROUTINE MakeParticleExponential(WhichPopulation)
-!!10. SUBROUTINE ReadBoundaryDistributionsOrganic ()
-!!11. SUBROUTINE PopBoundaryPart
-!!12. SUBROUTINE MakeBoundaryParticleExponential
-!!13. SUBROUTINE MakeBoundaryMonodisperse
-!!14. FUNCTION MakeBoundaryBulk
+!!      LagrangianOnly, StructuredDistribution, Boundary)
+!! 3. FUNCTION MakeBulk(Boundary)
+!! 4. SUBROUTINE PopulateParticlesSectionsRightAway()
+!! 5. SUBROUTINE ReadDistributionsOrganic ()
+!! 6. FUNCTION MakeMonodisperse(Boundary)
+!! 7. SUBROUTINE MakeParticleExponential(WhichPopulation, Boundary)
+!! 8. SUBROUTINE ReadBoundaryDistributionsOrganic ()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -180,7 +184,7 @@ END FUNCTION MakeSection
 !! returns it.  Any changes here need !!
 !! to be replicated there.            !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDistribution)
+SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDistribution, Boundary)
 
 	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
@@ -220,7 +224,8 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	!! If we want to draw from a distribution in a structured way, use 
         !! this input
 	!! and it will go this far up the cumulative distribution function.
-	REAL*8, OPTIONAL :: StructuredDistribution
+	REAL*8 :: StructuredDistribution
+        LOGICAL :: Boundary
 
 	!! Local Variables
 	REAL*8 :: II, JJ, KK, RR(1)
@@ -228,8 +233,26 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	INTEGER			:: allocation_error, I,J,X,Y,Z
 	LOGICAL, PARAMETER	:: Scaffolding = .FALSE. !.TRUE.
 
+        !!This holds the AerosolModes or EnvAerosolModes arrays, depending on the value of Boundary
+        REAL*8, ALLOCATABLE :: ModesArray(:,:)
+
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticle()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
+
+
+        IF (NOT(BOUNDARY)) THEN
+              ALLOCATE (ModesArray(HowManyAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
+        ELSE
+              ALLOCATE (ModesArray(HowManyEnvAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
+        ENDIF
+
+	if (allocation_error > 0) CALL ERROR("Allocation of ModesArray Failed in MakeParticle()")
+
+        IF (NOT(BOUNDARY)) THEN
+              ModesArray = AerosolModes
+        ELSE
+              ModesArray = EnvAerosolModes
+        ENDIF          
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! For sampling, we want to use a random number to find a number of standard !!
@@ -238,26 +261,17 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 !!an error function for a series with a mean at the Euler-Masscheroni Constant!
 !! and a standard deviation of pi/sqrt(6):			             !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        
 
 	IF (MONODISPERSE .EQ. .FALSE.) THEN
 
-		IF (PRESENT(StructuredDistribution)) THEN
+		CALL PPND (StructuredDistribution, I, II)
+		!Matt Changed this - the old code was wrong
+		II = EXP(LOG(ModesArray(WhichPopulation,3)) * II + LOG(ModesArray(WhichPopulation,2))) / 2.*micron
+		!II = EXP(ModesArray(WhichPopulation,3) * II + LOG(ModesArray(WhichPopulation,2))) / 2.*micron
 
-			CALL PPND (StructuredDistribution, I, II)
-			!Matt Changed this - the old code was wrong
-			II = EXP(LOG(AerosolModes(WhichPopulation,3)) * II + LOG(AerosolModes(WhichPopulation,2))) / 2.*micron
-			!II = EXP(AerosolModes(WhichPopulation,3) * II + LOG(AerosolModes(WhichPopulation,2))) / 2.*micron
-
-
-		ELSE
-
-                  	CALL ERROR("This version of the code lacks the ability to sample from an aerosol distribution "// &
-			           "stochastically (need a proprietary function, which I originally used the COMPAQ "//   &
-					   "compiler's version, then removed it to port to linux.")
-                        !RETURN
-		END IF
 	ELSE
-		II = AerosolModes(WhichPopulation,2)/2.*micron
+		II = ModesArray(WhichPopulation,2)/2.*micron
 	END IF
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -265,7 +279,11 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	IF (II .LE. BinEdges(HowManyBins,2) .AND. .NOT.LagrangianOnly) THEN
 
-		CurrentParticle => Particles%First
+		IF (NOT(Boundary)) THEN
+                      CurrentParticle => Particles%First
+                ELSE
+                      CurrentParticle => BoundaryParticles%First
+                ENDIF
 
 		!! Find the appropriate section to put it in, or err
 		IF (ASSOCIATED(CurrentParticle)) THEN
@@ -281,7 +299,7 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 			!DO I = 2, HowManyAqChems
 			DO I = 1, HowManyAqChems !MJA, 02-28-2012
                                   !WRITE(*,*) "MakeParticle: ", AverageAerosolDensity
-                                  CurrentParticle%AqChems(I) = (AerosolModes(WhichPopulation,3+I) *	&
+                                  CurrentParticle%AqChems(I) = (ModesArray(WhichPopulation,3+I) *	&
 							      4./3.*Pi*II*II*II*AverageAerosolDensity/		&
 							     AqMolecularMass(I) +				&
 							     (CurrentParticle%NumberOfParticles-1.)*CurrentParticle%AqChems(I))/ &
@@ -289,7 +307,7 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 			END DO
 			
 			DO I = 1, HowManyOrgChems
-				CurrentParticle%OrgChems(I) = (AerosolModes(WhichPopulation,3+HowManyAqChems+I) *	&
+				CurrentParticle%OrgChems(I) = (ModesArray(WhichPopulation,3+HowManyAqChems+I) *	&
 								4./3.*Pi*II*II*II*AverageAerosolDensity/		&
 								OrgMolecularMass(I) +					&
 								(CurrentParticle%NumberOfParticles-1.)*CurrentParticle%OrgChems(I))/ &
@@ -374,7 +392,8 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	NewParticle%Edges(2)			 = 0.
 	
 	!! Budge the new particle in at the head of the list
-	IF (ASSOCIATED(Particles%First)) THEN
+        IF (NOT(BOUNDARY)) THEN	
+            IF (ASSOCIATED(Particles%First)) THEN
 		CurrentParticle		   => Particles%First
 
 		!! Sectional Bins are at the head of the lists
@@ -391,12 +410,35 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 			!NewParticle%Next	 => Null()
 			CurrentParticle%Next => NewParticle
 		END IF
-	ELSE
+	    ELSE
 		Particles%First => NewParticle
 		NULLIFY(NewParticle%Next)
 		!NewParticle%Next	   => Null()
-	END IF
+	    END IF
+        ELSE
+            IF (ASSOCIATED(BoundaryParticles%First)) THEN
+		CurrentParticle		   => BoundaryParticles%First
 
+		!! Sectional Bins are at the head of the lists
+ 88		IF(CurrentParticle%Sectional .EQ. .TRUE. .AND. ASSOCIATED(CurrentParticle%Next)) THEN
+			CurrentParticle => CurrentParticle%Next
+			GOTO 88	
+		END IF
+
+		IF (ASSOCIATED(CurrentParticle%Next)) THEN
+			NewParticle%Next	 => CurrentParticle%Next
+			CurrentParticle%Next => NewParticle
+		ELSE
+			NULLIFY(NewParticle%Next)
+			!NewParticle%Next	 => Null()
+			CurrentParticle%Next => NewParticle
+		END IF
+	    ELSE
+		BoundaryParticles%First => NewParticle
+		NULLIFY(NewParticle%Next)
+		!NewParticle%Next	   => Null()
+	    END IF
+        ENDIF
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment
 	NewParticle%Temperature = GetTemp()
@@ -426,19 +468,19 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 	IF (SCAFFOLDING) CALL Transcript("Effective Radius : ("//TRIM(REAL2STR(NewParticle%EffectiveRadius))//")")
 	IF (SCAFFOLDING) CALL Transcript("Velocity (X,Y,Z): ("//TRIM(REAL2STR(NewParticle%velocity(1)))//","//			&
-									 TRIM(REAL2STR(NewParticle%velocity(2)))//","//TRIM(REAL2STR(NewParticle%velocity(3)))//")")
+				TRIM(REAL2STR(NewParticle%velocity(2)))//","//TRIM(REAL2STR(NewParticle%velocity(3)))//")")
 
 	II = 0.
 	DO I = 2, HowManyAqChems
  
 	
 			!! Load in the chemistry assignments, stored as Moles.
-			!! Calculate a Mass of each chemical type (using AerosolModes, which is simply a mass fraction value)
+			!! Calculate a Mass of each chemical type (using ModesArray, which is simply a mass fraction value)
 			!! Assume, for this calculation, that the mean desity is AverageAerosolDensity (=1).
-			NewParticle%AqChems(I) = AerosolModes(WhichPopulation,3+I) *	&
-									 4./3.*Pi*(NewParticle%EffectiveRadius)**3.		&
-									 *AverageAerosolDensity/				&
-									 AqMolecularMass(I) !*moles
+			NewParticle%AqChems(I) = ModesArray(WhichPopulation,3+I) *	&
+						4./3.*Pi*(NewParticle%EffectiveRadius)**3.		&
+						*AverageAerosolDensity/				&
+						AqMolecularMass(I) !*moles
 			II = II + NewParticle%AqChems(I)
 
 	END DO
@@ -447,12 +489,12 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
  
 	
 			!! Load in the chemistry assignments, stored as Moles.
-			!! Calculate a Mass of each chemical type (using AerosolModes, which is simply a mass fraction value)
+			!! Calculate a Mass of each chemical type (using ModesArray, which is simply a mass fraction value)
 			!! Assume, for this calculation, that the mean desity is AverageAerosolDensity (=1).
-			NewParticle%OrgChems(I) = AerosolModes(WhichPopulation,3+HowManyAqChems+I) *	&
-									 4./3.*Pi*(NewParticle%EffectiveRadius)**3.		&
-									 *AverageAerosolDensity/				&
-									 OrgMolecularMass(I) !*moles
+			NewParticle%OrgChems(I) = ModesArray(WhichPopulation,3+HowManyAqChems+I) *	&
+						4./3.*Pi*(NewParticle%EffectiveRadius)**3.		&
+						*AverageAerosolDensity/				&
+						OrgMolecularMass(I) !*moles
 	END DO
 
 	DO I = 1, HowManyAqOrgChems
@@ -483,145 +525,10 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 END SUBROUTINE MakeParticle
 
-!!This subroutine is like MakeParticle, but only for environmental
-!!(boundary) aerosol modes listed in EnvAewrosolModes.in
-!!Any changes made to MakeParticle should be made here as well 
-!!Matt Alvarado, 09/07/06 
-SUBROUTINE MakeBoundaryParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDistribution)
-
-	USE GridPointFields,	 ONLY : GetTemp, GetPress
-	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,		&
-					lengthscale,			&
-					Pi, EulerMass,			&
-					micron,	moles,			&
-					AverageAerosolDensity,		&
-					DomainX, DomainY, DomainZ,	&
-					Monodisperse,			&
-					BinEdges, HowManyBins,		&
-					NumbInsolTypes,			&
-					InsolRadii,			&
-					InsolDensity,			&
-					InsolContactAngle
-
-	USE Chemistry,		 ONLY : HowManyAqChems,			&
-					HowManyAqCations,		&
-					HowManyAqAnions,		&
-					AqMolecularMass,		&
-					HowManyAqEqReactions,           &
-					HowManyOrgChems,                &
-					OrgMolecularMass,               &
-					HowManyAqOrgChems, &
-					AqOrgMolecularMass
-
-	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript,  &
-                                        Warn, Error, GetParticleID
-
-	IMPLICIT NONE
-
-	!! Input Variables
-	INTEGER :: WhichPopulation, ResultInt
-	LOGICAL :: LagrangianOnly !! If this is true, then return always as lagrangian
-
-	!! If we want to draw from a distribution in a structured way, use this input
-	!! and it will go this far up the cumulative distribution functin.
-	REAL*8, OPTIONAL :: StructuredDistribution
-
-	!! Local Variables
-	REAL*8 :: II, JJ, KK, RR(1)
-	TYPE(Particle), POINTER :: NewParticle, CurrentParticle
-	INTEGER				    :: allocation_error, I,J,X,Y,Z
-	LOGICAL, PARAMETER		:: Scaffolding = .FALSE. !.TRUE.
-
-	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeBoundaryParticle()<<<")
-	IF (SCAFFOLDING) CALL Transcript("")
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! For sampling, we want to use a random number to find a number of standard !!
-!! deviations away from the mean value.  To do this, we must invert the error!!
-!! function.  To do this, we use the following numerical trick, which inverts!!
-!!an error function for a series with a mean at the Euler-Masscheroni Constant!
-!! and a standard deviation of pi/sqrt(6):				     !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	IF (MONODISPERSE .EQ. .FALSE.) THEN
-
-		IF (PRESENT(StructuredDistribution)) THEN
-
-			CALL PPND (StructuredDistribution, I, II)
-			!Matt fixed bug
-			II = EXP(LOG(EnvAerosolModes(WhichPopulation,3)) * II + LOG(EnvAerosolModes(WhichPopulation,2))) / 2.*micron
-
-		ELSE
-			!! Samples from a log-normal distribution with double precision.
-			CALL ERROR("MakeBoundaryParticle() in InitializationAndSamplingRoutines.h can't call DRNLNL unless "// &
-			           "you're using the COMPAQ compiler.  If you are, then go uncoment the appropraite lines.")
-		END IF
-	ELSE
-		II = EnvAerosolModes(WhichPopulation,2)/2.*micron
-	END IF
-
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! PUSH PARTICLE INTO THE SECTIONAL ARRAYS !!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	IF (II .LE. BinEdges(HowManyBins,2) .AND. .NOT.LagrangianOnly) THEN
-
-		CurrentParticle => BoundaryParticles%first
-
-		!! Find the appropriate section to put it in, or err
-		IF (ASSOCIATED(CurrentParticle)) THEN
-
-10		IF ((CurrentParticle%Sectional            .EQ. .TRUE.) .AND.			&
-		    (II .GT. CurrentParticle%Edges(1)) .AND.							&
-			(II .LE. CurrentParticle%Edges(2)))								THEN
-			
-			!! We've found the proper section
-			!! So add the chemicals
-
-			CurrentParticle%NumberOfParticles = CurrentParticle%NumberOfParticles + 1
-			DO I = 2, HowManyAqChems
-				CurrentParticle%AqChems(I) = (EnvAerosolModes(WhichPopulation,3+I) *								&
-										     4./3.*Pi*II*II*II*AverageAerosolDensity/							&
-										     AqMolecularMass(I) +												&
-											 (CurrentParticle%NumberOfParticles-1.)*CurrentParticle%AqChems(I))/ &
-											 CurrentParticle%NumberOfParticles 
-			END DO
-
-			DO I = 1, HowManyOrgChems
-				CurrentParticle%OrgChems(I) = (EnvAerosolModes(WhichPopulation,3+HowManyAqChems+I) *								&
-										     4./3.*Pi*II*II*II*AverageAerosolDensity/							&
-										     OrgMolecularMass(I) +												&
-											 (CurrentParticle%NumberOfParticles-1.)*CurrentParticle%OrgChems(I))/ &
-											 CurrentParticle%NumberOfParticles 
-			END DO
-		
-			!NOTE: We initialize with all of the organic compounds in 
-			!the organic phase, and none in the hydrophilic phase
-			DO I = 1, HowManyAqOrgChems
-				CurrentParticle%AqOrgChems(I) = 0.0
-			END DO
-		
-		ELSE
-			IF(ASSOCIATED(CurrentParticle%Next)) THEN
-				CurrentParticle => CurrentParticle%Next
-				GOTO 10
-			ELSE
-				CALL ERROR ("Couldn't Find the appropriate section to put a too-small particle of mode "  &
-						    //TRIM(INT2STR(WhichPopulation))//" in subroutine MakeLooseParticle.")
-			END IF
-		END IF ; END IF
-
-		IF (SCAFFOLDING) CALL WARN("Particle too small")
-		ResultInt = 0 
-		RETURN
-	END IF
-
-	RETURN
-
-END SUBROUTINE MakeBoundaryParticle
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Initializes and returns a sectional pseudo-particle following !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-FUNCTION MakeBulk()
+FUNCTION MakeBulk(Boundary)
 
 	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
@@ -640,6 +547,7 @@ FUNCTION MakeBulk()
 
 	!! External Variables
 	TYPE(Particle), POINTER :: MakeBulk
+        LOGICAL :: Boundary !TRUE if boundary distribution, FALSE if main distribution
 
 
 	!! Local Variables
@@ -695,9 +603,9 @@ FUNCTION MakeBulk()
 	MakeBulk%ParticleID           = 0.
 	MakeBulk%ParticleDistribution = 1
 	MakeBulk%NumberOfParticles    = 1
-	MakeBulk%Sectional			 = .TRUE.
-	MakeBulk%Edges(1)			 = 0.
-	MakeBulk%Edges(2)			 = 1.0e9 
+	MakeBulk%Sectional	      = .TRUE.
+	MakeBulk%Edges(1)	      = 0.
+	MakeBulk%Edges(2)	      = 1.0e9 
 
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
@@ -712,15 +620,22 @@ FUNCTION MakeBulk()
 		MakeBulk%AqChems(I) = 0.
 	END DO
 
-
 	II = 0.
 	DO I = 2, HowManyAqChems
-		MakeBulk%AqChems(I) = AerosolModes(1,3+I)
+		IF(NOT(Boundary)) THEN
+                   MakeBulk%AqChems(I) = AerosolModes(1,3+I)
+                ELSE
+                   MakeBulk%AqChems(I) = EnvAerosolModes(1,3+I)
+                ENDIF
 		II = II + MakeBulk%AqChems(I)
 	END DO
 
 	DO I = 1, HowManyOrgChems
-		MakeBulk%OrgChems(I) = AerosolModes(1,3+HowManyAqChems+I)
+		IF(NOT(Boundary)) THEN
+                    MakeBulk%OrgChems(I) = AerosolModes(1,3+HowManyAqChems+I)
+                ELSE
+                    MakeBulk%OrgChems(I) = EnvAerosolModes(1,3+HowManyAqChems+I)
+                ENDIF
 	END DO
 	
 	!Initialize all organic species in hydrophobic phase
@@ -756,7 +671,7 @@ INCLUDE "SCTailorMakeParticle.h"
 !! NOTE: Creates a single, internally mixed size distribution    !!
 !! as the sum of the input modes.				 !!       
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE PopulateParticlesSectionsRightAway ()
+SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 
 	USE InfrastructuralCode, ONLY : INT2STR, REAL2STR, Transcript, &
                                         SetParticleID, ERROR
@@ -785,6 +700,9 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 
 	IMPLICIT NONE
 
+        !!Input Variables
+        LOGICAL :: Boundary !TRUE if boundary distribution, FALSE if main distribution
+
 	!! Local Variables
 	INTEGER :: I, J, K, X, Y, Z, Q,	&
 	           NumbParticles,	&
@@ -802,16 +720,37 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	TYPE(Particle), POINTER :: NewSection
 	TYPE(Particle), POINTER :: Current, Trailer, SectionRunner
 
+        !!This holds the AerosolModes or EnvAerosolModes arrays, depending on the value of Boundary
+        REAL*8, ALLOCATABLE :: ModesArray(:,:)
+        INTEGER :: NumModes, allocation_error
+
 	Scaffolding= .FALSE.
 	Transcribe = .TRUE.
         Jacobson = .TRUE. !Use Jacobson init or MELAM init
+
 
 	IF(Scaffolding .OR. TRANSCRIBE) CALL Transcript("")
 	IF(Scaffolding)	CALL Transcript(">>Entering PopulateParticlesSectionsRightAway()<<")
 	IF(Transcribe)	CALL Transcript("_Assigning_Particles_to_Particle_Linked_List_Structure_")
 
+        IF (NOT(BOUNDARY)) THEN
+              ALLOCATE (ModesArray(HowManyAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
+        ELSE
+              ALLOCATE (ModesArray(HowManyEnvAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
+        ENDIF
+
+	if (allocation_error > 0) CALL ERROR("Allocation of ModesArray Failed in PopulateParticlesSectionsRightAway()")
+
+        IF (NOT(BOUNDARY)) THEN
+              ModesArray = AerosolModes
+              NumModes = HowManyAerosolModes
+        ELSE
+              ModesArray = EnvAerosolModes
+              NumModes = HowManyEnvAerosolModes              
+        ENDIF  
+
 	!! Start the aerosol ID numbering at 1
-	CALL SetParticleID (1)
+	IF (NOT(BOUNDARY)) CALL SetParticleID (1)
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Each of the modes has its own sectional representation !!
@@ -820,31 +759,50 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	IF (HowManyBins .GT. 0. .OR. ThermoBulkMode) THEN
 		IF (.NOT.ThermoBulkMode .AND. .NOT.Monodisperse) THEN
 			DO J = 1, HowManyBins
-				NewSection => MakeSection(I,J)
-
-				!!Budge the new mode in at the head of the list
-				IF (ASSOCIATED(Particles%First)) THEN
-					NewSection%Next	=> Particles%First
-					Particles%First => NewSection
-				ELSE
+				NewSection => MakeSection(I,J) 
+                                IF (NOT(Boundary)) THEN
+				    !!Budge the new mode in at the head of the list
+				    IF (ASSOCIATED(Particles%First)) THEN	
+                                        NewSection%Next	=> Particles%First
+                                        Particles%First => NewSection         
+				    ELSE
 					Particles%First => NewSection
 					NULLIFY(NewSection%Next)
 					!NewSection%Next=> Null()
-				END IF
+				    END IF
+                                ELSE
+				    !!Budge the new mode in at the head of the list
+				    IF (ASSOCIATED(BoundaryParticles%First)) THEN	
+                                        NewSection%Next	=> BoundaryParticles%First
+                                        BoundaryParticles%First => NewSection         
+				    ELSE
+					BoundaryParticles%First => NewSection
+					NULLIFY(NewSection%Next)
+					!NewSection%Next=> Null()
+				    END IF
+                                END IF                               
 			END DO
 
 		ELSE IF (Monodisperse) THEN
 			!Monodisperse Distribution
 			!WRITE(*,*) "Check 0"
 			HowManyBins = 1
-			NewSection => MakeMonodisperse()
-			!WRITE(*,*) "Check 0.5"
-			Particles%First => NewSection
-		
+                        IF (NOT(Boundary)) THEN
+			   NewSection => MakeMonodisperse(.FALSE.)
+			   Particles%First => NewSection
+		        ELSE
+			   NewSection => MakeMonodisperse(.TRUE.)
+			   BoundaryParticles%First => NewSection
+                        ENDIF
 		ELSE
 			!Bulk Mode
-			NewSection => MakeBulk()
-			Particles%First => NewSection
+                        IF (NOT(Boundary)) THEN
+          		   NewSection => MakeBulk(.FALSE.)
+			   Particles%First => NewSection
+                        ELSE
+          		   NewSection => MakeBulk(.TRUE.)
+			   BoundaryParticles%First => NewSection 
+                        ENDIF                       
 		END IF
 
 	END IF
@@ -856,21 +814,25 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
                 sum_num = 0.0
                 sum_mass = 0.0
                 num_all_modes = 0.0
-	        DO I = 1, MAX(1,HowManyAerosolModes)
+	        DO I = 1, MAX(1,NumModes)
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! Scale the particle concentration by the number !!
 		!! concentration and the domain volume.	          !!
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			NumbParticles = ANINT(AerosolModes(I,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
+			NumbParticles = ANINT(ModesArray(I,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
 			SectionalParticles  = 0
 			LagrangianParticles = 0
-			IF(AerosolModes(I,3) .NE. 0.0) THEN !Log-normal mode
+			IF(ModesArray(I,3) .NE. 0.0) THEN !Log-normal mode
 
                                 !MJA 05-29-2012 Old method, only integer numbers of particles
 			    IF (NOT(Jacobson)) THEN
                                    DO J = 1, NumbParticles
 					!Matt changed this to hopefully put particles in sections right away
-					CALL MakeParticle(I, K, .FALSE., StructuredDistribution = (DFLOAT(J)-0.5)/NumbParticles)
+					IF (NOT(BOUNDARY)) THEN
+                                            CALL MakeParticle(I, K, .FALSE., (DFLOAT(J)-0.5)/NumbParticles, .FALSE.)
+                                        ELSE
+                                            CALL MakeParticle(I, K, .FALSE., (DFLOAT(J)-0.5)/NumbParticles, .TRUE.)
+                                        ENDIF                    
 					SectionalParticles  = SectionalParticles + 1 - K
 					LagrangianParticles = LagrangianParticles + K
 				  END DO
@@ -881,13 +843,13 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
                                 !Eq. 13.21 and 13.24 - MJA, 05-29-2012
 
                                 !Calculate parameters out of loop if possible
-                                ln_sigma_sq = LOG(AerosolModes(I,3))**2
-                                d_num_mean = AerosolModes(I,2)*micron !Convert from um to cm 
+                                ln_sigma_sq = LOG(ModesArray(I,3))**2
+                                d_num_mean = ModesArray(I,2)*micron !Convert from um to cm 
                                 !Jacobson, Eq. 13.25
-                                vtot = (pi/6.0)*(d_num_mean**3.0)*exp(4.5*ln_sigma_sq)*AerosolModes(I,1)
+                                vtot = (pi/6.0)*(d_num_mean**3.0)*exp(4.5*ln_sigma_sq)*ModesArray(I,1)
                                 mtot = vtot*AverageAerosolDensity
 
-                                num_all_modes = num_all_modes +  AerosolModes(I,1)            
+                                num_all_modes = num_all_modes +  ModesArray(I,1)            
  
                                 !Seinfeld and Pandis, 1998, Eq. 7.52
                                 d_mass_mean = exp(log(d_num_mean)+3*ln_sigma_sq)
@@ -913,7 +875,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
                                     store_num = Current%NumberOfParticles
 
                                     if (Current%Edges(1) .NE. 0.0) then !Skip first bin for now
-                                         new_num = (AerosolModes(I,1)*(del_diam/diam) &
+                                         new_num = (ModesArray(I,1)*(del_diam/diam) &
                                                        *exp(-0.5*(log(diam/d_num_mean)**2)/ln_sigma_sq) &
                                                        /sqrt(2*Pi*ln_sigma_sq))
                                          if(new_num .gt. 1.0e-6) then !Skip bins with less than 1e-6 particles/cm3
@@ -943,13 +905,13 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 	                              DO J = 1, HowManyAqChems !MJA, 02-28-2012
                                         !WRITE(*,*) "MakeParticle: ", AverageAerosolDensity
                                          Current%AqChems(J) = (Current%AqChems(J)*store_num &
-                                                              + AerosolModes(I,3+J) *mass_bin/AqMolecularMass(J))		&
+                                                              + ModesArray(I,3+J) *mass_bin/AqMolecularMass(J))		&
 							     /Current%NumberOfParticles
 			              END DO
 			
 			              DO J = 1, HowManyOrgChems
 				         Current%OrgChems(J) = (Current%OrgChems(J)*store_num &
-                                                              + AerosolModes(I,3+HowManyAqChems+J) *mass_bin/OrgMolecularMass(J)) &
+                                                              + ModesArray(I,3+HowManyAqChems+J) *mass_bin/OrgMolecularMass(J)) &
 							     /Current%NumberOfParticles
 			              END DO
                                     else
@@ -982,7 +944,11 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 			    IF (TRANSCRIBE) CALL TRANSCRIPT ("Allocated "//TRIM(INT2STR(LagrangianParticles))//" Lagrangian particles")
 			    IF (TRANSCRIBE) CALL TRANSCRIPT ("and "//TRIM(INT2STR(SectionalParticles))//" Sectional particles")
 			ELSE !Exponential Mode
-				CALL MakeParticleExponential(I)
+				IF (NOT(BOUNDARY)) THEN
+                                   CALL MakeParticleExponential(I, .FALSE.)
+                                ELSE
+                                   CALL MakeParticleExponential(I, .TRUE.)
+                                ENDIF   
 			END IF
 		END DO
 	
@@ -1002,12 +968,16 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 						"the relative mass percentage using the second flag in AerosolModes.in (0); you have selected another "// &
 						"option.  Please remedy.")	
 
-		DO I = 1, HowManyAerosolModes
+		DO I = 1, NumModes
 		DO J = 1, HowManyAqChems+HowManyOrgChems
 			RescalingFactors(I,J) = 0.
 		END DO ; END DO
 
-		Current => PARTICLES%First
+		IF (NOT(BOUNDARY)) THEN
+		    Current => PARTICLES%First
+                ELSE
+		    Current => BOUNDARYPARTICLES%First
+                ENDIF
 
 	10	IF (ASSOCIATED(Current)) THEN
 
@@ -1031,16 +1001,16 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 
 
 		!! Then Calculate the Scaling
-		DO I = 1, MAX(1,HowManyAerosolModes-1)
+		DO I = 1, MAX(1,NumModes-1)
 			DO J = 2, HowManyAqChems
 				IF (RescalingFactors(I,J) .GT. 0.) &
-					RescalingFactors(I,J) = AerosolModes(I,J+3) /		&
+					RescalingFactors(I,J) = ModesArray(I,J+3) /		&
 											RescalingFactors(I,J) / 1.e12 / AqMolecularMass(J)
 			END DO 
 	
 			DO J = 1, HowManyOrgChems
 				IF (RescalingFactors(I,HowManyAqChems+J) .GT. 0.) &
-					RescalingFactors(I,HowManyAqChems+J) = AerosolModes(I,HowManyAqChems+J+3) /		&
+					RescalingFactors(I,HowManyAqChems+J) = ModesArray(I,HowManyAqChems+J+3) /		&
 											RescalingFactors(I,HowManyAqChems+J) / 1.e12 / OrgMolecularMass(J)
 			END DO 
 		
@@ -1048,7 +1018,11 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 		END DO
 
 		IF(Scaffolding) WRITE(*,*) "Check 3"
-		Current => PARTICLES%First
+		IF (NOT(BOUNDARY)) THEN
+		    Current => PARTICLES%First
+                ELSE
+		    Current => BOUNDARYPARTICLES%First
+                ENDIF
 
 	20	IF (ASSOCIATED(Current)) THEN
 
@@ -1065,6 +1039,13 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 				GOTO 20
 			END IF
 		END IF
+
+        ELSE
+		!!This should not be called for monodisperse or bulk aerosol
+		IF(Monodisperse .OR. ThermoBulkMode) &
+		   CALL ERROR ("You selected a monodisperse or bulk aerosol.  In this mode, you must specify the abundance of chemicals by "// &
+					"the total mass conc. using the second flag in AerosolModes.in (1); you have selected another "// &
+					"option.  Please remedy.")
 	END IF
 
 
@@ -1073,7 +1054,11 @@ SUBROUTINE PopulateParticlesSectionsRightAway ()
 
 	!! Now that all of the consitutents have been added,
 	!! walk through the lists and equilibrate everything
-	Current => PARTICLES%First
+	IF (NOT(BOUNDARY)) THEN
+	    Current => PARTICLES%First
+        ELSE
+            Current => BOUNDARYPARTICLES%First
+        ENDIF
 	NULLIFY(Trailer)
 	!Trailer => Null()
 
@@ -1512,7 +1497,7 @@ END SUBROUTINE ReadDistributionsOrganic
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Initializes and returns a single sectional pseudo-particle    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-FUNCTION MakeMonodisperse()
+FUNCTION MakeMonodisperse(Boundary)
 
 	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
@@ -1532,7 +1517,7 @@ FUNCTION MakeMonodisperse()
 
 	!! External Variables
 	TYPE(Particle), POINTER :: MakeMonodisperse
-
+        LOGICAL :: Boundary !TRUE if boundary distribution, FALSE if main distribution
 
 	!! Local Variables
 	INTEGER :: allocation_error, I,J
@@ -1594,8 +1579,14 @@ FUNCTION MakeMonodisperse()
 
 	MakeMonodisperse%ParticleID           = 0.
 	MakeMonodisperse%ParticleDistribution = 1
-	MakeMonodisperse%NumberOfParticles    = ANINT(AerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)		
-	MakeMonodisperse%Sectional			 = .TRUE.
+
+        IF (NOT(BOUNDARY)) THEN
+	     MakeMonodisperse%NumberOfParticles    = ANINT(AerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
+        ELSE
+	     MakeMonodisperse%NumberOfParticles    = ANINT(EnvAerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
+        ENDIF
+
+	MakeMonodisperse%Sectional	      = .TRUE.
 
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
@@ -1610,15 +1601,22 @@ FUNCTION MakeMonodisperse()
 		MakeMonodisperse%AqChems(I) = 0.
 	END DO
 
-
 	II = 0.
 	DO I = 2, HowManyAqChems
+            IF (NOT(BOUNDARY)) THEN
 		MakeMonodisperse%AqChems(I) = AerosolModes(1,3+I)
+            ELSE
+		MakeMonodisperse%AqChems(I) = EnvAerosolModes(1,3+I)
+            ENDIF
 		II = II + MakeMonodisperse%AqChems(I)
 	END DO
 
 	DO I = 1, HowManyOrgChems
-		MakeMonodisperse%OrgChems(I) = AerosolModes(1,3+HowManyAqChems+I)
+	    IF (NOT(BOUNDARY)) THEN
+                MakeMonodisperse%OrgChems(I) = AerosolModes(1,3+HowManyAqChems+I)
+            ELSE
+                MakeMonodisperse%OrgChems(I) = EnvAerosolModes(1,3+HowManyAqChems+I)
+            ENDIF
 	END DO
 	
 	!Initialize all organic species in hydrophobic phase
@@ -1647,7 +1645,7 @@ END FUNCTION MakeMonodisperse
 
 !!This subroutine adds in an exponential distribution to the sectional
 !!size distribution
-SUBROUTINE MakeParticleExponential(WhichPopulation)
+SUBROUTINE MakeParticleExponential(WhichPopulation, Boundary)
 
 	USE GridPointFields,	 ONLY :  GetTemp, GetPress
 
@@ -1681,36 +1679,61 @@ SUBROUTINE MakeParticleExponential(WhichPopulation)
 
 	!! Input Variables
 	INTEGER :: WhichPopulation
+        LOGICAL :: Boundary !TRUE if boundary distribution, FALSE if main distribution
 
 	!! Local Variables
 	REAL*8 :: JJ, N12, M12, Exp1, Exp2, InitNum, VolSum1, VolSum2
 	TYPE(Particle), POINTER :: CurrentParticle
-	INTEGER				    :: I
+	INTEGER				    :: I, allocation_error
 	LOGICAL, PARAMETER		:: Scaffolding = .FALSE. !.TRUE.
+
+        !!This holds the AerosolModes or EnvAerosolModes arrays, depending on the value of Boundary
+        REAL*8, ALLOCATABLE :: ModesArray(:,:)
 
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticleExponential()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
 
-	CurrentParticle => Particles%First
+        IF (NOT(BOUNDARY)) THEN
+              ALLOCATE (ModesArray(HowManyAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
+        ELSE
+              ALLOCATE (ModesArray(HowManyEnvAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
+        ENDIF
+
+	if (allocation_error > 0) CALL ERROR("Allocation of ModesArray Failed in MakeParticle()")
+
+        IF (NOT(BOUNDARY)) THEN
+              ModesArray = AerosolModes
+        ELSE
+              ModesArray = EnvAerosolModes
+        ENDIF          
+
+	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticleExponential()<<<")
+	IF (SCAFFOLDING) CALL Transcript("")
+
+	IF (NOT(BOUNDARY)) THEN
+            CurrentParticle => Particles%First
+        ELSE
+            CurrentParticle => BoundaryParticles%First
+        ENDIF
 
 	!! Find the appropriate section to put it in, or err
 	IF (ASSOCIATED(CurrentParticle)) THEN		
 		
 	10  InitNum = CurrentParticle%NumberOfParticles
 	
-		Exp1 = EXP(-8.0*((CurrentParticle%Edges(1)/micron)**3.0)/(AerosolModes(WhichPopulation,2)**3))
-		Exp2 = EXP(-8.0*((CurrentParticle%Edges(2)/micron)**3.0)/(AerosolModes(WhichPopulation,2)**3))
+		Exp1 = EXP(-8.0*((CurrentParticle%Edges(1)/micron)**3.0)/(ModesArray(WhichPopulation,2)**3))
+		Exp2 = EXP(-8.0*((CurrentParticle%Edges(2)/micron)**3.0)/(ModesArray(WhichPopulation,2)**3))
 		
 		!Number added to this section from Exponential Mode
-		N12 = AerosolModes(WhichPopulation,1)*(Exp1-Exp2) !particles/cm3
+		N12 = ModesArray(WhichPopulation,1)*(Exp1-Exp2) !particles/cm3
 		VolSum1 = (4.0*Pi/3.0)*((CurrentParticle%Edges(1)/micron)**3.0) &
-				 + (Pi/6.0)*(AerosolModes(WhichPopulation,2)**3)
+				 + (Pi/6.0)*(ModesArray(WhichPopulation,2)**3)
 		
 		VolSum2 = (4.0*Pi/3.0)*((CurrentParticle%Edges(2)/micron)**3.0) &
-				 + (Pi/6.0)*(AerosolModes(WhichPopulation,2)**3)
+				 + (Pi/6.0)*(ModesArray(WhichPopulation,2)**3)
 	
 		!Total mass added to this section from Exponential Mode (g/cm3 air)
-		M12 = 1.0e-12*AverageAerosolDensity*AerosolModes(WhichPopulation,1) &
+		M12 = 1.0e-12*AverageAerosolDensity*ModesArray(WhichPopulation,1) &
 		      *(VolSum1*Exp1 - VolSum2*Exp2)
 			  	
 		!Add the appropriate number of particles to each section
@@ -1720,12 +1743,12 @@ SUBROUTINE MakeParticleExponential(WhichPopulation)
 			DO I = 2, HowManyAqChems
 			
 				CurrentParticle%AqChems(I) = (InitNum*CurrentParticle%AqChems(I)  &
-											+ AerosolModes(WhichPopulation,3+I)*M12/AqMolecularMass(I))/CurrentParticle%NumberOfParticles
+						+ ModesArray(WhichPopulation,3+I)*M12/AqMolecularMass(I))/CurrentParticle%NumberOfParticles
 			END DO
 			
 			DO I = 1, HowManyOrgChems
 				CurrentParticle%OrgChems(I) = (InitNum*CurrentParticle%OrgChems(I)  &
-											+ AerosolModes(WhichPopulation,3+HowManyAqChems+I)*M12/OrgMolecularMass(I))/CurrentParticle%NumberOfParticles
+						+ ModesArray(WhichPopulation,3+HowManyAqChems+I)*M12/OrgMolecularMass(I))/CurrentParticle%NumberOfParticles
 			END DO
 			
 			!NOTE: We initialize with all of the organic compounds in 
@@ -2011,673 +2034,3 @@ SUBROUTINE ReadBoundaryDistributionsOrganic ()
 	RETURN
 END SUBROUTINE ReadBoundaryDistributionsOrganic
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Add each of the individual modes to the BoundaryParticles() array     !!
-!! NOTE: Creates a single, internally mixed size distribution            !!
-!! as the sum of the input modes.				         !!   
-!!                                                                       !!
-!!This subroutine is like PopulateParticlesSectionsRightAway,            !!
-!! but only for environmental                                            !!
-!!(boundary) aerosol modes listed in EnvAewrosolModes.in                 !!
-!!Any changes made to PopulateParticlesSectionsRightAway                 !!
-!! should be made here as well                                           !!
-!!Matt Alvarado, 09/07/06                                                !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE PopBoundaryPart ()
-
-	USE InfrastructuralCode, ONLY : INT2STR, REAL2STR, &
-                                        Transcript, SetParticleID, ERROR
-
-	USE ModelParameters,     ONLY : lengthscale,			&
-					DomainX, DomainY, DomainZ,	&
-				        LagrSectSizeCutoff,		&
-					ThermoBulkMode,			&
-					HowManyBins,			&
-					BinEdges,			&
-					micron,				&
-					SmallestAerosolPossible,        &
-					Monodisperse
-
-	USE GridPointFields,     ONLY : GetTemp
-
-	USE Chemistry,		 ONLY :	HowManyAqChems,			&
-					AqMolecularMass,		&
-					howmanyaqanions,                &
-                                        howmanyaqcations,               &
-					HowManyOrgChems,		&
-					OrgMolecularMass,               &
-                                        AqPhaseChemicalNames
-
-	IMPLICIT NONE
-
-	!! Local Variables
-	INTEGER :: I, J, K, Q,	&
-			   NumbParticles,		&
-			   SectionalParticles,	&
-			   LagrangianParticles
-
-	REAL*8  :: II, Temperature
-	REAL*8  :: RescalingFactors(HowManyAerosolModes,HowManyAqChems+HowManyOrgChems) 
-        REAL*8  :: RH, InorgWaterContent
-
-	CHARACTER (len= 1024) :: str
-	LOGICAL :: Scaffolding, Transcribe
-	TYPE(Particle), POINTER :: NewSection
-	TYPE(Particle), POINTER :: Current, Trailer, SectionRunner
-
-	Scaffolding= .TRUE.
-	Transcribe = .TRUE.
-
-	IF(Scaffolding .OR. TRANSCRIBE) CALL Transcript("")
-	IF(Scaffolding)	CALL Transcript(">>Entering PopBoundaryPart()<<")
-	IF(Transcribe)	CALL Transcript("_Assigning_Particles_to_Particle_Linked_List_Structure_")
-
-	
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Each of the modes has its own sectional representation !!
-	!! for particles below the certain size cutoff.			  !!
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	IF (HowManyBins .GT. 0. .OR. ThermoBulkMode) THEN
-	
-		IF (.NOT.ThermoBulkMode .AND. .NOT.Monodisperse) THEN
-				DO J = 1, HowManyBins
-					NewSection => MakeSection(I,J)
-
-					!! Budge the new mode in at the head of the list
-					IF (ASSOCIATED(BoundaryParticles%First)) THEN
-						NewSection%Next		   => BoundaryParticles%First
-						BoundaryParticles%First => NewSection
-					ELSE
-						BoundaryParticles%First => NewSection
-						NULLIFY(NewSection%Next)
-						!NewSection%Next		   => Null()
-					END IF
-				END DO
-
-		ELSE IF (Monodisperse) THEN
-			!Monodisperse Distribution
-			!WRITE(*,*) "Check 0"
-			NewSection => MakeBoundaryMonodisperse()
-			!WRITE(*,*) "Check 0.5"
-			BoundaryParticles%First => NewSection
-		
-		ELSE
-			!Bulk Mode
-			NewSection => MakeBoundaryBulk()
-			BoundaryParticles%First => NewSection
-
-		END IF
-
-	END IF
-
-	IF(Scaffolding) WRITE(*,*) "Check 1"
-	IF (.NOT.ThermoBulkMode .AND. .NOT.Monodisperse) THEN
-
-!! Allocate all of the aerosol and place them in the appropriate structures:
-			DO I = 1, MAX(1,HowManyEnvAerosolModes)
-			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			!! Scale the particle concentration by the number !!
-			!! concentration and the domain volume.		  !!
-			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				!!WRITE(*,*) "Hi!"
-				NumbParticles = ANINT(EnvAerosolModes(I,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
-				!This is to make sure small modes are included
-				!IF(NumbParticles .LT. 10) NumbParticles = 100
-				SectionalParticles  = 0
-				LagrangianParticles = 0
-				IF(EnvAerosolModes(I,3) .NE. 0.0) THEN !Log-normal mode
-					DO J = 1, NumbParticles
-						!Matt changed this to hopefully put particles in sections right away
-						CALL MakeBoundaryParticle(I, K, .FALSE., StructuredDistribution = (DFLOAT(J)-0.5)/NumbParticles)
-						SectionalParticles  = SectionalParticles + 1 - K
-						LagrangianParticles = LagrangianParticles + K
-					END DO
-					!WRITE(*,*) "Hi again!"
-
-					!! Report the results and allocations of the population
-					IF (TRANSCRIBE) CALL TRANSCRIPT ("")
-					IF (TRANSCRIBE) CALL TRANSCRIPT ("For the '"//TRIM(EnvAerosolModeNames(I))//"' aerosol mode")
-					IF (TRANSCRIBE) CALL TRANSCRIPT ("Allocated "//TRIM(INT2STR(LagrangianParticles))//" Lagrangian particles")
-					IF (TRANSCRIBE) CALL TRANSCRIPT ("and "//TRIM(INT2STR(SectionalParticles))//" Sectional particles")
-				
-				ELSE !Exponential Mode
-					CALL MakeBoundaryParticleExponential(I)
-				END IF
-			END DO
-	
-
-	END IF
-
-	IF(Scaffolding) WRITE(*,*) "Check 1.5"
-
-	!! If the user specified that the contain a certain mass of each 
-	!! species then rescale everything
-	IF (InputFlagRatioOrMass .EQ. 1) THEN
-		
-		!!This should only be called for monodisperse or bulk aerosol
-		IF(NOT(Monodisperse) .AND. NOT(ThermoBulkMode)) &
-			CALL ERROR ("You selected a sectional aerosol.  In this mode, you must specify the abundance of chemicals by "// &
-						"the relative mass percentage using the second flag in EnvAerosolModes.in (0); you have selected another "// &
-						"option.  Please remedy.")	
-
-		DO I = 1, HowManyEnvAerosolModes
-		DO J = 1, HowManyAqChems+HowManyOrgChems
-			RescalingFactors(I,J) = 0.
-		END DO ; END DO
-
-
-
-			Current => BoundaryParticles%First
-
-		10	IF (ASSOCIATED(Current)) THEN
-
-				DO I = 2,HowManyAqChems
-					RescalingFactors(Current%ParticleDistribution,I) = RescalingFactors(Current%ParticleDistribution,I) + &
-																	   Current%AqChems(I)*Current%NumberOfParticles
-				END DO
-
-				DO I = 1,HowManyOrgChems
-					RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) = RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) + &
-																	   Current%OrgChems(I)*Current%NumberOfParticles
-				END DO
-
-				IF (ASSOCIATED(Current%Next)) THEN
-					Current => Current%Next
-					GOTO 10
-				END IF
-			END IF
-
-		IF(Scaffolding) WRITE(*,*) "Check 2"
-
-
-		!! Then Calculate the Scaling
-		DO I = 1, MAX(1,HowManyEnvAerosolModes-1)
-			DO J = 2, HowManyAqChems
-				IF (RescalingFactors(I,J) .GT. 0.) &
-					RescalingFactors(I,J) = EnvAerosolModes(I,J+3) /		&
-											RescalingFactors(I,J) / 1.e12 / AqMolecularMass(J)
-			END DO 
-	
-			DO J = 1, HowManyOrgChems
-				IF (RescalingFactors(I,HowManyAqChems+J) .GT. 0.) &
-					RescalingFactors(I,HowManyAqChems+J) = EnvAerosolModes(I,HowManyAqChems+J+3) /		&
-											RescalingFactors(I,HowManyAqChems+J) / 1.e12 / OrgMolecularMass(J)
-			END DO 
-		
-		
-		END DO
-
-		IF(Scaffolding) WRITE(*,*) "Check 3"
-		
-			Current => BoundaryParticles%First
-
-		20	IF (ASSOCIATED(Current)) THEN
-
-				DO I = 2,HowManyAqChems
-					Current%AqChems(I) = Current%AqChems(I) * RescalingFactors(Current%ParticleDistribution,I)
-				END DO
-
-				DO I = 1,HowManyOrgChems
-					Current%OrgChems(I) = Current%OrgChems(I) * RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I)
-				END DO
-				
-				IF (ASSOCIATED(Current%Next)) THEN
-					Current => Current%Next
-					GOTO 20
-				END IF
-			END IF
-		 
-	END IF
-
-
-	IF(Scaffolding) WRITE(*,*) "Check 4"
-
-	!! Now that all of the consitutents have been added,
-	!! walk through the lists and equilibrate everything
-
-	Current => BoundaryParticles%First
-	NULLIFY(Trailer)
-	!Trailer => Null()
-
-90	IF (ASSOCIATED(Current)) THEN
-
-		IF (Current%NumberOfParticles .GT. 0.0) THEN
-			II = 0.
-			DO I = 2, HowManyAqChems
-				!IF (Current%AqChems(I) .NE. 0.0) WRITE(*,*) AqPhaseChemicalNames(I)
-				II = II + Current%AqChems(I)
-			END DO
-			DO I = 2, HowManyOrgChems
-				!IF (Current%AqChems(I) .NE. 0.0) WRITE(*,*) AqPhaseChemicalNames(I)
-				II = II + Current%OrgChems(I)
-			END DO
-
-                        WRITE(*,*) "H2O: ", Current%AqChems(1)
-			!! Add a token amount of water to avoid initial numerical problems
-			IF (II .GT. 0.0) THEN
-                           Current%AqChems(1) = II*1.
-                        ELSE
-                           !If only BC specified, particle is dry
-                           Current%Dry = .TRUE.
-                        ENDIF
-
-			!WRITE(*,*) Current%NumberOfParticles
-			IF (NOT(Current%Dry)) THEN 
-			   CALL KusikMeissner (Current)
-			   IF(Scaffolding) WRITE(*,*) "Before Equilibrate"
-			   
-                           CALL FindElectrolyteEquilibrium(Current, .TRUE., FirstEquilibration=.TRUE., ReturnType=Q)
-			   IF(Scaffolding) WRITE(*,*) "After Equilibrate"
-			   CALL EquilibriumWaterContentAmount (Current, RH, Q, .TRUE., InorgWaterContent)
-                           Current%AqChems(1) = InorgWaterContent
-			   IF(Scaffolding) WRITE(*,*) "After Water EQ"
-                        ENDIF
-			   !Not needed for boundary particles
-                           !CALL ShellRefIndAndRad(Current)
-		           !IF(Scaffolding) WRITE(*,*) "After ShellRefIndAndRad"
-		
-		END IF
-		
-		CALL RecalculateRadius (Current)
-		IF(Scaffolding) WRITE(*,*) "After RecalculateRadius"
-		IF(Scaffolding) WRITE(*,*) Current%EffectiveRadius
-	
-
-		Trailer => Current
-		Current => Current%Next
-
-		GOTO 90
-	END IF
-
-	!! Report what ended up with
-	CALL TRANSCRIPT("")
-	CALL TRANSCRIPT("In PopBoundaryPart, Reallocated "//TRIM(INT2STR(SectionalParticles))//" particles to sections and left "//		&
-					TRIM(INT2STR(LagrangianParticles))//" as lagrangian particles.")
-	CALL TRANSCRIPT("")
-
-	RETURN
-END SUBROUTINE PopBoundaryPart 
-
-!!This subroutine is like MakeParticleExponential, but only for environmental
-!!(boundary) aerosol modes listed in EnvAerosolModes.in
-!!Any changes made to MakeParticleExponential should be made here as well 
-!!Matt Alvarado, 09/07/06 
-SUBROUTINE MakeBoundaryParticleExponential(WhichPopulation)
-
-	USE GridPointFields,	 ONLY : GetTemp, GetPress
-
-	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,		&
-					lengthscale,			&
-					Pi, EulerMass,			&
-					micron,	moles,			&
-					AverageAerosolDensity,		&
-					DomainX, DomainY, DomainZ,	&
-					Monodisperse,			&
-					BinEdges, HowManyBins,		&
-					NumbInsolTypes,			&
-					InsolRadii,			&
-					InsolDensity,			&
-					InsolContactAngle
-
-	USE Chemistry,			 ONLY : HowManyAqChems,		&
-						HowManyAqCations,	&
-						HowManyAqAnions,	&
-						AqMolecularMass,	&
-						HowManyAqEqReactions,   &
-						HowManyOrgChems,        &
-						OrgMolecularMass,       &
-						HowManyAqOrgChems,      &
-						AqOrgMolecularMass
-
-	USE InfrastructuralCode, ONLY : REAL2STR, INT2STR, Transcript,  &
-                                        Warn, Error, GetParticleID
-
-	IMPLICIT NONE
-
-	!! Input Variables
-	INTEGER :: WhichPopulation
-
-	!! Local Variables
-	REAL*8 :: JJ,N12, M12, Exp1, Exp2, InitNum, VolSum1, VolSum2
-	TYPE(Particle), POINTER :: CurrentParticle
-	INTEGER				    :: I
-	LOGICAL, PARAMETER		:: Scaffolding = .FALSE. !.TRUE.
-
-	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeBoundaryParticleExponential()<<<")
-	IF (SCAFFOLDING) CALL Transcript("")
-
-	CurrentParticle => BoundaryParticles%First
-
-	!! Find the appropriate section to put it in, or err
-	IF (ASSOCIATED(CurrentParticle)) THEN		
-		
-	10  InitNum = CurrentParticle%NumberOfParticles
-	
-		Exp1 = EXP(-8.0*((CurrentParticle%Edges(1)/micron)**3.0)/(EnvAerosolModes(WhichPopulation,2)**3))
-		Exp2 = EXP(-8.0*((CurrentParticle%Edges(2)/micron)**3.0)/(EnvAerosolModes(WhichPopulation,2)**3))
-		
-		!Number added to this section from Exponential Mode
-		N12 = EnvAerosolModes(WhichPopulation,1)*(Exp1-Exp2) !particles/cm3
-		VolSum1 = (4.0*Pi/3.0)*((CurrentParticle%Edges(1)/micron)**3.0) &
-				 + (Pi/6.0)*(EnvAerosolModes(WhichPopulation,2)**3)
-		
-		VolSum2 = (4.0*Pi/3.0)*((CurrentParticle%Edges(2)/micron)**3.0) &
-				 + (Pi/6.0)*(EnvAerosolModes(WhichPopulation,2)**3)
-	
-		!Total mass added to this section from Exponential Mode (g/cm3 air)
-		M12 = 1.0e-12*AverageAerosolDensity*EnvAerosolModes(WhichPopulation,1) &
-		      *(VolSum1*Exp1 - VolSum2*Exp2)
-			  	
-		!Add the appropriate number of particles to each section
-		IF(N12 .GT. 1e-6) THEN
-			CurrentParticle%NumberOfParticles = CurrentParticle%NumberOfParticles  &
-		                                    + N12
-			DO I = 2, HowManyAqChems
-			
-				CurrentParticle%AqChems(I) = (InitNum*CurrentParticle%AqChems(I)  &
-											+ EnvAerosolModes(WhichPopulation,3+I)*M12/AqMolecularMass(I))/CurrentParticle%NumberOfParticles
-			END DO
-			
-			DO I = 1, HowManyOrgChems
-				CurrentParticle%OrgChems(I) = (InitNum*CurrentParticle%OrgChems(I)  &
-											+ EnvAerosolModes(WhichPopulation,3+HowManyAqChems+I)*M12/OrgMolecularMass(I))/CurrentParticle%NumberOfParticles
-			END DO
-			
-			!NOTE: We initialize with all of the organic compounds in 
-			!the organic phase, and none in the hydrophilic phase
-			DO I = 1, HowManyAqOrgChems
-				CurrentParticle%AqOrgChems(I) = CurrentParticle%AqOrgChems(I)+ 0.0
-			END DO
-		ELSE
-			Currentparticle%numberofparticles = CurrentParticle%NumberOfParticles
-			DO I = 2, HowManyAqChems
-			
-				CurrentParticle%AqChems(I) = CurrentParticle%AqChems(I) 
-			END DO
-			
-			DO I = 1, HowManyOrgChems
-				CurrentParticle%OrgChems(I) = CurrentParticle%OrgChems(I) 
-			END DO
-			
-			!NOTE: We initialize with all of the organic compounds in 
-			!the organic phase, and none in the hydrophilic phase
-			DO I = 1, HowManyAqOrgChems
-				CurrentParticle%AqOrgChems(I) = CurrentParticle%AqOrgChems(I)+ 0.0
-			END DO
-		END IF
-		
-		IF(ASSOCIATED(CurrentParticle%Next)) THEN
-			CurrentParticle => CurrentParticle%Next
-			GOTO 10
-		END IF
-
-		IF (SCAFFOLDING) CALL Transcript(">>>Exiting MakeBoundaryParticleExponential()<<<")
-		RETURN
-	END IF
-
-END SUBROUTINE MakeBoundaryParticleExponential
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Like MakeMonodisperse, but for a boundary particle.		 !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-FUNCTION MakeBoundaryMonodisperse()
-
-	USE GridPointFields,	 ONLY :  GetTemp, GetPress
-
-	USE Chemistry,	         ONLY : HowManyAqChems,			&
-					HowManyAqCations,		&
-					HowManyAqAnions,		&
-					HowManyAqEqReactions,           &
-					HowManyOrgChems,                &
-					HowManyAqOrgChems
-
-	USE InfrastructuralCode, ONLY : ERROR
-
-	USE ModelParameters,     ONLY : micron,NumbInsolTypes,          &
-                                        Lengthscale,                    &
-					DomainX, DomainY, DomainZ	
-
-	IMPLICIT NONE
-
-	!! External Variables
-	TYPE(Particle), POINTER :: MakeBoundaryMonodisperse
-
-
-	!! Local Variables
-	INTEGER :: allocation_error, I,J
-	REAL*8  :: II
-
-	!! If particle is large enough to be tracked, 
-	!! create the New Particle and allocate its arrays
-	ALLOCATE (MakeBoundaryMonodisperse, stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryMonodisperse Failed in MakeBoundaryMonodisperse()")
-	ALLOCATE (MakeBoundaryMonodisperse%AqChems(HowManyAqChems+HowManyAqCations+HowManyAqAnions), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryMonodisperse%AqChems Failed in MakeBoundaryMonodisperse()")
-	ALLOCATE (MakeBoundaryMonodisperse%OrgChems(HowManyOrgChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryMonodisperse%OrgChems Failed in MakeBoundaryMonodisperse()")
-	ALLOCATE (MakeBoundaryMonodisperse%AqOrgChems(HowManyAqOrgChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryMonodisperse%AqOrgChems Failed in MakeBoundaryMonodisperse()")
-
-
-
-	!! Allocate the Appropriate Electrolytic Arrays
-	ALLOCATE (MakeBoundaryMonodisperse%GammaMixed(HowManyAqEqReactions), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryMonodisperse%GammaMixed Failed in MakeBoundaryMonodisperse()")
-
-
-
-	!! Initialize
-	DO I = 1, HowManyAqEqReactions
-		MakeBoundaryMonodisperse%GammaMixed(I) = 0
-	END DO
-
-
-
-	!Allocate the hydrophobic acitivty coefficients arrays
-	ALLOCATE (MakeBoundaryMonodisperse%HydrophobicActivityCoeffs(HowManyOrgChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryMonodisperse%HydrophobicActivityCoeffs Failed in MakeSection()")
-
-	!! Initialize
-	DO I = 1, HowManyOrgChems
-		MakeBoundaryMonodisperse%HydrophobicActivityCoeffs(I) = 1.0
-	END DO
-
-
-
-	!Allocate the hydrophobic acitivty coefficients arrays
-	ALLOCATE (MakeBoundaryMonodisperse%HydrophilicActivityCoeffs(HowManyAqOrgChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryMonodisperse%HydrophilicActivityCoeffs Failed in MakeSection()")
-
-	!! Initialize
-	DO I = 1, HowManyAqOrgChems
-		MakeBoundaryMonodisperse%HydrophilicActivityCoeffs(I) = 1.0
-	END DO
-
-	
-
-	MakeBoundaryMonodisperse%IonicStr = 1.
-	MakeBoundaryMonodisperse%EmbryoRadius	 = 0.1*micron
-	MakeBoundaryMonodisperse%InsolubleRadius = 0.
-	MakeBoundaryMonodisperse%EffectiveRadius = 0.1*micron
-
-
-	MakeBoundaryMonodisperse%ParticleID           = 0.
-	MakeBoundaryMonodisperse%ParticleDistribution = 1
-	MakeBoundaryMonodisperse%NumberOfParticles    = ANINT(EnvAerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)		
-	MakeBoundaryMonodisperse%Sectional			 = .TRUE.
-
-	!! For Now, the Initial Temperature of the Particle is that of the 
-	!! Local Environment (1/2002)
-	MakeBoundaryMonodisperse%Temperature = GetTemp()
-	MakeBoundaryMonodisperse%OriginPressureLevel  = GetPress()
-
-
-	!! Use a fake initial water activity:
-	MakeBoundaryMonodisperse%WaterActivity = 1.
-
-	DO I = 2, HowManyAqChems+HowManyAqCations+HowManyAqAnions
-		MakeBoundaryMonodisperse%AqChems(I) = 0.
-	END DO
-
-
-	II = 0.
-	DO I = 2, HowManyAqChems
-		MakeBoundaryMonodisperse%AqChems(I) = EnvAerosolModes(1,3+I)
-		II = II + MakeBoundaryMonodisperse%AqChems(I)
-	END DO
-
-	DO I = 1, HowManyOrgChems
-		MakeBoundaryMonodisperse%OrgChems(I) = EnvAerosolModes(1,3+HowManyAqChems+I)
-	END DO
-	
-	!Initialize all organic species in hydrophobic phase
-	DO I = 1, HowManyAqOrgChems
-		MakeBoundaryMonodisperse%AqOrgChems(I) = 0.0
-	END DO
-
-	
-	DO I = 3+HowManyAqChems+HowManyOrgChems+1,3+HowManyAqChems+HowManyOrgChems+NumbInsolTypes
-		IF (EnvAerosolModes(1,I) .GT. 0) &
-		CALL ERROR("MakeBoundaryMonodisperse() Failed.  You cannot specify insoluble cores to aerosol and then try to run in monodisperse mode.  "// &
-		           "This program is not set up to do that.")
-	END DO
-
-	!! As a token amount of water to avoid initial numerical problems, set the 
-	!! water mixing ratio at 0.5
-	MakeBoundaryMonodisperse%AqChems(1) = II*1.
-
-	NULLIFY(MakeBoundaryMonodisperse%Next)
-	!MakeBoundaryMonodisperse%Next => Null()
-
-	RETURN
-
-END FUNCTION MakeBoundaryMonodisperse
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Like MakeBulk, but for boundary aerosol			 !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-FUNCTION MakeBoundaryBulk()
-
-	USE GridPointFields,	 ONLY : GetTemp, GetPress
-
-	USE Chemistry,		 ONLY : HowManyAqChems,			&
-					HowManyAqCations,		&
-					HowManyAqAnions,		&
-					HowManyAqEqReactions,           &
-					HowManyOrgChems,                &
-					HowManyAqOrgChems
-
-	USE InfrastructuralCode, ONLY : ERROR
-
-	USE ModelParameters,     ONLY : micron,NumbInsolTypes
-
-	IMPLICIT NONE
-
-	!! External Variables
-	TYPE(Particle), POINTER :: MakeBoundaryBulk
-
-
-	!! Local Variables
-	INTEGER :: allocation_error, I,J
-	REAL*8  :: II
-
-	!! If particle is large enough to be tracked, 
-	!! create the New Particle and allocate its arrays
-	ALLOCATE (MakeBoundaryBulk, stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryBulk Failed in MakeBoundaryBulk()")
-	ALLOCATE (MakeBoundaryBulk%AqChems(HowManyAqChems+HowManyAqCations+HowManyAqAnions), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryBulk%AqChems Failed in MakeBoundaryBulk()")
-	ALLOCATE (MakeBoundaryBulk%OrgChems(HowManyOrgChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryBulk%OrgChems Failed in MakeBoundaryBulk()")
-	ALLOCATE (MakeBoundaryBulk%AqOrgChems(HowManyAqOrgChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryBulk%AqOrgChems Failed in MakeBoundaryBulk()")
-
-
-
-	!! Allocate the Appropriate Electrolytic Arrays
-	ALLOCATE (MakeBoundaryBulk%GammaMixed(HowManyAqEqReactions), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryBulk%GammaMixed Failed in MakeBoundaryBulk()")
-
-	!! Initialize
-	DO I = 1, HowManyAqEqReactions
-		MakeBoundaryBulk%GammaMixed(I) = 0
-	END DO
-
-	!Allocate the hydrophobic acitivty coefficients arrays
-	ALLOCATE (MakeBoundaryBulk%HydrophobicActivityCoeffs(HowManyOrgChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryBulk%HydrophobicActivityCoeffs Failed in MakeSection()")
-
-	!! Initialize
-	DO I = 1, HowManyOrgChems
-		MakeBoundaryBulk%HydrophobicActivityCoeffs(I) = 1.0
-	END DO
-
-	!Allocate the hydrophobic acitivty coefficients arrays
-	ALLOCATE (MakeBoundaryBulk%HydrophilicActivityCoeffs(HowManyAqOrgChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of MakeBoundaryBulk%HydrophilicActivityCoeffs Failed in MakeSection()")
-
-	!! Initialize
-	DO I = 1, HowManyAqOrgChems
-		MakeBoundaryBulk%HydrophilicActivityCoeffs(I) = 1.0
-	END DO
-
-
-	MakeBoundaryBulk%IonicStr = 1.
-	MakeBoundaryBulk%EmbryoRadius	 = 0.1*micron
-	MakeBoundaryBulk%InsolubleRadius = 0.
-	MakeBoundaryBulk%EffectiveRadius = 0.
-
-	MakeBoundaryBulk%ParticleID           = 0.
-	MakeBoundaryBulk%ParticleDistribution = 1
-	MakeBoundaryBulk%NumberOfParticles    = 1
-	MakeBoundaryBulk%Sectional			 = .TRUE.
-	MakeBoundaryBulk%Edges(1)			 = 0.
-	MakeBoundaryBulk%Edges(2)			 = 1.0e9 
-
-	!! For Now, the Initial Temperature of the Particle is that of the 
-	!! Local Environment (1/2002)
-	MakeBoundaryBulk%Temperature = GetTemp()
-	MakeBoundaryBulk%OriginPressureLevel  = GetPress()
-
-
-	!! Use a fake initial water activity:
-	MakeBoundaryBulk%WaterActivity = 1.
-
-	DO I = 2, HowManyAqChems+HowManyAqCations+HowManyAqAnions
-		MakeBoundaryBulk%AqChems(I) = 0.
-	END DO
-
-
-	II = 0.
-	DO I = 2, HowManyAqChems
-		MakeBoundaryBulk%AqChems(I) = EnvAerosolModes(1,3+I)
-		II = II + MakeBoundaryBulk%AqChems(I)
-	END DO
-
-	DO I = 1, HowManyOrgChems
-		MakeBoundaryBulk%OrgChems(I) = EnvAerosolModes(1,3+HowManyAqChems+I)
-	END DO
-	
-	!Initialize all organic species in hydrophobic phase
-	DO I = 1, HowManyAqOrgChems
-		MakeBoundaryBulk%AqOrgChems(I) = 0.0
-	END DO
-
-	
-	DO I = 3+HowManyAqChems+HowManyOrgChems+1,3+HowManyAqChems+HowManyOrgChems+NumbInsolTypes
-		IF (AerosolModes(1,I) .GT. 0) &
-		CALL ERROR("MakeBoundaryBulk() Failed.  You cannot specify insoluble cores to aerosol and then try to run bulk mode.  "// &
-		           "This program is not set up to do that.  The simplest system with that includes insoluble cores is "// &
-				   "the single-bin sectional representation.")
-	END DO
-
-	!! As a token amount of water to avoid initial numerical problems, set the 
-	!! water mixing ratio at 0.5
-	MakeBoundaryBulk%AqChems(1) = II*1.
-
-	NULLIFY(MakeBoundaryBulk%Next)
-	!MakeBoundaryBulk%Next => Null()
-
-	RETURN
-
-END FUNCTION MakeBoundaryBulk

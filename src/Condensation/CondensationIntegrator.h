@@ -1003,7 +1003,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		END IF
 		
 		
-		IF (Scaffolding) WRITE(*,*) "Before Dissolution Loop"
+		IF (Scaffolding) WRITE(*,*) "Before Dissolution Loop", CombinedInorgDiss
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! LOOP OVER EACH DISSOLUTION REACTION !!
@@ -1023,6 +1023,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		IF(CombinedInorgDiss .AND. (Rxn .GE. 3)) THEN
 			!Call the equilibrator only once
 			IF(Rxn .EQ. 3) THEN
+                                !WRITE(*,*) "Before Inorg Eq, RXN: ", Rxn
 				CALL EquilibrateInorgGridPoint()
 				CYCLE
 			ELSE	
@@ -1033,7 +1034,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		END IF
 		
 		!Send an error if this tries to do ammonia in flux form
-	     IF(AmmoniaFlux .EQ. .TRUE. .AND. CombinedInorgDiss .EQ. .FALSE.) CALL ERROR("Operator split method only works if Ammonia is done as eq.")
+	        IF(AmmoniaFlux .EQ. .TRUE. .AND. CombinedInorgDiss .EQ. .FALSE.) CALL ERROR("Operator split method only works if Ammonia is done as eq.")
 
 
 		!! The allowed error for water content may be different than
@@ -1328,7 +1329,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 !! is reached.
 			IF (ISTATE .EQ. -1 ) THEN 
 				IF (Scaffolding) &
-				CALL WARN("Warning! Nominal maximun number of steps in LSODES was exceeded in Condensation Integration for "	&
+				CALL WARN("Warning! Nominal maximum number of steps in LSODES was exceeded in Condensation Integration for "	&
 				 	     //TRIM(GasPhaseChemicalNames(GasChemIndex1))//" ("//trim(int2str(iwork(6)))//" steps)... Recycling")
 				ISTATE = 2
 				GOTO 30
@@ -1367,8 +1368,8 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! Replace the background chemical concentrations !!
-		DO I = 1, HowManyDissolutionReactions
-			IF (SCAFFOLDING) WRITE(*,*) I, ChemStorageArray(I,1)
+		DO I = 1, 2 !HowManyDissolutionReactionsMJA, We skip all but H2O and sulfate
+			IF (SCAFFOLDING) WRITE(*,*) I, ChemStorageArray(I,1), ChemStorageArray(I,2) 
 			!Skip replace if gas is to be held constant
 			IF(INT(DissolutionData(I,1)) .LE. HowManyEvolveGasChems) THEN
 				CALL AddToGridCellChemBurden (INT(DissolutionData(I,1)), ChemStorageArray(I,1))
@@ -1387,7 +1388,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		!! integrations in one pass through the list.  !!
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		DO I = 1, HowManyLinks  !! Loop over the aerosol
-		DO J = 1, HowManyDissolutionReactions
+		DO J = 1, 2 !HowManyDissolutionReactions MJA, We skip all but H2O and sulfate
 
 			!! How we replace depends on the 
 			!! reaction type
@@ -1619,6 +1620,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		END DO 
 		
 		!! Re-Equilibrate
+                !WRITE(*,*) "Before FindElectrolyteEquilibrium"
 		CALL FindElectrolyteEquilibrium(CurrentParticle, UpdateThermo = .TRUE., FirstEquilibration=.FALSE., ReturnType=GG)
 
 		CurrentParticle => CurrentParticle%Next

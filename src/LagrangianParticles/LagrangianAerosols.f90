@@ -112,7 +112,6 @@ PUBLIC	:: AerosolModeNames,			&
 			DissociateAllElectrolytes, &
 			EquilibriumWaterContentAmount, &
 			ReadBoundaryDistributionsOrganic, &
-			PopBoundaryPart, &
 			BoundaryParticles, &
 			SortBoundaryPart, &
 			GetPatwardhandAndKumarWeightings, &
@@ -154,7 +153,7 @@ CHARACTER (len=64), ALLOCATABLE  :: AerosolModeNames(:)
 
 !!These are for the environmental (boundary) aerosol distribution
 REAL*8, ALLOCATABLE :: EnvAerosolModes(:,:)
-INTEGER				:: HowManyEnvAerosolModes
+INTEGER		    :: HowManyEnvAerosolModes
 CHARACTER (len=64), ALLOCATABLE  :: EnvAerosolModeNames(:)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -456,7 +455,7 @@ SUBROUTINE InitializeParticlesSectional()
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
 	!This puts all particles into sections
-	Call PopulateParticlesSectionsRightAway()
+	Call PopulateParticlesSectionsRightAway(.FALSE.)
 	RETURN
 END SUBROUTINE InitializeParticlesSectional
 

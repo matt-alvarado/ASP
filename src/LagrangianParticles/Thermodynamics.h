@@ -2501,14 +2501,14 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 					   "calculation returned NaN.  Something is quite wrong.")
 		END IF
 
-		IF (N .GT. AqThermoNumbAllowedIterations) THEN
+		IF (N .GT. 10*AqThermoNumbAllowedIterations) THEN
 			CALL DumpParticleContentsAtError(InParticle, "UnEquilableParticle.txt",InDoSurfaceTension=.FALSE., &
                       InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
 		      InDensity=.TRUE., InIonicStrength=.TRUE.)
 			CALL ERROR ("Took too many iterations to find the right order of magnitude for water content in "// &
-			            "EquilibriumWaterContentAmount().  Increase AqThermoNumbAllowedIterations in ModelParameters.f90 "// &
-						"if you think nothing is wrong.  Perhaps this is called for too high of a relative humidity "// &
-						"(won't equilibrate if RH > S').")
+			            "first loop of EquilibriumWaterContentAmount().  Increase AqThermoNumbAllowedIterations in ModelParameters.f90 "// &
+				    "if you think nothing is wrong.  Perhaps this is called for too high of a relative humidity "// &
+				    "(won't equilibrate if RH > S').")
 		END IF
 
 		N = N + 1
@@ -2517,7 +2517,7 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 	END DO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Move on to a seconary loop that refines our search !!!!!!!!!!!!!!!!!!!!
+!! Move on to a secondary loop that refines our search !!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Define Change initially as something that will retreat a full step   !!
 !! in less than infinite steps of dividing in half and walking (as      !!
@@ -2577,14 +2577,10 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 		!!Just return if change approaches 0 and you are fairly close to eq.
 		IF(Change .EQ. 0.0 .AND. ABS(Residual) .LE. WaterContentPrecision*10) EXIT
 		
-		!! Keep count of the number of loops and err if you take too many
+		!! Keep count of the number of loops and exit if too many
 		IF (N .GT. AqThermoNumbAllowedIterations) THEN
-			CALL DumpParticleContentsAtError(InParticle, "UnEquilableParticle.txt",InDoSurfaceTension=.FALSE., &
-                      InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
-		      InDensity=.TRUE., InIonicStrength=.TRUE.)
-			CALL ERROR ("Took too many iterations to reach desired precision for water content in EquilibriumWaterContentAmount().  "// &
-			            "Increase AqThermoNumbAllowedIterations in ModelParameters.f90 if you think nothing is wrong.  Perhaps"// &
-						" this is called for too high of a relative humidity (won't equilibrate if RH > S').")
+		    ReturnType = 2
+                    EXIT
 		END IF
 
 		N = N + 1

@@ -115,7 +115,7 @@ SUBROUTINE EulerianBox()
 
 		!! Call Boundary distributions
 		CALL ReadBoundaryDistributionsOrganic
-		CALL PopBoundaryPart
+		CALL PopulateParticlesSectionsRightAway(.TRUE.)
 		CALL SortBoundaryPart
 		CALL SpillBeans(Env=.TRUE.)
 		

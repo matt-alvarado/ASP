@@ -55,6 +55,11 @@
 !!				UpdateWaterActivityAll and WaterResidualAll  !!
 !!                              Also removed call to EquilibriumWaterContent !!
 !!                                 in EquilibrateDissolutionReaction.        !!
+!! 01/29  2013   Matt Alvarado    Removed Subroutine DryParticleQuickly
+!! 01/30  2013   Matt Alvarado    Added checks to EquilibrateDissolutionReaction
+!!                                to keep ions above 0.
+!!                                Added ElectrolyteEq step to 
+!!                                 EquilibrateInorgGridPoint
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -73,10 +78,9 @@
 !! 8. SUBROUTINE EquilibrateGasSolidReactions()
 !! 9. SUBROUTINE EquilibrateGridPointAll
 !!10. SUBROUTINE EqAllWater
-!!11. SUBROUTINE DryParticleQuickly(InParticle)
-!!12. SUBROUTINE EquilibrateInternallyatGridPoint
-!!13. FUNCTION RidderMethod
-!!14. SUBROUTINE EquilibrateInorgGridPoint
+!!11. SUBROUTINE EquilibrateInternallyatGridPoint
+!!12. FUNCTION RidderMethod
+!!13. SUBROUTINE EquilibrateInorgGridPoint
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -558,12 +562,13 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 
 	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
+        !WRITE(*,*) "Entering EquilibrateDissolutionReaction, Reaction # ", WhichRxn
+
 	ErrorTolerance = OptErrorTolerance
 
-!!Matt Alvarado added this to check for solid-gas reactions that are already in
-!!Equilibrium, as the solid conc = 0.0 and the gas-phase is subsaturated
-	
-	IF (DissolutionData(WhichRxn,11) .EQ. 6.)  THEN
+        !!This checks for solid-gas reactions that are already in
+        !!equilibrium, as the solid conc = 0.0 and the gas-phase is subsaturated
+	IF (INT(DissolutionData(WhichRxn,11)) .EQ. 6.)  THEN
 	   EqRatio = DissolutionEquilibriumConstantsRatio (GasPhaseBurden, & 
                         WhichRxn, Temperature, InParticle, &
                         WaterSatBurden=WaterSatBurden, &
@@ -575,13 +580,28 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 			ReturnType = 2
 			RETURN
 		END IF
-		
 
 	END IF	
 
+        !!This checks for Type 2 reactions that are subsaturated in the gas-phase, 
+        !!but there is not enough of an ion to evaporate more.
+        IF (INT(DissolutionData(WhichRxn,11)) .EQ. 2.)  THEN
+               EqRatio = DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle, &
+				  WaterSatBurden=WaterSatBurden, GasPhaseBurden2=GasPhaseBurden2)
+
+		IF (EqRatio .GT. 1.0 & !The gas-phase is sub-saturated
+		   .AND. (InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) &
+                    .LT. 1.0e-28 .OR. InParticle%AqChems(INT(DissolutionData(WhichRxn,4))) &
+                    .LT. 1.0e-28)) THEN !There is not enough ions left
+                        !WRITE(*,*) "Too Small Caught!"
+			ReturnType = 2
+			RETURN
+		END IF
+        END IF 
+
 	!This checks to make sure the NH3(g) <=> NH3(aq)
 	!doesn't crash because there isn't enough NH3(aq)
-	IF (DissolutionData(WhichRxn,11) .EQ. 1. .AND. &
+	IF (INT(DissolutionData(WhichRxn,11)) .EQ. 1. .AND. &
       GasPhaseChemicalNames(INT(DissolutionData(WhichRxn,1))) .EQ. "NH3")  THEN
 		!WRITE(*,*) "Check Started for Reaction: ", WhichRxn
 		EqRatio = DissolutionEquilibriumConstantsRatio (GasPhaseBurden, WhichRxn, Temperature, InParticle, &
@@ -595,6 +615,8 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 		END IF
 		
 	END IF	
+
+        !WRITE(*,*) "After initial checks"
 	
 	!! Presume innocence in the form of a successful return.
 	ReturnType = 1
@@ -625,7 +647,7 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 !! There are several reactions types:				             !!
 !!									     !!
 !! 0. Water Condensation.						     !!
-!! 1. Direct dissolution of a single species not inclorporating dissociation.!!
+!! 1. Direct dissolution of a single species not incorporating dissociation. !!
 !! 2. Dissolution of a single species that then dissociates directly.	     !!
 !! 4. Dissolution of a species that binds with an ion on the way in.	     !!
 !! 5. Dissolution of two gas phase species to form 1 or 2 aqueous species.   !!
@@ -729,7 +751,8 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 	!! STEP 2: Calculate the Mass Step Sizes by which to Correct Concentrations
 	Z  = (Qdenom + Qnumer) / 2.
 	dX = Qdenom - Z				!! The Mass Flux Factor
-	!WRITE(*,*) "dx: ", dX, " Z: ", Z
+	!WRITE(*,*) "dx: ", dX, " Z: ", Z, "Qdenom: ", Qdenom, "Qnumer: ", Qnumer
+
 	!! Loop over Corrections until convergence if there is anything to do
 	IF (.NOT. (Qnumer .EQ. 0 .AND. Qdenom .EQ. 0)) THEN
 	DO WHILE ((ABS(EqRatio-1) .GT. ErrorTolerance))
@@ -750,14 +773,14 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 	CASE (2)
 
 		InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	= InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	&
-														  + dX * DissolutionData(WhichRxn,13)
+											+ dX * DissolutionData(WhichRxn,13)
 
 		InParticle%AqChems(INT(DissolutionData(WhichRxn,4)))	= InParticle%AqChems(INT(DissolutionData(WhichRxn,4)))	&
-														  + dX * DissolutionData(WhichRxn,14)
+											+ dX * DissolutionData(WhichRxn,14)
 
 		IF (DissolutionData(WhichRxn,1) .LE. HowManyEvolveGasChems)	&
 			GasPhaseBurden = GasPhaseBurden - dX * Avogadro * InParticle%NumberOfParticles
-		!WRITE(*,*) "Check 6"
+	
 	CASE (4)
 
 		InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	= InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) + dX
@@ -803,7 +826,8 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 	!! Count the number of attempts before convergence
 	I = I+1
 
-	IF (INT(DissolutionData(WhichRxn,11)) .EQ. 6 .AND. InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .LT. 1.0e-27) THEN !Much Less than a molecule per particle
+	IF (INT(DissolutionData(WhichRxn,11)) .EQ. 6 .AND. InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .LT. 1.0e-27) THEN 
+                !Much Less than a molecule per particle
 		!WRITE(*,*) "Solid Electrolyte ", trim(AqPhaseChemicalNames(DissolutionData(WhichRxn,3))), " is negligible.", I		
 		RETURN
 	END IF
@@ -819,9 +843,58 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 		END IF	
 	END IF	
 
+        !Check to make sure that there is some of the ions present for Type 2 rxns
+        IF (DissolutionData(WhichRxn,11) .EQ. 2.)  THEN
+		IF ((EqRatio .GT. 1.0) & !The gas-phase is sub-saturated
+		   .AND. (InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))+ dX * DissolutionData(WhichRxn,13) &
+                    .LT. 1.0e-28 .OR. InParticle%AqChems(INT(DissolutionData(WhichRxn,4)))+ dX * DissolutionData(WhichRxn,13) &
+                    .LT. 1.0e-28)) THEN !dX will force AqChems very small or negative on next step
+                        !WRITE(*,*) "Not enough!", EqRatio, InParticle%AqChems(INT(DissolutionData(WhichRxn,3))), InParticle%AqChems(INT(DissolutionData(WhichRxn,4))), dX
+
+                        !If not negative on next step, do one step and return
+                        IF(InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))+ dX * DissolutionData(WhichRxn,13) &
+                         .GT. 0.0 .AND. InParticle%AqChems(INT(DissolutionData(WhichRxn,4)))+ dX * DissolutionData(WhichRxn,13) &
+                         .GT. 0.0) THEN
+                            !Write(*,*) "Postive branch"
+			    InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) = InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	&
+											+ dX * DissolutionData(WhichRxn,13)
+
+			    InParticle%AqChems(INT(DissolutionData(WhichRxn,4))) = InParticle%AqChems(INT(DissolutionData(WhichRxn,4)))	&
+											+ dX * DissolutionData(WhichRxn,14)
+
+		            IF (DissolutionData(WhichRxn,1) .LE. HowManyEvolveGasChems)	&
+			         GasPhaseBurden = GasPhaseBurden - dX * Avogadro * InParticle%NumberOfParticles
+                            ReturnType = 2
+                            RETURN
+
+                        !!If next step is negative, set dX so that minimum is 1.0e-28 and return
+                        ELSE
+                            !Write(*,*) "Negative branch"
+                            IF (InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))+ dX * DissolutionData(WhichRxn,13) &
+                                .LE. 0.0) THEN
+                                 dX = (1.0e-28-InParticle%AqChems(INT(DissolutionData(WhichRxn,3))))/ DissolutionData(WhichRxn,13)
+                            ELSE
+                                 dX = (1.0e-28-InParticle%AqChems(INT(DissolutionData(WhichRxn,4))))/ DissolutionData(WhichRxn,14)
+                            ENDIF
+
+			    InParticle%AqChems(INT(DissolutionData(WhichRxn,3))) = InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))	&
+											+ dX * DissolutionData(WhichRxn,13)
+
+			    InParticle%AqChems(INT(DissolutionData(WhichRxn,4))) = InParticle%AqChems(INT(DissolutionData(WhichRxn,4)))	&
+											+ dX * DissolutionData(WhichRxn,14)
+
+		            IF (DissolutionData(WhichRxn,1) .LE. HowManyEvolveGasChems)	&
+			         GasPhaseBurden = GasPhaseBurden - dX * Avogadro * InParticle%NumberOfParticles
+                            ReturnType = 2
+                            RETURN
+                       ENDIF
+		END IF
+        END IF
+
 	!Just exit if no convergence after 2000 iterations(MJA, 10/05/07)
-	IF (I .GT. 2000) THEN
-		WRITE(*,*) "Over 2000 iterations in EquilibrateDissolutionReaction."
+        ! Change to 200 (MJA, 01/30/2013)
+	IF (I .GT. 100) THEN
+		!WRITE(*,*) "Over 100 iterations in EquilibrateDissolutionReaction for Reaction # ", WhichRxn
 		ReturnType = 2
 		EXIT
 		
@@ -974,14 +1047,14 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, &
 		ExpB = INT(DissolutionData(WhichRxn,14))
 		!WRITE(*,*) "Flag 6", INT(DissolutionData(WhichRxn,3)) 
 		
-		DissolutionEquilibriumConstantsRatio =														&
-					SatVapPressRatio (InParticle , INT(DissolutionData(WhichRxn,3))) 				&
-					* InParticle%AqChems(IonA)**ExpA * InParticle%AqChems(IonB)**ExpB				&
+		DissolutionEquilibriumConstantsRatio =										&
+					SatVapPressRatio (InParticle , INT(DissolutionData(WhichRxn,3))) 			&
+					* InParticle%AqChems(IonA)**ExpA * InParticle%AqChems(IonB)**ExpB			&
 					* (1000. * grams / moles / WaterMolecMass / InParticle%AqChems(1))**(ExpA+ExpB) &
-					/ Eq / RstarMB / Temperature													& 
-					*InParticle%GammaMixed(INT(DissolutionData(WhichRxn,12)))**							& ! 3 lines of
-					(AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),4)+								& ! mean act
-					 AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),5))								&
+					/ Eq / RstarMB / Temperature								& 
+					*InParticle%GammaMixed(INT(DissolutionData(WhichRxn,12)))**				& ! 3 lines of
+					(AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),4)+					& ! mean act
+					 AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),5))					&
 					 * Avogadro / GasPhaseBurden
 			
 	CASE (4)
@@ -1095,7 +1168,7 @@ SUBROUTINE EquilibrateSulfate()
 
 	!! Internal Variables
 	integer :: i, j, k, l, seedarray(2),q, r, OutFH(4), NumBins, A, S, &
-                   HeteroBins, Gas, Aq, H2SO4GasIndex, SO4AqIndex,         &
+                   HeteroBins, H2SO4GasIndex, SO4AqIndex,         &
                    HNO3GasIndex, NumAqChems, &
 	           NH3GasIndex, HAqIndex
 	real*8  :: ii, jj, kk, Dum1, Dum2
@@ -1110,126 +1183,126 @@ SUBROUTINE EquilibrateSulfate()
 
 
 		!Count # of bins, # of Aq. Chems
-			CurrentParticle => particles%first
-			NumBins = 0
-			8 if (associated(currentparticle)) then
-				NumBins = NumBins + 1
-				NumAqChems = size(currentparticle%AqChems)
-				if (associated(currentparticle%next)) then
-					currentparticle => currentparticle%next
-					goto 8
-				end if
-			end if
-			ALLOCATE(NumConc(NumBins))
-			ALLOCATE(SulfTrans(NumBins))
-		
-		!Find H2SO4 in gas and aqueous phases
-			Gas = 0
-			Aq = 1
-			H2SO4GasIndex = FindChem("H2SO4", Gas)
-			SO4AqIndex = FindChem("SO4--", Aq)
-			HAqIndex = FindChem("H+", Aq)
-			!write (*,*), SO4AqIndex
-		!Calculate gas conc of H2SO4 in mol/cm3
-			H2SO4Conc = GridGasChem(H2SO4GasIndex)/ Avogadro !mol/cm3
-			
-		!Calculate sum of the mass transfer coefficients for all particles
-			CurrentParticle => particles%first
-			TransferSum = 0				
-			I = 1
-			30 if (associated(currentparticle)) then
-    								
-				IF(CurrentParticle%NumberofParticles .GT. 1e-3) THEN
-                                        
-					!Calculate correction for collision geometry 
-					!and sticking probability (omega)
-					GasMeanFreePath = MeanFreePathOfAir()
-					Knudsen = GasMeanFreePath / CurrentParticle%EffectiveRadius 
-					InvKn = 1.0/Knudsen
-					AccomCoeff = 0.65 !From Poschl et al.
-					omega = (1 + ((1.33 + 0.71*InvKn)/(1.0 + InvKn) + 4*(1-AccomCoeff)/3.0/AccomCoeff)*Knudsen)**(-1)
-                                       
-					!Calculate the Ventilation Factor
-					Re = ReynoldsNumber (CurrentParticle)
-					DynamVisc = GetDynamicViscosityOfAir()
-					Dens = GetAirDensity()
-					Dv = MolecularDiffusionCoefficient (H2SO4GasIndex)						
-					Sc = DynamVisc/Dens/Dv
-					DumNum = (Re**(0.5))*(Sc**(0.33333333333))
-					IF (DumNum .LE. 1.4) THEN
-						VentFac = 1 + 0.108*DumNum*DumNum
-					ELSE
-						VentFac = 0.78 + 0.308*DumNum
-					END IF
-
-					!Get number concentration of particles
-					NumConc(I) = currentparticle%numberofparticles
-						
-					!Calculate mass transfer coefficient
-					SulfTrans(I) = 4*Pi*Dv*omega*VentFac*currentparticle%numberofparticles*currentparticle%effectiveradius
-					TransferSum = TransferSum + SulfTrans(I)
-
-				!Ignore bins with no particles
-				ELSE
-					SulfTrans(I) = 0.0
-					TransferSum = TransferSum + SulfTrans(I)
-				END IF
-				
-				if (associated(currentparticle%next)) then
-					currentparticle => currentparticle%next
-					I = I+ 1
-					goto 30
-				end if
-			end if 
-				
-		
-		!Check to make sure gas-phase fractions sum to 1
-		Total = 0.0
-		DO I = 1, NumBins
-			FractionofSulfate = SulfTrans(I)/TransferSum
-			Total = Total + FractionofSulfate
-		END DO
-		IF(Total .LT. 0.999999999 .OR. Total .GT. 1.000000001) THEN
-			CALL ERROR("Error in EquilibrateSulfate(). Fractions do not add to 1.")
-		END IF
-
-		!Allocate gas-phase sulfate to bins
-		!The fraction of gas-phase sulfate added to each size bin
-		!Is the ratio of the bin mass transfer coefficient
-		!to the sum of the coefficients of all bins.
-		!Here, all the sulfate is added as SO4-- so that
-		!it is dissociated when EquilibrateGridPoint is called
-	 
 		CurrentParticle => particles%first
-		I = 1
-		20 if (associated(currentparticle)) then
-    								
-			FractionofSulfate = SulfTrans(I)/TransferSum
-
-			!Add sulfate
-			currentparticle%AqChems(SO4AqIndex) = currentparticle%AqChems(SO4AqIndex) + H2SO4Conc*FractionofSulfate/NumConc(I)
-
-			!AddProtons
-			currentparticle%AqChems(HAqIndex) = currentparticle%AqChems(HAqIndex) + 2*H2SO4Conc*FractionofSulfate/NumConc(I)
-			
-			I = I + 1
-
+		NumBins = 0
+ 8		if (associated(currentparticle)) then
+			NumBins = NumBins + 1
+			NumAqChems = size(currentparticle%AqChems)
 			if (associated(currentparticle%next)) then
 				currentparticle => currentparticle%next
-				goto 20
+				goto 8
 			end if
-		end if 
+		end if
+		ALLOCATE(NumConc(NumBins))
+		ALLOCATE(SulfTrans(NumBins))
 		
-		!Update gas H2SO4 concentration by setting it equal to 0.
-		ALLOCATE(CHEM(HowManyGasChems))
-		DO q = 1, HowManyGasChems
-			Chem(q) = GridGasChem(q) !molecules/cm3
-		END DO
+		!Find H2SO4 in gas and aqueous phases
+		H2SO4GasIndex = FindChem("H2SO4", 0)
+		SO4AqIndex = FindChem("SO4--", 1)
+		HAqIndex = FindChem("H+", 1)
+
+		!Calculate gas conc of H2SO4 in mol/cm3
+		H2SO4Conc = GridGasChem(H2SO4GasIndex)/ Avogadro !mol/cm3
+			
+		!Calculate sum of the mass transfer coefficients for all particles
+		CurrentParticle => particles%first
+		TransferSum = 0				
+		I = 1
+ 33		if (associated(currentparticle)) then
+    			Write(*,*) "Number of Particles", CurrentParticle%NumberofParticles					
+		   IF(CurrentParticle%NumberofParticles .GT. 1e-3) THEN
+                                        
+		        !Calculate correction for collision geometry 
+		        !and sticking probability (omega)
+		        GasMeanFreePath = MeanFreePathOfAir()
+		        Knudsen = GasMeanFreePath / CurrentParticle%EffectiveRadius 
+		        InvKn = 1.0/Knudsen
+	                AccomCoeff = 0.65 !From Poschl et al.
+	                omega = (1 + ((1.33 + 0.71*InvKn)/(1.0 + InvKn) + 4*(1-AccomCoeff)/3.0/AccomCoeff)*Knudsen)**(-1)
+                                       
+		        !Calculate the Ventilation Factor
+			Re = ReynoldsNumber (CurrentParticle)
+			DynamVisc = GetDynamicViscosityOfAir()
+			Dens = GetAirDensity()
+			Dv = MolecularDiffusionCoefficient (H2SO4GasIndex)						
+			Sc = DynamVisc/Dens/Dv
+			DumNum = (Re**(0.5))*(Sc**(0.33333333333))
+			IF (DumNum .LE. 1.4) THEN
+				VentFac = 1 + 0.108*DumNum*DumNum
+			ELSE
+				VentFac = 0.78 + 0.308*DumNum
+			END IF
+
+			!Get number concentration of particles
+			NumConc(I) = currentparticle%numberofparticles
+						
+			!Calculate mass transfer coefficient
+			SulfTrans(I) = 4*Pi*Dv*omega*VentFac*currentparticle%numberofparticles*currentparticle%effectiveradius
+			TransferSum = TransferSum + SulfTrans(I)
+
+		!Ignore bins with no particles
+		ELSE
+			SulfTrans(I) = 0.0
+			TransferSum = TransferSum + SulfTrans(I)
+		END IF
+				
+		if (associated(currentparticle%next)) then
+			currentparticle => currentparticle%next
+			I = I+ 1
+			goto 33
+		end if
+	end if 
+				
 		
-		Chem(H2SO4GasIndex) = 0.0
-		CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
+	!Check to make sure gas-phase fractions sum to 1
+	Total = 0.0
+	DO I = 1, NumBins
+		FractionofSulfate = SulfTrans(I)/TransferSum
+		Total = Total + FractionofSulfate
+	END DO
+	
+	IF(Total .LT. 0.999999999 .OR. Total .GT. 1.000000001) THEN
+                WRITE(*,*) "Fraction Sum: ", Total
+		CALL ERROR("Error in EquilibrateSulfate(). Fractions do not add to 1.")
+	END IF
+
+	!Allocate gas-phase sulfate to bins
+	!The fraction of gas-phase sulfate added to each size bin
+	!Is the ratio of the bin mass transfer coefficient
+	!to the sum of the coefficients of all bins.
+	!Here, all the sulfate is added as SO4-- so that
+	!it is dissociated when EquilibrateGridPoint is called
+	 
+	CurrentParticle => particles%first
+	I = 1
+20      if (associated(currentparticle)) then
+    								
+		FractionofSulfate = SulfTrans(I)/TransferSum
+
+		!Add sulfate
+		currentparticle%AqChems(SO4AqIndex) = currentparticle%AqChems(SO4AqIndex) + H2SO4Conc*FractionofSulfate/NumConc(I)
+
+		!AddProtons
+		currentparticle%AqChems(HAqIndex) = currentparticle%AqChems(HAqIndex) + 2*H2SO4Conc*FractionofSulfate/NumConc(I)
+			
+		I = I + 1
+
+		if (associated(currentparticle%next)) then
+			currentparticle => currentparticle%next
+			goto 20
+		end if
+	end if 
 		
-		RETURN
+	!Update gas H2SO4 concentration by setting it equal to 0.
+	ALLOCATE(CHEM(HowManyGasChems))
+	DO q = 1, HowManyGasChems
+		Chem(q) = GridGasChem(q) !molecules/cm3
+	END DO
+	
+	Chem(H2SO4GasIndex) = 0.0
+	CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
+	
+	RETURN
 END SUBROUTINE EquilibrateSulfate
 
 SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, & 
@@ -2188,10 +2261,10 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 	END IF
 
 	!WRITE(*,*) "Water Check", RH, Current%AqChems(1), EqRatio
-	!Return if water content is approaching zero (fix at 1.0e-21 moles/particle, 
-	!or 600 molecules of water per particle). Minimum embryo radius 1.6 nanometers.
+	!Return if water content is approaching zero (fix at 5.0e-21 moles/particle).
+        !Minimum embryo radius 2.8 nanometers.
 	IF(Current%AqChems(1) .LT. MinimumWater .AND. EqRatio .LT. 1.0) THEN
-		WRITE(*,*) "MinimumWater! RH = ", RH 
+		!WRITE(*,*) "MinimumWater! RH = ", RH 
 		ReturnType = 2 !Says was already in eq.
 		RETURN
 	END IF
@@ -2210,74 +2283,43 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 	ELSE 	
 		!! CLOSED SYSTEM
 		!Just make current water equal calc water and return
-			GasWaterContent = GetGasBurden (1)/Avogadro/Current%NumberofParticles		
-			!Scaled to be mol H2O in gas phase per particle
+		GasWaterContent = GetGasBurden (1)/Avogadro/Current%NumberofParticles		
+		!Scaled to be mol H2O in gas phase per particle
 				
-			DeltaWater = CalcWater - Current%AqChems(1)
-			!If CalcWater is below minimum, return minimum
-			IF(CalcWater .LT. 0.99*MinimumWater) DeltaWater = 0.99*MinimumWater - Current%AqChems(1)
+		DeltaWater = CalcWater - Current%AqChems(1)
+		!If CalcWater is below minimum, return minimum
+		IF(CalcWater .LT. 0.99*MinimumWater) DeltaWater = 0.99*MinimumWater - Current%AqChems(1)
 		
-			Current%AqChems(1) = Current%AqChems(1) + DeltaWater		
-			GasWaterContent = GasWaterContent - DeltaWater
-			NewBurden = GasWaterContent*Avogadro*Current%NumberofParticles
-			CALL ReplaceGridCellChemBurden ( 1, NewBurden)
+		Current%AqChems(1) = Current%AqChems(1) + DeltaWater		
+		GasWaterContent = GasWaterContent - DeltaWater
+		NewBurden = GasWaterContent*Avogadro*Current%NumberofParticles
+		CALL ReplaceGridCellChemBurden ( 1, NewBurden)
 			
-			!Get new RH
-			RH = GetRelativeHumidity()
+		!Get new RH
+		RH = GetRelativeHumidity()
 
-			!Calculate equilibrium organic water content at this RH
-			OrgWaterContent = HydrophilicOrganicWaterContent(Current, Temperature, RH)
+		!Calculate equilibrium organic water content at this RH
+		OrgWaterContent = HydrophilicOrganicWaterContent(Current, Temperature, RH)
 	
-			!Calculate equilibrium inorganic water content at this RH
-			CALL EquilibriumWaterContentAmount (Current, RH, ReturnType, ForceEquilibrium, InorgWaterContent)	
+		!Calculate equilibrium inorganic water content at this RH
+		CALL EquilibriumWaterContentAmount (Current, RH, ReturnType, ForceEquilibrium, InorgWaterContent)	
 			
-			!Add total eq water content
-			CalcWater = OrgWaterContent + InorgWaterContent
+		!Add total eq water content
+		CalcWater = OrgWaterContent + InorgWaterContent
 
-			!Calculate equilibrium ratio
-			EqRatio = Current%AqChems(1)/CalcWater
+		!Calculate equilibrium ratio
+		EqRatio = Current%AqChems(1)/CalcWater
 
-			I = I+1
+		I = I+1
 		
-			!WRITE(*,*) "Water Content: ", Current%AqChems(1), I
-			!WRITE(*,*) "SOA1 Content: ", Current%AqOrgChems(9)
-			GasWaterContent = GetGasBurden (1)/Avogadro/Current%NumberofParticles		
-			!WRITE(*,*) "Gas Water: ", GasWaterContent
-			!WRITE(*,*) "Eq Ratio: ", ABS(1.0-EqRatio), 5*WaterContentPrecision
-		
+		GasWaterContent = GetGasBurden (1)/Avogadro/Current%NumberofParticles		
+
 		ReturnType = 1	
 		RETURN
 	
 	END IF
 
 END SUBROUTINE EqAllWater
-
-SUBROUTINE DryParticleQuickly(InParticle)
-
-	USE Aerosols,    ONLY : Particles,		&
-				Particle,		&
-				ParticleArray,		&
-				FindElectrolyteEquilibrium
-
-	USE ModelParameters
-	USE GridPointFields, ONLY : AddToGridCellChemBurden
-
-	IMPLICIT NONE
-
-	!! External Variables
-	TYPE(Particle),POINTER :: InParticle
-
-	!!Internal Variables
-	REAL*8 :: LostWater
-	INTEGER :: GG
-
-	LostWater = InParticle%AqChems(1) - 1.2*MinimumWater
-	InParticle%AqChems(1) = InParticle%AqChems(1) - LostWater
-	CALL AddToGridCellChemBurden (1, LostWater*Avogadro*InParticle%NumberofParticles)
-	CALL FindElectrolyteEquilibrium(InParticle, .TRUE., FirstEquilibration=.FALSE., ReturnType=GG)
-	RETURN
-
-END SUBROUTINE DryParticleQuickly
 
 !! This subroutine only equilibrates all the particles internally.
 !! In this routine, only water is allowed to go between 
@@ -2587,7 +2629,7 @@ SUBROUTINE EquilibrateInorgGridPoint()
 		DO I = 3, HowManyDissolutionReactions+1			
 			L = 0
 			RxnEquilibrated = .FALSE.
-			
+			!WRITE(*,*) "Reaction: ", I
 			!First, equilibrate the inorganic reactions
 			IF (I .LE. HowManyDissolutionReactions + 1 .AND. DoDissolutionFlag) THEN
 				
@@ -2659,7 +2701,7 @@ SUBROUTINE EquilibrateInorgGridPoint()
 							
 							ELSE
 								!Equilibrate the reaction for one particle
-								!WRITE(*,*) "Before EquilibrateDissolutionReaction"
+							        !WRITE(*,*) "Before EquilibrateDissolutionReaction"
 								WaterSatBurden = GetSatVapBurden () 
                                                                 CALL EquilibrateDissolutionReaction (GasPhaseBurden, I, &
                                                                       Current, Temperature, ReturnType, &
@@ -2683,6 +2725,10 @@ SUBROUTINE EquilibrateInorgGridPoint()
 
 						!! HMDR+1 is a dummy saying "do the aqueous rxns."
 						ELSE IF (I .EQ. HowManyDissolutionReactions+1) THEN
+                                                        !Don't need to update activities - that was done 
+                                                        !after previous dissolution reactions
+							CALL FindElectrolyteEquilibrium(Current, .FALSE., &
+                                                           FirstEquilibration=.FALSE., ReturnType=ReturnType)
 
 							!If Electrolyte equilibrium hasn't been reached
 							!after 50 times through particle list or 5 times through a single reaction
@@ -2697,9 +2743,10 @@ SUBROUTINE EquilibrateInorgGridPoint()
 							RxnEquilibrated = .FALSE.
 							Equilibrated    = .FALSE.
 						END IF
-
+                                                !WRITE(*,*) "Before KusikMeissner"
 						!! If not the aqueous electrolyte equilibration, then update the thermo
 						IF (I .LE. HowManyDissolutionReactions) CALL KusikMeissner (Current)
+                                                !WRITE(*,*) "After KusikMeissner"
 
 						L = L+1
 						Current => Current%Next

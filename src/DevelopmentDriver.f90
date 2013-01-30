@@ -158,7 +158,7 @@ PROGRAM ASP
              !!Make and equilibrate a Monodisperse aerosol
              Monodisperse = .TRUE.
              InputFlagRatioOrMass = 1
-             Call PopulateParticlesSectionsRightAway
+             Call PopulateParticlesSectionsRightAway(.FALSE.)
 	     !Output size distribution
 	     CALL SizeDistOutput(0.0,"SizeDist_Opt_Mono.txt")
              
@@ -223,7 +223,7 @@ PROGRAM ASP
  
              !!CALL ReadDistributionsOrganic()
              InputFlagRatioOrMass = 0
-             Call PopulateParticlesSectionsRightAway
+             Call PopulateParticlesSectionsRightAway(.FALSE.)
              ii = etime(etimearray)
 	     CALL TRANSCRIPT("")
 	     CALL TRANSCRIPT("CPU time after sectional particle initialization "//trim(real2str(ii)))
@@ -542,7 +542,7 @@ PROGRAM ASP
 
 		!! Call Boundary distributions
 		CALL ReadBoundaryDistributionsOrganic
-		CALL PopBoundaryPart
+		CALL PopulateParticlesSectionsRightAway(.TRUE.)
 		CALL SortBoundaryPart
 		CALL SpillBeans(Env=.TRUE.)
 		
