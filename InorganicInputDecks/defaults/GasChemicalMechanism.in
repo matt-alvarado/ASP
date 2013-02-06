@@ -2192,46 +2192,46 @@ IAP     + OH => 0.654 OH + 0.654 DHMOB + 0.346 HC5OO            ; 5.31e-12; 0.; 
 !
 !*************************************RACM2 Lumped Reactions****************************************************
 !Organic + OH reactions
-HC5  + OH          =>       HC5P +       H2O + HC5SOA ; 1.01e-11; 0.;245.0; 1.;
-HC8  + OH          =>  .049 HO2  +  .951 HC8P + .025  ALD +  .024 HKET +       H2O + HC8SOA; 2.82e-11; 0.;273.0; 1.;
-OLT  + OH          =>       OLTP + OLTSOA; 5.72e-12; 0.;-500.0; 1.;
-OLI  + OH          =>       OLIP + OLISOA; 1.33e-11; 0.;-500.0; 1.;
-DIEN + OH          =>       OLIP + OLISOA; 1.48e-11; 0.;-448.0; 1.;
-BEN  + OH          =>  .648 HO2  +  .352 BENP + .118  EPX +  .530 PHEN; 2.33e-12; 0.;193.0; 1.;
-TOL  + OH          =>  .177 HO2  +  .763 TR2  + .060  TLP1+  .177 CSL + TOLSOA; 1.81e-12; 0.;-354.; 1.;
+HC5  + OH          =>       HC5P +       H2O + HC5SOA ; 1.01e-11; 0.;-245.0; 1.;
+HC8  + OH          =>  .049 HO2  +  .951 HC8P + .025  ALD +  .024 HKET +       H2O + HC8SOA; 2.82e-11; 0.;-273.0; 1.;
+OLT  + OH          =>       OLTP + OLTSOA; 5.72e-12; 0.;500.0; 1.;
+OLI  + OH          =>       OLIP + OLISOA; 1.33e-11; 0.;500.0; 1.;
+DIEN + OH          =>       OLIP + OLISOA; 1.48e-11; 0.;448.0; 1.;
+BEN  + OH          =>  .648 HO2  +  .352 BENP + .118  EPX +  .530 PHEN; 2.33e-12; 0.;-193.0; 1.;
+TOL  + OH          =>  .177 HO2  +  .763 TR2  + .060  TLP1+  .177 CSL + TOLSOA; 1.81e-12; 0.;354.; 1.;
 XYM  + OH          =>  .177 HO2  +  .763 XY2  + .060  XYL1+  .177 CSL + XYLSOA; 2.31e-11; 0.;0.0; 1.;
 XYP  + OH          =>  .177 HO2  +  .763 XY2  + .060  XYL1+  .177 CSL + XYLSOA; 1.43e-11; 0.;0.0; 1.;
 XYO  + OH          =>  .177 HO2  +  .763 XYO2 + .060  XYL1+  .177 CSL + XYLSOA; 1.36e-11; 0.;0.0; 1.;
-API  + OH          =>       APIP + TERPSOA; 1.21e-11; 0.;-440.0; 1.;
-LIM  + OH          =>       LIMP + TERPSOA; 4.20e-11; 0.;-401.0; 1.;
-ALD  + OH          =>       RCO3 +       H2O ; 4.90e-12; 0.;-405.0; 1.;
-KET  + OH          =>       KETP +       H2O ; 2.80e-12; 0.;-10.0; 1.;
+API  + OH          =>       APIP + TERPSOA; 1.21e-11; 0.;440.0; 1.;
+LIM  + OH          =>       LIMP + TERPSOA; 4.20e-11; 0.;401.0; 1.;
+ALD  + OH          =>       RCO3 +       H2O ; 4.90e-12; 0.;405.0; 1.;
+KET  + OH          =>       KETP +       H2O ; 2.80e-12; 0.;10.0; 1.;
 HKET + OH          =>       HO2  +       MGLY +       H2O ; 3.00e-12; 0.;0.0; 1.;
-UALD + OH          =>  .313 CH3CO3 +  .687 UALP; 5.77e-12; 0.;-533.0; 1.;
-DCB1 + OH          =>  0.52 HO2  +  0.33 CO   + 0.40  ALD +  0.78 KET  +  0.10 GLY  + 0.01  MGLY; 2.8e-11; 0.;-175.; 1.;
-DCB2 + OH          =>  0.52 HO2  +  0.33 CO   + 0.13  MEK +  0.10 GLY  +  0.01 MGLY + 0.78  OP2 ; 2.8e-11; 0.;-175.; 1.;
+UALD + OH          =>  .313 CH3CO3 +  .687 UALP; 5.77e-12; 0.;533.0; 1.;
+DCB1 + OH          =>  0.52 HO2  +  0.33 CO   + 0.40  ALD +  0.78 KET  +  0.10 GLY  + 0.01  MGLY; 2.8e-11; 0.;175.; 1.;
+DCB2 + OH          =>  0.52 HO2  +  0.33 CO   + 0.13  MEK +  0.10 GLY  +  0.01 MGLY + 0.78  OP2 ; 2.8e-11; 0.;175.; 1.;
 DCB3 + OH          =>  0.56 HO2  +  0.21 MACO3 + 0.11  CO  +  0.27 GLY  +  0.01 MGLY + 0.79  OP2 ; 1.00e-11; 0.;0.0; 1.;
-BALD + OH          =>       BALP +       H2O ; 5.32e-12; 0.;-243.; 1.;
-PHEN + OH          =>  0.73 HO2  +  0.20 ADDC +  0.07 CHO +  0.73 MCT ; 6.75e-12; 0.;-405.; 1.;
+BALD + OH          =>       BALP +       H2O ; 5.32e-12; 0.;243.; 1.;
+PHEN + OH          =>  0.73 HO2  +  0.20 ADDC +  0.07 CHO +  0.73 MCT ; 6.75e-12; 0.;405.; 1.;
 CSL  + OH          =>  0.73 HO2  +  0.20 ADDC +  0.07 CHO +  0.73 MCT + XYLSOA; 4.65e-11; 0.;0.0; 1.;
-EPX  + OH          =>       HO2  +       XO2  +       CO  +       ALD ; 2.8e-11; 0.;-175.; 1.;
+EPX  + OH          =>       HO2  +       XO2  +       CO  +       ALD ; 2.8e-11; 0.;175.; 1.;
 MCT  + OH          =>       MCTO; 2.05e-10; 0.;0.0; 1.;
 ROH  + OH          =>       HO2  +  .184 Acetaldehyde  + .719  ALD ; 2.60e-12; 0.;200.0; 1.;
-OP2  + OH          =>  0.01 OH   +  0.44 NC3H7O2 + 0.07  XO2 +  0.08 ALD  +  0.41 KET ; 3.40e-12; 0.;-190.0; 1.;
-ORA2 + OH          =>  0.64 CH3O2  +  0.36 ORAP + 0.64  CO2 ; 4.00e-14; 0.;-850.0; 1.;
-ONIT + OH          =>       NC3H7O2 +       NO2  +       H2O ; 5.31e-12; 0.;260.0; 1.;
+OP2  + OH          =>  0.01 OH   +  0.44 NC3H7O2 + 0.07  XO2 +  0.08 ALD  +  0.41 KET ; 3.40e-12; 0.;190.0; 1.;
+ORA2 + OH          =>  0.64 CH3O2  +  0.36 ORAP + 0.64  CO2 ; 4.00e-14; 0.;850.0; 1.;
+ONIT + OH          =>       NC3H7O2 +       NO2  +       H2O ; 5.31e-12; 0.;-260.0; 1.;
 !
 !Organic + O3 reactions
 !
-OLT  + O3          =>  0.56 HCHO +  0.44 ALD  + 0.43  CO  +  0.03 Formic_Acid +  0.06 ORA2 + 0.32  HO2 +  0.22 OH   +  0.06 MEK  + 0.01  Acetaldehyde +  0.01 CH4  +  0.01 HKET + 0.02  Ethane +  .068 H2O2 +  0.08 CH3O2  + 0.06  C2H5O2+  .015 Propane  +  0.04 NC3H7O2 + 0.03  Acetone +  .006 HC5  +  0.02 HC5P + 0.02  BALD+  .032 BEN + OLTSOA; 4.33e-15; 0.;1800.0; 1.;
+OLT  + O3          =>  0.56 HCHO +  0.44 ALD  + 0.43  CO  +  0.03 Formic_Acid +  0.06 ORA2 + 0.32  HO2 +  0.22 OH   +  0.06 MEK  + 0.01  Acetaldehyde +  0.01 CH4  +  0.01 HKET + 0.02  Ethane +  .068 H2O2 +  0.08 CH3O2  + 0.06  C2H5O2+  .015 Propane  +  0.04 NC3H7O2 + 0.03  Acetone +  .006 HC5  +  0.02 HC5P + 0.02  BALD+  .032 BEN + OLTSOA; 4.33e-15; 0.;-1800.0; 1.;
 !
-OLI  + O3          =>  0.46 OH   +  0.07 HO2  + 0.32  CH3O2 +  0.07 C2H5O2 +  0.04 NC3H7O2 + 0.09  CH3CO3+  0.37 CO   +  .026 H2O2 + 0.04  CH4 +  0.01 Ethane  +  0.01 Propane + 0.09  HCHO+  .457 Acetaldehyde  +  0.73 ALD  + 0.11  Acetone +  .017 KET  +  .044 HKET + .017  ORA2 + OLISOA; 4.40e-15; 0.;845.0; 1.;
+OLI  + O3          =>  0.46 OH   +  0.07 HO2  + 0.32  CH3O2 +  0.07 C2H5O2 +  0.04 NC3H7O2 + 0.09  CH3CO3+  0.37 CO   +  .026 H2O2 + 0.04  CH4 +  0.01 Ethane  +  0.01 Propane + 0.09  HCHO+  .457 Acetaldehyde  +  0.73 ALD  + 0.11  Acetone +  .017 KET  +  .044 HKET + .017  ORA2 + OLISOA; 4.40e-15; 0.;-845.0; 1.;
 !
-DIEN + O3          =>  0.09 O  +  0.28 OH   + 0.30  HO2 +  0.03 CH3O2  +  0.15 CH3CO3 + 0.02  KETP+  0.13 XO2  +  .001 H2O2 + 0.36  CO  +  0.35 OLT  +  0.90 HCHO + 0.39  MCR +  0.15 Formic_Acid +  0.05 H2  + OLISOA; 1.34e-14; 0.;2283.0; 1.;
+DIEN + O3          =>  0.09 O  +  0.28 OH   + 0.30  HO2 +  0.03 CH3O2  +  0.15 CH3CO3 + 0.02  KETP+  0.13 XO2  +  .001 H2O2 + 0.36  CO  +  0.35 OLT  +  0.90 HCHO + 0.39  MCR +  0.15 Formic_Acid +  0.05 H2  + OLISOA; 1.34e-14; 0.;-2283.0; 1.;
 !
-API  + O3          =>  0.85 OH   +  0.10 HO2  + 0.20  C2H5O2+  0.42 KETP +  0.14 CO   + 0.02  H2O2+  0.65 ALD  +  0.53 KET + TERPSOA; 5.00e-16; 0.;530.0; 1.;
+API  + O3          =>  0.85 OH   +  0.10 HO2  + 0.20  C2H5O2+  0.42 KETP +  0.14 CO   + 0.02  H2O2+  0.65 ALD  +  0.53 KET + TERPSOA; 5.00e-16; 0.;-530.0; 1.;
 !
-LIM  + O3          =>  0.85 OH   +  0.10 HO2  + 0.16  C2H5O2+  0.42 KETP +  0.02 H2O2 + 0.14  CO  +  0.46 OLT  +  0.04 HCHO + 0.79  MCR+  0.01 Formic_Acid +  0.07 ORA2 + TERPSOA; 2.95e-15; 0.;783.0; 1.;
+LIM  + O3          =>  0.85 OH   +  0.10 HO2  + 0.16  C2H5O2+  0.42 KETP +  0.02 H2O2 + 0.14  CO  +  0.46 OLT  +  0.04 HCHO + 0.79  MCR+  0.01 Formic_Acid +  0.07 ORA2 + TERPSOA; 2.95e-15; 0.;-783.0; 1.;
 !
 UALD + O3          =>  .100 OH   +  .072 HO2  + .008  CH3O2 +  .002 CH3CO3 +  0.10 XO2  + .243  CO  +  .080 HCHO +  .420 Acetaldehyde  + .028  KET +  .491 GLY  +  .003 MGLY + .044  Formic_Acid; 1.66e-18; 0.;0.0; 1.;
 !
@@ -2247,16 +2247,16 @@ MCTO + O3          =>       MCTP; 2.86e-13; 0.;0.0; 1.;
 !
 !Organic + NO3 reactions
 !
-OLT  + NO3         =>  0.43 OLNN +  0.57 OLND + OLTSOA; 1.79e-13; 0.;450.0; 1.;
-OLI  + NO3         =>  0.11 OLNN +  0.89 OLND + OLISOA; 8.64e-13; 0.;-450.; 1.;
+OLT  + NO3         =>  0.43 OLNN +  0.57 OLND + OLTSOA; 1.79e-13; 0.;-450.0; 1.;
+OLI  + NO3         =>  0.11 OLNN +  0.89 OLND + OLISOA; 8.64e-13; 0.;450.; 1.;
 DIEN + NO3         =>  0.90 OLNN +  0.10 OLND + 0.90  MCR + OLISOA; 1.00e-13; 0.;0.0; 1.;
-API  + NO3         =>  0.10 OLNN +  0.90 OLND + TERPSOA; 1.19e-12; 0.;-490.0; 1.;
+API  + NO3         =>  0.10 OLNN +  0.90 OLND + TERPSOA; 1.19e-12; 0.;490.0; 1.;
 LIM  + NO3         =>  0.71 OLNN +  0.29 OLND + TERPSOA; 1.22e-11; 0.;0.0; 1.;
-ALD  + NO3         =>       RCO3 +       HNO3; 3.76e-12; 0.;1900.0; 1.;
-UALD + NO3         =>       HO2  +       XO2  + .668  CO  +  .332 HCHO + .332  ALD  +       ONIT; 5.02e-13; 0.;1076.0; 1.;
+ALD  + NO3         =>       RCO3 +       HNO3; 3.76e-12; 0.;-1900.0; 1.;
+UALD + NO3         =>       HO2  +       XO2  + .668  CO  +  .332 HCHO + .332  ALD  +       ONIT; 5.02e-13; 0.;-1076.0; 1.;
 PHEN + NO3         =>  0.40 CHO  +  0.10 ADDC + 0.50  ADCN+  0.50 HNO3; 3.78e-12; 0.;0.0; 1.;
 CSL  + NO3         =>  0.40 CHO  +  0.10 ADDC + 0.50  ADCN+  0.50 HNO3; 1.06e-12; 0.;0.0; 1.;
-EPX  + NO3         =>  0.50 OH   +  1.50 HO2  + 1.50  CO  +       GLY  +  0.50 NO2  + 0.50  HNO3+  0.50 CO2 ; 2.87e-13; 0.;1000.0; 1.;
+EPX  + NO3         =>  0.50 OH   +  1.50 HO2  + 1.50  CO  +       GLY  +  0.50 NO2  + 0.50  HNO3+  0.50 CO2 ; 2.87e-13; 0.;-1000.0; 1.;
 MCT  + NO3         =>       MCTO +       HNO3; 2.01e-10; 0.;0.0; 1.;
 !
 !Peroxy radical degradation reactions
@@ -2283,30 +2283,30 @@ OLTP + NO          =>  0.78 HO2  +  0.97 NO2  + 0.78  HCHO+  .012 Acetaldehyde  
 !
 OLIP + NO          =>  0.83 HO2  +  0.95 NO2  + 0.81  Acetaldehyde +  0.68 ALD  +  0.20 Acetone  + 0.09  KET +  0.02 HKET +  0.05 ONIT; 4.00e-12; 0.;0.0; 1.;
 !
-BENP + NO          =>  .918 HO2  +  .918 NO2  + .459  DCB2+  .459 DCB3 +  .918 GLY  + .082  ONIT; 2.54e-12; 0.;-360.; 1.;
+BENP + NO          =>  .918 HO2  +  .918 NO2  + .459  DCB2+  .459 DCB3 +  .918 GLY  + .082  ONIT; 2.54e-12; 0.;360.; 1.;
 TLP1 + NO          =>       NO2  +       BALD; 4.00e-12; 0.;0.0; 1.;
 TOLP + NO          =>  0.95 HO2  +  0.95 NO2  + 0.95  DCB2+  0.05 ONIT; 2.70e-12; 0.;-360.; 1.;
-PER1 + NO          =>  0.50 HO2  +  0.95 NO2  + 0.50  BALD+  0.50 MGLY +  0.50 DCB1 + 0.05  ONIT; 2.70e-12; 0.;-360.; 1.;
+PER1 + NO          =>  0.50 HO2  +  0.95 NO2  + 0.50  BALD+  0.50 MGLY +  0.50 DCB1 + 0.05  ONIT; 2.70e-12; 0.;360.; 1.;
 XYL1 + NO          =>       NO2  +       BALD; 4.00e-12; 0.;0.0; 1.;
 XYLP + NO          =>  0.95 HO2  +  0.95 NO2  + 0.95  DCB3+  0.05 ONIT; 2.70e-12; 0.;-360.; 1.;
-PER2 + NO          =>  0.95 HO2  +  0.95 NO2  + 0.95  MGLY+  0.95 DCB1 +  1.05 DCB3 + 0.05  ONIT; 2.70e-12; 0.;-360.; 1.;
+PER2 + NO          =>  0.95 HO2  +  0.95 NO2  + 0.95  MGLY+  0.95 DCB1 +  1.05 DCB3 + 0.05  ONIT; 2.70e-12; 0.;360.; 1.;
 !
-XYOP + NO          =>  0.95 HO2  +  0.95 NO2  + .350  GLY +  0.60 MGLY +  0.70 DCB1 + .073  DCB2+  .177 DCB3 +  0.05 ONIT; 2.70e-12; 0.;-360.; 1.;
+XYOP + NO          =>  0.95 HO2  +  0.95 NO2  + .350  GLY +  0.60 MGLY +  0.70 DCB1 + .073  DCB2+  .177 DCB3 +  0.05 ONIT; 2.70e-12; 0.;360.; 1.;
 !
 APIP + NO          =>  0.82 HO2  +  0.82 NO2  + 0.23  HCHO+  0.43 ALD  +  0.11 Acetone  + 0.44  KET +  0.07 Formic_Acid +  0.18 ONIT; 4.00e-12; 0.;0.0; 1.;
 !
 LIMP + NO          =>       HO2  +       NO2  + 0.05  OLI +  0.43 HCHO +  0.68 UALD + 0.07  Formic_Acid; 4.00e-12; 0.;0.0; 1.;
-RCO3 + NO          =>       C2H5O2 +       NO2 ; 8.10e-12; 0.;-270.; 1.;
+RCO3 + NO          =>       C2H5O2 +       NO2 ; 8.10e-12; 0.;270.; 1.;
 KETP + NO          =>  0.77 HO2  +  0.23 CH3CO3 + 0.16  XO2 +       NO2  +  0.54 MGLY + 0.46  ALD ; 4.00e-12; 0.;0.0; 1.;
-UALP + NO          =>       HO2  +  0.61 CO   +       NO2 +  0.03 HCHO +  0.27 ALD  + 0.70  KET +  0.18 GLY  +  0.21 MGLY; 2.54e-12; 0.;-360.; 1.;
+UALP + NO          =>       HO2  +  0.61 CO   +       NO2 +  0.03 HCHO +  0.27 ALD  + 0.70  KET +  0.18 GLY  +  0.21 MGLY; 2.54e-12; 0.;360.; 1.;
 BALP + NO          =>       BAL1 +       NO2 ; 4.00e-12; 0.;0.0; 1.;
 BAL1 + NO          =>       BAL2 +       NO2 ; 4.00e-12; 0.;0.0; 1.;
-ADDC + NO          =>       HO2  +       NO2  + 0.32  HKET+  0.68 GLY  +  0.68 OP2 ; 2.70e-12; 0.;-360.; 1.;
-MCTP + NO          =>       MCTO +       NO2 ; 2.70e-12; 0.;-360.; 1.;
+ADDC + NO          =>       HO2  +       NO2  + 0.32  HKET+  0.68 GLY  +  0.68 OP2 ; 2.70e-12; 0.;360.; 1.;
+MCTP + NO          =>       MCTO +       NO2 ; 2.70e-12; 0.;360.; 1.;
 ORAP + NO          =>       HO2  +       NO2  +       GLY ; 4.00e-12; 0.;0.0; 1.;
 OLNN + NO          =>       HO2  +       NO2  +       ONIT; 4.00e-12; 0.;0.0; 1.;
 OLND + NO          =>  2.00 NO2  +  .287 HCHO + 1.24  ALD +  .464 KET ; 4.00e-12; 0.;0.0; 1.;
-ADCN + NO          =>  2.00 NO2  +       GLY  +       OP2 ; 2.70e-12; 0.;-360.; 1.;
+ADCN + NO          =>  2.00 NO2  +       GLY  +       OP2 ; 2.70e-12; 0.;360.; 1.;
 XO2  + NO          =>       NO2 ; 4.00e-12; 0.;0.0; 1.;
 !
 !Peroxy radicals + NO2 
@@ -2317,91 +2317,91 @@ MCTO + NO2         =>       ONIT; 2.08e-12; 0.;0.0; 1.;
 !
 !Peroxy radicals + HO2
 !
-HC5P + HO2         =>       OP2 ; 1.66e-13; 0.;-1300.0; 1.;
-HC8P + HO2         =>       OP2 ; 1.66e-13; 0.;-1300.0; 1.;
-OLTP + HO2         =>       OP2 ; 1.66e-13; 0.;-1300.0; 1.;
-OLIP + HO2         =>       OP2 ; 1.66e-13; 0.;-1300.0; 1.;
-BENP + HO2         =>       OP2 ; 2.91e-13; 0.;-1300.; 1.;
-TLP1 + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
-TOLP + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
-PER1 + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
-XYL1 + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
-XYLP + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
-PER2 + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
-XYOP + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
+HC5P + HO2         =>       OP2 ; 1.66e-13; 0.;1300.0; 1.;
+HC8P + HO2         =>       OP2 ; 1.66e-13; 0.;1300.0; 1.;
+OLTP + HO2         =>       OP2 ; 1.66e-13; 0.;1300.0; 1.;
+OLIP + HO2         =>       OP2 ; 1.66e-13; 0.;1300.0; 1.;
+BENP + HO2         =>       OP2 ; 2.91e-13; 0.;1300.; 1.;
+TLP1 + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
+TOLP + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
+PER1 + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
+XYL1 + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
+XYLP + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
+PER2 + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
+XYOP + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
 APIP + HO2         =>       OP2 ; 1.50e-11; 0.;0.0; 1.;
 LIMP + HO2         =>       OP2 ; 1.50e-11; 0.;0.0; 1.;
-RCO3 + HO2         =>  0.44 OH   +  0.44 C2H5O2 + 0.15  ORA2+  0.41 CH3CO3H  +  0.44 CO2 ; 4.3e-13; 0.;-1040.; 1.;
-KETP + HO2         =>       OP2 ; 1.15e-13; 0.;-1300.0; 1.;
-UALP + HO2         =>       OP2 ; 2.91e-13; 0.;-1300.; 1.;
-ADDC + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
+RCO3 + HO2         =>  0.44 OH   +  0.44 C2H5O2 + 0.15  ORA2+  0.41 CH3CO3H  +  0.44 CO2 ; 4.3e-13; 0.;1040.; 1.;
+KETP + HO2         =>       OP2 ; 1.15e-13; 0.;1300.0; 1.;
+UALP + HO2         =>       OP2 ; 2.91e-13; 0.;1300.; 1.;
+ADDC + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
 CHO  + HO2         =>       CSL ; 1.00e-11; 0.;0.0; 1.;
-MCTP + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
-ORAP + HO2         =>       OP2 ; 1.15e-13; 0.;-1300.0; 1.;
-OLNN + HO2         =>       ONIT; 1.66e-13; 0.;-1300.0; 1.;
-OLND + HO2         =>       ONIT; 1.66e-13; 0.;-1300.0; 1.;
-ADCN + HO2         =>       OP2 ; 3.75e-13; 0.;-980.; 1.;
-XO2  + HO2         =>       OP2 ; 1.66e-13; 0.;-1300.0; 1.;
+MCTP + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
+ORAP + HO2         =>       OP2 ; 1.15e-13; 0.;1300.0; 1.;
+OLNN + HO2         =>       ONIT; 1.66e-13; 0.;1300.0; 1.;
+OLND + HO2         =>       ONIT; 1.66e-13; 0.;1300.0; 1.;
+ADCN + HO2         =>       OP2 ; 3.75e-13; 0.;980.; 1.;
+XO2  + HO2         =>       OP2 ; 1.66e-13; 0.;1300.0; 1.;
 !
 !Peroxy Radical Reactions with CH3O2
 !
-HC5P + CH3O2         =>  .842 HO2  +  .018 CH3O2  + .140  C2H5O2+  .191 XO2  +  .777 HCHO + .251  ALD +  .618 KET  +  .250 MEOH  + .250  ROH ; 1.00e-13; 0.;-467.0; 1.;
-HC8P + CH3O2         =>  .910 HO2  +  .090 C2H5O2 + .281  XO2 +  .750 HCHO +  .197 ALD  + .652  KET +  .250 MEOH  +  .250 ROH ; 4.34e-14; 0.;-633.; 1.;
-OLTP + CH3O2         =>       HO2  +  1.50 HCHO + .705  ALD +  .045 KET  +  .250 MEOH  + .250  ROH ; 1.46e-13; 0.;-708.0; 1.;
-OLIP + CH3O2         =>       HO2  +  .750 HCHO + 1.28  ALD +  .218 KET  +  .250 MEOH  + .250  ROH ; 9.18e-14; 0.;-708.0; 1.;
-BENP + CH3O2         =>  1.60 HO2  +  .459 DCB3 +       HCHO+  .459 DCB2 +  .600 GLY ; 3.56e-14; 0.;-708.; 1.;
-TLP1 + CH3O2         =>       HO2  +       HCHO +       BALD; 3.56e-14; 0.;-708.; 1.;
-TOLP + CH3O2         =>  2.00 HO2  +       HCHO + .271  GLY +       DCB2; 3.56e-14; 0.;-708.; 1.;
-PER1 + CH3O2         =>  2.00 HO2  +       HCHO +       MGLY+       DCB1; 3.56e-14; 0.;-708.; 1.;
-XYL1 + CH3O2         =>       HO2  +       HCHO +       BALD; 3.56e-14; 0.;-708.; 1.;
-XYLP + CH3O2         =>  2.00 HO2  +       HCHO +       DCB2; 3.56e-14; 0.;-708.; 1.;
-PER2 + CH3O2         =>  2.00 HO2  +       HCHO +       MGLY+       DCB1 +  1.05 DCB3; 3.56e-14; 0.;-708.; 1.;
-XYOP + CH3O2         =>  2.00 HO2  +       HCHO + .368  GLY +  .632 MGLY +  .737 DCB1 + .077  DCB2+  .186 DCB3 ; 3.56e-14; 0.; -708.; 1.;
-APIP + CH3O2         =>       HO2  +  .750 HCHO + .750  ALD +  .750 KET  +  .250 MEOH  + .250  ROH ; 3.56e-14; 0.;-708.0; 1.;
-LIMP + CH3O2         =>       HO2  +  .192 OLI  + 1.04  HCHO+  .308 MCR +  .250 MEOH  + .250  ROH ; 3.56e-14; 0.;-708.0; 1.;
-RCO3 + CH3O2         =>  0.9  HO2  +  0.9  CH3O2  +       HCHO+  0.1  ORA2 +  0.4  CO2 ; 2.0e-11; 0.;-500.0; 1.;
-KETP + CH3O2         =>       HO2  +  0.75 HCHO + 0.50  DCB1+  0.25 MEOH  +  0.25 ROH ; 6.91e-13; 0.;-508.0; 1.;
-UALP + CH3O2         =>       HO2  +  .305 CO   + .773  HCHO+  .203 ALD  +  .525 KET  + .105  MGLY+  .135 GLY  +  .250 MEOH  + .250  ROH ; 3.40e-14; 0.;-221.; 1.;
-BALP + CH3O2         =>       HO2  +       HCHO +       BAL1; 3.56e-14; 0.;-708.; 1.;
-BAL1 + CH3O2         =>       HO2  +       HCHO +       BAL2; 3.56e-14; 0.;-708.; 1.;
-ADDC + CH3O2         =>  2.00 HO2  +       HCHO +  0.32 HKET+  0.68 GLY  +  0.68 OP2 ; 3.56e-14; 0.;-708.; 1.;
-MCTP + CH3O2         =>       HO2  +       MCTO +       HCHO; 3.56e-14; 0.;-708.; 1.;
-ORAP + CH3O2         =>       HO2  +       HCHO +       GLY ; 7.50e-13; 0.;-500.0; 1.;
-OLNN + CH3O2         =>  2.00 HO2  +       HCHO +       ONIT; 1.60e-13; 0.;-708.0; 1.;
-OLND + CH3O2         =>  .500 HO2  +  .500 NO2  + .965  HCHO+  .930 ALD  +  .348 KET  + .250  MEOH +  0.25 ROH  +  .500 ONIT; 9.68e-14; 0.;-708.0; 1.;
+HC5P + CH3O2         =>  .842 HO2  +  .018 CH3O2  + .140  C2H5O2+  .191 XO2  +  .777 HCHO + .251  ALD +  .618 KET  +  .250 MEOH  + .250  ROH ; 1.00e-13; 0.;467.0; 1.;
+HC8P + CH3O2         =>  .910 HO2  +  .090 C2H5O2 + .281  XO2 +  .750 HCHO +  .197 ALD  + .652  KET +  .250 MEOH  +  .250 ROH ; 4.34e-14; 0.;633.; 1.;
+OLTP + CH3O2         =>       HO2  +  1.50 HCHO + .705  ALD +  .045 KET  +  .250 MEOH  + .250  ROH ; 1.46e-13; 0.;708.0; 1.;
+OLIP + CH3O2         =>       HO2  +  .750 HCHO + 1.28  ALD +  .218 KET  +  .250 MEOH  + .250  ROH ; 9.18e-14; 0.;708.0; 1.;
+BENP + CH3O2         =>  1.60 HO2  +  .459 DCB3 +       HCHO+  .459 DCB2 +  .600 GLY ; 3.56e-14; 0.;708.; 1.;
+TLP1 + CH3O2         =>       HO2  +       HCHO +       BALD; 3.56e-14; 0.;708.; 1.;
+TOLP + CH3O2         =>  2.00 HO2  +       HCHO + .271  GLY +       DCB2; 3.56e-14; 0.;708.; 1.;
+PER1 + CH3O2         =>  2.00 HO2  +       HCHO +       MGLY+       DCB1; 3.56e-14; 0.;-08.; 1.;
+XYL1 + CH3O2         =>       HO2  +       HCHO +       BALD; 3.56e-14; 0.;708.; 1.;
+XYLP + CH3O2         =>  2.00 HO2  +       HCHO +       DCB2; 3.56e-14; 0.;708.; 1.;
+PER2 + CH3O2         =>  2.00 HO2  +       HCHO +       MGLY+       DCB1 +  1.05 DCB3; 3.56e-14; 0.;708.; 1.;
+XYOP + CH3O2         =>  2.00 HO2  +       HCHO + .368  GLY +  .632 MGLY +  .737 DCB1 + .077  DCB2+  .186 DCB3 ; 3.56e-14; 0.; 708.; 1.;
+APIP + CH3O2         =>       HO2  +  .750 HCHO + .750  ALD +  .750 KET  +  .250 MEOH  + .250  ROH ; 3.56e-14; 0.;708.0; 1.;
+LIMP + CH3O2         =>       HO2  +  .192 OLI  + 1.04  HCHO+  .308 MCR +  .250 MEOH  + .250  ROH ; 3.56e-14; 0.;708.0; 1.;
+RCO3 + CH3O2         =>  0.9  HO2  +  0.9  CH3O2  +       HCHO+  0.1  ORA2 +  0.4  CO2 ; 2.0e-11; 0.;500.0; 1.;
+KETP + CH3O2         =>       HO2  +  0.75 HCHO + 0.50  DCB1+  0.25 MEOH  +  0.25 ROH ; 6.91e-13; 0.;508.0; 1.;
+UALP + CH3O2         =>       HO2  +  .305 CO   + .773  HCHO+  .203 ALD  +  .525 KET  + .105  MGLY+  .135 GLY  +  .250 MEOH  + .250  ROH ; 3.40e-14; 0.;221.; 1.;
+BALP + CH3O2         =>       HO2  +       HCHO +       BAL1; 3.56e-14; 0.;708.; 1.;
+BAL1 + CH3O2         =>       HO2  +       HCHO +       BAL2; 3.56e-14; 0.;708.; 1.;
+ADDC + CH3O2         =>  2.00 HO2  +       HCHO +  0.32 HKET+  0.68 GLY  +  0.68 OP2 ; 3.56e-14; 0.;708.; 1.;
+MCTP + CH3O2         =>       HO2  +       MCTO +       HCHO; 3.56e-14; 0.;708.; 1.;
+ORAP + CH3O2         =>       HO2  +       HCHO +       GLY ; 7.50e-13; 0.;500.0; 1.;
+OLNN + CH3O2         =>  2.00 HO2  +       HCHO +       ONIT; 1.60e-13; 0.;708.0; 1.;
+OLND + CH3O2         =>  .500 HO2  +  .500 NO2  + .965  HCHO+  .930 ALD  +  .348 KET  + .250  MEOH +  0.25 ROH  +  .500 ONIT; 9.68e-14; 0.;708.0; 1.;
 ADCN + CH3O2         =>       HO2  +  0.70 NO2  +       HCHO+  0.70 GLY  +  0.70 OP2  + 0.30  ONIT; 3.56e-14; 0.;0.0; 1.;
-XO2  + CH3O2         =>       HO2  +       HCHO; 5.99e-15; 0.;-1510.0; 1.;
+XO2  + CH3O2         =>       HO2  +       HCHO; 5.99e-15; 0.;1510.0; 1.;
 !
 !Peroxy radical plus ACO3 = CH3CO3
 !
-HC5P + CH3CO3        =>  .342 HO2  +  .518 CH3O2  + .140  C2H5O2+  .191 XO2  +  .042 HCHO + .381  ALD +  .824 KET  +  .500 ORA2; 5.59e-13; 0.;-522.0; 1.;
-HC8P + CH3CO3        =>  .303 HO2  +  .500 CH3O2  + .067  C2H5O2+  .208 XO2  +  .217 ALD  + .642  KET +  .495 ORA2; 2.47e-13; 0.;-683.; 1.;
-OLTP + CH3CO3        =>  .500 HO2  +  .500 CH3O2  + .940  ALD +       HCHO +  .060 KET  + .500  ORA2; 8.11e-13; 0.;-765.0; 1.;
-OLIP + CH3CO3        =>  .500 HO2  +  .500 CH3O2  + 1.71  ALD +  .290 KET  +  .500 ORA2; 5.09e-13; 0.;-765.0; 1.;
-BENP + CH3CO3        =>  0.60 HO2  +       CH3O2  + .459  DCB2+  .458 DCB3 +  .600 GLY ; 7.40e-13; 0.;-765.; 1.;
-TLP1 + CH3CO3        =>       CH3O2  +       BALD; 7.40e-13; 0.;-765.; 1.;
-TOLP + CH3CO3        =>       HO2  +       CH3O2  +       DCB2; 7.40e-13; 0.;-765.; 1.;
-PER1 + CH3CO3        =>       HO2  +       CH3O2  +       MGLY+       DCB1; 7.40e-13; 0.;-765.; 1.;
-XYL1 + CH3CO3        =>       CH3O2  +       BALD; 7.40e-13; 0.;-765.; 1.;
-XYLP + CH3CO3        =>       HO2  +       CH3O2  +       DCB2; 7.40e-13; 0.;-765.; 1.;
-PER2 + CH3CO3        =>       HO2  +       CH3O2  +       MGLY+       DCB1 +  1.05 DCB3; 7.40e-13; 0.;-765.; 1.;
-XYOP + CH3CO3        =>       HO2  +       CH3O2  + .368  GLY +  .632 MGLY +  .737 DCB1 + .077  DCB2+  .186 DCB3; 7.40e-13; 0.;-765.; 1.;
-APIP + CH3CO3        =>  .500 HO2  +  .500 CH3O2  +       ALD +       KET  +       ORA2; 7.40e-13; 0.;-765.0; 1.;
-LIMP + CH3CO3        =>  .500 HO2  +  .500 CH3O2  + .192  OLI +  .385 HCHO +  .308 MCR + .500  ORA2; 7.40e-13; 0.;-765.0; 1.;
-RCO3 + CH3CO3        =>       CH3O2  +       C2H5O2 + 2.00  CO2 ; 2.50e-12; 0.;-500.0; 1.;
-KETP + CH3CO3        =>  0.50 HO2  +  0.50 DCB1 + 0.50  CH3O2 +  0.50 ORA2; 7.51e-13; 0.;-565.0; 1.;
-UALP + CH3CO3        =>  0.50 HO2  +  0.50 CH3O2  + 0.50  CO  +  .030 HCHO +  0.27 ALD  + 0.70  KET +  0.18 GLY  +  .105 MGLY + 0.50  ORA2; 1.68e-12; 0.;-500.; 1.;
-BALP + CH3CO3        =>       CH3O2  +       BAL1; 7.40e-13; 0.;-765.; 1.;
-BAL1 + CH3CO3        =>       CH3O2  +       BAL2; 7.40e-13; 0.;-765.; 1.;
-ADDC + CH3CO3        =>  2.00 HO2  +       CH3O2  + 0.32  HKET+  0.68 GLY  +  0.68 OP2 ; 7.40e-13; 0.;-708.; 1.;
-MCTP + CH3CO3        =>       HO2  +       CH3O2  +       MCTO; 7.40e-13; 0.;-708.; 1.;
-ORAP + CH3CO3        =>       CH3O2  +       GLY ; 7.51e-13; 0.;-565.0; 1.;
-OLNN + CH3CO3        =>       HO2  +       CH3O2  +       ONIT; 8.85e-13; 0.;-765.0; 1.;
-OLND + CH3CO3        =>  .500 CH3O2  +       NO2  + .287  HCHO+  1.24 ALD  +  .464 KET  + .500  ORA2; 5.37e-13; 0.;-765.0; 1.;
-ADCN + CH3CO3        =>       HO2  +       CH3O2  + 0.70  NO2 +  0.70 GLY  +  0.70 OP2  + 0.30  ONIT; 7.40e-13; 0.;-708.; 1.;
-XO2  + CH3CO3        =>       CH3O2 ; 3.40e-14; 0.;-1560.0; 1.;
+HC5P + CH3CO3        =>  .342 HO2  +  .518 CH3O2  + .140  C2H5O2+  .191 XO2  +  .042 HCHO + .381  ALD +  .824 KET  +  .500 ORA2; 5.59e-13; 0.;522.0; 1.;
+HC8P + CH3CO3        =>  .303 HO2  +  .500 CH3O2  + .067  C2H5O2+  .208 XO2  +  .217 ALD  + .642  KET +  .495 ORA2; 2.47e-13; 0.;683.; 1.;
+OLTP + CH3CO3        =>  .500 HO2  +  .500 CH3O2  + .940  ALD +       HCHO +  .060 KET  + .500  ORA2; 8.11e-13; 0.;765.0; 1.;
+OLIP + CH3CO3        =>  .500 HO2  +  .500 CH3O2  + 1.71  ALD +  .290 KET  +  .500 ORA2; 5.09e-13; 0.;765.0; 1.;
+BENP + CH3CO3        =>  0.60 HO2  +       CH3O2  + .459  DCB2+  .458 DCB3 +  .600 GLY ; 7.40e-13; 0.;765.; 1.;
+TLP1 + CH3CO3        =>       CH3O2  +       BALD; 7.40e-13; 0.;765.; 1.;
+TOLP + CH3CO3        =>       HO2  +       CH3O2  +       DCB2; 7.40e-13; 0.;765.; 1.;
+PER1 + CH3CO3        =>       HO2  +       CH3O2  +       MGLY+       DCB1; 7.40e-13; 0.;765.; 1.;
+XYL1 + CH3CO3        =>       CH3O2  +       BALD; 7.40e-13; 0.;765.; 1.;
+XYLP + CH3CO3        =>       HO2  +       CH3O2  +       DCB2; 7.40e-13; 0.;765.; 1.;
+PER2 + CH3CO3        =>       HO2  +       CH3O2  +       MGLY+       DCB1 +  1.05 DCB3; 7.40e-13; 0.;765.; 1.;
+XYOP + CH3CO3        =>       HO2  +       CH3O2  + .368  GLY +  .632 MGLY +  .737 DCB1 + .077  DCB2+  .186 DCB3; 7.40e-13; 0.;765.; 1.;
+APIP + CH3CO3        =>  .500 HO2  +  .500 CH3O2  +       ALD +       KET  +       ORA2; 7.40e-13; 0.;765.0; 1.;
+LIMP + CH3CO3        =>  .500 HO2  +  .500 CH3O2  + .192  OLI +  .385 HCHO +  .308 MCR + .500  ORA2; 7.40e-13; 0.;765.0; 1.;
+RCO3 + CH3CO3        =>       CH3O2  +       C2H5O2 + 2.00  CO2 ; 2.50e-12; 0.;500.0; 1.;
+KETP + CH3CO3        =>  0.50 HO2  +  0.50 DCB1 + 0.50  CH3O2 +  0.50 ORA2; 7.51e-13; 0.;565.0; 1.;
+UALP + CH3CO3        =>  0.50 HO2  +  0.50 CH3O2  + 0.50  CO  +  .030 HCHO +  0.27 ALD  + 0.70  KET +  0.18 GLY  +  .105 MGLY + 0.50  ORA2; 1.68e-12; 0.;500.; 1.;
+BALP + CH3CO3        =>       CH3O2  +       BAL1; 7.40e-13; 0.;765.; 1.;
+BAL1 + CH3CO3        =>       CH3O2  +       BAL2; 7.40e-13; 0.;765.; 1.;
+ADDC + CH3CO3        =>  2.00 HO2  +       CH3O2  + 0.32  HKET+  0.68 GLY  +  0.68 OP2 ; 7.40e-13; 0.;708.; 1.;
+MCTP + CH3CO3        =>       HO2  +       CH3O2  +       MCTO; 7.40e-13; 0.;708.; 1.;
+ORAP + CH3CO3        =>       CH3O2  +       GLY ; 7.51e-13; 0.;565.0; 1.;
+OLNN + CH3CO3        =>       HO2  +       CH3O2  +       ONIT; 8.85e-13; 0.;765.0; 1.;
+OLND + CH3CO3        =>  .500 CH3O2  +       NO2  + .287  HCHO+  1.24 ALD  +  .464 KET  + .500  ORA2; 5.37e-13; 0.;765.0; 1.;
+ADCN + CH3CO3        =>       HO2  +       CH3O2  + 0.70  NO2 +  0.70 GLY  +  0.70 OP2  + 0.30  ONIT; 7.40e-13; 0.;708.; 1.;
+XO2  + CH3CO3        =>       CH3O2 ; 3.40e-14; 0.;1560.0; 1.;
 !
-RCO3 + RCO3        =>   2.0 C2H5O2 +   2.0 CO2 ; 2.50e-12; 0.;-500.0; 1.;
+RCO3 + RCO3        =>   2.0 C2H5O2 +   2.0 CO2 ; 2.50e-12; 0.;500.0; 1.;
 !
 !Peroxy radicals plus NO3
 !
@@ -2433,57 +2433,57 @@ ADCN + NO3         =>  2.00 NO2  +       GLY  +       OP2 ; 1.20e-12; 0.;0.0; 1.
 !
 !
 !
-OLNN + OLNN        =>       HO2  +  2.00 ONIT; 7.00e-14; 0.;-1000.0; 1.;
-OLNN + OLND        =>  .500 HO2  +  .500 NO2  + .202  HCHO+  .640 ALD  +  .149 KET  + 1.50  ONIT; 4.25e-14; 0.;-1000.0; 1.;
-OLND + OLND        =>       NO2  +  .504 HCHO + 1.21  ALD +  .285 KET  +       ONIT; 2.96e-14; 0.;-1000.0; 1.;
+OLNN + OLNN        =>       HO2  +  2.00 ONIT; 7.00e-14; 0.;1000.0; 1.;
+OLNN + OLND        =>  .500 HO2  +  .500 NO2  + .202  HCHO+  .640 ALD  +  .149 KET  + 1.50  ONIT; 4.25e-14; 0.;1000.0; 1.;
+OLND + OLND        =>       NO2  +  .504 HCHO + 1.21  ALD +  .285 KET  +       ONIT; 2.96e-14; 0.;1000.0; 1.;
 !
 !XO2 reactions to get extra NO to NO2 conversions
 !
 XO2  + NO3         =>       NO2 ; 1.20e-12; 0.;0.0; 1.;
-XO2  + RCO3        =>       C2H5O2 +       CO2 ; 2.50e-12; 0.;-500.0; 1.;
-XO2  + XO2         =>       M    ; 7.13e-17; 0.;-2950.0; 1.;
+XO2  + RCO3        =>       C2H5O2 +       CO2 ; 2.50e-12; 0.;500.0; 1.;
+XO2  + XO2         =>       M    ; 7.13e-17; 0.;2950.0; 1.;
 !
 !Use XO2 rates for NO, NO3, and HO2 reactions, CH3O2 + RO2_T from MCM v3.2 for RO2_T
 !
 HC5SOA + NO        => NO  + 0.0108 IVOC4   ; 4.00e-12; 0.;0.0; 1.; 
 HC5SOA + NO3       => NO3 + 0.0108 IVOC4   ; 1.20e-12; 0.;0.0; 1.;
-HC5SOA + HO2       => HO2 + 0.0217 IVOC4   ; 1.66e-13; 0.;-1300.0; 1.;
-HC5SOA             => 0.0217 IVOC4         ;12. ; 1.480e-12;	0.;	-520.;	1.; 
+HC5SOA + HO2       => HO2 + 0.0217 IVOC4   ; 1.66e-13; 0.;1300.0; 1.;
+HC5SOA             => 0.0217 IVOC4         ;12. ; 1.480e-12;	0.;	520.;	1.; 
 !
 HC8SOA + NO        => NO  + 0.0687 IVOC4   ; 4.00e-12; 0.;0.0; 1.; 
 HC8SOA + NO3       => NO3 + 0.0687 IVOC4   ; 1.20e-12; 0.;0.0; 1.;
-HC8SOA + HO2       => HO2 + 0.1373 IVOC4   ; 1.66e-13; 0.;-1300.0; 1.;
-HC8SOA             => 0.1373 IVOC4         ;12. ; 1.480e-12;	0.;	-520.;	1.;
+HC8SOA + HO2       => HO2 + 0.1373 IVOC4   ; 1.66e-13; 0.;1300.0; 1.;
+HC8SOA             => 0.1373 IVOC4         ;12. ; 1.480e-12;	0.;	520.;	1.;
 !
 OLTSOA + NO        => NO  + 0.0001 IVOC3 + 0.0076 IVOC4 + 0.0063 IVOC5 + 0.0253 IVOC6   ; 4.00e-12; 0.;0.0; 1.; 
 OLTSOA + NO3       => NO3 + 0.0001 IVOC3 + 0.0076 IVOC4 + 0.0063 IVOC5 + 0.0253 IVOC6   ; 1.20e-12; 0.;0.0; 1.;
-OLTSOA + HO2       => HO2 + 0.0008 IVOC3 + 0.0015 IVOC4 + 0.0101 IVOC5 + 0.0380 IVOC6   ; 1.66e-13; 0.;-1300.0; 1.;
-OLTSOA             => 0.0008 IVOC3 + 0.0015 IVOC4 + 0.0101 IVOC5 + 0.0380 IVOC6         ;12. ; 1.480e-12;	0.;	-520.;	1.; 
+OLTSOA + HO2       => HO2 + 0.0008 IVOC3 + 0.0015 IVOC4 + 0.0101 IVOC5 + 0.0380 IVOC6   ; 1.66e-13; 0.;1300.0; 1.;
+OLTSOA             => 0.0008 IVOC3 + 0.0015 IVOC4 + 0.0101 IVOC5 + 0.0380 IVOC6         ;12. ; 1.480e-12;	0.;	520.;	1.; 
 !
 OLISOA + NO        => NO  + 0.0008 IVOC3 + 0.0070 IVOC4 + 0.0225 IVOC5 + 0.0737 IVOC6   ; 4.00e-12; 0.;0.0; 1.; 
 OLISOA + NO3       => NO3 + 0.0008 IVOC3 + 0.0070 IVOC4 + 0.0225 IVOC5 + 0.0737 IVOC6   ; 1.20e-12; 0.;0.0; 1.;
-OLISOA + HO2       => HO2 + 0.0061 IVOC3 + 0.0119 IVOC4 + 0.0352 IVOC5 + 0.1024 IVOC6   ; 1.66e-13; 0.;-1300.0; 1.;
-OLISOA             => 0.0061 IVOC3 + 0.0119 IVOC4 + 0.0352 IVOC5 + 0.1024 IVOC6         ;12. ; 1.480e-12;	0.;	-520.;	1.; 
+OLISOA + HO2       => HO2 + 0.0061 IVOC3 + 0.0119 IVOC4 + 0.0352 IVOC5 + 0.1024 IVOC6   ; 1.66e-13; 0.;1300.0; 1.;
+OLISOA             => 0.0061 IVOC3 + 0.0119 IVOC4 + 0.0352 IVOC5 + 0.1024 IVOC6         ;12. ; 1.480e-12;	0.;	520.;	1.; 
 !
 TOLSOA + NO        => NO  + 0.0011 IVOC3 + 0.0610 IVOC4 + 0.1108 IVOC5 + 0.1607 IVOC6   ; 4.00e-12; 0.;0.0; 1.; 
 TOLSOA + NO3       => NO3 + 0.0011 IVOC3 + 0.0610 IVOC4 + 0.1108 IVOC5 + 0.1607 IVOC6   ; 1.20e-12; 0.;0.0; 1.;
-TOLSOA + HO2       => HO2 + 0.0277 IVOC3 + 0.0831 IVOC4 + 0.1386 IVOC5 + 0.1940 IVOC6   ; 1.66e-13; 0.;-1300.0; 1.;
-TOLSOA             => 0.0277 IVOC3 + 0.0831 IVOC4 + 0.1386 IVOC5 + 0.1940 IVOC6         ;12. ; 1.480e-12;	0.;	-520.;	1.; 
+TOLSOA + HO2       => HO2 + 0.0277 IVOC3 + 0.0831 IVOC4 + 0.1386 IVOC5 + 0.1940 IVOC6   ; 1.66e-13; 0.;1300.0; 1.;
+TOLSOA             => 0.0277 IVOC3 + 0.0831 IVOC4 + 0.1386 IVOC5 + 0.1940 IVOC6         ;12. ; 1.480e-12;	0.;	520.;	1.; 
 !
 XYLSOA + NO        => NO  + 0.0006 IVOC3 + 0.0830 IVOC4 + 0.1277 IVOC5 + 0.1852 IVOC6   ; 4.00e-12; 0.;0.0; 1.; 
 XYLSOA + NO3       => NO3 + 0.0006 IVOC3 + 0.0830 IVOC4 + 0.1277 IVOC5 + 0.1852 IVOC6   ; 1.20e-12; 0.;0.0; 1.;
-XYLSOA + HO2       => HO2 + 0.0319 IVOC3 + 0.1277 IVOC4 + 0.1596 IVOC5 + 0.2235 IVOC6   ; 1.66e-13; 0.;-1300.0; 1.;
-XYLSOA             => 0.0319 IVOC3 + 0.1277 IVOC4 + 0.1596 IVOC5 + 0.2235 IVOC6         ;12. ; 1.480e-12;	0.;	-520.;	1.; 
+XYLSOA + HO2       => HO2 + 0.0319 IVOC3 + 0.1277 IVOC4 + 0.1596 IVOC5 + 0.2235 IVOC6   ; 1.66e-13; 0.;1300.0; 1.;
+XYLSOA             => 0.0319 IVOC3 + 0.1277 IVOC4 + 0.1596 IVOC5 + 0.2235 IVOC6         ;12. ; 1.480e-12;	0.;	520.;	1.; 
 !
 ISOSOA + NO        => NO  + 0.0001 IVOC3 + 0.0061 IVOC4 + 0.0041 IVOC5   ; 4.00e-12; 0.;0.0; 1.; 
 ISOSOA + NO3       => NO3 + 0.0001 IVOC3 + 0.0061 IVOC4 + 0.0041 IVOC5   ; 1.20e-12; 0.;0.0; 1.;
-ISOSOA + HO2       => HO2 + 0.0025 IVOC3 + 0.0082 IVOC4 + 0.0041 IVOC5   ; 1.66e-13; 0.;-1300.0; 1.;
-ISOSOA             => 0.0025 IVOC3 + 0.0082 IVOC4 + 0.0041 IVOC5         ;12. ; 1.480e-12;	0.;	-520.;	1.; 
+ISOSOA + HO2       => HO2 + 0.0025 IVOC3 + 0.0082 IVOC4 + 0.0041 IVOC5   ; 1.66e-13; 0.;1300.0; 1.;
+ISOSOA             => 0.0025 IVOC3 + 0.0082 IVOC4 + 0.0041 IVOC5         ;12. ; 1.480e-12;	0.;	520.;	1.; 
 !
 TERPSOA + NO        => NO  + 0.0066 IVOC3 + 0.0664 IVOC4 + 0.1098 IVOC5 + 0.2769 IVOC6   ; 4.00e-12; 0.;0.0; 1.; 
 TERPSOA + NO3       => NO3 + 0.0066 IVOC3 + 0.0664 IVOC4 + 0.1098 IVOC5 + 0.2769 IVOC6   ; 1.20e-12; 0.;0.0; 1.;
-TERPSOA + HO2       => HO2 + 0.0586 IVOC3 + 0.0501 IVOC4 + 0.1959 IVOC5 + 0.3318 IVOC6   ; 1.66e-13; 0.;-1300.0; 1.;
-TERPSOA             => 0.0586 IVOC3 + 0.0501 IVOC4 + 0.1959 IVOC5 + 0.3318 IVOC6         ;12. ; 1.480e-12;	0.;	-520.;	1.; 
+TERPSOA + HO2       => HO2 + 0.0586 IVOC3 + 0.0501 IVOC4 + 0.1959 IVOC5 + 0.3318 IVOC6   ; 1.66e-13; 0.;1300.0; 1.;
+TERPSOA             => 0.0586 IVOC3 + 0.0501 IVOC4 + 0.1959 IVOC5 + 0.3318 IVOC6         ;12. ; 1.480e-12;	0.;	520.;	1.; 
 !
 IVOC2 + OH => 1.075 IVOC1 						; 4.0e-11; 0.;  0.;         1.;
 IVOC3 + OH => 1.075 IVOC2 						; 4.0e-11; 0.;  0.;         1.;
