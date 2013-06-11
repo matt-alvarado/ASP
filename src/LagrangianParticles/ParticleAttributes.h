@@ -1746,7 +1746,7 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
             !!For Maxwell-Garnett mixing rule
             Eshell =  CMPLX(SumEr,-1.0*SumEi)
             EBC =  CMPLX(ErBC,-1.0*EiBC)
-            Factor2 = (EBC-Eshell)/(EBC-2.0*Eshell)
+            Factor2 = (EBC-Eshell)/(EBC+2.0*Eshell)
             EMG = Eshell*(1.0+(3.0*BCVolRat*Factor2/(1.0-BCVolRat*Factor2)))
             ErMG = REAL(EMG)
             EiMG = AIMAG(EMG)
