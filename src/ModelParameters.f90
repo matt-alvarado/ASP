@@ -24,7 +24,8 @@
 !! 12/28  2012   Matt Alvarado     Fixed units conversion bug in SetHetero   !!
 !! 01/29  2013   Matt Alvarado     Changed AqThermoNumbAllowedIterations     !!
 !!                                    from 50000 to 100.                     !!
-!! 07/03  2013   Matt Alvarado     Added subroutine SetPhotoFlag             !!
+!! 07/03  2013   Matt Alvarado     Added subroutine SetPhotoFlag and         !!
+!!                                    SetPhotoEndTime  SUBROUTINE            !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -81,6 +82,7 @@
 !!45. SUBROUTINE SetEulerianBox(wind,length,width)
 !!46. SUBROUTINE SetIncludeAerosols(flag)
 !!47  SUBROUTINE SetPhotoFlag(flag)
+!!48. SUBROUTINE SetPhotoEndTime(UTC)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !! This one holds all of the physical constants that are used in the code

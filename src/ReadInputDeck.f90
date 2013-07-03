@@ -13,6 +13,8 @@
 !! 07     2006   Matt Alvarado     Began Update History			     !!
 !! 11/06  2012   Matt Alvarado     Updated main input deck to give model more!!
 !!                                 flexibility without recompiling.          !!
+!! 07/03  2013   Matt Alvarado     Updated main input deck to allow interp   !!
+!!                                 between two arbitrary photolysis points   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
