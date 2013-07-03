@@ -41,7 +41,7 @@
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	SUBROUTINE ReadMainInputDeck ()
 
-		USE Chemistry,			 ONLY : SetPhaseIfs
+		USE Chemistry,	         ONLY : SetPhaseIfs
 		USE InfrastructuralCode, ONLY : GetFileHandle,		&
 						ReturnFileHandle,	&
 						GetLine,		&

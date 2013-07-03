@@ -36,8 +36,7 @@ SUBROUTINE EulerianBox()
 	REAL*4  :: etimearray(2)
 	REAL*8, ALLOCATABLE	::	XPASS(:), GAMMA(:), Chem(:), NumConc(:), &
 							HeteroNumberConc(:), HeteroRadii(:), &
-							InitNumConc(:), EnvNumConc(:), Flux(:), SourceNumConc(:), SourceMassConc(:,:), &
-							AqMassFlux(:,:), OrgMassFlux(:,:), AqOrgMassFlux(:,:), NumFlux(:)
+							InitNumConc(:), EnvNumConc(:), SourceNumConc(:), SourceMassConc(:,:)
         REAL*8, DIMENSION(451) :: ExtCoeff, SingScat, Assym,BackScatCoeff,SubExtCoeff, SubSSA, &
                                           ExtCoeffSep, SingScatSep, AssymSep, BackScatCoeffSep, &
                                           SubExtCoeffSep, SubSSASep
@@ -51,10 +50,11 @@ SUBROUTINE EulerianBox()
 
 	!Molar emision ratios to CO for Timbavati Fire
 	!See Trentman, 2005 
-	real*8, ALLOCATABLE :: Gas_ER(:) 
-        real*8, ALLOCATABLE :: Aero_Num_ER(:), Aero_AqMass_ER(:,:)
-        real*8, ALLOCATABLE :: Aero_OrgMass_ER(:,:), Aero_AqOrgMass_ER(:,:)
-
+	real*8, ALLOCATABLE :: Gas_ER(:), Flux(:)
+        real*8, ALLOCATABLE :: Aero_Num_ER(:), Aero_AqMol_ER(:,:)
+        real*8, ALLOCATABLE :: Aero_OrgMol_ER(:,:), Aero_AqOrgMol_ER(:,:)
+        real*8, ALLOCATABLE :: Aero_Num_Flux(:), Aero_AqMol_Flux(:,:)
+        real*8, ALLOCATABLE :: Aero_OrgMol_Flux(:,:), Aero_AqOrgMol_Flux(:,:)
 
         spinup = 600 !spinup time in s
 	Xlength = boxlength !in km
@@ -64,7 +64,7 @@ SUBROUTINE EulerianBox()
 	FireCO = fire_co_emis !kg/s
 	!Want molecules/m2/s
 	FluxCO = FireCO/XLength/Ylength !kg/km2/s
-	FluxCO = FluxCO*6.022e23*1000/28.0 !molecules/km2/s
+	FluxCO = FluxCO*Avogadro*1000/28.0 !molecs/km2/s
 	
 	! INITIALIZE THE CHEMISTRY 
 	CALL SetChemistryParams
@@ -76,12 +76,17 @@ SUBROUTINE EulerianBox()
 	CALL RecalculatePhotoRates (ut, .TRUE.)
 
 	ALLOCATE(CHEM(HowManyGasChems))
-	ALLOCATE(Gas_ER(HowManyGasChems))
-
+	ALLOCATE(Gas_ER(HowManyGasChems)) !molecules gas q/molecules CO
+	ALLOCATE(Flux(HowManyGasChems))   !gas fluxes (molecs/km2/s)
+	DO q = 1, HowManyGasChems
+		Gas_ER(q) = 0.0
+		Flux(q) = 0.0
+	END DO
         !!This subroutine (a) calculates the ERs for all gasses 
-        !!and places them in Gas_ER(:) and (b) sets the initial
+        !!and places them in Gas_ER(:), (b) calculates the Fluxes 
+        !!for all gasses and places them in Flux(:), and (c) sets the initial
         !!gas concentrations in the box to the background values
-        CALL InitializeGasEulerianBox(HowManyGasChems, Gas_ER) 
+        CALL InitializeGasEulerianBox(HowManyGasChems, FluxCO, Gas_ER, Flux, Chem) 
 	
 	!! INITIALIZE the DISSOLUTION routine
 	CALL SetAllDissolution
@@ -99,245 +104,110 @@ SUBROUTINE EulerianBox()
 		
 	!!WARNING Force initial water equilibrium between gas and aerosol
 	!!(Uses open system for water eq.)
-	CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
-	
+	CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)	
 	CALL RegridAerosol ()
 	CALL SpillBeans()
+
+	!Count # of bins, # of Aq., Org, and AqOrg Chems
+	current => particles%first
+	NumBins = 0
+	DO WHILE(associated(current))
+		NumBins = NumBins + 1
+		NumAqChems = size(current%AqChems)
+		NumOrgChems = size(current%OrgChems)
+		NumAqOrgChems = size(current%AqOrgChems)
+		current => current%next
+	END DO
+
+	!Set heterogeneous Reactions
+	HeteroBins = NumBins
+	ALLOCATE(HeteroNumberConc(HeteroBins))
+	ALLOCATE(HeteroRadii(HeteroBins))
+
+	!Get particle number conc. and radii for hetero. rate calculation
+	current => particles%first
+	I = 1
+	DO WHILE(associated(current))
+		HeteroNumberConc(I) = current%NumberofParticles
+		HeteroRadii(I) = current%EffectiveRadius/100.0 !convert from cm to m
+		!ResetHeteroRates expects radii in units of m
+		current => current%next
+		I = I+1
+	END DO
+				
+	!Calculate Heterogeneous rates from size dist. info
+	CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, &
+                                     HeteroBins, .TRUE.)
+
+	ALLOCATE(Aero_Num_ER(NumBins)) !particles/molec CO
+	ALLOCATE(Aero_AqMol_ER(NumBins,NumAqChems)) !mol/molec CO
+	ALLOCATE(Aero_OrgMol_ER(NumBins,NumOrgChems)) !mol/molec CO
+	ALLOCATE(Aero_AqOrgMol_ER(NumBins,NumAqOrgChems)) !mol/molec CO
+
+	ALLOCATE(Aero_Num_Flux(NumBins)) !particles/km2/s
+        !Note below are *mass* ratios, not molar!
+	ALLOCATE(Aero_AqMol_Flux(NumBins,NumAqChems)) !mol/km2/s
+	ALLOCATE(Aero_OrgMol_Flux(NumBins,NumOrgChems)) !mol/km2/s
+	ALLOCATE(Aero_AqOrgMol_Flux(NumBins,NumAqOrgChems)) !mol/km2/s
+
+	DO q = 1, NumBins
+		Aero_Num_ER(q) = 0.0
+		Aero_Num_Flux(q) = 0.0
+	    DO i = 1, NumAqChems
+		Aero_AqMol_ER(q,i) = 0.0
+		Aero_AqMol_Flux(q,i) = 0.0
+	    END DO
+	    DO i = 1, NumOrgChems
+		Aero_OrgMol_ER(q,i) = 0.0
+		Aero_OrgMol_Flux(q,i) = 0.0
+	    END DO
+	    DO i = 1, NumAqOrgChems
+		Aero_AqOrgMol_ER(q,i) = 0.0
+		Aero_AqOrgMol_Flux(q,i) = 0.0
+	    END DO
+	END DO
+
+        !!This subroutine (a) calculates the ERs for all aerosols 
+        !!(b) calculates the Fluxes for all aerosols , and (c) sets the initial
+        !!areosol concentrations in the box to the background values
+        CALL InitializeAeroEulerianBox(NumBins, NumAqChems, NumOrgChems, &
+                                      NumAqOrgChems, FluxCO, 	         &
+                                      Aero_Num_ER, Aero_Num_Flux,        &
+                                      Aero_AqMol_ER, Aero_AqMol_Flux,    &
+                                      Aero_OrgMol_ER, Aero_OrgMol_Flux,  &
+                                      Aero_AqOrgMol_ER,                  &
+                                      Aero_AqOrgMol_Flux) 
 		
 	TEMP = GetTemp()
 	Mgas = GetM   ()
 
-		!Find chemical indices for later
-		PotassiumIndex = FindChem("K+", 1)
-		KNO3i = FindChem("KNO3", 1)
-		KCli = FindChem("KCl", 1)
-		KHSO4i = FindChem("KHSO4", 1)
-		K2SO4Index = FindChem("K2SO4", 1)
-		K2SO4i = K2SO4Index
+	!Find chemical indices for later
+	PotassiumIndex = FindChem("K+", 1)
+	KNO3i = FindChem("KNO3", 1)
+	KCli = FindChem("KCl", 1)
+	KHSO4i = FindChem("KHSO4", 1)
+	K2SO4Index = FindChem("K2SO4", 1)
+	K2SO4i = K2SO4Index
 		
-		Nai = FindChem("Na+", 1)
-		NaNO3i = FindChem("NaNO3", 1)
-		NaCli = FindChem("NaCl", 1)
-		NaHSO4i = FindChem("NaHSO4", 1)
-		Na2SO4i = FindChem("Na2SO4", 1)
+	Nai = FindChem("Na+", 1)
+	NaNO3i = FindChem("NaNO3", 1)
+	NaCli = FindChem("NaCl", 1)
+	NaHSO4i = FindChem("NaHSO4", 1)
+	Na2SO4i = FindChem("Na2SO4", 1)
 		
-		NH3i = FindChem("NH3", 1)
-		NH4i = FindChem("NH4+", 1)
-		NH4NO3i = FindChem("NH4NO3", 1)
-		NH4Cli = FindChem("NH4Cl", 1)
-		NH4HSO4i = FindChem("NH4HSO4", 1)
-		NH42SO4i = FindChem("(NH4)2SO4", 1)
+	NH3i = FindChem("NH3", 1)
+	NH4i = FindChem("NH4+", 1)
+	NH4NO3i = FindChem("NH4NO3", 1)
+	NH4Cli = FindChem("NH4Cl", 1)
+	NH4HSO4i = FindChem("NH4HSO4", 1)
+	NH42SO4i = FindChem("(NH4)2SO4", 1)
 
-		Cli = FindChem("Cl-", 1)
-		NO3i = FindChem("NO3-", 1)
-		SO4i = FindChem("SO4--", 1)
-		HSO4i = FindChem("HSO4-", 1)
+	Cli = FindChem("Cl-", 1)
+	NO3i = FindChem("NO3-", 1)
+	SO4i = FindChem("SO4--", 1)
+	HSO4i = FindChem("HSO4-", 1)
 
-		!Count # of bins, # of Aq., Org, and AqOrg Chems
-		current => particles%first
-		NumBins = 0
-		DO WHILE(associated(current))
-			NumBins = NumBins + 1
-			NumAqChems = size(current%AqChems)
-			NumOrgChems = size(current%OrgChems)
-			NumAqOrgChems = size(current%AqOrgChems)
-			current => current%next
-		END DO
-	
-
-
-
-
-		ALLOCATE(NumConc(NumBins))
-		ALLOCATE(InitNumConc(NumBins))
-		ALLOCATE(EnvNumConc(NumBins))
-		
-		!Set heterogeneous Reactions
-		HeteroBins = NumBins
-		ALLOCATE(HeteroNumberConc(HeteroBins))
-		ALLOCATE(HeteroRadii(HeteroBins))
-
-		!Calculate gas fluxes (molecules/km2/s)
-		ALLOCATE(Flux(HowManyGasChems))
-		DO q = 1, HowManyGasChems
-			Flux(q) = 0
-		END DO
-		
-		q = FindChem("CO", 0)
-		Flux(q) = FluxCO
-		WRITE(*,*) Flux(q), q
-		
-
-
-
-		ALLOCATE(sourcenumconc(NumBins))
-		ALLOCATE(sourcemassconc(NumBins, 44))
-		sourcenumconc(1) = 14.555 !number/cm3/ppbm CO, 
-		sourcemassconc(1,1) = 5.259e-6 !ppbm H2O/ppbm CO
-		sourcemassconc(1,3) = 8.747e-15 !ppbm NH3/ppbm CO
-		sourcemassconc(1,6) = 2.655e-5 !ppbm NH4Cl/ppbm CO
-		sourcemassconc(1,7) = 2.065e-6 !ppbm NH4NO3/ppbm CO
-		sourcemassconc(1,8) = 8.849e-7 !NH42SO4 ppbm/ppbm CO
-		sourcemassconc(1,10) = 1.239e-5 !ppbm KCl/ppbm CO
-		sourcemassconc(1,12) = 4.140e-6 !ppbm K2SO4/ppbm CO
-		sourcemassconc(1,24) = 4.107e-6 !ppbm BC/ppbm CO
-		sourcemassconc(1,25) = 1.133e-5 !ppbm POA1/ppbm CO
-		sourcemassconc(1,44) = 3.265e-5 !ppbm CBIO/ppbm CO
-	
-		sourcenumconc(2) = 6.571 !number/cm3/ppbm CO, 
-		sourcemassconc(2,1) = 7.217e-4 !ppbm H2O/ppbm CO
-		sourcemassconc(2,3) = 1.578e-12 !ppbm NH3/ppbm CO
-		sourcemassconc(2,6) = 3.211e-3 !ppbm NH4Cl/ppbm CO
-		sourcemassconc(2,7) = 2.498e-4 !ppbm NH4NO3/ppbm CO
-		sourcemassconc(2,8) = 1.070e-4 !NH42SO4 ppbm/ppbm CO
-		sourcemassconc(2,10) = 1.499e-3 !ppbm KCl/ppbm CO
-		sourcemassconc(2,12) = 5.008e-4 !ppbm K2SO4/ppbm CO
-		sourcemassconc(2,24) = 4.968e-4 !ppbm BC/ppbm CO
-		sourcemassconc(2,25) = 1.371e-3 !ppbm POA1/ppbm CO
-		sourcemassconc(2,44) = 3.950e-3 !ppbm CBIO/ppbm CO
-
-		sourcenumconc(3) = 0.8053 !number/cm3/ppbm CO, 
-		sourcemassconc(3,1) = 2.302e-3 !ppbm H2O/ppbm CO
-		sourcemassconc(3,3) = 4.951e-12 !ppbm NH3/ppbm CO
-		sourcemassconc(3,6) = 0.010 !ppbm NH4Cl/ppbm CO
-		sourcemassconc(3,7) = 7.836e-4 !ppbm NH4NO3/ppbm CO
-		sourcemassconc(3,8) = 3.358e-4 !NH42SO4 ppbm/ppbm CO
-		sourcemassconc(3,10) = 4.702e-3 !ppbm KCl/ppbm CO
-		sourcemassconc(3,12) = 1.571e-3 !ppbm K2SO4/ppbm CO
-		sourcemassconc(3,24) = 1.558e-3 !ppbm BC/ppbm CO
-		sourcemassconc(3,25) = 4.301e-3 !ppbm POA1/ppbm CO
-		sourcemassconc(3,44) = 0.012 !ppbm CBIO/ppbm CO
-
-		
-		!Set Initial Aerosol Concentrations to background
-		CALL SortAerosolAtGridPointForCoagulation () 
-		current => particles%first
-		Env => BoundaryParticles%first
-		I = 1
-		DO WHILE(associated(current))
-    			
-			IF(Env%Edges(1) .NE. Current%Edges(1)) THEN
-				!WRITE(*,*) Env%Edges(1), Current%Edges(1)
-				!CALL ERROR("Env. Aerosol not lined up!")					
-			END IF
-
-			!Get Number Concentration of particles in particles/cm3
-			current%numberofparticles = Env%numberofparticles
-			DO J = 1, NumAqChems	
-				Current%AqChems(J) = Env%AqChems(J)
-			END DO
-			DO J = 1, NumOrgChems	
-				Current%OrgChems(J) = Env%OrgChems(J)
-			END DO	
-			DO J = 1, NumAqOrgChems	
-				Current%AqOrgChems(J) = Env%AqOrgChems(J)
-			END DO	
-			CALL RecalculateRadius(current)
-			I = I + 1
-		
-			current => current%next
-			Env => Env%next	
-		END DO
-	
-		TEMP = GetTemp()
-		Mgas = GetM   ()
-		deltaCO = FireCO/Xlength/Ylength
-	    deltaCO = 1.0e9*deltaCO/(GetAirDensity()*1000) !ppbm CO*m/s
-
-		ALLOCATE(NumFlux(NumBins))
-		DO q = 1, NumBins
-			NumFlux(q) = 0.
-		END DO
-		!particles/m2/s
-		NumFlux(1) = sourcenumconc(1)*deltaCO*1.0e6
-		NumFlux(2) = sourcenumconc(2)*deltaCO*1.0e6
-		NumFlux(3) = sourcenumconc(3)*deltaCO*1.0e6
-
-		ALLOCATE(AqMassFlux(NumBins,NumAqChems))
-		DO q = 1, NumBins
-			DO j = 1, NumAqChems
-				AqMassFlux(q,j) = 0.
-			END DO
-		END DO
-		!mol/m2/s
-		q = FindChem("H2O",1)
-		AqMassFlux(1,q) = sourcemassconc(1,1)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,1)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,1)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-
-		q = FindChem("NH3",1)
-		AqMassFlux(1,q) = sourcemassconc(1,3)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,3)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,3)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-
-		q = FindChem("NH4Cl",1)
-		AqMassFlux(1,q) = sourcemassconc(1,6)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,6)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,6)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-
-		q = FindChem("NH4NO3",1)
-		AqMassFlux(1,q) = sourcemassconc(1,7)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,7)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,7)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-
-		q = FindChem("(NH4)2SO4",1)
-		AqMassFlux(1,q) = sourcemassconc(1,8)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,8)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,8)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-
-		q = FindChem("KCl",1)
-		AqMassFlux(1,q) = sourcemassconc(1,10)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,10)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,10)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-
-		q = FindChem("K2SO4",1)
-		AqMassFlux(1,q) = sourcemassconc(1,12)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(2,q) = sourcemassconc(2,12)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-		AqMassFlux(3,q) = sourcemassconc(3,12)*deltaCO*1.0e-3*GetAirDensity( )/AqMolecularMass(q)
-
-		ALLOCATE(OrgMassFlux(NumBins,NumOrgChems))
-		DO q = 1, NumBins
-			DO j = 1, NumOrgChems
-				OrgMassFlux(q,j) = 0.
-			END DO
-		END DO
-
-		q = FindChem("BC",2)
-		OrgMassFlux(1,q) = sourcemassconc(1,24)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
-		OrgMassFlux(2,q) = sourcemassconc(2,24)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
-		OrgMassFlux(3,q) = sourcemassconc(3,24)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
-
-		q = FindChem("POA1",2)
-		OrgMassFlux(1,q) = sourcemassconc(1,25)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
-		OrgMassFlux(2,q) = sourcemassconc(2,25)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
-		OrgMassFlux(3,q) = sourcemassconc(3,25)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
-
-		q = FindChem("CBIO",2)
-		OrgMassFlux(1,q) = sourcemassconc(1,44)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
-		OrgMassFlux(2,q) = sourcemassconc(2,44)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
-		OrgMassFlux(3,q) = sourcemassconc(3,44)*deltaCO*1.0e-3*GetAirDensity( )/OrgMolecularMass(q)
-
-		ALLOCATE(AqOrgMassFlux(NumBins,NumAqOrgChems))
-		DO q = 1, NumBins
-			DO j = 1, NumAqOrgChems
-				AqOrgMassFlux(q,j) = 0.
-			END DO
-		END DO
-
-		!Get particle number conc. and radii for hetero. rate calculation
-		current => particles%first
-		I = 1
-		DO WHILE(associated(current))
-			HeteroNumberConc(I) = current%NumberofParticles
-			HeteroRadii(I) = current%EffectiveRadius/100.0 !convert from cm to m
-			!ResetHeteroRates expects radii in units of m
-			current => current%next
-			I = I+1
-		END DO
-				
-		!Calculate Heterogeneous rates from size dist. info
-		CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .TRUE.)
-		CALL RecalculatePhotoRates(ut, .TRUE.)
+!!!!!!!!!!!!!!OUTPUT STUFF!!!!!!!!!!!!!!!!!!!!!!!!!!!
 					
 		ALLOCATE(OutFH(3+NumBins))
 		DO I = 1, 3+Numbins
@@ -561,25 +431,20 @@ SUBROUTINE EulerianBox()
 		
 		!Output size distribution
 		CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
+!!!!!END OUTPUT STUFF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			
-		ChemTimestep = 1.
-		MixTimestep = 1*ChemTimestep !Should always be an integer multiple!
-		CoagTimeStep = 60.
-		CondTimeStep = 20*ChemTimestep
-		
-		!Run the main loop with above timesteps
-		DO r = 1, INT(71*60/MixTimestep)
-			!WRITE(*,*) "In Loop"
+		ChemTimestep = 1
+		MixTimestep = 1 !Always start as 1s for first 600 seconds, MJA 12-28-2012		
+ 
+                CoagTimeStep = CoagStep
+		CondTimeStep = CondStep
 
-			!Change CondTimeStep after first minute
-			IF (r .GT. INT(60/Mixtimestep)) CondTimeStep = 20. 
+		DO r = 1, INT(600+((RunLength-10)*60/MixStep))+1
+
 			
 			!Calculate Temperature
 			TEMP = GetTemp()
-
-			!NOTE: Right now, pressure and temperature are assumed to be 
-			!constant, so we don't have to recalculate the rest of the reaction rates
-			!CALL RecalculateReactionRates(IFGAS,IFAQ)
+			CALL RecalculateReactionRates(IFGAS,IFAQ)
 			!WARNING: You MUST call RecalculatePhotoRates and RecalculateHeteroRates
 			!after this step, or those rates will be set to 0!
 			
@@ -634,125 +499,22 @@ SUBROUTINE EulerianBox()
 		
 			!Step Dilution of Chems
 			!Flux should have units of molecules/m2/s
-			DO q = 1, HowManyGasChems
-				Chem(q) = GridGasChem(q)
-				IF(t .LT. spinup) THEN
-					Chem(q) = (Chem(q) + (WindSpeed*GasPhaseBackground(q)*MixTimestep/Xlength)) &
-				          /(1+ (MixTimestep*GasPhaseDepVel(q)/(Height*100)) + (MixTimestep*Windspeed/Xlength))
+                        CALL StepDiluGasEulerian(HowManyGasChems,WindSpeed,& 
+                                         Xlength,Height,MixTimestep,Flux, &
+                                         t, spinup)
 		
-				ELSE
-					Chem(q) = (Chem(q) + (WindSpeed*GasPhaseBackground(q)*MixTimestep/Xlength) + (Flux(q)*MixTimestep/Height/1.0e6)) &
-				          /(1+ (MixTimestep*GasPhaseDepVel(q)/(Height*100)) + (MixTimestep*Windspeed/Xlength))
-				END IF
-			END DO	
-			!Update chemical concentrations
-			CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 
-			!Step Dilution and Deposition of Particles
-			CALL SortAerosolAtGridPointForCoagulation () 
-			current => particles%first
-			Env => BoundaryParticles%first
-			I = 1
-			DO WHILE(associated(current))
-    			
-				IF(Env%Edges(1) .NE. Current%Edges(1)) THEN
-					!WRITE(*,*) Env%Edges(1), Current%Edges(1)
-					!CALL ERROR("Env. Aerosol not lined up!")					
-				END IF
-				CALL RecalculateRadius(current)
-				!Get Number Concentration of particles in particles/cm3
-				InitNumConc(I) = current%numberofparticles 
-				EnvNumConc(I) = Env%numberofparticles
-				!Dilute and Dep number of particles (assume no background for now)
-				!Flux should have units of particles/m2/s
-				IF(t .LT. spinup) THEN
-					current%numberofparticles = (InitNumConc(I) + (WindSpeed*EnvNumConc(I)*MixTimestep/Xlength)) &
-							/(1.0 + MixTimestep*(TerminalVelocity(Current)/(Height*100) + Windspeed/Xlength))
-				ELSE
-					current%numberofparticles = (InitNumConc(I) + (WindSpeed*EnvNumConc(I)*MixTimestep/Xlength) &
-				                             + (NumFlux(I)*MixTimestep/Height/1.0e6)) &
-							/(1.0 + MixTimestep*(TerminalVelocity(Current)/(Height*100) + Windspeed/Xlength))
-				END IF
-				!WRITE(*,*) I, InitNumConc(I), current%numberofparticles, TerminalVelocity(Current)
-				
-				!AqMassFlux in units of mol/m2/s
-				IF(current%Numberofparticles .GT. 0.) THEN
-					DO J = 1, NumAqChems
-						InitialMass = InitNumConc(I)*current%AqChems(J)
-						EnvMass = EnvNumConc(I)*Env%AqChems(J)
-						IF(t .LT. spinup) THEN
-							NewMass = (InitialMass + Windspeed*EnvMass*MixTimestep/Xlength)/ &
-										  (1+ MixTimestep*(TerminalVelocity(Current)/(Height*100) + Windspeed/Xlength))
-						ELSE
-							NewMass = (InitialMass + Windspeed*EnvMass*MixTimestep/Xlength &
-						            + AqMassFlux(I,J)*MixTimestep/Height/1.0e6)/ &
-										  (1+ MixTimestep*(TerminalVelocity(Current)/(Height*100) + Windspeed/Xlength))
-						END IF
-						Current%AqChems(J) = NewMass/current%numberofparticles
-						!IF(current%Numberofparticles .LT. 1.0) WRITE(*,*) I,J, Current%AqChems(J)
-						!IF(IsNAN(Current%AqChems(J))) WRITE(*,*) "Error in Particle Diluton! ", I, J
-					END DO
+		      !Step Dilution and Deposition of Particles
+                      CALL StepDiluAeroEulerian(WindSpeed,Xlength,Height,Temp,&
+                                                  MixTimestep, t, spinup, &
+                                                  Aero_Num_Flux, &
+                                                  Aero_AqMol_Flux, &
+                                                  Aero_OrgMol_Flux, &
+                                                  Aero_AqOrgMol_Flux, &
+                                                  NumAqChems, NumOrgChems, &
+                                                  NumAqOrgChems)
 
-				!OrgMassFlux in units of mol/m2/s
-					DO J = 1, NumOrgChems
-						InitialMass = InitNumConc(I)*current%OrgChems(J)
-						EnvMass = EnvNumConc(I)*Env%OrgChems(J)
-						IF (t .LT. spinup) THEN
-							NewMass = (InitialMass + Windspeed*EnvMass*MixTimestep/Xlength)/ &
-										  (1+ MixTimestep*(TerminalVelocity(Current)/(Height*100) + Windspeed/Xlength))
-			
-						ELSE
-							NewMass = (InitialMass + Windspeed*EnvMass*MixTimestep/Xlength &
-						            + OrgMassFlux(I,J)*MixTimestep/Height/1.0e6)/ &
-										  (1+ MixTimestep*(TerminalVelocity(Current)/(Height*100) + Windspeed/Xlength))
-						END IF
-						Current%OrgChems(J) = NewMass/current%numberofparticles
-					END DO
-				
-				!AqOrgMassFlux in units of mol/m2/s
-					DO J = 1, NumAqOrgChems
-						InitialMass = InitNumConc(I)*current%AqOrgChems(J)
-						EnvMass = EnvNumConc(I)*Env%AqOrgChems(J)
-						IF (t .LT. spinup) THEN
-							NewMass = (InitialMass + Windspeed*EnvMass*MixTimestep/Xlength)/ &
-										  (1+ MixTimestep*(TerminalVelocity(Current)/(Height*100) + Windspeed/Xlength))
-						ELSE
-							NewMass = (InitialMass + Windspeed*EnvMass*MixTimestep/Xlength &
-						            + AqOrgMassFlux(I,J)*MixTimestep/Height/1.0e6)/ &
-										  (1+ MixTimestep*(TerminalVelocity(Current)/(Height*100) + Windspeed/Xlength))
-						END IF
-						Current%AqOrgChems(J) = NewMass/current%numberofparticles
-					END DO
-				ELSE !No particles
-					DO J = 1, NumAqChems
-						Current%AqChems(J) = 0.
-						!IF(IsNAN(Current%AqChems(J))) WRITE(*,*) "Error in Particle Diluton! ", I, J
-					END DO
-				
-					DO J = 1, NumOrgChems
-						Current%OrgChems(J) = 0.
-					END DO
-				
-					DO J = 1, NumAqOrgChems
-						Current%AqOrgChems(J) = 0.
-					END DO				
-				END IF
-				!Force particle temperature to be env. Temperature
-				!WARNING: This is a kludge, since the program is calculating
-				!a huge temperature for the largest particles, and I'm not sure why
-				current%Temperature = TEMP
-				
-				!Recalculate optical parameters
-				!WRITE(*,*) "Call Optical"
-				CALL ShellRefIndAndRad(Current)
-				!WRITE(*,*) "Optical Okay"
-				
-				I = I + 1
-		
-				current => current%next
-				Env => Env%next
-				
-			END DO !END STEP PARTICLE DILUTION
+
 			!WRITE(*,*) "Before AOD"
 			!WRITE(*,*) "AOD: ", AerosolOpticalDepth ()	
 			!WRITE(*,*) "Dilution Okay"	
@@ -761,7 +523,7 @@ SUBROUTINE EulerianBox()
 			
 			!Write Output to file every minute 
 			IF (MOD(t,10.0) .LT. 0.01) THEN
-				
+!!!!OUTPUT STUFF!!!!!				
 				!Write current time in minutes
 				WRITE(OutFH(1),FMT='(7ES13.5E2)', ADVANCE='NO') (t)/60
 				WRITE(OutFH(2),FMT='(7ES13.5E2)', ADVANCE='NO') (t)/60
@@ -925,6 +687,7 @@ SUBROUTINE EulerianBox()
 					CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 				END IF
 			END IF
+!!!!END OUTPUT STUFF!!!!!	
 			
 			!Update time
 			t = t + MixTimestep
@@ -939,31 +702,330 @@ SUBROUTINE EulerianBox()
 
 END SUBROUTINE EulerianBox
 
-SUBROUTINE InitializeGasEulerianBox(NumGasChems, Gas_ER) 
+SUBROUTINE InitializeGasEulerianBox(NumGasChems, FluxCO, Gas_ER, Flux, Chem) 
 
 	!! Include modules
-	USE ModelParameters
-	USE InfrastructuralCode	
-	USE GridPointFields
-	USE Chemistry
-	USE Aerosols		
-	USE Condensation
-	USE OutputRoutines
-	USE Coagulation
-	
+	USE GridPointFields,     ONLY : GridGasChem, &
+                                        UpdateChemicalConcentrations
+	USE Chemistry,           ONLY : FindChem, &
+                                        GasPhaseBackground, &
+                                        HowManyEvolveGasChems	
 	implicit none
 
-        REAL*8, INTENT(IN) :: NumGasChems
-        REAL*8, INTENT(INOUT) ::  Gas_ER(:)
+        !External variables
+        INTEGER, INTENT(IN)   :: NumGasChems 
+        REAL*8, INTENT(IN)    :: FluxCO
+        REAL*8, INTENT(INOUT) ::  Gas_ER(:), Flux(:), Chem(:)
 
-  
+        !Internal variables
+        INTEGER               :: q, IndCO
+        REAL                  :: GasConc
 
-	!Set Inital Gas Concentrations to Background
-!	DO q = 1, NumGasChems
-!		Chem(q) = GasPhaseBackground(q)
-!	END DO
+        !Find Index for CO
+	IndCO = FindChem("CO", 0)
+
+	DO q = 1, NumGasChems  
+             GasConc = GridGasChem(q)
+             IF (GasConc .GT. 0.0) THEN
+                 !Calculate ERs to CO
+                 Gas_ER(q) = (GasConc-GasPhaseBackground(q))/ &
+                         (GridGasChem(IndCO)-GasPhaseBackground(IndCO))
+                 !Calculate Flux (molecules/km2/s)
+                  Flux(q) = Gas_ER(q)*FluxCO
+             ENDIF
+	     !Set Inital Gas Concentrations to Background
+             Chem(q) = GasPhaseBackground(q)
+        ENDDO
 
 	!Update chemical concentrations
-!	CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
+	CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 
 END SUBROUTINE
+
+SUBROUTINE InitializeAeroEulerianBox(NumBins, NumAqChems, NumOrgChems, &
+                                      NumAqOrgChems, FluxCO, 	        &
+                                      Aero_Num_ER, Aero_Num_Flux, &
+                                      Aero_AqMol_ER, Aero_AqMol_Flux, &
+                                      Aero_OrgMol_ER, Aero_OrgMol_Flux, &
+                                      Aero_AqOrgMol_ER, &
+                                      Aero_AqOrgMol_Flux) 
+	!! Include modules
+	USE GridPointFields,     ONLY : GridGasChem
+	USE Chemistry,           ONLY : FindChem, &
+                                        GasPhaseBackground	
+	USE Aerosols,            ONLY : particle, particles, &
+                                        Boundaryparticles, &
+                                        SortAerosolAtGridPointForCoagulation, &
+                                        RecalculateRadius
+	implicit none
+
+        !External variables
+        INTEGER, INTENT(IN)     :: NumBins, NumAqChems
+        INTEGER, INTENT(IN)     :: NumOrgChems, NumAqOrgChems
+        REAL*8,  INTENT(IN)     :: FluxCO
+        REAL*8,  INTENT(INOUT)  :: Aero_Num_ER(:), Aero_Num_Flux(:)
+        REAL*8,  INTENT(INOUT)  :: Aero_AqMol_ER(:,:), Aero_AqMol_Flux(:,:)
+        REAL*8,  INTENT(INOUT)  :: Aero_OrgMol_ER(:,:), Aero_OrgMol_Flux(:,:)
+        REAL*8,  INTENT(INOUT)  :: Aero_AqOrgMol_ER(:,:), Aero_AqOrgMol_Flux(:,:) 
+
+        !Internal variables
+        INTEGER                 :: q, j, IndCO
+        REAL*8                  :: molecCO !Excess CO in molec/cm3
+	TYPE(Particle), POINTER :: Current, Env
+
+	CALL SortAerosolAtGridPointForCoagulation () 
+        !Find Index for CO
+	IndCO = FindChem("CO", 0)
+        molecCO = GridGasChem(IndCO)-GasPhaseBackground(IndCO)
+
+	current => particles%first
+        Env => BoundaryParticles%first
+
+	DO q = 1, NumBins           
+
+           IF (current%Numberofparticles .GT. 0.0) THEN
+               !Calculate ERs to CO (particles/molecules CO)
+               Aero_Num_ER(q)= (current%Numberofparticles &
+                                    -Env%Numberofparticles) &
+                                 /molecCO                              
+               !Calculate Flux (particles/km2/s)
+               Aero_Num_Flux(q) = Aero_Num_ER(q)*FluxCO
+               
+               DO j = 1,NumAqChems
+                  !Calculate ERs to CO (mols/molecules CO)
+                  Aero_AqMol_ER(q,j)=(current%Numberofparticles*current%AqChems(j) &
+                                       -Env%Numberofparticles*Env%AqChems(j)) &
+                                       /molecCO
+                  !Calculate Flux (mols/km2/s)
+                  Aero_AqMol_Flux(q,j) = Aero_AqMol_ER(q,j)*FluxCO
+	          !Set Initial Mass Concentrations to Background
+                  current%AqChems(j)=Env%AqChems(j)
+               ENDDO 
+
+               DO j = 1,NumOrgChems
+                  !Calculate ERs to CO (mols/molecules CO)
+                  Aero_OrgMol_ER(q,j)=(current%Numberofparticles*current%OrgChems(j) &
+                                       -Env%Numberofparticles*Env%OrgChems(j)) &
+                                       /molecCO
+                  !Calculate Flux (mols/km2/s)
+                  Aero_OrgMol_Flux(q,j) = Aero_OrgMol_ER(q,j)*FluxCO
+	          !Set Initial Mass Concentrations to Background
+                  current%OrgChems(j)=Env%OrgChems(j)
+               ENDDO 
+
+               DO j = 1,NumAqOrgChems
+                  !Calculate ERs to CO (mols/molecules CO)
+                  Aero_AqOrgMol_ER(q,j)=(current%Numberofparticles*current%AqOrgChems(j) &
+                                       -Env%Numberofparticles*Env%AqOrgChems(j)) &
+                                       /molecCO
+                  !Calculate Flux (mols/km2/s)
+                  Aero_AqOrgMol_Flux(q,j) = Aero_AqOrgMol_ER(q,j)*FluxCO
+	          !Set Initial Mass Concentrations to Background
+                  current%AqOrgChems(j)=Env%AqOrgChems(j)
+               ENDDO 
+           ENDIF
+
+	   !Set Initial Number Concentrations to Background
+           current%Numberofparticles = Env%Numberofparticles
+	   CALL RecalculateRadius(current)
+           !Iterate to next particle
+           IF(q .LT. NumBins) THEN
+	      current => current%next
+              Env => Env%next
+           ENDIF
+	END DO 
+END SUBROUTINE InitializeAeroEulerianBox
+
+SUBROUTINE StepDiluGasEulerian(HowManyGasChems,WindSpeed,& 
+                               Xlength,Height, MixTimestep,Flux, t, spinup)
+
+	!! Include modules
+	USE GridPointFields,     ONLY : GridGasChem, &
+                                        UpdateChemicalConcentrations
+	USE Chemistry,           ONLY : FindChem, &
+                                        GasPhaseBackground, &
+                                        HowManyEvolveGasChems, &
+                                        gasphasedepvel	
+
+	implicit none
+
+        !External variables
+        INTEGER, INTENT(IN) :: HowManyGasChems
+        REAL*8,  INTENT(IN) :: WindSpeed !m/s
+        REAL*8,  INTENT(IN) :: Xlength, Height !km
+        REAL*8,  INTENT(IN) :: MixTimeStep, t, spinup !s
+        REAL*8,  INTENT(IN) :: Flux(:) !molecules/km2/s  
+
+        !Internal Variables
+        REAL*8, ALLOCATABLE :: Chem(:)
+        REAL*8              :: xlen, hi !m
+        INTEGER             :: q
+
+        xlen =1000.0*XLength
+        hi = 1000.0*Height
+
+        ALLOCATE(Chem(HowManyGasChems))
+
+	DO q = 1, HowManyGasChems
+		Chem(q) = GridGasChem(q)
+		IF(t .LT. spinup) THEN
+                    Chem(q) = (Chem(q) + (WindSpeed*GasPhaseBackground(q)*MixTimestep/xlen)) &
+				    /(1+ (MixTimestep*GasPhaseDepVel(q)/(hi*1.0e2)) + (MixTimestep*Windspeed/xlen))
+		
+		ELSE
+					Chem(q) = (Chem(q) + (WindSpeed*GasPhaseBackground(q)*MixTimestep/xlen) + (Flux(q)*MixTimestep/hi/1.0e12)) &
+				          /(1+ (MixTimestep*GasPhaseDepVel(q)/(hi*1.0e2)) + (MixTimestep*Windspeed/xlen))
+		END IF
+	END DO	
+
+	!Update chemical concentrations
+	CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
+
+
+END SUBROUTINE StepDiluGasEulerian
+
+SUBROUTINE StepDiluAeroEulerian(WindSpeed,Xlength,Height,Temp,&
+                                                  MixTimestep, t, spinup, &
+                                                  Aero_Num_Flux, &
+                                                  Aero_AqMol_Flux, &
+                                                  Aero_OrgMol_Flux, &
+                                                  Aero_AqOrgMol_Flux, &
+                                NumAqChems, NumOrgChems, NumAqOrgChems)
+	!! Include modules
+
+	USE Aerosols,            ONLY : particle, particles, &
+                                        Boundaryparticles, &
+                                        TerminalVelocity, &
+                                        SortAerosolAtGridPointForCoagulation, &
+                                        ShellRefIndAndRad, &
+                                        RecalculateRadius
+	implicit none
+
+        !External variables
+        REAL*8,  INTENT(IN) :: WindSpeed !m/s
+        REAL*8,  INTENT(IN) :: Xlength, Height !km
+        REAL*8,  INTENT(IN) :: Temp !K
+        REAL*8,  INTENT(IN) :: MixTimeStep, t, spinup !s
+        REAL*8,  INTENT(IN) :: Aero_Num_Flux(:) !particles/km2/s  
+        REAL*8,  INTENT(IN) :: Aero_AqMol_Flux(:,:) !mols/km2/s  
+        REAL*8,  INTENT(IN) :: Aero_OrgMol_Flux(:,:) !mols/km2/s  
+        REAL*8,  INTENT(IN) :: Aero_AqOrgMol_Flux(:,:) !mols/km2/s 
+        INTEGER, INTENT(IN) :: NumAqChems, NumOrgChems, NumAqOrgChems 
+
+        !Internal Variables
+        REAL*8              :: xlen, hi !m
+        REAL*8              :: InitNumConc, EnvNumConc
+        REAL*8              :: InitialMol, EnvMol, NewMol
+        INTEGER             :: I, J
+	TYPE(Particle), POINTER :: Current, Env
+
+        xlen =1000.0*XLength
+        hi = 1000.0*Height
+
+	CALL SortAerosolAtGridPointForCoagulation () 
+	current => particles%first
+	Env => BoundaryParticles%first
+	I = 1
+	DO WHILE(associated(current))
+ 
+            CALL RecalculateRadius(current)
+
+	    !Get Number Concentration of particles in particles/cm3
+	    InitNumConc = current%numberofparticles 
+	    EnvNumConc = Env%numberofparticles
+
+	    !Dilute and Dep number of particles (assume no background for now)
+	    !Flux should have units of particles/km2/s
+	    IF(t .LT. spinup) THEN
+		current%numberofparticles = (InitNumConc + &
+                (WindSpeed*EnvNumConc*MixTimestep/xlen)) &
+		/(1.0 + MixTimestep*(TerminalVelocity(Current)/(hi*100) &
+                + Windspeed/xlen))
+	    ELSE
+		current%numberofparticles = (InitNumConc + &
+                (WindSpeed*EnvNumConc*MixTimestep/xlen) &
+		+ (Aero_Num_Flux(I)*MixTimestep/hi/1.0e12)) &
+	        /(1.0 + MixTimestep*(TerminalVelocity(Current)/(hi*100) &
+                + Windspeed/xlen))
+	    ENDIF
+			
+	    !Aero_AqMol_Flux in units of mol/km2/s
+	    IF(current%Numberofparticles .GT. 0.) THEN
+		DO J = 1, NumAqChems
+		   InitialMol = InitNumConc*current%AqChems(J)
+		   EnvMol = EnvNumConc*Env%AqChems(J)
+		   
+                   IF(t .LT. spinup) THEN
+			NewMol = (InitialMol + &
+                         Windspeed*EnvMol*MixTimestep/xlen)/ &
+	                 (1.0+MixTimestep*(TerminalVelocity(Current)/(hi*100) &
+                         + Windspeed/Xlen))
+		   ELSE
+			NewMol = (InitialMol + &
+                         Windspeed*EnvMol*MixTimestep/xlen &
+                         + Aero_AqMol_Flux(I,J)*MixTimestep/hi/1.0e12)/ &
+			(1.0+ MixTimestep*(TerminalVelocity(Current)/(hi*100) &
+                        + Windspeed/xlen))
+		   END IF
+			Current%AqChems(J) = NewMol/current%numberofparticles
+					
+		END DO
+
+		DO J = 1, NumOrgChems
+		   InitialMol = InitNumConc*current%OrgChems(J)
+		   EnvMol = EnvNumConc*Env%OrgChems(J)
+		   
+                   IF(t .LT. spinup) THEN
+			NewMol = (InitialMol + &
+                         Windspeed*EnvMol*MixTimestep/xlen)/ &
+	                 (1.0+MixTimestep*(TerminalVelocity(Current)/(hi*100) &
+                         + Windspeed/Xlen))
+		   ELSE
+			NewMol = (InitialMol + &
+                         Windspeed*EnvMol*MixTimestep/xlen &
+                         + Aero_OrgMol_Flux(I,J)*MixTimestep/hi/1.0e12)/ &
+			(1.0+ MixTimestep*(TerminalVelocity(Current)/(hi*100) &
+                        + Windspeed/xlen))
+		   END IF
+			Current%OrgChems(J) = NewMol/current%numberofparticles
+					
+		END DO
+
+		DO J = 1, NumAqOrgChems
+		   InitialMol = InitNumConc*current%AqOrgChems(J)
+		   EnvMol = EnvNumConc*Env%AqOrgChems(J)
+		   
+                   IF(t .LT. spinup) THEN
+			NewMol = (InitialMol + &
+                         Windspeed*EnvMol*MixTimestep/xlen)/ &
+	                 (1.0+MixTimestep*(TerminalVelocity(Current)/(hi*100) &
+                         + Windspeed/Xlen))
+		   ELSE
+			NewMol = (InitialMol + &
+                         Windspeed*EnvMol*MixTimestep/xlen &
+                         + Aero_AqOrgMol_Flux(I,J)*MixTimestep/hi/1.0e12)/ &
+			(1.0+ MixTimestep*(TerminalVelocity(Current)/(hi*100) &
+                        + Windspeed/xlen))
+		   END IF
+			Current%AqOrgChems(J) = NewMol/current%numberofparticles
+					
+		END DO
+
+		!Force particle temperature to be env. Temperature
+		!WARNING: This is a kludge, since the program is calculating
+		!a huge temperature for the largest particles, 
+                !and I'm not sure why
+		current%Temperature = TEMP
+				
+		!Recalculate optical parameters
+		!WRITE(*,*) "Call Optical"
+		CALL ShellRefIndAndRad(Current)
+		!WRITE(*,*) "Optical Okay"
+				
+		I = I + 1
+		
+		current => current%next
+		Env => Env%next
+	     ENDIF			
+	ENDDO
+END SUBROUTINE StepDiluAeroEulerian

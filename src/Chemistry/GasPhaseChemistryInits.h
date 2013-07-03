@@ -148,7 +148,7 @@ SUBROUTINE SetGasPhaseChemistry ()
         !!! -- 2 if should be included in RO2_T and RCO3_T sums (acyl peroxy) -- !!!
         !!! -- 1 if should be included in RO2_T sum only, 0 if not -- !!!
 	ALLOCATE (GasPhasePeroxy(HowManyGasChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseBackground could not proceed in SetChemistryParams()")
+	if (allocation_error > 0) CALL ERROR("Allocation of GasPhasePeroxy could not proceed in SetChemistryParams()")
 		
 	!!! -- GAS PHASE LATERAL BACKGROUND CONCENTRATION in ppb -- !!!
 	ALLOCATE (GasPhaseBackground(HowManyGasChems), stat = allocation_error)
@@ -156,7 +156,7 @@ SUBROUTINE SetGasPhaseChemistry ()
 
 	!!! -- DEPOSITION VELOCITY in cm/s -- !!!
 	ALLOCATE (GasPhaseDepVel(HowManyGasChems), stat = allocation_error)
-	if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseBackground could not proceed in SetChemistryParams()")
+	if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseDepVel could not proceed in SetChemistryParams()")
 
 		
 	!! Make the grid of gas phase chemicals
