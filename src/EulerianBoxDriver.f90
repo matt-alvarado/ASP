@@ -1,8 +1,8 @@
 !! 11/06  2012  Matt Alvarado Updated intitalization to make parallel to others in
 !!                            DevelopmentDriver.f90
+!! 07/03  2013  Matt Alvarado Major Rewrite to make it work.
 SUBROUTINE EulerianBox()
 	!! Include modules
-!	USE DFPORT,				 ONLY : RTC, ETIME
 	USE ModelParameters
 	USE InfrastructuralCode	
 	USE GridPointFields
@@ -51,84 +51,62 @@ SUBROUTINE EulerianBox()
 
 	!Molar emision ratios to CO for Timbavati Fire
 	!See Trentman, 2005 
-	real*8, parameter    :: ER_NO = 1.16e-2, ER_NO2 = 2.60e-2 
-	real*8, parameter    :: ER_HONO = 1.23e-3, ER_SO2 = 1.28e-2  
-	real*8, parameter    :: ER_H2 = 2.57e-1
-	real*8, parameter    :: ER_CO2 = 1.02e+1, ER_CH4 = 5.83e-2
-	real*8, parameter    :: ER_HCHO = 1.87e-2, ER_MEOH = 1.45e-2
-	real*8, parameter    :: ER_ETHE = 1.60e-2, ER_OLEL = 5.90e-3
-	real*8, parameter    :: ER_OLEH = 2.12e-5, ER_ALKL = 3.98e-3
-	real*8, parameter    :: ER_ALKM = 2.25e-5, ER_AROH = 8.12e-4
-	real*8, parameter    :: ER_AROL = 1.83e-4, ER_AROO = 3.46e-3
-	real*8, parameter    :: ER_ARAL = 1.18e-4, ER_PAH = 6.57e-6
-    real*8, parameter    :: ER_ALD2 = 1.05e-2, ER_KETL = 1.08e-2
-    real*8, parameter    :: ER_KETH = 7.31e-5, ER_ETOH = 1.03e-4
-    real*8, parameter    :: ER_ALCH = 3.86e-4, ER_ISOP = 2.00e-4
-    real*8, parameter    :: ER_BIOL = 2.42e-5, ER_BIOH = 1.274e-2 !ER_BIOH = 2.42e-5 
-    real*8, parameter    :: ER_FURAN = 3.91e-3, ER_ACID = 2.10e-2
-    real*8, parameter    :: ER_MCR = 6.15e-4
-	real*8, parameter    :: ER_H2O = 5.18 !Assumes that H2O emission factor
-						  !is 0.5 kg H2O/kg fuel (from Freitas ,2007), and that CO emission 
-						  !factor is 0.15 kg CO/kg fuel. See 080607 notes. 
-	real*8, parameter    :: ER_NH3 = 1.59e-3 !ER_NH3 = 8.16e-3  ! !!
-						  !Lover value is from Trentmann, higher value includes
-						  !the NH3 necessary to neutralize the observed aerosol Cl- 
-	real*8, parameter    :: ER_HCl = 0.0 !ER_HCl = 6.57e-3 ! ! !
-						  !Lover value is from Trentmann, higher value includes
-						  !the aerosol HCl that was originally included as NH4Cl.
-						  !Adding it to the gas phase will hopefully prevent 
-						  !H+ below 0 errors. Must be consistent with melaminit.F!
-		
-		Xlength = boxlength !52500. !52.5 km
-		Ylength = boxwidth !20000. !20 km
-		Height = inversionheight	!1 km
-		spinup = 600 !spinup time in s
-		
-		FireCO = 49.5 !kg/s
-		!Want molecules/m2/s
-		FluxCO = FireCO/XLength/Ylength !kg/m2/s
-		FluxCO = FluxCO*6.022e23*1000/28.0 !molecules/m2/s
+	real*8, ALLOCATABLE :: Gas_ER(:) 
+        real*8, ALLOCATABLE :: Aero_Num_ER(:), Aero_AqMass_ER(:,:)
+        real*8, ALLOCATABLE :: Aero_OrgMass_ER(:,:), Aero_AqOrgMass_ER(:,:)
 
-	IF (.TRUE.) THEN !Size Dist PARTICLE TESTS
+
+        spinup = 600 !spinup time in s
+	Xlength = boxlength !in km
+	Ylength = boxwidth !in km
+	Height = inversionheight !in km
+		
+	FireCO = fire_co_emis !kg/s
+	!Want molecules/m2/s
+	FluxCO = FireCO/XLength/Ylength !kg/km2/s
+	FluxCO = FluxCO*6.022e23*1000/28.0 !molecules/km2/s
 	
-		! INITIALIZE the CHEMISTRY 
-		CALL SetChemistryParams
-		CALL ReadPhotolysisRates
-		
-		CALL RecalculateReactionRates(IFGAS,IFAQ)
-			
-		!Calculate Initial Photolysis Rates
-		ut = 8.75 !Timbavati Initial Universal Time in hours
-		!11.00 !Otavi Initial Universal Time in hours
-		CALL RecalculatePhotoRates (ut, .TRUE.)
+	! INITIALIZE THE CHEMISTRY 
+	CALL SetChemistryParams
 
-		ALLOCATE(CHEM(HowManyGasChems))
+        ! INITIALIZE THE REACTION RATES
+	CALL RecalculateReactionRates(IFGAS,IFAQ)			
+ 	CALL ReadPhotolysisRates
+	ut = UTCStartTime
+	CALL RecalculatePhotoRates (ut, .TRUE.)
+
+	ALLOCATE(CHEM(HowManyGasChems))
+	ALLOCATE(Gas_ER(HowManyGasChems))
+
+        !!This subroutine (a) calculates the ERs for all gasses 
+        !!and places them in Gas_ER(:) and (b) sets the initial
+        !!gas concentrations in the box to the background values
+        CALL InitializeGasEulerianBox(HowManyGasChems, Gas_ER) 
 	
-		!! INITIALIZE the DISSOLUTION routine
-		CALL SetAllDissolution
+	!! INITIALIZE the DISSOLUTION routine
+	CALL SetAllDissolution
 
-		!! INITIALIZE the PARTICLES	
-		CALL InitializeParticlesSectional
-		CALL RegridAerosol ()
-		CALL SpillBeans()
-		!WRITE(*,*) "AOD: ", AerosolOpticalDepth ()
+	!! INITIALIZE the PARTICLES	
+	CALL InitializeParticlesSectional
+	CALL RegridAerosol ()
+	CALL SpillBeans()
 
-		!! Call Boundary distributions
-		CALL ReadBoundaryDistributionsOrganic
-		CALL PopulateParticlesSectionsRightAway(.TRUE.)
-		CALL SortBoundaryPart
-		CALL SpillBeans(Env=.TRUE.)
+	!! Call Boundary distributions
+	CALL ReadBoundaryDistributionsOrganic
+	CALL PopulateParticlesSectionsRightAway(.TRUE.)
+	CALL SortBoundaryPart
+	CALL SpillBeans(Env=.TRUE.)
 		
-		!!WARNING Force initial water equilibrium between gas and aerosol
-		!!(Uses open system for water eq.)
-		CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
-		!CALL EquilibrateGridPointAll(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
-		CALL RegridAerosol ()
-		CALL SpillBeans()
+	!!WARNING Force initial water equilibrium between gas and aerosol
+	!!(Uses open system for water eq.)
+	CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
+	
+	CALL RegridAerosol ()
+	CALL SpillBeans()
 		
-		TEMP = GetTemp()
-		Mgas = GetM   ()
-		
+	TEMP = GetTemp()
+	Mgas = GetM   ()
+
 		!Find chemical indices for later
 		PotassiumIndex = FindChem("K+", 1)
 		KNO3i = FindChem("KNO3", 1)
@@ -155,25 +133,20 @@ SUBROUTINE EulerianBox()
 		SO4i = FindChem("SO4--", 1)
 		HSO4i = FindChem("HSO4-", 1)
 
-		!Count # of bins, # of Aq. Chems
+		!Count # of bins, # of Aq., Org, and AqOrg Chems
 		current => particles%first
-		Env => BoundaryParticles%first
 		NumBins = 0
-		Potassium = 0
 		DO WHILE(associated(current))
 			NumBins = NumBins + 1
 			NumAqChems = size(current%AqChems)
 			NumOrgChems = size(current%OrgChems)
 			NumAqOrgChems = size(current%AqOrgChems)
-			Potassium = Potassium + current%AqChems(PotassiumIndex)*current%numberofparticles
-			Potassium = Potassium + current%AqChems(KNO3i)*current%numberofparticles
-			Potassium = Potassium + 2*current%AqChems(K2SO4i)*current%numberofparticles
-			Potassium = Potassium + current%AqChems(KCli)*current%numberofparticles
-			Potassium = Potassium + current%AqChems(KHSO4i)*current%numberofparticles		
-			Env => Env%next
 			current => current%next
 		END DO
-		WRITE(*,*) "Potassium (ug/m3): ", Potassium*AqMolecularMass(PotassiumIndex)*1.0E12
+	
+
+
+
 
 		ALLOCATE(NumConc(NumBins))
 		ALLOCATE(InitNumConc(NumBins))
@@ -184,7 +157,7 @@ SUBROUTINE EulerianBox()
 		ALLOCATE(HeteroNumberConc(HeteroBins))
 		ALLOCATE(HeteroRadii(HeteroBins))
 
-		!Calculate gas fluxes (molecules/m2/s)
+		!Calculate gas fluxes (molecules/km2/s)
 		ALLOCATE(Flux(HowManyGasChems))
 		DO q = 1, HowManyGasChems
 			Flux(q) = 0
@@ -194,111 +167,8 @@ SUBROUTINE EulerianBox()
 		Flux(q) = FluxCO
 		WRITE(*,*) Flux(q), q
 		
-		q = FindChem("H2O", 0)
-		Flux(q) = FluxCO*ER_H2O
-		
-	  	q = FindChem("NO", 0)
-		Flux(q) = FluxCO*ER_NO
 
-	  	q = FindChem("NO2", 0)
-		Flux(q) = FluxCO*ER_NO2
 
-		q = FindChem("HONO", 0)
-		Flux(q) = FluxCO*ER_HONO
-
-		q = FindChem("SO2", 0)
-		Flux(q) = FluxCO*ER_SO2
-
-		q = FindChem("NH3", 0)
-		Flux(q) = FluxCO*ER_NH3
-
-		q = FindChem("HCl", 0)
-		Flux(q) = FluxCO*ER_HCl
-
-		q = FindChem("H2", 0)
-		Flux(q) = FluxCO*ER_H2
-	  	  		
-		q = FindChem("CO2", 0)
-		Flux(q) = FluxCO*ER_CO2
-	
-	  	q = FindChem("CH4", 0)
-		Flux(q) = FluxCO*ER_CH4
-
-		q = FindChem("HCHO", 0)
-		Flux(q) = FluxCO*ER_HCHO
-	  
-	  	q = FindChem("MEOH", 0)
-		Flux(q) = FluxCO*ER_MEOH
-
-		q = FindChem("ETHE", 0)
-		Flux(q) = FluxCO*ER_ETHE
-
-		q = FindChem("OLEL", 0)
-		Flux(q) = FluxCO*ER_OLEL
-
-		q = FindChem("OLEH", 0)
-		Flux(q) = FluxCO*ER_OLEH
-
-		q = FindChem("ALKL", 0)
-		Flux(q) = FluxCO*ER_ALKL
-
-		q = FindChem("ALKM", 0)
-		Flux(q) = FluxCO*ER_ALKM
-
-		q = FindChem("AROH", 0)
-		Flux(q) = FluxCO*ER_AROH
-
-		q = FindChem("AROL", 0)
-		Flux(q) = FluxCO*ER_AROL
-
-	  	q = FindChem("AROO", 0)
-		Flux(q) = FluxCO*ER_AROO
-
-		q = FindChem("ARAL", 0)
-		Flux(q) = FluxCO*ER_ARAL
-
-		q = FindChem("PAH", 0)
-		Flux(q) = FluxCO*ER_PAH
-
-		q = FindChem("ALD2", 0)
-		Flux(q) = FluxCO*ER_ALD2
-
-		q = FindChem("KETL", 0)
-		Flux(q) = FluxCO*ER_KETL
-
-		q = FindChem("KETH", 0)
-		Flux(q) = FluxCO*ER_KETH
-
-		q = FindChem("ETOH", 0)
-		Flux(q) = FluxCO*ER_ETOH
-
-		q = FindChem("ALCH", 0)
-		Flux(q) = FluxCO*ER_ALCH
-
-		q = FindChem("ISOP", 0)
-		Flux(q) = FluxCO*ER_ISOP
-
-		q = FindChem("BIOL", 0)
-		Flux(q) = FluxCO*ER_BIOL
-
-	  	q = FindChem("BIOH", 0)
-		Flux(q) = FluxCO*ER_BIOH
-
-		q = FindChem("FURAN", 0)
-		Flux(q) = FluxCO*ER_FURAN
-
-	  	q = FindChem("ACID", 0)
-		Flux(q) = FluxCO*ER_ACID
-
-	  	q = FindChem("MCR", 0)
-		Flux(q) = FluxCO*ER_MCR
-
-		!Set Inital Gas Concentrations to Background
-		DO q = 1, HowManyGasChems
-			Chem(q) = GasPhaseBackground(q)
-		END DO
-		!Update chemical concentrations
-		CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 
 		ALLOCATE(sourcenumconc(NumBins))
 		ALLOCATE(sourcemassconc(NumBins, 44))
@@ -1066,9 +936,34 @@ SUBROUTINE EulerianBox()
 
 		END DO
 
-		
-		Dohumiditytest=.TRUE.
-		    
-	END IF !Size Dist. Particle Tests
 
 END SUBROUTINE EulerianBox
+
+SUBROUTINE InitializeGasEulerianBox(NumGasChems, Gas_ER) 
+
+	!! Include modules
+	USE ModelParameters
+	USE InfrastructuralCode	
+	USE GridPointFields
+	USE Chemistry
+	USE Aerosols		
+	USE Condensation
+	USE OutputRoutines
+	USE Coagulation
+	
+	implicit none
+
+        REAL*8, INTENT(IN) :: NumGasChems
+        REAL*8, INTENT(INOUT) ::  Gas_ER(:)
+
+  
+
+	!Set Inital Gas Concentrations to Background
+!	DO q = 1, NumGasChems
+!		Chem(q) = GasPhaseBackground(q)
+!	END DO
+
+	!Update chemical concentrations
+!	CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
+
+END SUBROUTINE

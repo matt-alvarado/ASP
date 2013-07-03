@@ -25,7 +25,9 @@
 !! 01/29  2013   Matt Alvarado     Changed AqThermoNumbAllowedIterations     !!
 !!                                    from 50000 to 100.                     !!
 !! 07/03  2013   Matt Alvarado     Added subroutine SetPhotoFlag and         !!
-!!                                    SetPhotoEndTime  SUBROUTINE            !!
+!!                                    SetPhotoEndTime                        !!
+!! 07/03  2013   Matt Alvarado     Updated SetEulerianBox to include Fire CO !!
+!!                                   emission rate.                          !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -79,7 +81,7 @@
 !!42. SUBROUTINE SetInversionHeight(height)
 !!43. SUBROUTINE SetHetero(num, rad)
 !!44. SUBROUTINE SetLagrangianMix(mix)
-!!45. SUBROUTINE SetEulerianBox(wind,length,width)
+!!45. SUBROUTINE SetEulerianBox(wind,length,width, fireCO)
 !!46. SUBROUTINE SetIncludeAerosols(flag)
 !!47  SUBROUTINE SetPhotoFlag(flag)
 !!48. SUBROUTINE SetPhotoEndTime(UTC)
@@ -316,7 +318,7 @@ MODULE ModelParameters
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!Set Eulerian Box Parameters (MJA, 11/06/2012)                !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        REAL*8  :: windspeed, boxlength, boxwidth      
+        REAL*8  :: windspeed, boxlength, boxwidth, fire_co_emis    
 
 	!!!!!!! DEFINE SUBROUTINES !!!!!!!
 	CONTAINS
@@ -832,15 +834,18 @@ MODULE ModelParameters
 		b_mix = mix
 	END SUBROUTINE SetLagrangianMix
 
-	SUBROUTINE SetEulerianBox(wind,length,width)
+	SUBROUTINE SetEulerianBox(wind,length,width, fireCO)
 		
 		IMPLICIT NONE
 
 		REAL*8 :: wind !!in m/s
 		REAL*8 :: length, width !!in km
+                REAL*8 :: fireCO !!in kg/s
+
 		windspeed = wind
 		boxlength = length
-                boxwidth = width                
+                boxwidth = width  
+                fire_CO_emis = fireCO              
 	END SUBROUTINE SetEulerianBox
 
 	SUBROUTINE SetIncludeAerosols(flag)

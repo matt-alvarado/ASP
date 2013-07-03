@@ -15,6 +15,9 @@
 !!                                 flexibility without recompiling.          !!
 !! 07/03  2013   Matt Alvarado     Updated main input deck to allow interp   !!
 !!                                 between two arbitrary photolysis points   !!
+!! 07/03  2013   Matt Alvarado     Updated main input deck to allow input    !!
+!!                                   of CO emission rate to Eulerian Box     !!
+!!                                   routines.                               !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -61,7 +64,7 @@
 		LOGICAL   :: IFGAS,IFAQ,IFSOLID
 		CHARACTER(len=512) :: Token
 		CHARACTER(len=512)::CurrLine,StoreLine
-		REAL*8    :: T,P,II, RH, BRH, Num, Wind, length
+		REAL*8    :: T,P,II, RH, BRH, Num, Wind, length, width
 
 		FHT = GetFileHandle()
 		FH  = GetFileHandle()
@@ -615,7 +618,19 @@
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real box width.")
 		ELSE
 			II = STR2REAL(Token)
-                        Call SetEulerianBox(wind,length,II)
+                        width = II
+
+		END IF
+
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real CO Emission Rate.")
+		ELSE
+			II = STR2REAL(Token)
+                        
+                        Call SetEulerianBox(wind,length,width, II)
 		END IF
 	
 	END SUBROUTINE ReadMainInputDeck
