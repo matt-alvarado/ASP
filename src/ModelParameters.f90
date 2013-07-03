@@ -24,6 +24,7 @@
 !! 12/28  2012   Matt Alvarado     Fixed units conversion bug in SetHetero   !!
 !! 01/29  2013   Matt Alvarado     Changed AqThermoNumbAllowedIterations     !!
 !!                                    from 50000 to 100.                     !!
+!! 07/03  2013   Matt Alvarado     Added subroutine SetPhotoFlag             !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -79,6 +80,7 @@
 !!44. SUBROUTINE SetLagrangianMix(mix)
 !!45. SUBROUTINE SetEulerianBox(wind,length,width)
 !!46. SUBROUTINE SetIncludeAerosols(flag)
+!!47  SUBROUTINE SetPhotoFlag(flag)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !! This one holds all of the physical constants that are used in the code
@@ -297,11 +299,12 @@ MODULE ModelParameters
         LOGICAL :: CondTest
         LOGICAL :: SubroutineModel 
         LOGICAL :: IncludeAerosols
+        LOGICAL :: PhotoFlag
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!Set start time, run length, and time steps (MJA, 11/06/2012) !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-        REAL*8  :: UTCStartTime, RunLength, ChemStep, MixStep, CondStep, CoagStep
+        REAL*8  :: UTCStartTime, RunLength, ChemStep, MixStep, CondStep, CoagStep, PhotoEndTime
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!Set Lagrangian Parecl Parameters (MJA, 11/06/2012)           !!
@@ -849,6 +852,27 @@ MODULE ModelParameters
                     IncludeAerosols = .FALSE.
                 ENDIF
 	END SUBROUTINE SetIncludeAerosols
+
+	SUBROUTINE SetPhotoFlag(flag)
+		
+		IMPLICIT NONE
+
+		INTEGER :: flag 
+	        IF (flag .EQ. 1) THEN 
+                    PhotoFlag = .TRUE.
+                ELSE 
+                    PhotoFlag = .FALSE.
+                ENDIF
+	END SUBROUTINE SetPhotoFlag
+
+	SUBROUTINE SetPhotoEndTime(UTC)
+		
+		IMPLICIT NONE
+
+		REAL*8 :: UTC
+
+		PhotoEndTime = UTC
+	END SUBROUTINE SetPhotoEndTime
 
 end module ModelParameters
 

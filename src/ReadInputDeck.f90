@@ -441,6 +441,18 @@
 		CALL SetWaterVaporField (RH)
 		CALL SetBackgroundRH(BRH)
 
+                !!Get PHOTO FLAG
+                Token = GetLine(FH)
+		IF (.NOT.IsInteger(Token)) &
+	                CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			" how photolysis is to be calculated. Received "//StripToken(Token))	
+		I = STR2INT(Token)
+		IF (I < 0 .OR. I > 1) &
+			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
+			" how photolysis is to be calculated. Received "//StripToken(Token))
+
+	        CALL SetPhotoFlag(I)   
+
                 !!Get Start time (hours in UTC)
                 Token = GetLine(FH)
 
@@ -450,6 +462,18 @@
 		ELSE
 			II = STR2REAL(Token)
                         CALL SetStartTime(II)
+		END IF
+
+                !!Get End time for phtolysis interpolation (hours in UTC)
+                !!Only used if PhotoFlag = 1
+                Token = GetLine(FH)
+
+		!! If not a real, give error
+		IF (IsReal(Token) .EQ. 0) THEN
+			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real end time for photolysis interpolation.")
+		ELSE
+			II = STR2REAL(Token)
+                        CALL SetPhotoEndTime(II)
 		END IF
 
 	        !!Get Run Length (in min)

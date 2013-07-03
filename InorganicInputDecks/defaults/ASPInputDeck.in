@@ -1,6 +1,6 @@
 !! ASPInputDeck.in
 !! Main Input Deck of ASP
-!! Matt Alvarado, 2004-2012 (c)
+!! Matt Alvarado, 2004-2013 (c)
 !! Based on MELAM by Donnan Steele, 2000-2004 (c)
 !! The ordering of the inputs must be kept constant (as in all
 !! input decks) although the formatting is not as important.  Use 
@@ -28,7 +28,7 @@
 1	!! Include Dissolution of Organic Species into Hydrophobic Phase?
 1	!! Include Dissolution of Organic Species into Aqueous Phase?
 1	!! Is Dissolution an Equilibrium (0) or Flux (1) process?
-1	!! Is Ammonia Dissolution an Equilibrium (0) or Flux (1) process?
+0	!! Is Ammonia Dissolution an Equilibrium (0) or Flux (1) process?
 0	!! Is Aerosol Metastable (1) or do solid salts form (0)? 
 0       !! Ignore diffusivity corrections (1) or include them (0)? (Also sets curvature corrections to 1.0!)
 !!1.d. COAGULATION
@@ -42,11 +42,11 @@
 !!Here we decide between a Langrangian parcel run, Eulerian box run, smog
 !!chamber run, or other special run formats.
 !!
-0       !!Lagrangian Parcel Model (1 = yes, 0 = no)
+1       !!Lagrangian Parcel Model (1 = yes, 0 = no)
 0       !!Eulerian Box Model (1 = yes, 0 = no)
 0       !!Smog Chamber Model (1 = yes, 0 = no)
 0       !!Optical Properties Model (1 = yes, 0 = no)
-1       !!Thermodynamics test to compare to ISORROPIA (1 = yes, 0 = no)
+0       !!Thermodynamics test to compare to ISORROPIA (1 = yes, 0 = no)
 0       !!Coagulation Test to compare to analytic solution
 0       !!Condensation Test to compare to analytic solution
 0       !!Subroutine settings (for inclusion in larger model)
@@ -64,19 +64,27 @@
 1000.0  !! Pressure    (mb)
 0.73   !! Initial Relative Humidity (between 0 and 1)
 0.73   !! Background Relative Humidity (between 0 and 1)
-3.0    !! Starting Time (h UTC to match PhotoRates.in)
+!! PHOTO FLAG - If 0, run from starting time below for run length
+!!                    following profile in PhotoRates.in
+!!              If 1, linearly interpolate photolysis rates
+!!                    between starting and ending time below
+0      !! PHOTO FLAG
+3.0    !! Starting Time for Photolysis (h UTC to match PhotoRates.in)
+!!***Below only used if PHOTO FLAG = 1
+5.0    !! Ending Time for Photolysis (h UTC to match PhotoRates.in)
+!!***Above only used if PHOTO FLAG = 1
 390    !! Run Length in minutes
 1.0    !! Chemistry Time Step in s
 1.0    !! Mixing Time Step in s
 20.0   !! Condensation Time Step in s
 60.0   !! Coagulation Time Step in s
-1.0       !! Inversion height in km (for deposition calcs)
+1.0    !! Inversion height in km (for deposition calcs)
 1      !! Include aerosols? (1 for yes, 0 for no)
-7.25e4   !! Hetero number conc. (cm^-3) (for bulk aero or gas chem only)
-0.254    !! Hetero radii (in um) (for bulk aero or gas chem only)
+7.25e4 !! Hetero number conc. (cm^-3) (for bulk aero or gas chem only)
+0.254  !! Hetero radii (in um) (for bulk aero or gas chem only)
 !! 3.b For Lagrangian Parcel Model
 106.8735 !! Mixing parameter for Lagrangian parcel (yo^2/4/Ky, units of s)
-!! 3.c For Eulerian Box Model
+!! 3.c For Eulerian Box Model (Currently doesn't work)
 10.0     !! Wind Speed for Eulerian Box (m/s)
 50.0     !! Downwind dimensions in km
 50.0     !! Crosswind dimensions in km

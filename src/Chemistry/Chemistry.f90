@@ -35,6 +35,8 @@
 !!                                  total peroxy concentration.              !!
 !! 01/24  2013   Matt Alvarado     Added AqOrgActivityFlag,AqOrgActivityIndex!!
 !!                                    Kappa, and GammaInf                    !!
+!! 07/03  2013   Matt Alvarado     Added abilty to interpolate between 2     !!
+!!                                 arbitrary points to ResetPhotoRates       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -656,7 +658,7 @@ MODULE Chemistry
 		LOGICAL, INTENT(in) :: FirstTime
 		
 		INTEGER :: I,J,K,L, TimeIndex, RxnIndex
-		REAL*8 :: OldRate, y1, y2, ut1, ut2, A 
+		REAL*8 :: OldRate, y1, y2, ut1, ut2, A, ut_temp
 		REAL*8, PARAMETER :: Scale = 1.0
 
 
@@ -671,11 +673,12 @@ MODULE Chemistry
 								
 				!Find reaction index number
 				RxnIndex = INT(ReactionRates(L,4))
-								
-				!Find lower time index number
-				TimeIndex = INT(ut*4 + 1.0)
 
-				IF( 0. .EQ. 0.) THEN !Linear Interp
+!!Option 1 - if PhotoFlag = 0, find corresponding time in PhotoRates.in array
+                                IF (PhotoFlag .EQ. 0) THEN								
+				        !Find lower time index number
+				        TimeIndex = INT(ut*4 + 1.0)
+
 					ut1 = (TimeIndex - 1)/4.
 					IF(TimeIndex .EQ. 96) THEN
 	                                    ut2 = 0.
@@ -696,10 +699,34 @@ MODULE Chemistry
 					!WRITE(*,*) A
 								
 					GasPhaseChemicalRates(L) = Scale*(A*y1 + (1-A)*y2)
+!!Option 2 - if PhotoFlag = 1, interpolate between starting and ending times of photolysis as given in the input deck
+                                ELSE	
+				        !Find lower time index number
+					ut1 = UTCStartTime	
+			                TimeIndex = INT(ut1*4 + 1.0)
+					!Early Value
+					y1 = PhotoRates(TimeIndex, RxnIndex) 
+
+					ut2 = PhotoEndTime
+	                                TimeIndex = INT(ut2*4 + 1.0)
+					!Later Value
+					y2 = PhotoRates(TimeIndex, RxnIndex)
+
+                                        !Calculate run end time in UTC
+                                        ut2 = ut1+(RunLength/60.0)
+                                        !Correct time for passing 24 hrs
+                                        IF (ut .LT. ut1) THEN 
+                                              ut_temp = ut + 24.0
+                                        ELSE
+                                              ut_temp = ut
+                                        ENDIF
+					A = (ut2 - ut_temp)/(ut2 - ut1)
+					IF (L .EQ. 6) WRITE(*,*) ut, y1, y2, Scale*(A*y1 + (1-A)*y2)
 								
-				ELSE !Step Change
-					GasPhaseChemicalRates(L) = Scale*PhotoRates(TimeIndex, RxnIndex) 
-				END IF
+					GasPhaseChemicalRates(L) = Scale*(A*y1 + (1-A)*y2)
+								        
+                                ENDIF
+
 				IF (FirstTime) CALL TRANSCRIPT("Photolysis Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")	
 			END IF	
 		END DO
