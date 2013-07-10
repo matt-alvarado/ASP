@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -7,20 +7,20 @@
 !! and so-forth										
 	
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
+!! UPDATE HISTORY								!!
+!!										!!
+!! Month  Year   Name              Description					!!
+!! 07     2006   Matt Alvarado     Began Update History				!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:
-!! 1. SUBROUTINE SetFileHandleCounter (InitialFileHandle)
-!! 2. FUNCTION GetFileHandle() RESULT (CFH)
-!! 3. SUBROUTINE  ReturnFileHandle(CFH)
-!! 4. SUBROUTINE SetParticleID (inAID)
-!! 5. FUNCTION GetParticleID ()	
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This file contains the following functions and subroutines:   !!
+!! 1. SUBROUTINE SetFileHandleCounter (InitialFileHandle)        !!
+!! 2. FUNCTION GetFileHandle() RESULT (CFH)                      !!
+!! 3. SUBROUTINE  ReturnFileHandle(CFH)                          !!
+!! 4. SUBROUTINE SetParticleID (inAID)                           !!
+!! 5. FUNCTION GetParticleID ()	                                 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! This set of functions is used to provide unique filehandles !!

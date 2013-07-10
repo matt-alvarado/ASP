@@ -85,6 +85,7 @@
 !! 3.b For Lagrangian Parcel Model
 106.8735 !! Mixing parameter for Lagrangian parcel (yo^2/4/Ky, units of s)
 !! 3.c For Eulerian Box Model (Currently doesn't work)
-10.0     !! Wind Speed for Eulerian Box (m/s)
+ 5.0     !! Wind Speed for Eulerian Box (m/s)
 50.0     !! Downwind dimensions in km
 50.0     !! Crosswind dimensions in km
+40.0     !! Fire CO emissions in kg/s (used to scale all other emissions)

@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -7,30 +7,28 @@
 !! grabbing an input line from an ASCII file 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!! 01/04  2013   Matt Alvarado     Expanded length of allowed lines from 
-!!                                   512 to 1024 characters. Needed to 
-!!                                   allow 50 photo rxns.
+!! UPDATE HISTORY								!!
+!!										!!
+!! Month  Year   Name              Description				        !!
+!! 07     2006   Matt Alvarado     Began Update History				!!
+!! 01/04  2013   Matt Alvarado     Expanded length of allowed lines from        !!
+!!                                   512 to 1024 characters. Needed to          !!
+!!                                   allow 50 photo rxns.                       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This file contains the following functions and subroutines:	!!
-!! 1. FUNCTION GetLine(FileHandle) RESULT (OutLine)				!!
-!! 2. SUBROUTINE Error(ErrorMessage)							!!
-!! 3. SUBROUTINE Warn(WarningMessage)							!!
-!! 4. SUBROUTINE Transcript(Message)							!!
+!! 1. FUNCTION GetLine(FileHandle) RESULT (OutLine)		!!
+!! 2. SUBROUTINE Error(ErrorMessage)				!!
+!! 3. SUBROUTINE Warn(WarningMessage)				!!
+!! 4. SUBROUTINE Transcript(Message)				!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This Function Gets the next real line stripped of leading	!!
-!! whitespace and trailing comments								!!
+!! whitespace and trailing comments				!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CHARACTER (len=1024) FUNCTION GetLine(FileHandle) RESULT (OutLine)
-
-	USE ModelParameters
 
 	IMPLICIT NONE
 	INTEGER :: i, FileHandle, Status
@@ -40,7 +38,7 @@ CHARACTER (len=1024) FUNCTION GetLine(FileHandle) RESULT (OutLine)
         !WRITE(*,*) "Line Read"
 
 	IF (Status < 0) THEN
-		OutLine = EOF					    ! This is an END OF FILE, defined in ModelParameters
+		OutLine = EOF	! This is an END OF FILE, defined in ModelParameters
 	ELSE
 
 	!! Get rid of trailing and leading spaces / tabs
@@ -76,8 +74,9 @@ SUBROUTINE Error(ErrorMessage)
 	CALL Date_and_Time(ErrorDate, ErrorTime)
 	CALL Transcript ("*********************************************")
 	CALL Transcript ("** Error occured at                         **")
-	CALL Transcript ("** "//ErrorTime(1:2)//":"//ErrorTime(3:4)//":"//ErrorTime(5:6)//" on "//ErrorDate(5:6)//		&
-					  "/"//ErrorDate(7:8)//"/"//ErrorDate(1:4)//" "//"                 "//"**")
+	CALL Transcript ("** "//ErrorTime(1:2)//":"//ErrorTime(3:4)//           &
+                         ":"//ErrorTime(5:6)//" on "//ErrorDate(5:6)//		&
+			"/"//ErrorDate(7:8)//"/"//ErrorDate(1:4)//" "//"                 "//"**")
 	CALL Transcript ("*********************************************")
 
 	STOP

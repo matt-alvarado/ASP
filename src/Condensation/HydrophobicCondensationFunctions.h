@@ -1030,8 +1030,10 @@ SUBROUTINE UpdateHydrophilicUNIFAC(InParticle, Temperature)
 	XPASS(N-1) = InParticle%AqChems(1)/TotalMoles
 
 	!Call UNIFAC, placing activity coefficients in GAMMA(0:N-1)
+				!WRITE(*,*) "Before UNIDRIVA", XPASS 
+                                !WRITE(*,*)  TotalMoles, InParticle%AqChems(1), InParticle%Dry
 	CALL UNIDRIVA(XPASS,GAMMA,N,Temperature)
-
+				!WRITE(*,*) "After UNIDRIVA"
 	!Place UNIFAC activity coefficients into particle array
 	DO I = 1, HowManyAqOrgChems
 	   IF (AqOrgActivityFlag(I) .LT. 0.005) THEN !UNIFAC	
@@ -1710,18 +1712,22 @@ END SUBROUTINE UpdateHydrophobicUNIFAC_all
 SUBROUTINE UpdateHydrophilicUNIFAC_all
 
     USE GridPointFields, ONLY: GetTemp
-    USE Aerosols,		 ONLY : Particle, Particles
+    USE Aerosols,        ONLY : Particle, Particles
 
     IMPLICIT NONE 
     
     TYPE(Particle), POINTER :: Current
     REAL*8 :: Temp
+    INTEGER :: Count
 
     Temp = GetTemp()
 
     current => particles%first
+    Count = 1
     DO WHILE(associated(current)) 
-         CALL UpdateHydrophilicUNIFAC(current, Temp)
+         IF(current%AqChems(1) .GT. 0.0) CALL UpdateHydrophilicUNIFAC(current, Temp)
+!         WRITE(*,*) Count
          current => current%next
+         Count = Count+1
     END DO
 END SUBROUTINE UpdateHydrophilicUNIFAC_all

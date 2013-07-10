@@ -1,6 +1,6 @@
 !! 11/06  2012  Matt Alvarado Updated intitalization to make parallel to others in
 !!                            DevelopmentDriver.f90
-!! 07/03  2013  Matt Alvarado Major Rewrite to make it work.
+!! 07/03  2013  Matt Alvarado Major rewrite to make it work.
 SUBROUTINE EulerianBox()
 	!! Include modules
 	USE ModelParameters

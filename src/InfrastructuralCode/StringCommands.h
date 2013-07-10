@@ -12,9 +12,9 @@
 !! Month  Year   Name              Description				    !!
 !! 07     2006   Matt Alvarado     Began Update History			    !!
 !! 02/15  2012   Matt Alvarado     Removed Eulerian grids.                  !!
-!! 01/04  2013   Matt Alvarado     Expanded length of allowed lines from 
-!!                                   512 to 1024 characters. Needed to 
-!!                                   allow 50 photo rxns.
+!! 01/04  2013   Matt Alvarado     Expanded length of allowed lines from    !!
+!!                                   512 to 1024 characters. Needed to      !!
+!!                                   allow 50 photo rxns.                   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

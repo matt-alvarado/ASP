@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2013, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -8,23 +8,23 @@
 !! and commands to convert numbers to strings and vice versa
 !! This is the source file linking many header files together.
 	
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY						    !!
+!!								    !!
+!! Month  Year   Name              Description			    !!
+!! 07     2006   Matt Alvarado     Began Update History		    !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! DEPENDENCIES						        !!
-!! 1. ModelParameters						!!
+!! DEPENDENCIES				    !!
+!! 1. ModelParameters			    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! LINKED HEADER FILES												!!
-!! 1. InputOutputCommands.h											!!
-!! 2. StringCommands.h												!!
-!! 3. Counters.h													!!
+!! LINKED HEADER FILES						    !!
+!! 1. InputOutputCommands.h					    !!
+!! 2. StringCommands.h						    !!
+!! 3. Counters.h					            !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 MODULE InfrastructuralCode

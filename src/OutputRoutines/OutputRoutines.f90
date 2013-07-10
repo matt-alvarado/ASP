@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2006, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -7,58 +7,67 @@
 !! data for output to ASCII text files
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY							!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!! 08/29  2006   Matt Alvarado     1. Changed TotalPOA and TotalSOA				!!
-!!									calculation in SizeDistOutput				!!
-!!								   2. Changed currentparticle to current		!!
-!!									 in SizeDistOutput							!!
-!! 09/01  2006   Matt Alvarado     1. Added TotalOrgCar calculation to	!!
-!!				SizeDistOutput			!!
-!! 09/07  2006   Matt Alvarado   Updated SpillBeans to spill BoundaryParticles!
-!! 11/01  2006   Matt Alvarado     Added Optical properties to SpillBeans!!
-!! 10/03  2007   Matt Alvarado     Added lines to SpillBeans to help with 
-!!						initializing CRM6
-!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
-!!                                 a one-box model or subroutine.            !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! UPDATE HISTORY							    !!
+!!									    !!
+!! Month  Year   Name              Description				    !!
+!! 07     2006   Matt Alvarado     Began Update History		            !!
+!! 08/29  2006   Matt Alvarado     1. Changed TotalPOA and TotalSOA         !!
+!!				     calculation in SizeDistOutput	    !!
+!!				   2. Changed currentparticle to current    !!
+!!				      in SizeDistOutput			    !!
+!! 09/01  2006   Matt Alvarado     1. Added TotalOrgCar calculation to	    !!
+!!				SizeDistOutput		                    !!
+!! 09/07  2006   Matt Alvarado Updated SpillBeans to spill BoundaryParticles!!
+!! 11/01  2006   Matt Alvarado     Added Optical properties to SpillBeans   !!
+!! 10/03  2007   Matt Alvarado     Added lines to SpillBeans to help with   !!
+!!						initializing CRM6           !!
+!! 02/16  2012   Matt Alvarado     Removed Eulerian grids, making ASP       !!
+!!                                 a one-box model or subroutine.           !!
+!! 07/08  2013   Matt Alvarado     Created Subroutines GasOutput,           !!
+!!                                 GasEnhanceOutput, and AerosolOutput      !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! DEPENDENCIES						        !!
-!! 1. ModelParameters						!!
-!! 2. InfrastructuralCode					!!
-!! 3. GridPointFields						!!
-!! 4. Chemistry								!!
-!! 5. Aerosols								!!
-!! 6. Condensation							!!
+!! DEPENDENCIES		                    !!
+!! 1. ModelParameters			    !!
+!! 2. InfrastructuralCode		    !!
+!! 3. GridPointFields			    !!
+!! 4. Chemistry				    !!
+!! 5. Aerosols				    !!
+!! 6. Condensation			    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:			!!	
-!! 1. SUBROUTINE EachAerosolOutput (OutputFileName)
+!! This file contains the following functions and subroutines:		!!
+!! 1. SUBROUTINE EachAerosolOutput (OutputFileName)                     !!
 !! 2. SUBROUTINE BinEntireDomainForPrinting (OutputFileName, inHowManyBins)
-!! 3. SUBROUTINE SummarizeDomainMassForOutput (FileName, FirstCall)
-!! 4. SUBROUTINE BinLagrangianParticlesForOutput (XP,YP,ZP,NumberOfBins,SmallEdge,LargeEdge, FH, FirstComment)
-!! 5. SUBROUTINE SpillBeans(XP, YP, ZP)
-!! 6. SUBROUTINE SizeDistOutput(XP, YP, ZP, t, Filename)
+!! 3. SUBROUTINE SummarizeDomainMassForOutput (FileName, FirstCall)     !!
+!! 4. SUBROUTINE BinLagrangianParticlesForOutput (XP,YP,ZP,NumberOfBins,!!
+!!               SmallEdge,LargeEdge, FH, FirstComment)                 !!
+!! 5. SUBROUTINE SpillBeans(XP, YP, ZP)                                 !!
+!! 6. SUBROUTINE SizeDistOutput(XP, YP, ZP, t, Filename)                !!
+!! 7. SUBROUTINE GasOutput(FH1, FH2, FH3,t,First, Thermo)               !!
+!! 8. SUBROUTINE GasEnhanceOutput(FH, t, First)                         !!
+!! 9. SUBROUTINE AerosolOutput(InParticle, FH, t, First,, Thermo)       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 MODULE OutputRoutines
 
 PRIVATE
-PUBLIC :: BinEntireDomainForPrinting,		&
+PUBLIC ::         BinEntireDomainForPrinting,		&
 		  SummarizeDomainMassForOutput,		&
 		  BinLagrangianParticlesForOutput,	&
-		  EachAerosolOutput, &
-		  SpillBeans, &
-		  SizeDistOutput
+		  EachAerosolOutput,                    &
+		  SpillBeans,                           &
+		  SizeDistOutput,                       &
+                  GasOutput,                            &
+                  GasEnhanceOutput,                     &
+                  AerosolOutput 
 
 CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Produces a data file that is appropriate		 !!
+!! Produces a data file that is appropriate      !!
 !! for printing the aerosol distribution of the  !!
 !! entire domain ensemble aerosol.               !!
 SUBROUTINE EachAerosolOutput (OutputFileName)
@@ -67,16 +76,16 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 
 	USE Aerosols,            ONLY : Particles, Particle, AerosolPH
 	
-	USE Chemistry,           ONLY : HowManyAqChems,					&
-									HowManyAqCations,				&
-									HowManyAqAnions,				&
-									AqPhaseChemicalNames,			&
-									AqCationNames,AqAnionNames
+	USE Chemistry,           ONLY : HowManyAqChems,			&
+					HowManyAqCations,		&
+					HowManyAqAnions,		&
+					AqPhaseChemicalNames,		&
+					AqCationNames,AqAnionNames
 
 	USE Condensation,        ONLY : IsActivated
 
 	USE InfrastructuralCode, ONLY : WARN, ERROR, INT2STR, REAL2STR,	 &
-									GetFileHandle, ReturnFileHandle
+					GetFileHandle, ReturnFileHandle
 
 	IMPLICIT NONE
 
@@ -117,20 +126,20 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	FH = GetFileHandle()
     OPEN(UNIT=FH, FILE=TRIM(OutputDeckSubDir)//TRIM(OutputFileName)//".csv")
-	WRITE (FH, '(a)', advance='no') "ParticleID, "//			 &
-									"Particle Distribution #,"// &
-									"Number Of Particles,"//	 &
-									"Activated (1 is yes 0 is no),"// &
-									"Effective Radius,"//		 &
-									"Solution Embryo Radius,"//	 &
-									"InsolCoreRadius,"//		 &
-									"CosContactAngle,"//		 &
-									"InsolCoreMass,"//			 &
-									"Solution Density,"//		 &
-									"Particle Density,"//		 &
-									"Surface Tension,"//		 &
-									"PH,"//						 &
-									"Origin Pressure Level"
+	WRITE (FH, '(a)', advance='no') "ParticleID, "//		&
+		"Particle Distribution #,"// &
+		"Number Of Particles,"//	 &
+		"Activated (1 is yes 0 is no),"// &
+		"Effective Radius,"//		 &
+		"Solution Embryo Radius,"//	 &
+		"InsolCoreRadius,"//		 &
+		"CosContactAngle,"//		 &
+		"InsolCoreMass,"//		&
+		"Solution Density,"//		 &
+		"Particle Density,"//		 &
+		"Surface Tension,"//		 &
+		"PH,"//				&
+		"Origin Pressure Level"
 
 	DO I = 1, HowManyAqChems
 		IF (ChemicalPresent(I)) &
@@ -151,18 +160,20 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 
 20		IF (ASSOCIATED(Current)) THEN
 
-			WRITE (FH, '(a)', advance='no') TRIM(INT2STR(Current%ParticleID))//", "//			&
-										    TRIM(INT2STR(Current%ParticleDistribution))//", "// &
-											TRIM(REAL2STR(Current%NumberOfParticles,8))//", "
+		    WRITE (FH, '(a)', advance='no') &
+                      TRIM(INT2STR(Current%ParticleID))//", "// &
+	              TRIM(INT2STR(Current%ParticleDistribution))//", "// &
+		      TRIM(REAL2STR(Current%NumberOfParticles,8))//", "
 
 			
-			WRITE (FH, '(a)', advance='no') TRIM(REAL2STR(Current%EffectiveRadius/micron,8))//", "//	&
-											TRIM(REAL2STR(Current%EmbryoRadius/micron,8))//", "//			&
-											TRIM(REAL2STR(Current%SolutionDensity,8))//", "//			&
-											TRIM(REAL2STR(Current%ParticleDensity,8))//", "//			&
-											TRIM(REAL2STR(Current%SurfaceTension,8))//", "//			&
-											TRIM(REAL2STR(AerosolPH(Current)))//", "//					&
-											TRIM(REAL2STR(Current%OriginPressureLevel))
+	            WRITE (FH, '(a)', advance='no') &
+                      TRIM(REAL2STR(Current%EffectiveRadius/micron,8))//", "//&
+		      TRIM(REAL2STR(Current%EmbryoRadius/micron,8))//", "// &
+		      TRIM(REAL2STR(Current%SolutionDensity,8))//", "//	&
+		      TRIM(REAL2STR(Current%ParticleDensity,8))//", "//	&
+		      TRIM(REAL2STR(Current%SurfaceTension,8))//", "//	&
+		      TRIM(REAL2STR(AerosolPH(Current)))//", "//	&
+		      TRIM(REAL2STR(Current%OriginPressureLevel))
 
 			DO I = 1, HowManyAqChems
 				IF (ChemicalPresent(I)) &
@@ -967,26 +978,26 @@ SUBROUTINE SpillBeans(Env)
 	
 	USE InfrastructuralCode, ONLY : ERROR, REAL2STR, INT2STR
 	USE Aerosols,            ONLY : Particles, &
-									Particle, &
-									RecalculateRadius, &
-									AerosolPh, &
-									CurvatureCorrection, &
-									OrgCurvatureCorrection, &
-									BoundaryParticles, &
-									HypotheticalElectrolyteConcentrations
-	USE Chemistry,			 ONLY : AqPhaseChemicalNames, &
-									OrgPhaseChemicalNames, &
-									HowManyOrgChems, &
-									HowManyAqOrgChems, &
-									AqOrgPhaseChemicalNames, &
-									AqMolecularMass, &
-									OrgMolecularMass, &
-									AqOrgMolecularMass, &
-									HowManyAqChems, FindChem, &
-									GasPhaseBackground
+					Particle, &
+					RecalculateRadius, &
+					AerosolPh, &
+					CurvatureCorrection, &
+					OrgCurvatureCorrection, &
+					BoundaryParticles, &
+					HypotheticalElectrolyteConcentrations
+	USE Chemistry,		 ONLY : AqPhaseChemicalNames, &
+					OrgPhaseChemicalNames, &
+					HowManyOrgChems, &
+					HowManyAqOrgChems, &
+					AqOrgPhaseChemicalNames, &
+					AqMolecularMass, &
+					OrgMolecularMass, &
+					AqOrgMolecularMass, &
+					HowManyAqChems, FindChem, &
+					GasPhaseBackground
 	USE ModelParameters,	 ONLY : micron 
-	USE GridPointFields, ONLY : GetAirDensity, GetM, &
-				    GridGasChem
+	USE GridPointFields,     ONLY : GetAirDensity, GetM, &
+				        GridGasChem
 
 	Implicit None
 
@@ -1108,22 +1119,25 @@ END SUBROUTINE SpillBeans
 SUBROUTINE SizeDistOutput(t, Filename)
 	
 	USE InfrastructuralCode, ONLY : ERROR, REAL2STR, INT2STR, GetFileHandle
+
 	USE Aerosols,            ONLY : Particles, &
-									Particle, &
-									RecalculateRadius, &
-									AerosolPh
-	USE Chemistry,			 ONLY : AqPhaseChemicalNames, &
-									OrgPhaseChemicalNames, &
-									GasPhaseChemicalNames, &
-									HowManyOrgChems, &
-									FindChem, &
-									OrgMolecularMass, &
-									AqMolecularMass, &
-									HowManyAqOrgChems, &
-									AqOrgMolecularMass, &
-									AqOrgNumCarbon
+					Particle, &
+					RecalculateRadius, &
+					AerosolPh
+
+	USE Chemistry,		 ONLY : AqPhaseChemicalNames, &
+					OrgPhaseChemicalNames, &
+					GasPhaseChemicalNames, &
+					HowManyOrgChems, &
+					FindChem, &
+					OrgMolecularMass, &
+					AqMolecularMass, &
+					HowManyAqOrgChems, &
+					AqOrgMolecularMass, &
+					AqOrgNumCarbon
+
 	USE ModelParameters,	 ONLY : micron, OutputDeckSubDir, &
-									Monodisperse, ThermoBulkMode
+					Monodisperse, ThermoBulkMode
 
 	USE GridPointFields,	 ONLY : GridGasChem, &
 					GetM
@@ -1139,15 +1153,15 @@ SUBROUTINE SizeDistOutput(t, Filename)
 
 	TYPE(Particle), POINTER :: Current
 	Integer :: 	KNO3i, KCli, KHSO4i, &
-				Nai, NaNO3i, NaCli, NaHSO4i, Na2SO4i, &
-				NH3i, NH4i, NH4NO3i, NH4Cli, NH4HSO4i, NH42SO4i, &
-				Cli, NO3i, SO4i, HSO4i, K2SO4i, PotassiumIndex, &
-				K2SO4Index, FH, NumBins	, COi, Traceri, Cai, &
-                                KOHi, NaOHi, Mgi, MgNO32i, MgCl2i, MgHSO42i, &
-                                MgSO4i, MgOH2i, CaNO32i, CaCl2i, CaHSO42i, CaSO4i, &
-                                CaOH2i, LEVi
+			Nai, NaNO3i, NaCli, NaHSO4i, Na2SO4i, &
+			NH3i, NH4i, NH4NO3i, NH4Cli, NH4HSO4i, NH42SO4i, &
+			Cli, NO3i, SO4i, HSO4i, K2SO4i, PotassiumIndex, &
+			K2SO4Index, FH, NumBins	, COi, Traceri, Cai, &
+                        KOHi, NaOHi, Mgi, MgNO32i, MgCl2i, MgHSO42i, &
+                        MgSO4i, MgOH2i, CaNO32i, CaCl2i, CaHSO42i, CaSO4i, &
+                        CaOH2i, LEVi
 	REAL*8 :: TotalPOA, TotalSOA, TotalK, TotalNa, TotalNH4, TotalCl, &
-			  TotalNO3, TotalSO4, DeltaLogRad, Mgas, TotalOrgCar, &
+	          TotalNO3, TotalSO4, DeltaLogRad, Mgas, TotalOrgCar, &
                   TotalMg, TotalCa		
 					
 	
@@ -1431,6 +1445,422 @@ SUBROUTINE SizeDistOutput(t, Filename)
 
 
 END SUBROUTINE SizeDistOutput
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This subroutine writes gas phase output to text files in units of ppbv.   !!
+!! First written by Matt Alvarado, 20130709.                                 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+SUBROUTINE GasOutput(FH1, FH2, FH3,t,First, Thermo)
+
+	USE GridPointFields,	 ONLY : GridGasChem, &
+					GetM
+	USE Chemistry,	         ONLY : GasPhaseChemicalNames, &
+                                        HowManyGasChems
+
+	Implicit None
+
+        !EXTERNAL Variables
+        INTEGER, INTENT(IN) :: FH1, FH2, FH3
+        REAL,    INTENT(IN) :: t
+        LOGICAL, INTENT(IN) :: First, Thermo
+
+        !INTERNAL Variables
+        REAL                :: Mgas
+        INTEGER             :: q
+
+	IF (First) THEN !On first call, write header line
+ 
+		IF (Thermo) THEN
+                   WRITE(FH1, FMT='(A4,A11)', ADVANCE='NO') "RH  ", " "
+                   WRITE(FH2, FMT='(A4,A11)', ADVANCE='NO') "RH  ", " "
+                   WRITE(FH3, FMT='(A4,A11)', ADVANCE='NO') "RH  ", " "
+                ELSE
+                   WRITE(FH1, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
+                   WRITE(FH2, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
+                   WRITE(FH3, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
+                ENDIF
+		DO q = 1, HowManyGasChems
+			IF (q .LE. 70) THEN
+				WRITE(FH1,FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(q)
+			ELSE IF (q .GT. 70 .AND. q .LE. 140) THEN
+				WRITE(FH2,FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(q)
+			ELSE 
+				WRITE(FH3,FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(q)
+			END IF
+		END DO                
+
+                WRITE(FH1, FMT='(A1)') ""
+		WRITE(FH2, FMT='(A1)') ""
+		WRITE(FH3, FMT='(A1)') ""
+         ELSE
+		WRITE(FH1,FMT='(7ES13.5E2)', ADVANCE='NO') t
+		WRITE(FH2,FMT='(7ES13.5E2)', ADVANCE='NO') t
+		WRITE(FH3,FMT='(7ES13.5E2)', ADVANCE='NO') t
+
+		Mgas = GetM()
+		DO q = 1, HowManyGasChems		
+                   IF (q .LE. 70) THEN
+                      WRITE(FH1,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas !from molec/cm3 to ppb
+                   ELSE IF (q .GT. 70 .AND. q .LE. 140) THEN
+                      WRITE(FH2,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
+                   ELSE 
+                      WRITE(FH3,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
+                   END IF
+                END DO
+		
+		WRITE(FH1, FMT='(A1)') ""
+		WRITE(FH2, FMT='(A1)') ""
+		WRITE(FH3, FMT='(A1)') ""
+          ENDIF
+
+END SUBROUTINE GasOutput
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This subroutine writes gas phase molar enhancement ratios of selected     !!
+!! species to a text files  in units of ppbv.                                !!
+!! First written by Matt Alvarado, 20130709.                                 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE GasEnhanceOutput(FH, t, First)      
+
+	USE GridPointFields,	 ONLY : GridGasChem, &
+					GetM
+	USE Chemistry,	         ONLY : GasPhaseChemicalNames, &
+                                        HowManyGasChems,       &
+                                        GasPhaseBackground,    &
+                                        FindChem
+	Implicit None
+
+        !EXTERNAL Variables
+        INTEGER, INTENT(IN) :: FH
+        REAL,    INTENT(IN) :: t
+        LOGICAL, INTENT(IN) :: First
+
+        !INTERNAL Variables
+        REAL                :: Mgas, del_CO, del_PAN, del_AN
+        INTEGER             :: q, COi, O3i, HNO3i, NOi, NO2i, &
+                               PANi, N2O5i, HONOi, ANi, NO3i
+
+	IF (First) THEN !On first call, write header line
+		WRITE(FH, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
+		WRITE(FH, FMT='(A13)', ADVANCE='NO') "dO3/dCO"
+		WRITE(FH, FMT='(A13)', ADVANCE='NO') "dNOx/dCO"
+		WRITE(FH, FMT='(A13)', ADVANCE='NO') "dHNO3/dCO"
+		WRITE(FH, FMT='(A13)', ADVANCE='NO') "dPAN/dCO"
+		WRITE(FH, FMT='(A13)', ADVANCE='NO') "dTotPNs/dCO"
+		WRITE(FH, FMT='(A13)', ADVANCE='NO') "dTotANs/dCO"
+		WRITE(FH, FMT='(A13)', ADVANCE='NO') "dNO3/dCO"
+		WRITE(FH, FMT='(A13)', ADVANCE='NO') "dN2O5/dCO"
+		WRITE(FH, FMT='(A13)', ADVANCE='NO') "dHONO/dCO"
+                WRITE(FH, FMT='(A1)') ""
+         ELSE
+                COi = FindChem("CO", 0)
+                O3i = FindChem("O3", 0)
+                NOi = FindChem("NO", 0)
+                NO2i = FindChem("NO2", 0)
+                HNO3i = FindChem("HNO3", 0)
+                PANi =  FindChem("PAN", 0)              
+                ANi =  FindChem("CH3NO3", 0)
+                NO3i = FindChem("NO3", 0)
+                N2O5i = FindChem("N2O5", 0)
+                HONOi = FindChem("HONO", 0)
+
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') t
+
+                del_CO = GridGasChem(COi)-GasPhaseBackground(COi)
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(O3i)-GasPhaseBackground(O3i))/del_CO
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(NOi)-GasPhaseBackground(NOi) &
+                                                           +GridGasChem(NO2i)-GasPhaseBackground(NO2i))/del_CO
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(HNO3i)-GasPhaseBackground(HNO3i))/del_CO
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(PANi)-GasPhaseBackground(PANi))/del_CO
+
+                del_PAN = 0.0
+                DO q = 0,32
+                     del_PAN = del_PAN+GridGasChem(PANi+q)-GasPhaseBackground(PANi+q)
+                END DO 
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') del_PAN/del_CO
+
+                del_AN = 0.0
+                DO q = 0,76
+                     del_AN = del_AN+GridGasChem(ANi+q)-GasPhaseBackground(ANi+q)
+                END DO 
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') del_AN/del_CO
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(NO3i)-GasPhaseBackground(NO3i))/del_CO
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(N2O5i)-GasPhaseBackground(N2O5i))/del_CO
+                WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(HONOi)-GasPhaseBackground(HONOi))/del_CO
+		WRITE(FH, FMT='(A1)') ""
+         ENDIF
+END SUBROUTINE GasEnhanceOutput    
+
+
+SUBROUTINE AerosolOutput(InParticle, FH, t, First, Thermo)
+
+	USE Chemistry,		 ONLY : AqPhaseChemicalNames, &
+					OrgPhaseChemicalNames, &
+					AqOrgPhaseChemicalNames, &
+					FindChem, &
+					OrgMolecularMass, &
+					AqMolecularMass, &
+					AqOrgMolecularMass
+
+	USE Aerosols,            ONLY : Particle, &
+					AerosolPh
+	Implicit None
+
+	!External
+	TYPE(Particle), POINTER  :: InParticle
+	REAL*8,  INTENT(IN)      :: t
+	INTEGER, INTENT(IN)      :: FH
+        LOGICAL, INTENT(IN)      :: First, Thermo
+
+	!Internal
+	INTEGER	:: J, NumAqChems, NumOrgChems, NumAqOrgChems, &
+                   KNO3i, KCli, KHSO4i, &
+		   Nai, NaNO3i, NaCli, NaHSO4i, Na2SO4i, &
+		   NH3i, NH4i, NH4NO3i, NH4Cli, NH4HSO4i, NH42SO4i, &
+		   Cli, NO3i, SO4i, HSO4i, K2SO4i, PotassiumIndex, &
+		   Cai, KOHi, NaOHi, Mgi, MgNO32i, MgCl2i, MgHSO42i, &
+                   MgSO4i, MgOH2i, CaNO32i, CaCl2i, CaHSO42i, CaSO4i, &
+                   CaOH2i, LEVi
+
+	REAL*8  :: TotalPOA, TotalSOA, TotalK, TotalNa, TotalNH4, TotalCl, &
+	           TotalNO3, TotalSO4, TotalMg, TotalCa
+
+        NumAqChems = size(InParticle%AqChems)
+        NumOrgChems = size(InParticle%OrgChems)
+        NumAqOrgChems = size(InParticle%AqOrgChems)
+
+	IF (First) THEN !On first call, write header line
+           
+           IF (Thermo) THEN
+               WRITE(FH, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
+           ELSE
+               WRITE(FH, FMT='(A4,A11)', ADVANCE='NO') "RH  ", " "
+           ENDIF              
+           WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "Number", " "
+           WRITE(FH,FMT='(A11, A2)', ADVANCE='NO') "Eff. Radius", " "
+           WRITE(FH,FMT='(A10, A3)', ADVANCE='NO') "Ionic Str.", " "
+           WRITE(FH,FMT='(A8, A5)', ADVANCE='NO') "H2O Act.", " "
+           WRITE(FH,FMT='(A10, A3)', ADVANCE='NO') "Sol. Dens.", " "
+           WRITE(FH,FMT='(A11, A2)', ADVANCE='NO') "Part. Dens.", " "
+           WRITE(FH,FMT='(A2, A11)', ADVANCE='NO') "Ph", " "
+           WRITE(FH,FMT='(A4, A9)', ADVANCE='NO') "Temp", " "			
+           WRITE(FH,FMT='(A5, A8)', ADVANCE='NO') "TotBC", " "
+           WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotPOA", " "
+           WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotSOA", " "
+           WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotH2O", " "
+           WRITE(FH,FMT='(A4, A9)', ADVANCE='NO') "TotK", " "
+           WRITE(FH,FMT='(A5, A8)', ADVANCE='NO') "TotNa", " "
+           WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotNH4", " "
+           WRITE(FH,FMT='(A5, A8)', ADVANCE='NO') "TotCl", " "
+           WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotNO3", " "
+           WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotSO4", " "
+           WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotMg ", " "
+           WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotCa ", " "
+           DO J = 1, NumAqChems
+              WRITE(FH,FMT='(A13)', ADVANCE='NO') AqPhaseChemicalNames(J)
+           END DO
+           DO J = 1, NumOrgChems		
+              WRITE(FH,FMT='(A13)', ADVANCE='NO') OrgPhaseChemicalNames(J)
+           END DO
+           DO J = 1, NumAqOrgChems		
+              WRITE(FH,FMT='(A13)', ADVANCE='NO') AqOrgPhaseChemicalNames(J)
+           END DO
+           WRITE(FH, FMT='(A1)') ""
+        ELSE
+           PotassiumIndex = FindChem("K+", 1)
+           KNO3i = FindChem("KNO3", 1)
+           KCli = FindChem("KCl", 1)
+           KHSO4i = FindChem("KHSO4", 1)
+           K2SO4i = FindChem("K2SO4", 1)
+		
+           Nai = FindChem("Na+", 1)
+           NaNO3i = FindChem("NaNO3", 1)
+           NaCli = FindChem("NaCl", 1)
+           NaHSO4i = FindChem("NaHSO4", 1)
+           Na2SO4i = FindChem("Na2SO4", 1)
+		
+           NH3i = FindChem("NH3", 1)
+           NH4i = FindChem("NH4+", 1)
+           NH4NO3i = FindChem("NH4NO3", 1)
+           NH4Cli = FindChem("NH4Cl", 1)
+           NH4HSO4i = FindChem("NH4HSO4", 1)
+           NH42SO4i = FindChem("(NH4)2SO4", 1)
+
+           Cli = FindChem("Cl-", 1)
+           NO3i = FindChem("NO3-", 1)
+           SO4i = FindChem("SO4--", 1)
+           HSO4i = FindChem("HSO4-", 1)
+
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') t			
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%numberofparticles
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%effectiveradius
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%IonicStr
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%WaterActivity
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%SolutionDensity
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%ParticleDensity
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') AerosolPh(InParticle)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%Temperature
+			
+           !BC Mass Conc (ug/m3)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%Orgchems(1)*InParticle%numberofparticles &
+                                                      *1.0e12*OrgMolecularMass(1)
+					
+           !POA Mass Conc (ug/m3)
+           TotalPOA = 0.
+           DO J = 2, 9
+              TotalPOA = TotalPOA + InParticle%Orgchems(J)*InParticle%numberofparticles &
+                                    *1.0e12*OrgMolecularMass(J)
+              TotalPOA = TotalPOA + InParticle%AqOrgchems(J-1)*InParticle%numberofparticles &
+                                    *1.0e12*AqOrgMolecularMass(J-1)
+           END DO
+           DO J = 20, NumOrgChems
+              TotalPOA = TotalPOA + InParticle%Orgchems(J)*InParticle%numberofparticles &
+                                    *1.0e12*OrgMolecularMass(J)
+              TotalPOA = TotalPOA + InParticle%AqOrgchems(J-1)*InParticle%numberofparticles &
+                                    *1.0e12*AqOrgMolecularMass(J-1)
+           END DO
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalPOA
+
+           !SOA Mass Conc (ug/m3)
+           TotalSOA = 0.
+           DO J = 10, 19
+              TotalSOA = TotalSOA + InParticle%Orgchems(J)*InParticle%numberofparticles &
+                                    *1.0e12*OrgMolecularMass(J)
+              TotalSOA = TotalSOA + InParticle%AqOrgchems(J-1)*InParticle%numberofparticles &
+                                    *1.0e12*AqOrgMolecularMass(J-1)
+           END DO
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalSOA
+	
+           !Water Mass Conc. (ug/m3)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%Aqchems(1)*InParticle%numberofparticles &
+                                                     *1.0e12*AqMolecularMass(1)
+					
+           !K+ Mass Conc (ug/m3)
+           TotalK = 0.		
+           DO J = 1, NumAqChems
+              IF (J .EQ. PotassiumIndex .OR. J .EQ. KNO3i .OR. J .EQ. KCli &
+                  .OR. J .EQ. KHSO4i .OR. J .EQ. KOHi) THEN
+                 TotalK = TotalK + InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              ELSE IF (J .EQ. K2SO4i) THEN
+                 TotalK = TotalK + 2*InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              END IF
+           END DO
+           !Convert from umol/m3 to ug/m3
+           TotalK = TotalK*AqMolecularMass(PotassiumIndex)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalK
+	
+           !Na+ Mass Conc (ug/m3)
+           TotalNa = 0.		
+           DO J = 1, NumAqChems
+              IF (J .EQ. Nai .OR. J .EQ. NaNO3i .OR. J .EQ. NaCli .OR. J .EQ. NaHSO4i .OR. J .EQ. NaOHi) THEN
+                 TotalNa = TotalNa + InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              ELSE IF (J .EQ. Na2SO4i) THEN
+                 TotalNa = TotalNa + 2*InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              END IF
+           END DO
+           !Convert from umol/m3 to ug/m3
+           TotalNa = TotalNa*AqMolecularMass(Nai)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalNa
+	
+           !NH4+ Mass Conc (ug/m3)
+           TotalNH4 = 0.		
+           DO J = 1, NumAqChems
+              IF (J .EQ. NH3i .OR. J .EQ. NH4i .OR. J .EQ. NH4NO3i &
+                  .OR. J .EQ. NH4Cli .OR. J .EQ. NH4HSO4i) THEN
+                 TotalNH4 = TotalNH4 + InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              ELSE IF (J .EQ. NH42SO4i) THEN
+                 TotalNH4 = TotalNH4 + 2*InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              ELSE IF (J .EQ. LEVi) THEN
+                 TotalNH4 = TotalNH4 + 3*InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              END IF
+           END DO
+           !Convert from umol/m3 to ug/m3
+           TotalNH4 = TotalNH4*AqMolecularMass(NH4i)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalNH4
+
+           !Cl- Mass Conc (ug/m3)
+           TotalCl = 0.		
+           DO J = 1, NumAqChems
+              IF (J .EQ. Cli .OR. J .EQ. NH4Cli .OR. J .EQ. KCli .OR. J .EQ. NaCli) THEN
+                 TotalCl = TotalCl + InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              ELSE IF (J .EQ. MgCl2i .OR. J .EQ. CaCl2i) THEN
+                 TotalCl = TotalCl + 2*InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              END IF
+           END DO
+           !Convert from umol/m3 to ug/m3
+           TotalCl = TotalCl*AqMolecularMass(Cli)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalCl
+
+           !NO3- Mass Conc (ug/m3)
+           TotalNO3 = 0.
+           DO J = 1, NumAqChems
+              IF (J .EQ. NO3i .OR. J .EQ. NH4NO3i .OR. J .EQ. KNO3i .OR. J .EQ. NaNO3i) THEN
+                 TotalNO3 = TotalNO3 + InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              ELSE IF (J .EQ. MgNO32i .OR. J .EQ. CaNO32i) THEN
+                 TotalNO3 = TotalNO3 + 2*InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              END IF
+           END DO
+           !Convert from umol/m3 to ug/m3
+           TotalNO3 = TotalNO3*AqMolecularMass(NO3i)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalNO3
+
+           !SO4- Mass Conc (ug/m3)
+           TotalSO4 = 0.
+           DO J = 1, NumAqChems
+              IF (J .EQ. SO4i .OR. J .EQ. NH42SO4i .OR. J .EQ. K2SO4i .OR. J .EQ. Na2SO4i &
+                   .OR. J .EQ. HSO4i .OR. J .EQ. NH4HSO4i .OR. J .EQ. KHSO4i .OR. J .EQ. NaHSO4i &
+                   .OR. J .EQ. CaSO4i .OR. J .EQ. MgSO4i) THEN
+                 TotalSO4 = TotalSO4 + InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              ELSE IF (J .EQ. LEVi .OR. J .EQ. MgHSO42i .OR. J .EQ. CaHSO42i) THEN
+                 TotalSO4 = TotalSO4 + 2*InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              END IF
+           END DO
+           !Convert from umol/m3 to ug/m3
+           TotalSO4 = TotalSO4*AqMolecularMass(SO4i)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalSO4
+
+			
+           !Mg++ Mass Conc (ug/m3)
+           TotalMg = 0.		
+           DO J = 1, NumAqChems
+              IF (J .EQ. Mgi .OR. J .EQ. MgNO32i .OR. J .EQ. MgCl2i .OR. J .EQ. MgHSO42i .OR. J .EQ. MgOH2i &
+                  .OR. J .EQ. MgSO4i) THEN
+                 TotalMg = TotalMg + InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              END IF
+           END DO
+           !Convert from umol/m3 to ug/m3
+           TotalMg = TotalMg*AqMolecularMass(Mgi)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalMg
+
+           !Ca++ Mass Conc (ug/m3)
+           TotalCa = 0.		
+           DO J = 1, NumAqChems
+              IF (J .EQ. Cai .OR. J .EQ. CaNO32i .OR. J .EQ. CaCl2i .OR. J .EQ. CaHSO42i .OR. J .EQ. CaOH2i &
+                  .OR. J .EQ. CaSO4i) THEN
+                 TotalCa = TotalCa + InParticle%Aqchems(J)*InParticle%numberofparticles*1.0e12
+              END IF
+           END DO
+           !Convert from umol/m3 to ug/m3
+           TotalCa = TotalCa*AqMolecularMass(Cai)
+           WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalCa
+
+           !mol/particle
+           DO J = 1, NumAqChems
+              WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%AqChems(J)
+           END DO
+
+           DO J = 1, NumOrgChems		
+              WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%Orgchems(J)
+           END DO
+
+           DO J = 1, NumAqOrgChems		
+              WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') InParticle%AqOrgchems(J)
+           END DO
+
+           WRITE(FH, FMT='(A1)') ""
+	ENDIF
+END SUBROUTINE AerosolOutput
 
 END MODULE OutputRoutines
 

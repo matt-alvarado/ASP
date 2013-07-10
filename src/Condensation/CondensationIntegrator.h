@@ -203,22 +203,23 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 				!	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
 	
 			DO I = 1, NumTimeSteps
-				!WRITE(*,*) "StepDissolutionAll Check 0"
+				WRITE(*,*) "StepDissolutionAll Check 0"
 				IF(DoDissolutionFlag .OR. DoCondensationFlag) &
 					CALL StepCondensation (TimestepSize, 1)
 		
-				!WRITE(*,*) "StepDissolutionAll Check 1"
+				WRITE(*,*) "StepDissolutionAll Check 1"
 				IF(DoHydrophobicOrgDissolutionFlag) THEN
                                     CALL UpdateHydrophobicUNIFAC_all
 				    CALL StepOrgCondensation (TimestepSize, 1)
                                 ENDIF
 		
-				!WRITE(*,*) "StepDissolutionAll Check 2"
+				WRITE(*,*) "StepDissolutionAll Check 2"
 				IF(DoHydrophilicOrgDissolutionFlag) THEN
                                    CALL UpdateHydrophilicUNIFAC_all
+				WRITE(*,*) "StepDissolutionAll Check 2.1"
 				   CALL StepAqOrgCondensation (TimestepSize, 1)
                                 ENDIF
-				!WRITE(*,*) "StepDissolutionAll Check 3"
+				WRITE(*,*) "StepDissolutionAll Check 3"
 			END DO
 
 			!Update individual gas-phase concentrations
