@@ -1134,13 +1134,14 @@ SUBROUTINE SizeDistOutput(t, Filename)
 					AqMolecularMass, &
 					HowManyAqOrgChems, &
 					AqOrgMolecularMass, &
-					AqOrgNumCarbon
+					AqOrgNumCarbon, &
+                                        GasMolecularMass
 
 	USE ModelParameters,	 ONLY : micron, OutputDeckSubDir, &
-					Monodisperse, ThermoBulkMode
+					Monodisperse, ThermoBulkMode, &
+                                        Avogadro
 
-	USE GridPointFields,	 ONLY : GridGasChem, &
-					GetM
+	USE GridPointFields,	 ONLY : GridGasChem
 	
 	Implicit None
 
@@ -1159,7 +1160,7 @@ SUBROUTINE SizeDistOutput(t, Filename)
 			K2SO4Index, FH, NumBins	, COi, Traceri, Cai, &
                         KOHi, NaOHi, Mgi, MgNO32i, MgCl2i, MgHSO42i, &
                         MgSO4i, MgOH2i, CaNO32i, CaCl2i, CaHSO42i, CaSO4i, &
-                        CaOH2i, LEVi
+                        CaOH2i, LEVi, CO2i
 	REAL*8 :: TotalPOA, TotalSOA, TotalK, TotalNa, TotalNH4, TotalCl, &
 	          TotalNO3, TotalSO4, DeltaLogRad, Mgas, TotalOrgCar, &
                   TotalMg, TotalCa		
@@ -1210,6 +1211,7 @@ SUBROUTINE SizeDistOutput(t, Filename)
 
 	Traceri = FindChem("Trace", 0)
 	COi = FindChem("CO", 0)
+	CO2i = FindChem("CO2", 0)
 
 	!Count # of bins, # of Aq. Chems
 	Current => particles%first
@@ -1236,6 +1238,7 @@ SUBROUTINE SizeDistOutput(t, Filename)
 	WRITE(FH, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
 	WRITE(FH, FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(Traceri)
 	WRITE(FH, FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(COi)
+	WRITE(FH, FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(CO2i)
 
 	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "Edge 1", " "
 	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "Edge 2", " "
@@ -1246,8 +1249,7 @@ SUBROUTINE SizeDistOutput(t, Filename)
 	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "OrgCar", " "
 			
 	WRITE(FH,FMT='(A5, A8)', ADVANCE='NO') "TotBC", " "
-	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotPOA", " "
-	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotSOA", " "
+	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotOA", " "
 	WRITE(FH,FMT='(A6, A7)', ADVANCE='NO') "TotH2O", " "
 	WRITE(FH,FMT='(A4, A9)', ADVANCE='NO') "TotK", " "
 	WRITE(FH,FMT='(A5, A8)', ADVANCE='NO') "TotNa", " "
@@ -1260,13 +1262,17 @@ SUBROUTINE SizeDistOutput(t, Filename)
 			
 	WRITE(FH, FMT='(A1)') ""
 		
-	Mgas = GetM   ()
-	
 	Current => particles%first
 		DO I = 1, NumBins
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') t/60
-			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(Traceri)*1e9/Mgas	
-			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(COi)*1e9/Mgas
+
+                        !Do gas concentrations in ug/m3 to match aerosol
+			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(Traceri)* &
+                                              GasMolecularMass(Traceri)*1.0e12/Avogadro	
+			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(COi)* &
+                                              GasMolecularMass(COi)*1.0e12/Avogadro
+			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(CO2i)* &
+                                              GasMolecularMass(CO2i)*1.0e12/Avogadro
 			
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') Current%Edges(1)*1.0e4
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') Current%Edges(2)*1.0e4
@@ -1301,25 +1307,13 @@ SUBROUTINE SizeDistOutput(t, Filename)
 			!BC Mass Conc (ug/m3)
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') Current%Orgchems(1)*Current%numberofparticles*1.0e12*OrgMolecularMass(1)
 					
-			!POA Mass Conc (ug/m3)
+			!OA Mass Conc (ug/m3)
 			TotalPOA = 0.
-			DO J = 2, 9
+			DO J = 2, NumOrgChems
 				TotalPOA = TotalPOA + Current%Orgchems(J)*current%numberofparticles*1.0e12*OrgMolecularMass(J)
 				TotalPOA = TotalPOA + Current%AqOrgchems(J-1)*current%numberofparticles*1.0e12*AqOrgMolecularMass(J-1)
 			END DO
-			DO J = 20, NumOrgChems
-				TotalPOA = TotalPOA + current%Orgchems(J)*current%numberofparticles*1.0e12*OrgMolecularMass(J)
-				TotalPOA = TotalPOA + current%AqOrgchems(J-1)*current%numberofparticles*1.0e12*AqOrgMolecularMass(J-1)
-			END DO
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalPOA
-
-			!SOA Mass Conc (ug/m3)
-			TotalSOA = 0.
-			DO J = 10, 19
-				TotalSOA = TotalSOA + current%Orgchems(J)*current%numberofparticles*1.0e12*OrgMolecularMass(J)
-				TotalSOA = TotalSOA + current%AqOrgchems(J-1)*current%numberofparticles*1.0e12*AqOrgMolecularMass(J-1)
-			END DO
-			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') TotalSOA
 	
 			!Water Mass Conc. (ug/m3)
 			WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') Current%Aqchems(1)*Current%numberofparticles*1.0e12*AqMolecularMass(1)
@@ -1472,21 +1466,21 @@ SUBROUTINE GasOutput(FH1, FH2, FH3,t,First, Thermo)
 	IF (First) THEN !On first call, write header line
  
 		IF (Thermo) THEN
-                   WRITE(FH1, FMT='(A4,A11)', ADVANCE='NO') "RH  ", " "
-                   WRITE(FH2, FMT='(A4,A11)', ADVANCE='NO') "RH  ", " "
-                   WRITE(FH3, FMT='(A4,A11)', ADVANCE='NO') "RH  ", " "
+                   WRITE(FH1, FMT='(A4,A12)', ADVANCE='NO') "RH  ", " "
+                   WRITE(FH2, FMT='(A4,A12)', ADVANCE='NO') "RH  ", " "
+                   WRITE(FH3, FMT='(A4,A12)', ADVANCE='NO') "RH  ", " "
                 ELSE
-                   WRITE(FH1, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
-                   WRITE(FH2, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
-                   WRITE(FH3, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
+                   WRITE(FH1, FMT='(A4,A12)', ADVANCE='NO') "Time", " "
+                   WRITE(FH2, FMT='(A4,A12)', ADVANCE='NO') "Time", " "
+                   WRITE(FH3, FMT='(A4,A12)', ADVANCE='NO') "Time", " "
                 ENDIF
 		DO q = 1, HowManyGasChems
 			IF (q .LE. 70) THEN
-				WRITE(FH1,FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(q)
+				WRITE(FH1,FMT='(A16)', ADVANCE='NO') GasPhaseChemicalNames(q)
 			ELSE IF (q .GT. 70 .AND. q .LE. 140) THEN
-				WRITE(FH2,FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(q)
+				WRITE(FH2,FMT='(A16)', ADVANCE='NO') GasPhaseChemicalNames(q)
 			ELSE 
-				WRITE(FH3,FMT='(A13)', ADVANCE='NO') GasPhaseChemicalNames(q)
+				WRITE(FH3,FMT='(A16)', ADVANCE='NO') GasPhaseChemicalNames(q)
 			END IF
 		END DO                
 
@@ -1494,18 +1488,18 @@ SUBROUTINE GasOutput(FH1, FH2, FH3,t,First, Thermo)
 		WRITE(FH2, FMT='(A1)') ""
 		WRITE(FH3, FMT='(A1)') ""
          ELSE
-		WRITE(FH1,FMT='(7ES13.5E2)', ADVANCE='NO') t
-		WRITE(FH2,FMT='(7ES13.5E2)', ADVANCE='NO') t
-		WRITE(FH3,FMT='(7ES13.5E2)', ADVANCE='NO') t
+		WRITE(FH1,FMT='(ES16.5E2)', ADVANCE='NO') t
+		WRITE(FH2,FMT='(ES16.5E2)', ADVANCE='NO') t
+		WRITE(FH3,FMT='(ES16.5E2)', ADVANCE='NO') t
 
 		Mgas = GetM()
 		DO q = 1, HowManyGasChems		
                    IF (q .LE. 70) THEN
-                      WRITE(FH1,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas !from molec/cm3 to ppb
+                      WRITE(FH1,FMT='(ES16.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas !from molec/cm3 to ppb
                    ELSE IF (q .GT. 70 .AND. q .LE. 140) THEN
-                      WRITE(FH2,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
+                      WRITE(FH2,FMT='(ES16.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
                    ELSE 
-                      WRITE(FH3,FMT='(7ES13.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
+                      WRITE(FH3,FMT='(ES16.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
                    END IF
                 END DO
 		

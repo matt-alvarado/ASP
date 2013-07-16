@@ -148,7 +148,9 @@ PROGRAM ASP
                    K2SO4Index, SOA2GasIndex, NumOrgChems, &
                    KNO3i, KCli, KHSO4i, K2SO4i, UR21i, N, HNO3Index, &
                    NH3Gas, HNO3Gas, HClGas, H2SO4Gas, NumAqOrgChems, &
-                   ReturnType, Hi, NumModes, clock, BCi, status
+                   ReturnType, Hi, NumModes, clock, BCi, status, &
+                   NaHSO4i, Na2SO4i, NH4HSO4i, NH42SO4i, &
+                   SO4i, HSO4i,  LEVi
 
 	REAL*8  :: ii, T_mix, Tau_Dep, slope, b, ChemTimestep, MixTimestep, &
 		   CoagTimeStep, CondTimeStep, t, Mgas, Temp, &
@@ -157,7 +159,7 @@ PROGRAM ASP
                    TotalPotassiumMass, RH, &
                    K2SO4Mass, Kmass, TotalMass, TimeStepSize, PressEq, &
                    P1, EnvMass, InitialMass, NewMass, ChemPercentage, sum, &
-                   Total, Yield, Store_H2O, Store_Dens,InvHgt, BC
+                   Total, Yield, Store_H2O, Store_Dens,InvHgt, BC, Sulf
 
 	REAL*4  :: etimearray(2), etime
 	
@@ -577,6 +579,58 @@ PROGRAM ASP
 		!! INITIALIZE the PARTICLES	
 		CALL InitializeParticlesSectional
 		CALL RegridAerosol ()
+
+		!Find chemical indices for later
+		PotassiumIndex = FindChem("K+", 1)
+		KNO3i = FindChem("KNO3", 1)
+		KCli = FindChem("KCl", 1)
+		KHSO4i = FindChem("KHSO4", 1)
+		K2SO4Index = FindChem("K2SO4", 1)
+		K2SO4i = K2SO4Index
+
+                NaHSO4i = FindChem("NaHSO4", 1)
+                Na2SO4i = FindChem("Na2SO4", 1)
+                NH4HSO4i = FindChem("NH4HSO4", 1)
+                NH42SO4i = FindChem("(NH4)2SO4", 1)
+                LEVi = FindChem("(NH4)3H(SO4)2", 1)
+                SO4i = FindChem("SO4--", 1)
+                HSO4i = FindChem("HSO4-", 1)
+
+		!Count # of bins, # of Aq. Chems
+		current => particles%first
+		NumBins = 0
+		Potassium = 0.0
+                BC = 0.0
+                Sulf = 0.0
+		DO WHILE(associated(current))
+			NumBins = NumBins + 1
+			NumAqChems = size(current%AqChems)
+			NumOrgChems = size(current%OrgChems)
+			NumAqOrgChems = size(current%AqOrgChems)
+
+                        BC        = BC + current%OrgChems(1)*current%numberofparticles
+
+			Potassium = Potassium + current%AqChems(PotassiumIndex)*current%numberofparticles
+			Potassium = Potassium + current%AqChems(KNO3i)*current%numberofparticles
+			Potassium = Potassium + 2*current%AqChems(K2SO4i)*current%numberofparticles
+			Potassium = Potassium + current%AqChems(KCli)*current%numberofparticles
+			Potassium = Potassium + current%AqChems(KHSO4i)*current%numberofparticles
+
+                        Sulf = Sulf +  current%AqChems(K2SO4i)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(KHSO4i)*current%numberofparticles
+                        Sulf = Sulf +  current%AqChems(Na2SO4i)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(NaHSO4i)*current%numberofparticles
+                        Sulf = Sulf +  current%AqChems(NH42SO4i)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(NH4HSO4i)*current%numberofparticles
+                        Sulf = Sulf +  2*current%AqChems(LEVi)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(SO4i)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(HSO4i)*current%numberofparticles
+                		
+			current => current%next
+		END DO
+		WRITE(*,*) "Potassium (ug/m3): ", Potassium*AqMolecularMass(PotassiumIndex)*1.0E12
+		WRITE(*,*) "BC        (ug/m3): ", BC*OrgMolecularMass(1)*1.0E12
+                WRITE(*,*) "Sulfate   (ug/m3): ",Sulf*AqMolecularMass(SO4i)*1.0E12
 		CALL SpillBeans()
 
 		!! Call Boundary distributions
@@ -594,36 +648,44 @@ PROGRAM ASP
 		TEMP = GetTemp()
 		Mgas = GetM   ()
 		
-		!Find chemical indices for later
-		PotassiumIndex = FindChem("K+", 1)
-		KNO3i = FindChem("KNO3", 1)
-		KCli = FindChem("KCl", 1)
-		KHSO4i = FindChem("KHSO4", 1)
-		K2SO4Index = FindChem("K2SO4", 1)
-		K2SO4i = K2SO4Index
+
 
 		!Count # of bins, # of Aq. Chems
 		current => particles%first
-		Env => BoundaryParticles%first
 		NumBins = 0
 		Potassium = 0.0
                 BC = 0.0
+                Sulf = 0.0
 		DO WHILE(associated(current))
 			NumBins = NumBins + 1
 			NumAqChems = size(current%AqChems)
 			NumOrgChems = size(current%OrgChems)
 			NumAqOrgChems = size(current%AqOrgChems)
+
                         BC        = BC + current%OrgChems(1)*current%numberofparticles
+
 			Potassium = Potassium + current%AqChems(PotassiumIndex)*current%numberofparticles
 			Potassium = Potassium + current%AqChems(KNO3i)*current%numberofparticles
 			Potassium = Potassium + 2*current%AqChems(K2SO4i)*current%numberofparticles
 			Potassium = Potassium + current%AqChems(KCli)*current%numberofparticles
-			Potassium = Potassium + current%AqChems(KHSO4i)*current%numberofparticles		
-			Env => Env%next
+			Potassium = Potassium + current%AqChems(KHSO4i)*current%numberofparticles
+
+                        Sulf = Sulf +  current%AqChems(K2SO4i)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(KHSO4i)*current%numberofparticles
+                        Sulf = Sulf +  current%AqChems(Na2SO4i)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(NaHSO4i)*current%numberofparticles
+                        Sulf = Sulf +  current%AqChems(NH42SO4i)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(NH4HSO4i)*current%numberofparticles
+                        Sulf = Sulf +  2*current%AqChems(LEVi)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(SO4i)*current%numberofparticles  
+                        Sulf = Sulf +  current%AqChems(HSO4i)*current%numberofparticles
+                	
 			current => current%next
 		END DO
 		WRITE(*,*) "Potassium (ug/m3): ", Potassium*AqMolecularMass(PotassiumIndex)*1.0E12
 		WRITE(*,*) "BC        (ug/m3): ", BC*OrgMolecularMass(1)*1.0E12
+                WRITE(*,*) "Sulfate   (ug/m3): ",Sulf*AqMolecularMass(SO4i)*1.0E12
+                STOP
 
 		ALLOCATE(NumConc(NumBins), STAT = status)
                 IF (status > 0) THEN
@@ -675,7 +737,7 @@ PROGRAM ASP
 		!Calculate Heterogeneous rates from size dist. info
 		CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .TRUE.)
 		CALL RecalculatePhotoRates(ut, .TRUE.)
-					
+		WRITE(*,*) "After Photo Rates"			
 		TEMP = GetTemp()
 		Mgas = GetM   ()
 
@@ -694,7 +756,7 @@ PROGRAM ASP
 		OPEN(UNIT = OutFH(3), FILE=TRIM(OutputDeckSubDir)//"GasOut3.txt", STATUS="REPLACE")
 
                 CALL GasOutput(OutFH(1),OutFH(2),OutFH(3),0.0,.TRUE.,.FALSE.)	
-	
+		WRITE(*,*) "After GasOutput1"		
 		current => particles%first
 		DO I = 4, 3 + NumBins
                    OPEN(UNIT = OutFH(I), FILE=TRIM(OutputDeckSubDir)//"Aerosol"//TRIM(INT2STR(I-3))&
@@ -710,7 +772,7 @@ PROGRAM ASP
 		t=0	
 
                 CALL GasOutput(OutFH(1),OutFH(2),OutFH(3),t,.FALSE.,.FALSE.)	
-
+		WRITE(*,*) "After GasOutput2"
 		current => particles%first
 		DO I = 4, 3+NumBins
                    CALL AerosolOutput(current, OutFH(I), t, .FALSE.,.FALSE.)
@@ -883,26 +945,30 @@ PROGRAM ASP
 
                         
 		        WRITE(*,*) "Before AOD"
-
+!                        Call SpillBeans
+!		        WRITE(*,*) "After SpillBeans"
                         !Only call AOD every cond time step
 			IF (MOD(t,CondTimeStep) .LT. 0.01 .AND. t .NE. 0.0) THEN
                             current => particles%first
 		 	    I = 1
 			    DO WHILE(associated(current))
+!                                 WRITE(*,*) "Particle Number ", I
                                  CALL ShellRefIndAndRad(Current)
                                  I = I + 1
                                  current => current%next
                             END DO
+!		        WRITE(*,*) "Before AerosolOptProp"
                             CALL AerosolOptProp ( ExtCoeff, SingScat, Assym, BackScatCoeff, SubExtCoeff, SubSingScat, 0)
                         ENDIF
 			
 			!Write Output to file every minute 
 			IF (MOD(t,60.0) .LT. 0.01) THEN
-				
+				WRITE(*,*) "Before GasOutput3"
                                 CALL GasOutput(OutFH(1),OutFH(2),OutFH(3),t,.FALSE.,.FALSE.)
 			
 				current => particles%first
 				DO I = 4, 3+NumBins
+				WRITE(*,*) "Before AerosolOutput3"
 					CALL AerosolOutput(current, OutFH(I), t, .FALSE.,.FALSE.)
 
 					IF (associated(current%next)) THEN
@@ -929,7 +995,7 @@ PROGRAM ASP
                         ENDIF
                         write(*,*) t
 			IF (MOD(t,CoagTimeStep)<=0.01) THEN
-				WRITE(*,*) trim(real2str(t/60)), " minutes done"
+				CALL TRANSCRIPT(trim(real2str(t/60))//" minutes done")
 			END IF
 
 		END DO

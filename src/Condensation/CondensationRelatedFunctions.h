@@ -88,9 +88,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION GetThermalVelocity (ChemIndex)
 
-	USE ModelParameters,	 ONLY : ThmVelFac, cm, Avogadro
-	USE Chemistry,	ONLY : GasMolecularMass, FindChem, HowManyAqEqReactions
-	USE InfrastructuralCode, ONLY : WARN, ERROR, INT2STR
+	USE ModelParameters,	 ONLY : ThmVelFac, &
+                                        Avogadro
+	USE Chemistry,	         ONLY : GasMolecularMass
 	USE GridPointFields,     ONLY : GetTemp
 
 	IMPLICIT NONE
@@ -408,7 +408,7 @@ REAL*8 FUNCTION SatVapPressRatio (InParticle , ChemIndex )
 
 	!! External Variables
 	TYPE(Particle),POINTER :: InParticle
-	INTEGER				   :: ChemIndex
+	INTEGER		       :: ChemIndex
 
 	!! Internal Variables
 	INTEGER :: I
@@ -723,7 +723,14 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 		Qnumer = InParticle%AqChems(INT(DissolutionData(WhichRxn,3)))
 		Qdenom = MIN(GasPhaseBurden / Avogadro  / InParticle%NumberOfParticles,	&
 					 InParticle%AqChems(INT(DissolutionData(WhichRxn,2))))
-		IF(Qnumer .LT. 0. .OR. Qdenom .LT. 0.) CALL ERROR("Conc below 0 in EqDissRxn!")
+		IF(Qnumer .LT. 0.) THEN
+                    CALL WARN("Qnumer below 0 in EqDissRxn Case 4! Resetting to 1.0e-100")
+                    Qnumer = 1.0e-100
+                ENDIF
+		IF(Qdenom .LT. 0.) THEN
+                    CALL WARN("Qdenom below 0 in EqDissRxn Case 4! Resetting to 1.0e-100")
+                    Qdenom = 1.0e-100
+                ENDIF            
 		!WRITE(*,*) "Reaction Check 3"
 	
 	CASE(6)
@@ -1127,6 +1134,7 @@ SUBROUTINE EquilibrateSulfate()
 	USE InfrastructuralCode, ONLY : SetFileHandleCounter, &
 					Transcript, &
 					ERROR, &
+                                        WARN, &
 					REAL2STR, &
 					INT2STR, &
 					GetFileHandle
@@ -1170,7 +1178,7 @@ SUBROUTINE EquilibrateSulfate()
 	integer :: i, j, k, l, seedarray(2),q, r, OutFH(4), NumBins, A, S, &
                    HeteroBins, H2SO4GasIndex, SO4AqIndex,         &
                    HNO3GasIndex, NumAqChems, &
-	           NH3GasIndex, HAqIndex
+	           NH3GasIndex, HAqIndex, status
 	real*8  :: ii, jj, kk, Dum1, Dum2
 	real*8  ::  Mgas, Temp, H2SO4Conc, TransferSum, &
 	            FractionofSulfate, Knudsen, InvKn, AccomCoeff, &
@@ -1182,38 +1190,48 @@ SUBROUTINE EquilibrateSulfate()
 	TYPE(Particle), POINTER :: CurrentParticle
 
 
-		!Count # of bins, # of Aq. Chems
-		CurrentParticle => particles%first
-		NumBins = 0
- 8		if (associated(currentparticle)) then
-			NumBins = NumBins + 1
-			NumAqChems = size(currentparticle%AqChems)
-			if (associated(currentparticle%next)) then
-				currentparticle => currentparticle%next
-				goto 8
-			end if
-		end if
-		ALLOCATE(NumConc(NumBins))
-		ALLOCATE(SulfTrans(NumBins))
+	!Count # of bins, # of Aq. Chems
+	CurrentParticle => particles%first
+	NumBins = 0
+ 8	if (associated(currentparticle)) then
+	   NumBins = NumBins + 1
+	   NumAqChems = size(currentparticle%AqChems)
+	   if (associated(currentparticle%next)) then
+	      currentparticle => currentparticle%next
+	      goto 8
+	   end if
+	end if
 		
-		!Find H2SO4 in gas and aqueous phases
-		H2SO4GasIndex = FindChem("H2SO4", 0)
-		SO4AqIndex = FindChem("SO4--", 1)
-		HAqIndex = FindChem("H+", 1)
+	ALLOCATE(NumConc(NumBins), STAT = status)
+	IF (status > 0) THEN
+	   CALL ERROR("Allocation error for NumConc in " &
+           //" EquilibrateSulfate of CondensationRelatedFunctions.h")
+        ENDIF
 
-		!Calculate gas conc of H2SO4 in mol/cm3
-		H2SO4Conc = GridGasChem(H2SO4GasIndex)/ Avogadro !mol/cm3
+	ALLOCATE(SulfTrans(NumBins), STAT = status)
+        IF (status > 0) THEN
+           CALL ERROR("Allocation error for SulfTrans in " &
+           //" EquilibrateSulfate of CondensationRelatedFunctions.h")  
+        ENDIF
+		
+	!Find H2SO4 in gas and aqueous phases
+	H2SO4GasIndex = FindChem("H2SO4", 0)
+	SO4AqIndex = FindChem("SO4--", 1)
+	HAqIndex = FindChem("H+", 1)
+
+	!Calculate gas conc of H2SO4 in mol/cm3
+	H2SO4Conc = GridGasChem(H2SO4GasIndex)/ Avogadro !mol/cm3
 			
-		!Calculate sum of the mass transfer coefficients for all particles
-		CurrentParticle => particles%first
-		TransferSum = 0				
-		I = 1
- 33		if (associated(currentparticle)) then
-    			Write(*,*) "Number of Particles", CurrentParticle%NumberofParticles					
-		   IF(CurrentParticle%NumberofParticles .GT. 1e-9) THEN
+	!Calculate sum of the mass transfer coefficients for all particles
+	CurrentParticle => particles%first
+	TransferSum = 0				
+	I = 1
+ 33	if (associated(currentparticle)) then
+	   Write(*,*) "Number of Particles", CurrentParticle%NumberofParticles					
+	   IF(CurrentParticle%NumberofParticles .GT. 1e-9) THEN
                                         
-		        !Calculate correction for collision geometry 
-		        !and sticking probability (omega)
+           !Calculate correction for collision geometry 
+           !and sticking probability (omega)
 		        GasMeanFreePath = MeanFreePathOfAir()
 		        Knudsen = GasMeanFreePath / CurrentParticle%EffectiveRadius 
 		        InvKn = 1.0/Knudsen
@@ -1263,7 +1281,7 @@ SUBROUTINE EquilibrateSulfate()
 	
 	IF(Total .LT. 0.999999999 .OR. Total .GT. 1.000000001) THEN
                 WRITE(*,*) "Fraction Sum: ", Total
-		CALL ERROR("Error in EquilibrateSulfate(). Fractions do not add to 1.")
+		CALL WARN("Error in EquilibrateSulfate(). Fractions do not add to 1.")
 	END IF
 
 	!Allocate gas-phase sulfate to bins
@@ -1294,7 +1312,11 @@ SUBROUTINE EquilibrateSulfate()
 	end if 
 		
 	!Update gas H2SO4 concentration by setting it equal to 0.
-	ALLOCATE(CHEM(HowManyGasChems))
+	ALLOCATE(CHEM(HowManyGasChems), STAT = status)
+        IF (status > 0) THEN
+           CALL ERROR("Allocation error for Chem in " &
+           //" EquilibrateSulfate of CondensationRelatedFunctions.h")  
+        ENDIF
 	DO q = 1, HowManyGasChems
 		Chem(q) = GridGasChem(q) !molecules/cm3
 	END DO
@@ -1302,6 +1324,7 @@ SUBROUTINE EquilibrateSulfate()
 	Chem(H2SO4GasIndex) = 0.0
 	CALL UpdateChemicalConcentrations(Chem(1:HowManyEvolveGasChems))
 	
+        DEALLOCATE(Chem, NumConc, SulfTrans, STAT = status)
 	RETURN
 END SUBROUTINE EquilibrateSulfate
 
@@ -1316,7 +1339,8 @@ SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, &
 	!! Include modules
 	USE InfrastructuralCode, ONLY : SetFileHandleCounter, &
 					Transcript, &
-					ERROR, &
+                                        ERROR, &
+                                        WARN, &
 					REAL2STR, &
 					INT2STR, &
 					GetFileHandle
@@ -1362,7 +1386,7 @@ SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, &
 	REAL*8 :: OptErrorTolerance, GasPhaseBurden2
 
 	!! Local Variables
-	INTEGER :: I
+	INTEGER :: I, status
 	REAL*8  :: II, Qdenom, Qnumer, Z, dX, EqRatio, ActivityCoefficients, &
                    ErrorTolerance, DissociatedScaling, DissociatedExp
 	LOGICAL :: WaterRxn
@@ -1392,8 +1416,17 @@ SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, &
 				goto 8
 			end if
 		end if
-		ALLOCATE(NumConc(NumBins))
-		ALLOCATE(SurfArea(NumBins))
+		ALLOCATE(NumConc(NumBins), STAT = status)
+		IF (status > 0) THEN
+		   CALL ERROR("Allocation error for NumConc in " &
+		   //" EquilibrateGasSolidReactions of CondensationRelatedFunctions.h")
+		ENDIF
+
+		ALLOCATE(SurfArea(NumBins), STAT = status)
+		IF (status > 0) THEN
+		   CALL ERROR("Allocation error for SurfArea in " &
+		   //" EquilibrateGasSolidReactions of CondensationRelatedFunctions.h")  
+		ENDIF
 		
 		!Calculate total surface area and surface area of each bin		
 		CurrentParticle => particles%first
@@ -1589,7 +1622,7 @@ SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, &
 			Total = Total + SurfArea(I)/AreaSum
 		END DO
 		IF (Total .LT. 0.999999 .OR. Total .GT. 1.000001) THEN
-			CALL ERROR("Error in EquilibrateGasSolidReactions(). Area fractions do not sum to 1.")
+			CALL WARN("Error in EquilibrateGasSolidReactions(). Area fractions do not sum to 1.")
 		END IF
 		
 		
@@ -1683,7 +1716,7 @@ SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, &
 			end if 
 			
 			IF (Total .LT. 0.999999 .OR. Total .GT. 1.000001) THEN
-				CALL ERROR("Error in EquilibrateGasSolidReactions(). Area fractions do not sum to 1.")		
+				CALL WARN("Error in EquilibrateGasSolidReactions(). Area fractions do not sum to 1.")		
 			END IF
 			
 			CurrentParticle => particles%first
@@ -1718,13 +1751,16 @@ SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, &
 			J = J+1
 			IF (J .GT. 1000) THEN
 				WRITE(*,*) RemainingSolidtoEvaporate
-				CALL ERROR("Infinite loop in EquilibrateGasSolidReactions()")
+				CALL WARN("Apparent Infinite loop in EquilibrateGasSolidReactions()")
+                                DEALLOCATE(NumConc, SurfArea, STAT = status)
+	                        RETURN		
 			END IF
 		
 		END DO
  	
 	END IF
 	
+        DEALLOCATE(NumConc, SurfArea, STAT = status)
 	RETURN		
 		
 END SUBROUTINE EquilibrateGasSolidReactions
@@ -1751,7 +1787,6 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 				FindElectrolyteEquilibrium,		&
 				ReformElectrolyte,	&
 				RecalculateRadius,	&
-				SurfaceTension,		&
 				DumpParticleContentsAtError,		&
 				SortAerosolAtGridPointForCondensation,  &
 				PrintAqEqReaction
@@ -2009,11 +2044,12 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.)
 
-						CALL ERROR ("EquilibrateGridPoint() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
+						CALL WARN ("EquilibrateGridPoint() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
 					            "of the particles (stored as "//TRIM(INT2STR(HowManyLinks))//" links) at a grid point "  // &
 								"to dissolution reaction "//TRIM(INT2STR(I))//" (first is water, the others are indexed "// &
 								"as input in Dissolution.in) and failed.  The contents of the first particle in that "   // &
 								"section are printed as UnEquilableParticle.txt")
+                                                RxnEquilibrated = .TRUE.
 					END IF
 				END DO !RxnEq
 
@@ -2083,11 +2119,12 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 						CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
-						CALL ERROR ("EquilibrateGridPointAll() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
+						CALL WARN ("EquilibrateGridPointAll() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
 					            "of the particles (stored as "//TRIM(INT2STR(HowManyLinks))//" links) at a grid point "  // &
 								"to hydrophobic organic dissolution reaction "//TRIM(INT2STR(OrgRxnIndex))//" (As indexed "// &
 								"as input in OrganicDissolution.in) and failed.  The contents of the first particle in that "   // &
 								"section are printed as UnEquilableParticle-Hydrophobic.txt")
+                                                RxnEquilibrated = .TRUE.
 					END IF
 				END DO
 			
@@ -2146,11 +2183,12 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 						CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle-Hydrophobic.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
-						CALL ERROR ("EquilibrateGridPointAll() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
+						CALL WARN ("EquilibrateGridPointAll() in CondensationRelatedFunctions.h tried to equilibrate all "     // &
 					            "of the particles (stored as "//TRIM(INT2STR(HowManyLinks))//" links) at a grid point "  // &
 								"to hydrophilic organic dissolution reaction "//TRIM(INT2STR(AqRxnIndex))//" (As indexed "// &
 								"as input in HydrophilicOrganicDissolution.in) and failed.  The contents of the first particle in that "   // &
 								"section are printed as UnEquilableParticle-Hydrophilic.txt")
+                                                RxnEquilibrated = .TRUE.
 					END IF
 				END DO
 			
@@ -2166,11 +2204,12 @@ SUBROUTINE EquilibrateGridPointAll(EquilibrateWater, &
 			CALL DumpParticleContentsAtError(Particles%First, "UnEquilableParticle.txt", InRelativeHumidity=.TRUE., &
                                                      InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
                                                      InDensity=.TRUE., InDoSurfaceTension=.TRUE., InIonicStrength=.TRUE.) 
-			CALL ERROR ("EquilibrateGridPoint() in CondensationRelatedFunctions.h tried to equilibrate all of the dissolution "// &
+			CALL WARN ("EquilibrateGridPoint() in CondensationRelatedFunctions.h tried to equilibrate all of the dissolution "// &
 					    "reactions, aerosol water content, and aerosol ionic content and failed.  Usually this implies an "// &
 						"unrealistic starting condition.  You may try to fix this by increasing AqThermoNumbAllowedIterations,"// &
 						" the maximum  allowed iterations of this type of routine.  Another problem may be an oscillation of "// &
 						"water content and a particular dissolving species.")
+                        Equilibrated = .TRUE.
 		END IF
 
 	END DO !NotinEq
@@ -2336,7 +2375,6 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 				FindElectrolyteEquilibrium,	&
 				ReformElectrolyte,	&
 				RecalculateRadius,	&
-				SurfaceTension,		&
 				DumpParticleContentsAtError,	&
 				SortAerosolAtGridPointForCondensation, &
 				PrintAqEqReaction
@@ -2557,7 +2595,6 @@ SUBROUTINE EquilibrateInorgGridPoint()
 				FindElectrolyteEquilibrium,	&
 				ReformElectrolyte,	&
 				RecalculateRadius,	&
-				SurfaceTension,			&
 				DumpParticleContentsAtError,	&
 				SortAerosolAtGridPointForCondensation, &
 				PrintAqEqReaction

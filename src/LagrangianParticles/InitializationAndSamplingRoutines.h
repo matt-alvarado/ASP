@@ -729,8 +729,8 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
         Jacobson = .TRUE. !Use Jacobson init or MELAM init
 
 
-	IF(Scaffolding .OR. TRANSCRIBE) CALL Transcript("")
-	IF(Scaffolding)	CALL Transcript(">>Entering PopulateParticlesSectionsRightAway()<<")
+	IF(Scaffolding .OR. Transcribe) CALL Transcript("")
+	IF(Scaffolding.OR. Transcribe)	CALL Transcript(">>Entering PopulateParticlesSectionsRightAway()<<")
 	IF(Transcribe)	CALL Transcript("_Assigning_Particles_to_Particle_Linked_List_Structure_")
 
         IF (NOT(BOUNDARY)) THEN
@@ -859,7 +859,12 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 
 
                                 !Loop over sections
-                                Current => Particles%First                        
+                                IF (NOT(BOUNDARY)) THEN
+				   Current => PARTICLES%First
+				ELSE
+				   Current => BOUNDARYPARTICLES%First
+				ENDIF
+                     
  99			        IF (Current%Sectional .EQ. .TRUE. .AND. Current%Edges(2) .LT. 1.0E4 ) THEN
                            
                                     !Jacobson, Eq 13.9

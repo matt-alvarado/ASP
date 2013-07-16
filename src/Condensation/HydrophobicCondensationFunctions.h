@@ -147,11 +147,13 @@ END FUNCTION TotalMolesOM
 !! UNIFAC hydrophobic driver file soa_unidriv.f
 SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
 
+        USE InfrastructuralCode, ONLY: ERROR
+
 	USE Chemistry,		ONLY :	HowManyOrgChems, OrgActivityFlag, OrgActivityIndex
 
 	IMPLICIT NONE
 
-	INTEGER :: I, N, Q
+	INTEGER :: I, N, Q, status
 	TYPE(PARTICLE),POINTER :: InParticle
 	REAL*8, ALLOCATABLE :: XPASS(:), GAMMA(:)
 	REAL*8 :: TotalOM, Temperature, TotalOM_unifac
@@ -159,7 +161,12 @@ SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
 
 
 	N = 23 !Number of compounds in UNIDRIV and unifacparams.h
-	ALLOCATE(XPASS(0:N-1), GAMMA(0:N-1))
+	ALLOCATE(XPASS(0:N-1), GAMMA(0:N-1), STAT = status)
+	IF (status > 0) THEN
+		  CALL ERROR("Allocation error for XPASS and GAMMA in " &
+		   //" UpdateHydrophobicUNIFAC of HydrophobicCondensationFunctions.h")
+	ENDIF
+
         DO Q = 0, N-1
            XPASS(Q) = 0.0
 	ENDDO
@@ -211,6 +218,7 @@ SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
 		END DO
 	ENDIF
 !WRITE(*,*) "Done!"
+        DEALLOCATE(XPASS, GAMMA, STAT = status)
 	RETURN
 END SUBROUTINE UpdateHydrophobicUNIFAC
 
@@ -984,18 +992,24 @@ END FUNCTION EffectiveOrganicHenrysLaw
 !! unifacparama.h and in HydrophilicOrgChems.in must be the same! 
 SUBROUTINE UpdateHydrophilicUNIFAC(InParticle, Temperature)
 
-	USE Chemistry,		ONLY :	HowManyAqOrgChems, GammaInf, &
+        USE InfrastructuralCode, ONLY: ERROR
+	
+        USE Chemistry,		ONLY :	HowManyAqOrgChems, GammaInf, &
                                       AqOrgActivityFlag, AqOrgActivityIndex  
 
 	IMPLICIT NONE
 
-	INTEGER :: I, N, Q
+	INTEGER :: I, N, Q, status
 	TYPE(PARTICLE),POINTER :: InParticle
 	REAL*8, ALLOCATABLE :: XPASS(:), GAMMA(:)
 	REAL*8 :: TotalMoles, Temperature
 		
 	N = 24 !Number of compounds
-	ALLOCATE(XPASS(0:N-1), GAMMA(0:N-1))
+	ALLOCATE(XPASS(0:N-1), GAMMA(0:N-1), STAT =status)
+	IF (status > 0) THEN
+		  CALL ERROR("Allocation error for XPASS and GAMMA in " &
+		   //" UpdateHydrophobicUNIFAC of HydrophobicCondensationFunctions.h")
+	ENDIF
 
         DO Q = 0, N-1
            XPASS(Q) = 0.0
@@ -1043,6 +1057,7 @@ SUBROUTINE UpdateHydrophilicUNIFAC(InParticle, Temperature)
            !WRITE(*,*) "Henry's law Activity ",I, InParticle%HydrophilicActivityCoeffs(I) 
         END DO
         
+        DEALLOCATE(XPASS, GAMMA, STAT = status)
 	RETURN
 
 END SUBROUTINE UpdateHydrophilicUNIFAC
@@ -1630,7 +1645,7 @@ SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, &
 	END IF
 
 	END DO
-
+        DEALLOCATE(OrgIndex, STAT = allocation_error)
 	RETURN
 END SUBROUTINE EquilibrateOrganicParticle
 
@@ -1642,6 +1657,7 @@ REAL*8 FUNCTION BinaryWaterActivityOrganic(InParticle, WhichRxn, Temp)
 !! calculate the total water activity of the 
 !! organic-inorganic solution.
 !! Created by Matt Alvarado, 09/08/2006
+        USE InfrastructuralCode, ONLY: ERROR
 
 	IMPLICIT NONE
 
@@ -1651,7 +1667,7 @@ REAL*8 FUNCTION BinaryWaterActivityOrganic(InParticle, WhichRxn, Temp)
 	REAL*8 :: Temp !Temperature
 
 	!Internal Variables
-	INTEGER :: I, J, N
+	INTEGER :: I, J, N, status
 	REAL*8, ALLOCATABLE :: XPASS(:), GAMMA(:)
 	REAL*8 :: xorg, Ratio
 
@@ -1665,7 +1681,11 @@ REAL*8 FUNCTION BinaryWaterActivityOrganic(InParticle, WhichRxn, Temp)
 	xorg = Ratio/(1 + Ratio)
 
 	N = 24 !Number of compounds
-	ALLOCATE(XPASS(0:N-1), GAMMA(0:N-1))
+	ALLOCATE(XPASS(0:N-1), GAMMA(0:N-1), STAT = status)
+	IF (status > 0) THEN
+		  CALL ERROR("Allocation error for XPASS and GAMMA in " &
+		   //" BinaryWaterActivityOrganic of HydrophobicCondensationFunctions.h")
+	ENDIF
 	!Assign mole fractions
 	DO J = 1,N
 		IF (J == I) THEN !Organic Compound
@@ -1682,6 +1702,7 @@ REAL*8 FUNCTION BinaryWaterActivityOrganic(InParticle, WhichRxn, Temp)
 		
 	BinaryWaterActivityOrganic = GAMMA(N-1)*XPASS(N-1)
 
+        DEALLOCATE(XPASS, GAMMA, STAT = status)
 	RETURN
 	
 END FUNCTION BinaryWaterActivityOrganic

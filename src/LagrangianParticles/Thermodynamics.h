@@ -222,9 +222,9 @@ SUBROUTINE PrintParticleContents (InParticle, FH, Initialize, ToScreen, &
 	!! Surface Tension
 	IF (DoSurfaceTension) THEN
 		IF (Initialize)      WRITE (FH, '(a)', advance ='no') "Surface Tension, "
-		IF (.NOT.Initialize) WRITE (FH, '(a)', advance ='no') TRIM(REAL2STR(SurfaceTension (InParticle),DecimalPlaces))//", "
+		IF (.NOT.Initialize) WRITE (FH, '(a)', advance ='no') TRIM(REAL2STR(InParticle%SurfaceTension,DecimalPlaces))//", "
 		IF (.NOT.Initialize .AND. ToScreen) &
-		PRINT *, "Surface Tension     : ",TRIM(REAL2STR(SurfaceTension (InParticle)/dyncm,DecimalPlaces))
+		PRINT *, "Surface Tension     : ",TRIM(REAL2STR(InParticle%SurfaceTension/dyncm,DecimalPlaces))
 	ENDIF
 
 	!! Water
@@ -372,7 +372,7 @@ SUBROUTINE DumpParticleContentsAtError (InParticle, OutFileName,    &
 	WRITE (FH, '(a)') "Solution Density= "//TRIM(REAL2STR(ParticleDensity (InParticle)*cm*cm*cm/grams,DecimalPlaces))
 	IF (Density)		  &
 	WRITE (FH, '(a)') "Particle Density= "//TRIM(REAL2STR(InParticle%ParticleDensity*cm*cm*cm/grams,DecimalPlaces))
-	IF (DoSurfaceTension) WRITE (FH, '(a)') "Surface Tension = "//TRIM(REAL2STR(SurfaceTension (InParticle)/dyncm,DecimalPlaces))
+	IF (DoSurfaceTension) WRITE (FH, '(a)') "Surface Tension = "//TRIM(REAL2STR(InParticle%surfaceTension/dyncm,DecimalPlaces))
 	IF (IonicStrength)    WRITE (FH, '(a)') "Ionic Strength  = "//TRIM(REAL2STR(InParticle%IonicStr,DecimalPlaces))
 						  WRITE (FH, '(a)') "# of Particles  = "//TRIM(REAL2STR(InParticle%NumberOfParticles,DecimalPlaces))
                           WRITE (FH, '(a)') "Distribution #  = "//TRIM(INT2STR(InParticle%ParticleDistribution))
@@ -871,8 +871,6 @@ SUBROUTINE FindElectrolyteEquilibrium (InParticle, UpdateThermo, &
 		!! Update the Mixed Activity Coefficients after each equilibration
 		CALL KusikMeissner (InParticle)
 		CALL RecalculateRadius(InParticle)
-
-		II = SurfaceTension(InParticle)
 	END IF
 
 
@@ -1685,9 +1683,9 @@ END FUNCTION EquilibriumConstantsRatio
 SUBROUTINE CalculateIonicStrength (InParticle)
 
 	USE Chemistry, ONLY : HowManyAqCations,			&
-						  HowManyAqAnions,			&
-		  				  AqCationCharge,			&
-						  AqAnionCharge
+	                      HowManyAqAnions,			&
+			      AqCationCharge,			&
+			      AqAnionCharge
 
 	IMPLICIT NONE
 
@@ -1764,12 +1762,12 @@ REAL*8 FUNCTION MeanActivity (WhichEquilibrium, InParticle)
 
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! Activity Coefficient is defined as:									!!
-	!!																		!!
-	!! a_i,j = m_i ^ nu_i * m_j ^ nu_j * Gamma_i,j ^ (nu_i + nu_j)			!!
-	!!																		!!
+	!! Activity Coefficient is defined as:					!!
+	!!									!!
+	!! a_i,j = m_i ^ nu_i * m_j ^ nu_j * Gamma_i,j ^ (nu_i + nu_j)		!!
+	!!									!!
 	!! where m is molality, nu is a stoicheometric function, and Gamma is	!!
-	!! the mean activity coefficient										!!
+	!! the mean activity coefficient					!!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	IF (AqEquilibriaList(WhichEquilibrium,22) .EQ. 0.) THEN
 		MeanActivity = CationMolality(INT(AqEquilibriaList(WhichEquilibrium,2)),InParticle)**AqEquilibriaList(WhichEquilibrium, 4) * &

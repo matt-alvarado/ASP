@@ -1085,9 +1085,11 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 						END IF
 
 						LLLL = LLLL+1
-						IF(LLLL .GT. 1000) THEN
-							CALL WARN("Over 1000 water iterations in StepCondensation().")
-							CALL WARN("RH equals :"//trim(real2str(RH)))
+						IF(LLLL .GT. 100) THEN
+                                                   CALL WARN("Over 100 water iterations in StepCondensation().")
+                                                   CALL WARN("RH equals :"//trim(real2str(RH)))
+                                                   ReturnType  = 2
+                                                   Equilibrated = .TRUE.
 						END IF
 					END DO
 						

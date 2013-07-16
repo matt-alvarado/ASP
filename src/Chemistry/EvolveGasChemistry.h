@@ -381,6 +381,7 @@ y = GetGasChemVector()
 	CALL UpdateChemicalConcentrations(Y(1:HowManyEvolveGasChems))
 	!! SCSCSCSC
 	IF (Scaffolding) CALL TRANSCRIPT (">>>Exiting StepGasChemistry<<<")
+        DEALLOCATE (Y, RWORK, IWORK, STAT = allocation_error)
 
 RETURN
 END SUBROUTINE StepGasChemistry

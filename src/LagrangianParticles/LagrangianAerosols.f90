@@ -100,7 +100,6 @@ PUBLIC	:: AerosolModeNames,			&
 		   ResetAllOriginPressureLevels,&
 		   SortAerosolAtGridPointForCondensation, &
 		   SortAerosolAtGridPointForCoagulation,  &
-		   SurfaceTension,				&
 		   TerminalVelocity,			&
 		EquilibrateAqueousDissociationReaction,&
 			PrintParticleContents,&

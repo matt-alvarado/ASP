@@ -261,11 +261,11 @@ MODULE ModelParameters
 
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! The SECTIONAL REPRESENTATION has			!!
-	!! several parameters, allocated here		!!
+	!! The SECTIONAL REPRESENTATION has	    !!
+	!! several parameters, allocated here	    !!
 	!! and defined in SetSectionalParameters()  !!
 	REAL*8  :: LagrSectSizeCutoff,	&
-			   LowestBinCutoff
+	           LowestBinCutoff
 	INTEGER :: HowManyBins
 	LOGICAL :: StochasticOrNot
 	REAL*8, ALLOCATABLE  :: BinEdges(:,:)
@@ -273,7 +273,7 @@ MODULE ModelParameters
 	LOGICAL :: LagrangianOrNot !! Are we tracking lagrangian aerosol or does everything go into a section?
 	LOGICAL :: MONODISPERSE !! Are the aerosol monodisperse?
 	LOGICAL :: AmmoniaFlux !!Is ammonia dissolution a flux (1) or eq(0) process?
-	LOGICAL :: UseDonnanSurfaceTension = .TRUE. !If true, use Donnan's formula, else use Jacobson
+	LOGICAL, PARAMETER :: UseDonnanSurfaceTension = .TRUE. !If true, use Donnan's formula, else use Jacobson
 	LOGICAL :: IgnoreCorrectionstoDiffusivity
 	LOGICAL, PARAMETER :: CombinedInorgDiss = .TRUE.
 	LOGICAL, PARAMETER :: ZSROrgWater = .TRUE.

@@ -67,6 +67,10 @@
 !! 11/08  2012   Matt Alvarado     Added Maxwell-Garnett mixing rule to ShellRefIndAndRad
 !! 01/24  2013   Matt Alvarado     Updated OrgCurvatureCorrection to give 1.0
 !!                                  if particle number = 0.0
+!! 07/10  2013   Matt Alvarado     Made it so only RecalculateRadius resets 
+!!                                  the particle%surfacetension by calling 
+!!                                  SurfaceTension, and CurvatureCorrection
+!!                                  uses the particle%surfacetension
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -884,17 +888,19 @@ SUBROUTINE RecalculateRadius (InParticle)
 	END IF
 
 	!! Calling the Density Routine Resets the Radius, so just do that
-	II = ParticleDensity (InParticle)	
+	II = ParticleDensity (InParticle)
+        !! Reset the Surface Tension as well
+        II = SurfaceTension (InParticle)	
 
 	RETURN
 END SUBROUTINE RecalculateRadius
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! The correction to pressure from curvature, used for water activity and in condensation. !!
-!! It is also known as the "Kelvin Effect"												   !!
-!!																						   !!
+!! It is also known as the "Kelvin Effect"						   !!
+!!											   !!
 !! The optional argument PerturbWater is a multiple by which to change the water content   !!
-!! so we can get a sense of the derivative of the water residual.						   !!
+!! so we can get a sense of the derivative of the water residual.			   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION CurvatureCorrection (InParticle) 
 
@@ -915,21 +921,20 @@ REAL*8 FUNCTION CurvatureCorrection (InParticle)
 	
 	!Ignore this for bulk mode, no particles, or if ordered to.
 	IF (ThermoBulkMode .OR. InParticle%NumberofParticles .LE. 0.0 .OR. IgnoreCorrectionstoDiffusivity) THEN
-		CurvatureCorrection = 1.
+	   CurvatureCorrection = 1.
 		
 	ELSE
-		!! Do this in stages because ParticleDensity forces a radius + solution density update..."
-		!WRITE(*,*) "Before Dens"
-		TotalDens  = InParticle%SolutionDensity
-		!WRITE(*,*) "After Dens" 
+	   !! Do this in stages because ParticleDensity forces a radius + solution density update..."
+	   !WRITE(*,*) "Before Dens"
+	   TotalDens  = InParticle%SolutionDensity
+	   !WRITE(*,*) "After Dens" 
 		
-		!WRITE(*,*) "Curvature Correction: ", InParticle%NumberofParticles
+	   !WRITE(*,*) "Curvature Correction: ", InParticle%NumberofParticles
 
-		CurvatureCorrection = 2.*AqMolecularMass(1)/(InParticle%Temperature*Rstar*InParticle%SolutionDensity)
-		!WRITE(*,*) CurvatureCorrection, InParticle%EmbryoRadius, SurfaceTension(InParticle)
+	   CurvatureCorrection = 2.*AqMolecularMass(1)/(InParticle%Temperature*Rstar*InParticle%SolutionDensity)
+	   !WRITE(*,*) CurvatureCorrection, InParticle%EmbryoRadius, SurfaceTension(InParticle)
 		
-		
-		CurvatureCorrection = EXP(CurvatureCorrection*SurfaceTension(InParticle)/InParticle%EmbryoRadius)
+	   CurvatureCorrection = EXP(CurvatureCorrection*InParticle%SurfaceTension/InParticle%EmbryoRadius)
 
 	END IF
 
@@ -940,30 +945,40 @@ END FUNCTION CurvatureCorrection
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Surface Tension depends on Temperature and Electrolytic Properties  !!
-!! of the Aerosol's constituent species.							   !!
-!!																	   !!
-!! Follow Li and Lu (2001): Chem. Eng. Sci., 56: 2879-2888, who use	   !!
+!! of the Aerosol's constituent species.			       !!
+!!								       !!
+!! Follow Li and Lu (2001): Chem. Eng. Sci., 56: 2879-2888, who use    !!
 !! a Gibbs dividing surface, define surface excess, etc.  It is a 2-   !!
 !! parameter-per-electrolyte system and the data is taken in when the  !!
-!! electrolytes are defined.										   !!
-!!																	   !!
+!! electrolytes are defined.					       !!
+!!								       !!
 !! Many other systems seem to use the sig = sig_w + Beta I formulation !!
 !! from Pruppacher and Klett (1997), but that is significantly less    !!
-!! effective than this technique.									   !!
-!!
-!! Units are dyn / cm
+!! effective than this technique.				       !!
+!!                                                                     !!
+!! Units are dyn / cm                                                  !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION SurfaceTension (InParticle)
 
-	USE GridPointFields, ONLY : SurfaceTensionOfWater, GetRelativeHumidity
-	USE Chemistry, ONLY : AqEquilibriaList, HowManyAqEqReactions
-	USE ModelParameters 
-	USE InfrastructuralCode, ONLY : Error, REAL2STR
+	USE GridPointFields, ONLY : SurfaceTensionOfWater, &
+                                    GetRelativeHumidity
+
+	USE Chemistry,       ONLY : AqEquilibriaList,      &
+                                    HowManyAqEqReactions
+	
+        USE ModelParameters, ONLY : UseDonnanSurfaceTension, &
+                                    Rstar,                   &
+                                    HowManyAqChems,          &
+                                    HowManyAqAnions,         &
+                                    HowManyAqCations   
+	
+        USE InfrastructuralCode, ONLY : Error, REAL2STR
 	IMPLICIT NONE
 
-	!! Input Variables
+	!! External Variables
 	TYPE (Particle),POINTER :: InParticle
 
+	!! Internal Variables
 	INTEGER :: I
 	REAL*8  :: II, Sum1, DenomSum, TotalIonMolality, Test
 
@@ -971,7 +986,7 @@ REAL*8 FUNCTION SurfaceTension (InParticle)
 
 	!! CALL FindElectrolyteEquilibrium (InParticle)
 	CALL CalculateIonicStrength(InParticle)
-    CALL KusikMeissner(InParticle)
+        CALL KusikMeissner(InParticle)
 
 	IF(UseDonnanSurfaceTension) THEN !If true, Donnan; If False, Jacobson formulas
 		!!Donnan's Parameterization
@@ -981,20 +996,19 @@ REAL*8 FUNCTION SurfaceTension (InParticle)
 			DenomSum = DenomSum + MeanActivity(I, InParticle) * AqEquilibriaList(I,15)
 		END DO
 
-		!! Probably this only happens if the RH is actually 0.
-		IF (Denomsum .GT. 1.0e40) THEN
-			WRITE(*,*) DenomSum, InParticle%numberofParticles
-			CALL DumpParticleContentsAtError(InParticle, "BadActivitiesInSurfaceTensionParticle.txt", &
-                                                 InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., &
-                                                 InDoWaterActivity=.TRUE.,InDensity=.TRUE.,InDoSurfaceTension=.FALSE., &
-                                                 InIonicStrength=.TRUE.)
-			CALL ERROR ("In SurfaceTension(), the mean activity coefficients appear to have grown without bounds.  "// &
-					"This is likely because the water is leaching out of the system towards zero.  Perhaps the "// &
-					"relative humidity for the particle is too small?  I think it is "//trim(real2str(100*         &
-					GetRelativeHumidity()))//  &
-					"%.  Another possibility is that you are in the water equilibration routine and it is dumping "// &
-					"water from the particle to try to reduce the water activity, and it got too dry.")
-		END IF
+!		IF (Denomsum .GT. 1.0e40) THEN
+!			WRITE(*,*) DenomSum, InParticle%numberofParticles
+!			CALL DumpParticleContentsAtError(InParticle, "BadActivitiesInSurfaceTensionParticle.txt", &
+!                                                 InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., &
+!                                                 InDoWaterActivity=.TRUE.,InDensity=.TRUE.,InDoSurfaceTension=.FALSE., &
+!                                                 InIonicStrength=.TRUE.)
+!			CALL ERROR ("In SurfaceTension(), the mean activity coefficients appear to have grown without bounds.  "// &
+!					"This is likely because the water is leaching out of the system towards zero.  Perhaps the "// &
+!					"relative humidity for the particle is too small?  I think it is "//trim(real2str(100*         &
+!					GetRelativeHumidity()))//  &
+!					"%.  Another possibility is that you are in the water equilibration routine and it is dumping "// &
+!					"water from the particle to try to reduce the water activity, and it got too dry.")
+!		END IF
 
 		!! Loop over each reaction and consider the appropriate equation
 		Sum1 = 0.
@@ -1018,6 +1032,7 @@ REAL*8 FUNCTION SurfaceTension (InParticle)
 	
 		!Now, add in effect of aqueous organics using formula in
 		! Jacobson, "Fund. of Atm. Modeling", 2nd ed., p. 534
+                !Based on Fachini et al., Nature, 401, 257-259, 1999.
  		SurfaceTension = SurfaceTension - 0.0187*InParticle%Temperature*LOG(1+628.14*MolalityAqCarbon(InParticle))
 	
 	ELSE !Use formulas from Jacobson, "Fund. of Atm. Modeling", 2nd ed., p. 534		
@@ -1027,15 +1042,17 @@ REAL*8 FUNCTION SurfaceTension (InParticle)
 		DO I = HowManyAqChems+1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
 			TotalIonMolality = TotalIonMolality + Molality(I, InParticle)
 		END DO
+                !Based on Pruppacher and Klett, 1997.
 		SurfaceTension = SurfaceTension + 1.7*TotalIonMolality
 		!Organics
+                !Based on Fachini et al., Nature, 401, 257-259, 1999.
 		SurfaceTension = SurfaceTension - 0.0187*InParticle%Temperature*LOG(1+628.14*MolalityAqCarbon(InParticle))
 
 	END IF
 
 	!!Force a minimum Surface tension
 	!!Use the surface tension of Benzene at 298 K 
-	!!(Also used in OrgCurvatureCorrection as the surface tension		
+	!!(Also used in OrgCurvatureCorrection as the surface tension)		
 	!!See Seinfeld and Pandis (1998), Table 10.2, p. 558
 	IF(SurfaceTension .LT. 28.21) SurfaceTension = 28.21
 
@@ -1106,11 +1123,11 @@ REAL*8 FUNCTION ReynoldsNumber (InParticle)
 END FUNCTION ReynoldsNumber
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! The correction to pressure from curvature of the organic phase.						   !!
-!! It is also known as the "Kelvin Effect"												   !!
-!! This uses approximate values for molecular mass and surface tension
-!! of the organic phase. Since the curvature correction is mainly for
-!! water above RH = 98%, this should be of minor importance.																					   !!
+!! The correction to pressure from curvature of the organic phase.			   !!
+!! It is also known as the "Kelvin Effect"						   !!
+!! This uses approximate values for molecular mass and surface tension                     !!
+!! of the organic phase. Since the curvature correction is mainly for                      !!
+!! water above RH = 98%, this should be of minor importance.				   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION OrgCurvatureCorrection (InParticle) 
 
@@ -1756,9 +1773,6 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
             MGInd = CMPLX(InParticle%MGRealRefracInd(ib),-1.0*InParticle%MGImagRefracInd(ib))
           ENDIF
 
-
-
-
 	  NumAng = 0.
 
           !DMiLay needs 2*Pi divided by the wavelength
@@ -1947,6 +1961,8 @@ SUBROUTINE ShellRefIndAndRad(InParticle)
                 InParticle%AssymParamMG(ib)/InParticle%ScaEffMG(ib)
           
 	END DO
+
+        DEALLOCATE(AqVolConc,OrgVolConc,AqOrgVolConc, MolFrac, STAT = I)
 
 	RETURN
 END SUBROUTINE ShellRefIndAndRad
