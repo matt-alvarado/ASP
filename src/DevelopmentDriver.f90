@@ -685,7 +685,7 @@ PROGRAM ASP
 		WRITE(*,*) "Potassium (ug/m3): ", Potassium*AqMolecularMass(PotassiumIndex)*1.0E12
 		WRITE(*,*) "BC        (ug/m3): ", BC*OrgMolecularMass(1)*1.0E12
                 WRITE(*,*) "Sulfate   (ug/m3): ",Sulf*AqMolecularMass(SO4i)*1.0E12
-                STOP
+                
 
 		ALLOCATE(NumConc(NumBins), STAT = status)
                 IF (status > 0) THEN
