@@ -46,7 +46,7 @@ END SUBROUTINE SetAllDissolution
 !! and calls the appropriate eulerian grid subroutines to establich the	    !!
 !! chemical fields							    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	SUBROUTINE SetDissolution ()
+SUBROUTINE SetDissolution ()
 
 		USE ModelParameters, ONLY : AqChemScale, Atmospheres,	&
 					SetDissolutionEquilibriumOrFlux,&
@@ -69,7 +69,6 @@ END SUBROUTINE SetAllDissolution
 					HowManyAqChems,			&
 					HowManyAqCations,		&
 					HowManyAqEqReactions,		&
-					AqWaterDissociationReaction,&
 					GetAqCharge
 
 		IMPLICIT NONE
@@ -103,11 +102,11 @@ END SUBROUTINE SetAllDissolution
 			!! Make a first pass through the file to determine the number of 
 			!! reactions specified therein.
 			!! Need this number early to allocate all of the arrays.
-10			CurrLine = GetLine(FH)
-			IF (CurrLine .NE. EOF) THEN
+			CurrLine = GetLine(FH)
+			DO WHILE (CurrLine .NE. EOF)
 				HowManyDissolutionReactions = HowManyDissolutionReactions+1
-				GOTO 10
-			END IF
+                                CurrLine = GetLine(FH)			
+			END DO
 
 			!! Back up for a second pass to parse the reactions
 			REWIND(FH)
@@ -893,11 +892,11 @@ END SUBROUTINE SetAllDissolution
 			!! Make a first pass through the file to determine the number of 
 			!! reactions specified therein.
 			!! Need this number early to allocate all of the arrays.
-10			CurrLine = GetLine(FH)
-			IF (CurrLine .NE. EOF) THEN
+			CurrLine = GetLine(FH)
+			DO WHILE (CurrLine .NE. EOF)
 				HowManyOrganicDissolutionReactions = HowManyOrganicDissolutionReactions+1
-				GOTO 10
-			END IF
+                                CurrLine = GetLine(FH)
+			END DO
 
 			!! Back up for a second pass to parse the reactions
 			REWIND(FH)
@@ -1179,11 +1178,11 @@ END SUBROUTINE SetAllDissolution
 			!! Make a first pass through the file to determine the number of 
 			!! reactions specified therein.
 			!! Need this number early to allocate all of the arrays.
-10			CurrLine = GetLine(FH)
-			IF (CurrLine .NE. EOF) THEN
+			CurrLine = GetLine(FH)
+			DO WHILE (CurrLine .NE. EOF)
 				HowManyAqOrganicDissolutionReactions = HowManyAqOrganicDissolutionReactions+1
-				GOTO 10
-			END IF
+				CurrLine = GetLine(FH)
+			END DO
 
 			!! Back up for a second pass to parse the reactions
 			REWIND(FH)

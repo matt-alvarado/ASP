@@ -106,12 +106,12 @@ SUBROUTINE ResetAllOriginPressureLevels (OriginPressureLevel)
 
 	Particle => Particles%First
 
-10	IF (ASSOCIATED(Particle)) Particle%OriginPressureLevel = OriginPressureLevel
+	IF (ASSOCIATED(Particle)) Particle%OriginPressureLevel = OriginPressureLevel
 		
-	IF (ASSOCIATED(Particle%Next)) THEN
+	DO WHILE (ASSOCIATED(Particle%Next))
 		Particle => Particle%Next
-		GOTO 10
-	END IF
+		IF (ASSOCIATED(Particle)) Particle%OriginPressureLevel = OriginPressureLevel
+	END DO
 
 	RETURN
 END SUBROUTINE ResetAllOriginPressureLevels
@@ -229,7 +229,7 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
                                        AqOrgMolecularMass,             &
                                        AqOrgDensity
 
-	USE InfrastructuralCode, ONLY : ERROR,REAL2STR, WARN
+	USE InfrastructuralCode, ONLY : ERROR,REAL2STR, WARN, IsNaN
 
 	IMPLICIT NONE
 
@@ -498,15 +498,16 @@ END FUNCTION ParticleMass
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 FUNCTION GetPatwardhandAndKumarWeightings (InParticle)
 
-	USE Chemistry, ONLY : HowManyAqEqReactions,			&
-						  HowManyAqChems,				&
-						  HowManyAqCations,				&
-						  HowManyAqAnions,				&
-						  AqEquilibriaList,				&
-						  AqCationCharge,				&
-						  AqAnionCharge, &
-							AqPhaseChemicalNames
-	USE InfrastructuralCode, ONLY : WARN
+	USE Chemistry, ONLY : HowManyAqEqReactions,	&
+			      HowManyAqChems,		&
+			      HowManyAqCations,		&
+			      HowManyAqAnions,		&
+			      AqEquilibriaList,		&
+			      AqCationCharge,		&
+			      AqAnionCharge,            &
+			      AqPhaseChemicalNames
+
+	USE InfrastructuralCode, ONLY : WARN, IsNaN
 
 	IMPLICIT NONE
 
@@ -1982,16 +1983,14 @@ REAL*8 FUNCTION AerosolOpticalDepth ()
 	
 	Particle => Particles%First
 
-10	IF (ASSOCIATED(Particle)) THEN
+	DO WHILE (ASSOCIATED(Particle))
 
-		AerosolOpticalDepth = AerosolOpticalDepth + Particle%NumberofParticles*(PI*Particle%EffectiveRadius**2)*Particle%ExtEff(301)
-		
-		IF (ASSOCIATED(Particle%Next)) THEN
-			Particle => Particle%Next
-			GOTO 10
-		END IF
-	
-	END IF
+           AerosolOpticalDepth = AerosolOpticalDepth + &
+                Particle%NumberofParticles*(PI*Particle%EffectiveRadius**2)*Particle%ExtEff(301)
+
+           Particle => Particle%Next
+
+	END DO
 	
 	AerosolOpticalDepth = AerosolOpticalDepth*InversionHeight
 	
@@ -2053,7 +2052,7 @@ SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, &
 !                AssymSumSep = 0.0
 		Particle => Particles%First
 
-	10	IF (ASSOCIATED(Particle)) THEN
+		DO WHILE (ASSOCIATED(Particle))
                      IF (Particle%EffectiveRadius .gt. 0) THEN 
                        bc_vol_frac = (Particle%AbsCoreRad/Particle%EffectiveRadius)**3
                      ELSE
@@ -2113,12 +2112,8 @@ SUBROUTINE AerosolOptProp (ExtCoeff, SingScat, Assym, BackScatCoeff, &
                         ENDIF
                       ENDIF
 
-	              IF (ASSOCIATED(Particle%Next)) THEN
-			Particle => Particle%Next
-			GOTO 10
-		      END IF
-	
-		END IF
+                      Particle => Particle%Next
+		END DO
 
 		!Formula from p.327, eqn 9.103 of Jacobson, 2nd ed. "Fundamentals of Atm. Modeling"
 		SingScat(ib) = ScatCoeff(ib)/ExtCoeff(ib)

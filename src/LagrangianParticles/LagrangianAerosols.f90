@@ -19,6 +19,7 @@
 !!                                 a one-box model or subroutine.            !!
 !! 03/01  2012   Matt Alvarado     Added SetInitialDens to                   !!
 !!                                  SUBROUTINE InitializeParticlesSectional  !!
+!! 07/19  2013   Matt Alvarado     Moved IsNaN to InfrastructuralCode        !!  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -54,7 +55,6 @@
 !!11. FUNCTION CopyLagrangianParticle (InParticle)
 !!12. SUBROUTINE InitializeParticlesSectional()
 !!13. SUBROUTINE DissociateAllElectrolytes()
-!!14. FUNCTION ISNAN
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 MODULE Aerosols
 
@@ -65,64 +65,40 @@ PRIVATE
 !! Now specify which subroutines may be accessed by the outside world	 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 PUBLIC	:: AerosolModeNames,			&
-		   AerosolModes,                &
-		   AerosolPH,					&
-		   CalculateIonicStrength,		&
-		   ClearParticles,				&
-		   CopyLagrangianParticle,		&
-		   CurvatureCorrection,			&
-		   OrgCurvatureCorrection,		&
-		   DumpParticleContentsAtError, &
-   		   EqCoeff,						&
-		   FindElectrolyteEquilibrium,	&
-		   FindAqElectrolyteEquilibriumForGridPoint, &
-		   HowManyAerosolModes,			&
-		   HypotheticalElectrolyteConcentrations , &
-		   InitializeParticlesSectional, &
-		   InsolCoresYesOrNo,			&
-		   KusikMeissner,				&
-		   MakeSection,					&
-		   MakeParticle,				&
-		   MeanActivity,				&
-		   Molality,				    &
-		   ODowdSaltWindSpeed,			&
-		   ODowdSaltNumbBins,			&
-		   ParticleKnudsen,				&
-		   Particle,					&
-		   Particles, ParticleArray,	&
-		   ParticleKnudsenForEnergy,	& 
-		   ParticleMass,				&
-		   ParticleDensity,				&
-		   PrintAqEqReaction,			&
-		   ReynoldsNumber,				&
-		   ReformElectrolyte,			&
-		   RecalculateRadius,			&
-		   ResetAllOriginPressureLevels,&
-		   SortAerosolAtGridPointForCondensation, &
-		   SortAerosolAtGridPointForCoagulation,  &
-		   TerminalVelocity,			&
-		EquilibrateAqueousDissociationReaction,&
-			PrintParticleContents,&
-			SCTailorMakeParticle, & !! this is junk
-			SCInitializeWaterParticles, &
-			UpdateWaterActivity, &
-			RegridAerosol, &
-			CationMolality, &
-			DissociateAllElectrolytes, &
-			EquilibriumWaterContentAmount, &
-			ReadBoundaryDistributionsOrganic, &
-			BoundaryParticles, &
-			SortBoundaryPart, &
-			GetPatwardhandAndKumarWeightings, &
-			CalcQ, &
-			AerosolOpticalDepth, &
-			ShellRefIndAndRad, &
-			AerosolOptProp, &
-			DeliquesenceRH, &
-			EquilibriumConstantsRatio, &
-                        PopulateParticlesSectionsRightAway, &
-                        ReadDistributionsOrganic, &
-                        InputFlagRatioOrMass
+           AerosolModes,                        &
+           AerosolPH,				&
+           CurvatureCorrection,			&
+           OrgCurvatureCorrection,		&
+           DumpParticleContentsAtError,         &
+           FindElectrolyteEquilibrium,	        &
+           FindAqElectrolyteEquilibriumForGridPoint, &
+           HypotheticalElectrolyteConcentrations, &
+           InitializeParticlesSectional,        &
+           KusikMeissner,			&
+           Molality,				&
+           ParticleKnudsen,			&
+           Particle,				&
+           Particles, ParticleArray,	        &
+           ParticleKnudsenForEnergy,	        &   
+           ParticleMass,			&
+           ReynoldsNumber,			&
+           ReformElectrolyte,			&
+           RecalculateRadius,			&
+           SortAerosolAtGridPointForCondensation, &
+           SortAerosolAtGridPointForCoagulation, &
+           TerminalVelocity,			&
+           UpdateWaterActivity,                 &
+           RegridAerosol,                       & 
+           EquilibriumWaterContentAmount,       &
+           ReadBoundaryDistributionsOrganic,    &
+           BoundaryParticles,                   &
+           SortBoundaryPart,                    &
+           AerosolOpticalDepth,                 &
+           ShellRefIndAndRad,                   &
+           AerosolOptProp,                      &
+           PopulateParticlesSectionsRightAway,  &
+           ReadDistributionsOrganic,            &
+           InputFlagRatioOrMass
 
 INCLUDE "ParticleStructure.h"
 
@@ -131,8 +107,8 @@ INTEGER :: InputFlagRatioOrMass
 
 !! The windspeed for the O'Dowd 1997 Salt Parameterization 
 !! (0 means don't use it)
-REAL*8  :: ODowdSaltWindSpeed
-INTEGER :: ODowdSaltNumbBins
+!REAL*8  :: ODowdSaltWindSpeed
+!INTEGER :: ODowdSaltNumbBins
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! The Aerosol Modes array holds, in order (first index is mode identifier): !!
@@ -548,16 +524,5 @@ SUBROUTINE DissociateAllElectrolytes()
 	END IF
 
 END SUBROUTINE DissociateAllElectrolytes
-
-logical function isnan(a)
-   IMPLICIT NONE
-   real ::  a
-   if (a.ne.a) then
-       isnan = .true.
-   else
-       isnan = .false.
-   end if
-   return
-end function
 
 END MODULE Aerosols

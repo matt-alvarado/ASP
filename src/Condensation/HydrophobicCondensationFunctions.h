@@ -271,14 +271,11 @@ SUBROUTINE EquilibrateHydrophobicPhaseAtGridPoint()
 	!! Count the number of links
 	HowManyLinks = 0
 	Current => Particles%First
-	IF (ASSOCIATED(Current)) THEN
-10		IF (Current%NumberOfParticles .GT. 0 ) &
-			HowManyLinks = HowManyLinks + 1
-			IF (ASSOCIATED(Current%Next)) THEN
-				Current => Current%Next
-				GOTO 10
-			END IF
-	END IF
+	DO WHILE (ASSOCIATED(Current))
+           IF (Current%NumberOfParticles .GT. 0 ) &
+                HowManyLinks = HowManyLinks + 1
+           Current => Current%Next
+	END DO
 
 	Temperature = GetTemp()
 
@@ -408,10 +405,7 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, &
 					Transcript,			&
 					ERROR, WARN
 
-	USE Aerosols,		ONLY :	DumpParticleContentsAtError, &
-					EqCoeff,			&
-					MeanActivity,&
-					EquilibrateAqueousDissociationReaction
+	USE Aerosols,		ONLY :	DumpParticleContentsAtError
 
 	IMPLICIT NONE
 
@@ -682,10 +676,7 @@ SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, &
 						Transcript,		&
 						ERROR, WARN
 
-	USE Aerosols,		ONLY :	DumpParticleContentsAtError, &
-					EqCoeff,			&
-					MeanActivity,&
-					EquilibrateAqueousDissociationReaction
+	USE Aerosols,		ONLY :	DumpParticleContentsAtError
 
 	IMPLICIT NONE
 
@@ -1110,14 +1101,11 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint()
 	!! Count the number of links
 	HowManyLinks = 0
 	Current => Particles%First
-	IF (ASSOCIATED(Current)) THEN
-10		IF (Current%NumberOfParticles .GT. 0 ) &
-			HowManyLinks = HowManyLinks + 1
-			IF (ASSOCIATED(Current%Next)) THEN
-				Current => Current%Next
-				GOTO 10
-			END IF
-	END IF
+	DO WHILE (ASSOCIATED(Current))
+           IF (Current%NumberOfParticles .GT. 0 ) &
+                HowManyLinks = HowManyLinks + 1
+           Current => Current%Next
+	END DO
 
 	Temperature = GetTemp()
 
@@ -1131,7 +1119,7 @@ SUBROUTINE EquilibrateAllOrganicsAtGridPoint()
 		Equilibrated = .TRUE.
 
 		!! Loop over the reactions
-		DO I = 1, HowManyOrganicDissolutionReactions+HowManyAqOrganicDissolutionReactions						 
+		DO I = 1, HowManyOrganicDissolutionReactions+HowManyAqOrganicDissolutionReactions
 			
 			!WRITE (*,*) "Reaction: ", I
 			L = 0
@@ -1323,10 +1311,7 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, &
 						Transcript,	&
 						ERROR, WARN
 
-	USE Aerosols,		ONLY :	DumpParticleContentsAtError, &
-					EqCoeff,		&
-					MeanActivity, &
-					EquilibrateAqueousDissociationReaction
+	USE Aerosols,		ONLY :	DumpParticleContentsAtError
 
 	IMPLICIT NONE
 
@@ -1570,10 +1555,7 @@ SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, &
 					Transcript,	&
 					ERROR, WARN
 
-	USE Aerosols,		ONLY :	DumpParticleContentsAtError, &
-					EqCoeff,		&
-					MeanActivity,&
-					EquilibrateAqueousDissociationReaction
+	USE Aerosols,		ONLY :	DumpParticleContentsAtError
 
 	IMPLICIT NONE
 

@@ -139,12 +139,18 @@
 !! together. Also regrids aerosol automatically.
 SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 
-	USE InfrastructuralCode
-	USE ModelParameters
-	USE Aerosols, ONLY :  Particles, Particle,			&
-			      ParticleArray,				&
-			      RegridAerosol,				&
-			      SortAerosolAtGridPointForCondensation
+	USE InfrastructuralCode,  ONLY :  Error
+        USE ModelParameters,      ONLY :  DissolutionEquilibriumOrFlux, &
+                                          ThermoBulkMode,               &
+                                          DoCondensationFlag,           &
+                                          DoDissolutionFlag,            &
+                                          DoHydrophobicOrgDissolutionFlag, &
+                                          DoHydrophilicOrgDissolutionFlag
+
+	USE Aerosols,             ONLY :  Particles, Particle,	&
+			                  ParticleArray,		&
+                                          RegridAerosol,		&
+                                          SortAerosolAtGridPointForCondensation
 						  		
 	IMPLICIT NONE
 
@@ -154,12 +160,8 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 
 	!! Internal Variables
 	INTEGER :: I
-	REAL*8 :: S1MassFracs(2), S2MassFracs(6), S3MassFracs(2), &
-		S4MassFracs(3), S5MassFracs(2), S6MassFracs(3), &
-		S7MassFracs(8), S8MassFracs(3), S9MassFracs(4), &
-		S10MassFracs(4), InitialBurden(10)
+	REAL*8  :: InitialBurden(10), CondTime
 	REAL*4  :: etimearray(2)
-	REAL*8  :: CondTime
 	LOGICAL :: EmptyGridCell
 	TYPE(Particle), POINTER :: FirstParticle, CurrentParticle
 	
@@ -169,73 +171,59 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 	EmptyGridCell = .TRUE. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	CurrentParticle => Particles%First
 
-5	IF (ASSOCIATED(CurrentParticle)) THEN
-		IF ((CurrentParticle%Sectional .AND. CurrentParticle%NumberOfParticles .EQ. 0) .OR. CurrentParticle%Dry) THEN
-			IF(ASSOCIATED(CurrentParticle%Next)) THEN
-				CurrentParticle => CurrentParticle%Next			
-				GOTO 5
-			END IF
-		ELSE
-			EmptyGridCell = .FALSE.
-		END IF
-	END IF
+	DO WHILE (ASSOCIATED(CurrentParticle))
+           IF ((CurrentParticle%Sectional .AND. CurrentParticle%NumberOfParticles .EQ. 0) &
+                .OR. CurrentParticle%Dry) THEN
+
+              CurrentParticle => CurrentParticle%Next			
+           ELSE
+              CurrentParticle => CurrentParticle%Next	
+              EmptyGridCell = .FALSE.
+           END IF
+	END DO
 	
 	
 	IF (.NOT.EmptyGridCell) THEN
 	
-		!If doing equilibrium (09/18/06 MJA)
-		IF(.NOT. DissolutionEquilibriumOrFlux) THEN
-			CALL StepCondensation (TimestepSize, 1)
+           !If doing equilibrium (09/18/06 MJA)
+           IF(.NOT. DissolutionEquilibriumOrFlux) THEN
+              CALL StepCondensation (TimestepSize, 1)
 	
-		!If doing flux
-		ELSE
-			IF (ThermoBulkMode) &
-			CALL ERROR("Can't try to use the kinetic based condensation and dissolution routine when running in bulk mode "// &
+           !If doing flux
+           ELSE
+              IF (ThermoBulkMode) &
+                   CALL ERROR("Can't try to use the kinetic based condensation and "// &
+                                   "dissolution routine when running in bulk mode "// &
 				   "(specified in AerosolModes.in).  Please remedy.")
 
-			!! Sort the gridcell, pushing all empty sections to the end
-			CALL SortAerosolAtGridPointForCondensation ()
-		
-			!Calculate surrogate organic concentrations
-			!IF(DoHydrophobicOrgDissolutionFlag .OR. DoHydrophilicOrgDissolutionFlag) &
-				!CALL CalculateSurrogateGasConc(S1MassFracs, S2MassFracs, &
-				!	S3MassFracs, S4MassFracs, S5MassFracs, S6MassFracs, &
-				!	S7MassFracs, S8MassFracs, S9MassFracs, S10MassFracs, InitialBurden)
+              !! Sort the gridcell, pushing all empty sections to the end
+              CALL SortAerosolAtGridPointForCondensation ()
 	
-			DO I = 1, NumTimeSteps
-				WRITE(*,*) "StepDissolutionAll Check 0"
-				IF(DoDissolutionFlag .OR. DoCondensationFlag) &
-					CALL StepCondensation (TimestepSize, 1)
+              DO I = 1, NumTimeSteps
+                 WRITE(*,*) "StepDissolutionAll Check 0"
+                 IF(DoDissolutionFlag .OR. DoCondensationFlag) &
+                      CALL StepCondensation (TimestepSize, 1)
 		
-				WRITE(*,*) "StepDissolutionAll Check 1"
-				IF(DoHydrophobicOrgDissolutionFlag) THEN
-                                    CALL UpdateHydrophobicUNIFAC_all
-				    CALL StepOrgCondensation (TimestepSize, 1)
-                                ENDIF
+                 WRITE(*,*) "StepDissolutionAll Check 1"
+                 IF(DoHydrophobicOrgDissolutionFlag) THEN
+                    CALL UpdateHydrophobicUNIFAC_all
+                    CALL StepOrgCondensation (TimestepSize, 1)
+                 ENDIF
 		
-				WRITE(*,*) "StepDissolutionAll Check 2"
-				IF(DoHydrophilicOrgDissolutionFlag) THEN
-                                   CALL UpdateHydrophilicUNIFAC_all
-				WRITE(*,*) "StepDissolutionAll Check 2.1"
-				   CALL StepAqOrgCondensation (TimestepSize, 1)
-                                ENDIF
-				WRITE(*,*) "StepDissolutionAll Check 3"
-			END DO
+                 WRITE(*,*) "StepDissolutionAll Check 2"
+                 IF(DoHydrophilicOrgDissolutionFlag) THEN
+                    CALL UpdateHydrophilicUNIFAC_all
+                    WRITE(*,*) "StepDissolutionAll Check 2.1"
+                    CALL StepAqOrgCondensation (TimestepSize, 1)
+                 ENDIF
+                 WRITE(*,*) "StepDissolutionAll Check 3"
+              END DO
 
-			!Update individual gas-phase concentrations
-			!IF(DoHydrophobicOrgDissolutionFlag .OR. &
-                        !     DoHydrophilicOrgDissolutionFlag) &
-			!	CALL UpdateGasPhaseOrganics(S1MassFracs, & 
-                        !                S2MassFracs, S3MassFracs, &
-                        !                 S4MassFracs, S5MassFracs, &
-                        !                 S6MassFracs, S7MassFracs, &
-                        !                 S8MassFracs, S9MassFracs, &
-                        !                 S10MassFracs, InitialBurden)
-		END IF
+           END IF
 
-		!WRITE(*,*) "StepDissolutionAll Check 4"
-		!Move particles across bin boundaries, if necessary
-		CALL RegridAerosol ()		
+           !WRITE(*,*) "StepDissolutionAll Check 4"
+           !Move particles across bin boundaries, if necessary
+           CALL RegridAerosol ()		
 	
 	END IF !Empty Grid Cell
 			
@@ -264,7 +252,7 @@ SUBROUTINE DissolutionFactors (WhichRxn, HowManyLinks, Temperature, &
                                         GetGridCellChemBurden
 
 	USE Aerosols,        ONLY :	Particles, Particle,		&
-					ParticleArray, Molality
+					ParticleArray
 
 	USE ModelParameters, ONLY :	RstarMB, moles, grams, watermolecmass,&
 					ProtonIndex, HydroxyIndex,	&
@@ -278,7 +266,7 @@ SUBROUTINE DissolutionFactors (WhichRxn, HowManyLinks, Temperature, &
 					AqCationNames,AqAnionNames,     & 
 					FindChem, HowManyAqOrgChems
 
-	USE InfrastructuralCode, ONLY : ERROR
+	USE InfrastructuralCode, ONLY : Error, Int2Str
 
 	IMPLICIT NONE
 
@@ -349,215 +337,231 @@ SUBROUTINE DissolutionFactors (WhichRxn, HowManyLinks, Temperature, &
 		!! Water condensing
 		CASE (0)
 
-			SoverH(J) = II * SatVapPressRatio (CurrentParticle, 1)
+                   SoverH(J) = II * SatVapPressRatio (CurrentParticle, 1)
 
-			!! Load the Y vector with the appropriate aerosol    !!
-			!! concentration.				     !!
-			InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
+                   !! Load the Y vector with the appropriate aerosol    !!
+                   !! concentration.				     !!
+                   InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
 
-			!! Put the total solute concentration here...
-			InitialConcs2(J) = 0.
-			DO I = HowManyAqChems+1, HowManyAqChems + HowManyAqCations + HowManyAqAnions
-				InitialConcs2(J) = InitialConcs2(J) + CurrentParticle%AqChems(I)
-			END DO
-			DO I = 1, HowManyAqOrgChems 
-				InitialConcs2(J) = InitialConcs2(J) + CurrentParticle%AqOrgChems(I)
-			END DO
-			InitialConcs2(J) = InitialConcs2(J) * Avogadro
+                   !! Put the total solute concentration here...
+                   InitialConcs2(J) = 0.
+                   DO I = HowManyAqChems+1, HowManyAqChems + HowManyAqCations + HowManyAqAnions
+                      InitialConcs2(J) = InitialConcs2(J) + CurrentParticle%AqChems(I)
+                   END DO
+                   DO I = 1, HowManyAqOrgChems 
+                      InitialConcs2(J) = InitialConcs2(J) + CurrentParticle%AqOrgChems(I)
+                   END DO
+                   InitialConcs2(J) = InitialConcs2(J) * Avogadro
 
-			InitialConcs3(J) = 0.
+                   InitialConcs3(J) = 0.
 
 		!! Direct dissolution
 		CASE (1)
 
-			IF (ReturnType .EQ. -1 .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.)	&
+                   IF (ReturnType .EQ. -1 .AND. &
+                       CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.)	&
 			ReturnType = 1
 
-			!! NOTE: Factor of 1000 has units of g H2O/L soln (approximate!)
-			SoverH(J) =																	 &
-					SatVapPressRatio (CurrentParticle, INT(DissolutionData(WhichRxn,3))) &
-					* 1000. / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	 &
-					/ CurrentParticle%AqChems(1) / moles * grams / WaterMolecMass
+                   !! NOTE: Factor of 1000 has units of g H2O/L soln (approximate!)
+                   SoverH(J) =								&
+                        SatVapPressRatio (CurrentParticle, INT(DissolutionData(WhichRxn,3))) &
+                        * 1000. / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	 &
+                        / CurrentParticle%AqChems(1) / moles * grams / WaterMolecMass
 
-			!! Load the Y vector with the appropriate aerosol    !!
-			!! concentration.									 !!
-			InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
-			InitialConcs2(J) = 0.
-			InitialConcs3(J) = 0.
+                   !! Load the Y vector with the appropriate aerosol    !!
+                   !! concentration.					!!
+                   InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
+                   InitialConcs2(J) = 0.
+                   InitialConcs3(J) = 0.
 
 		!! Dissociating dissolution
 		CASE (2)
 
-			IF (ReturnType .EQ. -1 .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.	&
-			    .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) .GT. 0.)						&
+                   IF (ReturnType .EQ. -1 & 
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.	&
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) .GT. 0.)	&
 			ReturnType = 1
 
                 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! The reaction doesn't use the Henry's Law formulation      !!
 		!! because we assume it condenses directly into the dissociated
 		!! form, which we must now formulate...	!!!!!!!!!!!!!!!!!!!!!!!
-			IonA = INT(DissolutionData(WhichRxn,3))
-			IonB = INT(DissolutionData(WhichRxn,4))
-			ExpA = INT(DissolutionData(WhichRxn,13))
-			ExpB = INT(DissolutionData(WhichRxn,14))
+                   IonA = INT(DissolutionData(WhichRxn,3))
+                   IonB = INT(DissolutionData(WhichRxn,4))
+                   ExpA = INT(DissolutionData(WhichRxn,13))
+                   ExpB = INT(DissolutionData(WhichRxn,14))
 
-			!! This one is to be multiplied by Y(IonA)**ExpA * Y(IonB)**ExpB
-			!! NOTE: Factor of 1000 has units of g H2O/L soln (approximate!)
-			SoverH(J) =																						 &
-						SatVapPressRatio (CurrentParticle , INT(DissolutionData(WhichRxn,3))) 				 &
-						* (1000. * grams / moles / WaterMolecMass / CurrentParticle%AqChems(1))**(ExpA+ExpB) &
-						/ HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature							 & 
-						*(CurrentParticle%GammaMixed(INT(DissolutionData(WhichRxn,12)))/Avogadro)**				 & ! 3 lines of
-						(AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),4)+									 & ! mean act
-						 AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),5))									 &
-						 * Avogadro 
+                   !! This one is to be multiplied by Y(IonA)**ExpA * Y(IonB)**ExpB
+                   !! NOTE: Factor of 1000 has units of g H2O/L soln (approximate!)
+                   SoverH(J) =			&
+                        SatVapPressRatio (CurrentParticle , INT(DissolutionData(WhichRxn,3))) 	&
+                        * (1000. * grams / moles / WaterMolecMass / CurrentParticle%AqChems(1))**(ExpA+ExpB) &
+                        / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	& 
+                        *(CurrentParticle%GammaMixed(INT(DissolutionData(WhichRxn,12)))/Avogadro)** & !mean act
+                        (AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),4)+	&
+                        AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),5))	&
+                        * Avogadro 
 			
-			!! Load the Y vector with the appropriate aerosol    !!
-			!! concentration.									 !!
-			InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
-			InitialConcs2(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) * Avogadro
-			InitialConcs3(J) = 0.
+                   !! Load the Y vector with the appropriate aerosol    !!
+                   !! concentration.					!!
+                   InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
+                   InitialConcs2(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) * Avogadro
+                   InitialConcs3(J) = 0.
 			
 		!! Dissociating and direct dissolution (NOT USED! Matt Alvarado 10/04/06)
 		CASE (3)
 
-			IF (ReturnType .EQ. -1 .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.	&
-			    .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) .GT. 0.)						&
+                   IF (ReturnType .EQ. -1  &
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.	&
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) .GT. 0.) &
 			ReturnType = 1
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! The reaction doesn't use  the Henry's Law formulation     !!
 		!! because we assume it condenses directly into the dissociated
 		!! form, which we must now formulate...	!!!!!!!!!!!!!!!!!!!!!!!
-			IonA = INT(DissolutionData(WhichRxn,3))
-			IonB = INT(DissolutionData(WhichRxn,4))
-			ExpA = INT(DissolutionData(WhichRxn,13))
-			ExpB = INT(DissolutionData(WhichRxn,14))
+                   IonA = INT(DissolutionData(WhichRxn,3))
+                   IonB = INT(DissolutionData(WhichRxn,4))
+                   ExpA = INT(DissolutionData(WhichRxn,13))
+                   ExpB = INT(DissolutionData(WhichRxn,14))
 
-			!! This one is to be multiplied by Y(IonA)**ExpA * Y(IonB)**ExpB
-			SoverH(J) =																						 &
-						SatVapPressRatio (CurrentParticle , INT(DissolutionData(WhichRxn,3))) 				 &
-						* (1000. * grams / moles / WaterMolecMass / CurrentParticle%AqChems(1))**(ExpA+ExpB) &
-						/ HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature							 & 
-						*(CurrentParticle%GammaMixed(INT(DissolutionData(WhichRxn,12)))/Avogadro)**				 & ! 3 lines of
-						(AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),4)+									 & ! mean act
-						 AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),5))									 &
-						 * Avogadro 
+                   !! This one is to be multiplied by Y(IonA)**ExpA * Y(IonB)**ExpB
+                   SoverH(J) =		&
+                        SatVapPressRatio (CurrentParticle , INT(DissolutionData(WhichRxn,3))) 	&
+                        * (1000. * grams / moles / WaterMolecMass / CurrentParticle%AqChems(1))**(ExpA+ExpB) &
+                        / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	& 
+                        *(CurrentParticle%GammaMixed(INT(DissolutionData(WhichRxn,12)))/Avogadro)** & !mean act
+                        (AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),4)+	& 
+                        AqEquilibriaList(INT(DissolutionData(WhichRxn,12)),5))	&
+                        * Avogadro 
 	
-			!! Load the Y vector with the appropriate aerosol    !!
-			!! concentration.									 !!
-			InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
-			InitialConcs2(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) * Avogadro
+                   !! Load the Y vector with the appropriate aerosol    !!
+                   !! concentration.					!!
+                   InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
+                   InitialConcs2(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) * Avogadro
 
 
-			SoverH2(J) = SatVapPressRatio (CurrentParticle,								 &
-					INT(DissolutionData(INT(DissolutionData(WhichRxn,15)),3)))				 &
-					* 1000. / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	 &
-					/ CurrentParticle%AqChems(1) / moles * grams / WaterMolecMass		 
+                   SoverH2(J) = SatVapPressRatio (CurrentParticle, &
+                        INT(DissolutionData(INT(DissolutionData(WhichRxn,15)),3))) &
+                        * 1000. / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	 &
+                        / CurrentParticle%AqChems(1) / moles * grams / WaterMolecMass		 
 
-			!! Load the Y vector with the appropriate aerosol !!
-			!! concentration.								  !!
-			InitialConcs3(J) = CurrentParticle%AqChems(INT(DissolutionData(INT(DissolutionData(WhichRxn,15)),3))) * Avogadro
+                   !! Load the Y vector with the appropriate aerosol !!
+                   !! concentration.				     !!
+                   InitialConcs3(J) = CurrentParticle%AqChems( &
+                                   INT(DissolutionData(INT(DissolutionData(WhichRxn,15)),3))) * Avogadro
 
 
 		!! Dissolution that incorporates an aqueous ion (NH3(g) & H+(aq) => NH4+(aq))
 		CASE (4)
 
-			IF (ReturnType .EQ. -1 .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .GT. 0.	&
-			    .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.)						&
+                   IF (ReturnType .EQ. -1  &
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .GT. 0.	&
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.) &
 			ReturnType = 1
 
-			IonA = FLOOR(DissolutionData(WhichRxn,8))
-			IonB = FLOOR(DissolutionData(WhichRxn,9))
-			ExpA = ANINT(10000.*(DissolutionData(WhichRxn,8)-FLOOR(DissolutionData(WhichRxn,8))))
-			ExpB = ANINT(10000.*(DissolutionData(WhichRxn,9)-FLOOR(DissolutionData(WhichRxn,9))))
+                   IonA = FLOOR(DissolutionData(WhichRxn,8))
+                   IonB = FLOOR(DissolutionData(WhichRxn,9))
+                   ExpA = ANINT(10000.*(DissolutionData(WhichRxn,8)-FLOOR(DissolutionData(WhichRxn,8))))
+                   ExpB = ANINT(10000.*(DissolutionData(WhichRxn,9)-FLOOR(DissolutionData(WhichRxn,9))))
 
-			IF (CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .LE. 0) THEN
-				CALL ERROR ("A dissolution reaction (specified in Dissolution.in) specifies that the gas "//		&
-							TRIM(GasPhaseChemicalNames(INT(DissolutionData(WhichRxn,1))))//								&
-							" dissolves and incorporates an aqueous ion on the way in.  However, that ion "//		&
-							"has a zero concentration, which we think shouldn't happen and is a sign of worse things happening.")
-			ELSE
+                   IF (CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .LE. 0) THEN
+                      CALL ERROR ("A dissolution reaction (specified in Dissolution.in) specifies that the gas "// &
+                           TRIM(GasPhaseChemicalNames(INT(DissolutionData(WhichRxn,1))))// &
+                           " dissolves and incorporates an aqueous ion on the way in.  However, that ion "// &
+                           "has a negative concentration, which we think shouldn't happen and is a sign of worse things happening.")
+                   ELSE
 
-				!! Should be multiplied by IonA and Divided by IonB
-				SoverH(J) =																	 &
-						SatVapPressRatio (CurrentParticle, INT(DissolutionData(WhichRxn,3))) &
-						*CurrentParticle%GammaMixed(IonA)**ExpA								 & 
-						/CurrentParticle%GammaMixed(IonB)**ExpB								 &
-						/ HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature			 &
-						* Avogadro 
-				!WRITE(*,*) IonA, CurrentParticle%GammaMixed(IonA)
-				!WRITE(*,*) IonB, CurrentParticle%GammaMixed(IonB), CurrentParticle%IonicStr
-				!PAUSE
+                      !! Should be multiplied by IonA and Divided by IonB
+                      SoverH(J) =	&
+                           SatVapPressRatio (CurrentParticle, INT(DissolutionData(WhichRxn,3))) &
+                           *CurrentParticle%GammaMixed(IonA)**ExpA	& 
+                           /CurrentParticle%GammaMixed(IonB)**ExpB	&
+                           / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	&
+                           * Avogadro 
+                      !WRITE(*,*) IonA, CurrentParticle%GammaMixed(IonA)
+                      !WRITE(*,*) IonB, CurrentParticle%GammaMixed(IonB), CurrentParticle%IonicStr
+                      !PAUSE
 
-				!! Load the Y vector with the appropriate aerosol    !!
-				!! concentration.									 !!
-				InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
-				InitialConcs2(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) * Avogadro
-				InitialConcs3(J) = 0.
+                      !! Load the Y vector with the appropriate aerosol    !!
+                      !! concentration.					   !!
+                      InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
+                      InitialConcs2(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) * Avogadro
+                      InitialConcs3(J) = 0.
 			
-			END IF
+                   END IF
 
-		!! Dissolution that incorporates an aqueous ion (NH3(g) & H+(aq) => NH4+(aq)) coupled with direct diss.
+		!! Dissolution that incorporates an aqueous ion (NH3(g) & H+(aq) => NH4+(aq)) 
+                !! coupled with direct diss.
 		CASE (5)
 
-			IF (ReturnType .EQ. -1 .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .GT. 0.	&
-			    .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.)						&
+                   IF (ReturnType .EQ. -1 &
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .GT. 0.	&
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.)	&
 			ReturnType = 1
 
-			IonA = FLOOR(DissolutionData(WhichRxn,8))
-			IonB = FLOOR(DissolutionData(WhichRxn,9))
-			ExpA = ANINT(10000.*(DissolutionData(WhichRxn,8)-FLOOR(DissolutionData(WhichRxn,8))))
-			ExpB = ANINT(10000.*(DissolutionData(WhichRxn,9)-FLOOR(DissolutionData(WhichRxn,9))))
+                   IonA = FLOOR(DissolutionData(WhichRxn,8))
+                   IonB = FLOOR(DissolutionData(WhichRxn,9))
+                   ExpA = ANINT(10000.*(DissolutionData(WhichRxn,8)-FLOOR(DissolutionData(WhichRxn,8))))
+                   ExpB = ANINT(10000.*(DissolutionData(WhichRxn,9)-FLOOR(DissolutionData(WhichRxn,9))))
 
-			IF (CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .LE. 0) THEN
-				CALL ERROR ("A dissolution reaction (specified in Dissolution.in) specifies that the gas "//	&
-							TRIM(GasPhaseChemicalNames(INT(DissolutionData(WhichRxn,1))))//							&
-							" dissolves and incorporates an aqueous ion on the way in.  However, that ion "//   &
-							"has a zero concentration, which we think shouldn't happen and is a sign of worse things happening.")
+                   IF (CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) .LE. 0) THEN
+                      CALL ERROR ("A dissolution reaction (specified in Dissolution.in) specifies that the gas "//	&
+                           TRIM(GasPhaseChemicalNames(INT(DissolutionData(WhichRxn,1))))//	&
+                           " dissolves and incorporates an aqueous ion on the way in.  However, that ion "// &
+                           "has a zero concentration, which we think shouldn't happen and is a sign of worse things happening.")
 			ELSE
 
-				!! Should be multiplied by IonA and Divided by IonB
-				SoverH(J) =																	 &
-						SatVapPressRatio (CurrentParticle, INT(DissolutionData(WhichRxn,3))) &
-						*CurrentParticle%GammaMixed(IonA)**ExpA								 & 
-						/CurrentParticle%GammaMixed(IonB)**ExpB								 &
-						/ HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature			 &
-						* Avogadro 
+                           !! Should be multiplied by IonA and Divided by IonB
+                           SoverH(J) =								&
+                                SatVapPressRatio (CurrentParticle, INT(DissolutionData(WhichRxn,3))) &
+                                *CurrentParticle%GammaMixed(IonA)**ExpA				& 
+                                /CurrentParticle%GammaMixed(IonB)**ExpB				&
+                                / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	&
+                                * Avogadro 
 	
-				!! Load the Y vector with the appropriate aerosol    !!
-				!! concentration.									 !!
-				InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
-				InitialConcs2(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,2))) * Avogadro
+                           !! Load the Y vector with the appropriate aerosol    !!
+                           !! concentration.					!!
+                           InitialConcs1(J) = CurrentParticle%AqChems( & 
+                                                INT(DissolutionData(WhichRxn,3))) * Avogadro
+                           InitialConcs2(J) = CurrentParticle%AqChems( &
+                                                INT(DissolutionData(WhichRxn,2))) * Avogadro
 
 
-				SoverH2(J) = SatVapPressRatio (CurrentParticle,								 &
-						INT(DissolutionData(INT(DissolutionData(WhichRxn,15)),3)))				 &
-						* 1000. / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	 &
-						/ CurrentParticle%AqChems(1) / moles * grams / WaterMolecMass
+                           SoverH2(J) = SatVapPressRatio (CurrentParticle,	&
+                                INT(DissolutionData(INT(DissolutionData(WhichRxn,15)),3)))	&
+                                * 1000. / HenrysLaw (Temperature, WhichRxn) / RstarMB / Temperature	 &
+                                / CurrentParticle%AqChems(1) / moles * grams / WaterMolecMass
 
-				!! Load the Y vector with the appropriate aerosol !!
-				!! concentration.								  !!
-				InitialConcs3(J) = CurrentParticle%AqChems(INT(DissolutionData(INT(DissolutionData(WhichRxn,15)),3))) * Avogadro
+                           !! Load the Y vector with the appropriate aerosol !!
+                           !! concentration.				     !!
+                           InitialConcs3(J) = CurrentParticle%AqChems( &
+                                   INT(DissolutionData(INT(DissolutionData(WhichRxn,15)),3))) * Avogadro
 
 			END IF
 		
 		!! Sulfate condensing
 		CASE (7)
 
-			IF (ReturnType .EQ. -1 .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.	&
-			    .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) .GT. 0.)						&
+                   IF (ReturnType .EQ. -1  &
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) .GT. 0.	&
+                        .AND. CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) .GT. 0.) &
 			ReturnType = 1
 
-			H2SO4AqIndex = FindChem("H2SO4", 1)
-			SoverH(J) = 1.0
+                   H2SO4AqIndex = FindChem("H2SO4", 1)
+                   SoverH(J) = 1.0
 
-			!! Load the Y vector with the appropriate aerosol    !!
-			!! concentration.									 !!
-			InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
-			InitialConcs2(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) * Avogadro
-			InitialConcs3(J) = 0.
-		
+                   !! Load the Y vector with the appropriate aerosol    !!
+                   !! concentration.					!!
+                   InitialConcs1(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,3))) * Avogadro
+                   InitialConcs2(J) = CurrentParticle%AqChems(INT(DissolutionData(WhichRxn,4))) * Avogadro
+                   InitialConcs3(J) = 0.
+
+                CASE DEFAULT
+                   CALL ERROR("DissolutionFactors can't deal "// &
+                        "with reactions of type #"// &
+                        TRIM(INT2STR(ReactionType))// &
+                        ".")
 		END SELECT
 
 		CurrentParticle => CurrentParticle%Next
@@ -589,20 +593,13 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 	USE Aerosols,            ONLY : Particles, Particle,		&
 					ParticleArray,			&
 					RecalculateRadius,		&
-					EqCoeff,			&
-					Molality,			&
 					FindElectrolyteEquilibrium,     &
-					CalculateIonicStrength,	        &
 				        KusikMeissner,			&
-					SortAerosolAtGridPointForCondensation,&
-				FindAqElectrolyteEquilibriumForGridPoint, &
-				EquilibrateAqueousDissociationReaction
+					SortAerosolAtGridPointForCondensation
 
 	USE Chemistry,		 ONLY : HowManyGasChems,		&
 					HowManyEvolveGasChems,		&
-					HowManyEvolveAqChems,		&
 					GasPhaseChemicalNames,		&
-					HowManyCondensingChems,		&
 					AqEquilibriaList,		&
 					HowManyAqChems,			&
 					HowManyAqCations,		&
@@ -648,7 +645,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 				   ReturnType, WhichDominantIon,          &
                                    WhichSecondIon , Flag, Dum, RxnType,   &
 				   InternalReturnType, NH4Index, HIndex,  &
-                                   OHIndex, GasSolidRxn
+                                   OHIndex, GasSolidRxn, Global
 	REAL*8			:: II, JJ, KK, MM,                        &
                                    ChemTransferArray(HowManyGasChems),    &
                                    Temperature,	RH, NH3Index,             &
@@ -688,14 +685,13 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 
 	!! COUNT the number of LINKS that we should condense upon
 	HowManyLinks  =  1
-15	IF(ASSOCIATED(CurrentParticle%Next)) THEN
-		CurrentParticle => CurrentParticle%Next
-		IF (CurrentParticle%NumberOfParticles .GT. 0 .AND. &
-                   .NOT.CurrentParticle%Dry) THEN
-			HowManyLinks  = HowManyLinks + 1
-			GOTO 15
-		END IF
-	ENDIF
+	DO WHILE (ASSOCIATED(CurrentParticle%Next))
+           CurrentParticle => CurrentParticle%Next
+           IF (CurrentParticle%NumberOfParticles .GT. 0 .AND. &
+                .NOT.CurrentParticle%Dry) THEN
+              HowManyLinks  = HowManyLinks + 1
+           END IF
+	ENDDO
 	CurrentParticle => FirstParticle
 
 
@@ -703,7 +699,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 	!! Set the lengths of the various !!
 	!! arrays and allocate them !!!!!!!!
 	YLen	= 12 + HowManyLinks*8	  !! As per the definition below
-	NEQ		= 1  + 3*HowManyLinks	  
+	NEQ	= 1  + 3*HowManyLinks	  
         !! Maximum value is for reaction type 5.  Allocate based on this.
 
 	!! Temporarily set this to the maximum value 
@@ -999,7 +995,8 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		!! IF EQUILIBRIUM RATHER THAN FLUX, DO THAT HERE AND RETURN !!
 		IF (.NOT. DissolutionEquilibriumOrFlux .AND. RH .LE. AerosolWaterEquilibriumRHThreshold) THEN
 			WRITE(*,*) "Calling Equilibrium Routine"
-			CALL EquilibrateGridPointAll(.TRUE., ForceWaterEquilibrium=.FALSE., WaterOpenSystem=.FALSE.)
+			CALL EquilibrateGridPoint(EquilibrateWater=.TRUE., WaterOpenSystem=.FALSE., &
+                                                     InorgOnly=.FALSE.)
 			RETURN
 		END IF
 		
@@ -1019,14 +1016,16 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
                 !!        CondensationRelatedFunctions.h. 
                 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		DO Rxn = 1, HowManyDissolutionReactions
-   
+                   IF (Scaffolding) WRITE(*,*) "In StepCondensation, Rxn #", Rxn
 		!If we are doing the combined inorganic dissolution
 		IF(CombinedInorgDiss .AND. (Rxn .GE. 3)) THEN
 			!Call the equilibrator only once
 			IF(Rxn .EQ. 3) THEN
-                                !WRITE(*,*) "Before Inorg Eq, RXN: ", Rxn
-				CALL EquilibrateInorgGridPoint()
-				CYCLE
+                                IF (Scaffolding) WRITE(*,*) "Before EquilibrateInorgGridPoint"
+				CALL EquilibrateGridPoint(EquilibrateWater=.FALSE., &
+                                     WaterOpenSystem=.FALSE., InorgOnly=.TRUE.)
+				IF (Scaffolding) WRITE(*,*) "After EquilibrateInorgGridPoint"
+                                CYCLE
 			ELSE	
 				!Skip all the other rxns
 				!since they are equilibrated above
@@ -1059,35 +1058,51 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		IF (Rxn .EQ. 1 .AND.  &
                     RH .LE. AerosolWaterEquilibriumRHThreshold) THEN
 			Equilibrated = .FALSE.
-			
+
+                        !Add global iteration Counter
+			Global = 0
+
 			DO WHILE (NOT(Equilibrated))
 				CurrentParticle => Particles%First
 				Equilibrated = .TRUE.
-			
+
+			        Global = Global + 1
+
 				DO J = 1, HowManyLinks
 				
 				        !Skip empty particles
-				        IF(CurrentParticle%NumberofParticles .LE. 0.) CYCLE
+				        IF(CurrentParticle%NumberofParticles .LE. 1.0e-6) THEN
+                                            CYCLE
+                                        END IF
 
 					LLLL = 1
 					ReturnType = 1
 					DO WHILE (ReturnType .NE. 2)
 					
 						ABCD = CurrentParticle%AqChems(1)
-
+                                                IF(Scaffolding) THEN
+                                                   Write(*,*) "Before EqAllWater, link = ", J
+                                                   Write(*,*) "Iteration = ", LLLL
+                                                   Write(*,*) "Global Iteration = ", Global
+                                                END IF
+ 
 						CALL EqAllWater(CurrentParticle, ReturnType, OpenSystem)
 
 						IF(ReturnType .NE. 2) Equilibrated = .FALSE.
-						IF(LLLL .GT. 50 .AND. &
-						  ABS((ABCD-CurrentParticle%AqChems(1))/CurrentParticle%AqChems(1)) .LE. 0.01) THEN
+
+                                                !If change in aero water content is lt 0.5%, particle in Eq.
+						IF(ABS((ABCD-CurrentParticle%AqChems(1)) &
+                                                      /CurrentParticle%AqChems(1)) .LE. 0.005) THEN
 						  ReturnType  = 2
 						  Equilibrated = .TRUE.
 						END IF
 
 						LLLL = LLLL+1
-						IF(LLLL .GT. 100) THEN
-                                                   CALL WARN("Over 100 water iterations in StepCondensation().")
-                                                   CALL WARN("RH equals :"//trim(real2str(RH)))
+						IF(LLLL .GT. 25) THEN
+                                                   !CALL WARN("Over 25 water iterations "// &
+                                                   !          "for a single particle "//&
+                                                   !          "in StepCondensation().")
+                                                   !CALL WARN("RH equals :"//trim(real2str(RH)))
                                                    ReturnType  = 2
                                                    Equilibrated = .TRUE.
 						END IF
@@ -1095,6 +1110,11 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 						
 					CurrentParticle => CurrentParticle%Next
 				END DO
+
+                                !Exit after 25 global iterations
+                                IF (Global .GT. 25) THEN
+                                   Equilibrated = .TRUE.
+                                END IF
 			END DO
 			CYCLE
 		END IF

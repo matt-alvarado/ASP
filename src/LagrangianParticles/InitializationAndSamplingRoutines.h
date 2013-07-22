@@ -241,17 +241,19 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 
         IF (NOT(BOUNDARY)) THEN
-              ALLOCATE (ModesArray(HowManyAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
+           ALLOCATE (ModesArray(HowManyAerosolModes,3+HowManyAqChems+HowManyOrgChems) , &
+                stat = allocation_error)
         ELSE
-              ALLOCATE (ModesArray(HowManyEnvAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
+           ALLOCATE (ModesArray(HowManyEnvAerosolModes,3+HowManyAqChems+HowManyOrgChems) , &
+                stat = allocation_error)
         ENDIF
 
 	if (allocation_error > 0) CALL ERROR("Allocation of ModesArray Failed in MakeParticle()")
 
         IF (NOT(BOUNDARY)) THEN
-              ModesArray = AerosolModes
+           ModesArray = AerosolModes
         ELSE
-              ModesArray = EnvAerosolModes
+           ModesArray = EnvAerosolModes
         ENDIF          
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -265,13 +267,12 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 	IF (MONODISPERSE .EQ. .FALSE.) THEN
 
-		CALL PPND (StructuredDistribution, I, II)
-		!Matt Changed this - the old code was wrong
-		II = EXP(LOG(ModesArray(WhichPopulation,3)) * II + LOG(ModesArray(WhichPopulation,2))) / 2.*micron
-		!II = EXP(ModesArray(WhichPopulation,3) * II + LOG(ModesArray(WhichPopulation,2))) / 2.*micron
+           CALL PPND (StructuredDistribution, I, II)
+
+           II = EXP(LOG(ModesArray(WhichPopulation,3)) * II + LOG(ModesArray(WhichPopulation,2))) / 2.*micron
 
 	ELSE
-		II = ModesArray(WhichPopulation,2)/2.*micron
+           II = ModesArray(WhichPopulation,2)/2.*micron
 	END IF
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -279,61 +280,62 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	IF (II .LE. BinEdges(HowManyBins,2) .AND. .NOT.LagrangianOnly) THEN
 
-		IF (NOT(Boundary)) THEN
-                      CurrentParticle => Particles%First
-                ELSE
-                      CurrentParticle => BoundaryParticles%First
-                ENDIF
+           IF (NOT(Boundary)) THEN
+              CurrentParticle => Particles%First
+           ELSE
+              CurrentParticle => BoundaryParticles%First
+           ENDIF
 
 		!! Find the appropriate section to put it in, or err
-		IF (ASSOCIATED(CurrentParticle)) THEN
+           IF (ASSOCIATED(CurrentParticle)) THEN
 
-10		IF ((CurrentParticle%Sectional .EQ. .TRUE.) .AND.	&
-		    (II .GT. CurrentParticle%Edges(1)) .AND.		&
-			(II .LE. CurrentParticle%Edges(2)))	THEN
+10            IF ((CurrentParticle%Sectional .EQ. .TRUE.) .AND.	&
+                   (II .GT. CurrentParticle%Edges(1)) .AND.		&
+                    (II .LE. CurrentParticle%Edges(2)))	THEN
 			
-			!! We've found the proper section
-			!! So add the chemicals
+                 !! We've found the proper section
+                 !! So add the chemicals
 
-			CurrentParticle%NumberOfParticles = CurrentParticle%NumberOfParticles + 1
-			!DO I = 2, HowManyAqChems
-			DO I = 1, HowManyAqChems !MJA, 02-28-2012
-                                  !WRITE(*,*) "MakeParticle: ", AverageAerosolDensity
-                                  CurrentParticle%AqChems(I) = (ModesArray(WhichPopulation,3+I) *	&
-							      4./3.*Pi*II*II*II*AverageAerosolDensity/		&
-							     AqMolecularMass(I) +				&
-							     (CurrentParticle%NumberOfParticles-1.)*CurrentParticle%AqChems(I))/ &
-							     CurrentParticle%NumberOfParticles
-			END DO
+                 CurrentParticle%NumberOfParticles = CurrentParticle%NumberOfParticles + 1
+                 !DO I = 2, HowManyAqChems
+                 DO I = 1, HowManyAqChems !MJA, 02-28-2012
+                    !WRITE(*,*) "MakeParticle: ", AverageAerosolDensity
+                    CurrentParticle%AqChems(I) = (ModesArray(WhichPopulation,3+I) *	&
+                         4./3.*Pi*II*II*II*AverageAerosolDensity/		&
+                         AqMolecularMass(I) +				&
+                         (CurrentParticle%NumberOfParticles-1.)*CurrentParticle%AqChems(I))/ &
+                         CurrentParticle%NumberOfParticles
+                 END DO
 			
-			DO I = 1, HowManyOrgChems
-				CurrentParticle%OrgChems(I) = (ModesArray(WhichPopulation,3+HowManyAqChems+I) *	&
-								4./3.*Pi*II*II*II*AverageAerosolDensity/		&
-								OrgMolecularMass(I) +					&
-								(CurrentParticle%NumberOfParticles-1.)*CurrentParticle%OrgChems(I))/ &
-								CurrentParticle%NumberOfParticles 
-			END DO
+                 DO I = 1, HowManyOrgChems
+                    CurrentParticle%OrgChems(I) = (ModesArray(WhichPopulation,3+HowManyAqChems+I) *	&
+                         4./3.*Pi*II*II*II*AverageAerosolDensity/		&
+                         OrgMolecularMass(I) +					&
+                         (CurrentParticle%NumberOfParticles-1.)*CurrentParticle%OrgChems(I))/ &
+                         CurrentParticle%NumberOfParticles 
+                 END DO
 			
-			!NOTE: We initialize with all of the organic compounds in 
-			!the organic phase, and none in the hydrophilic phase
-			DO I = 1, HowManyAqOrgChems
-				CurrentParticle%AqOrgChems(I) = 0.0
-			END DO
+                 !NOTE: We initialize with all of the organic compounds in 
+                 !the organic phase, and none in the hydrophilic phase
+                 DO I = 1, HowManyAqOrgChems
+                    CurrentParticle%AqOrgChems(I) = 0.0
+                 END DO
                         
 
-		ELSE
-			IF(ASSOCIATED(CurrentParticle%Next)) THEN
-				CurrentParticle => CurrentParticle%Next
-				GOTO 10
-			ELSE
-				CALL ERROR ("Couldn't Find the appropriate section to put a too-small particle of mode "  &
-						    //TRIM(INT2STR(WhichPopulation))//" in subroutine MakeParticle.")
-			END IF
-		END IF ; END IF
+              ELSE
+                 IF(ASSOCIATED(CurrentParticle%Next)) THEN
+                    CurrentParticle => CurrentParticle%Next
+                    GOTO 10
+                 ELSE
+                    CALL ERROR ("Couldn't Find the appropriate section to put a too-small particle of mode "  &
+                         //TRIM(INT2STR(WhichPopulation))//" in subroutine MakeParticle.")
+                 END IF
+              END IF
+           END IF
 
-		IF (SCAFFOLDING) CALL WARN("Particle too small")
-		ResultInt = 0 
-		RETURN
+           IF (SCAFFOLDING) CALL WARN("Particle too small")
+           ResultInt = 0 
+           RETURN
 	END IF
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -350,15 +352,13 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	ALLOCATE (NewParticle%AqOrgChems(HowManyAqOrgChems), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of NewParticle%AqOrgChems Failed in MakeParticle()")
 
-
-
 	!! Allocate the Appropriate Electrolytic Arrays
 	ALLOCATE (NewParticle%GammaMixed(HowManyAqEqReactions), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of NewParticle%GammaMixed Failed in MakeParticle()")
 
 	!! Initialize
 	DO I = 1, HowManyAqEqReactions
-		NewParticle%GammaMixed(I) = 0
+           NewParticle%GammaMixed(I) = 0
 	END DO
 
 	!Allocate the hydrophobic acitivty coefficients arrays
@@ -376,7 +376,7 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 	!! Initialize
 	DO I = 1, HowManyAqOrgChems
-		NewParticle%HydrophilicActivityCoeffs(I) = 1.0
+           NewParticle%HydrophilicActivityCoeffs(I) = 1.0
 	END DO
 
 	NewParticle%IonicStr		= 1.
@@ -1163,7 +1163,7 @@ SUBROUTINE ReadDistributionsOrganic ()
 					SetSectionalParameters,	&
 					Monodisperse
 
-	USE Chemistry,		 ONLY : AqPhase, FindChem, & 
+	USE Chemistry,		 ONLY : FindChem, & 
                                         HowManyAqChems, HowManyOrgChems
 
 	IMPLICIT NONE
@@ -1454,7 +1454,7 @@ SUBROUTINE ReadDistributionsOrganic ()
 		!! Electrolyte or Org Compound
 
 			!! Determine Which Chemical We're Talking About
-			J = FindChem(TRIM(Token), AqPhase, SuppressError=.TRUE.) 
+			J = FindChem(TRIM(Token), 1, SuppressError=.TRUE.) 
 			IF (J .EQ. 0) THEN
 				
 				!Check if it is an organic compound (Phase=2)
@@ -1818,7 +1818,7 @@ SUBROUTINE ReadBoundaryDistributionsOrganic ()
 					SetSectionalParameters,	&
 					Monodisperse
 
-	USE Chemistry,		 ONLY : AqPhase, FindChem, &
+	USE Chemistry,		 ONLY : FindChem, &
                                         HowManyAqChems, HowManyOrgChems
 
 	IMPLICIT NONE
@@ -1995,7 +1995,7 @@ SUBROUTINE ReadBoundaryDistributionsOrganic ()
 		!! Electrolyte or Org Compound
 
 			!! Determine Which Chemical We're Talking About
-			J = FindChem(TRIM(Token), AqPhase, SuppressError=.TRUE.) 
+			J = FindChem(TRIM(Token), 1, SuppressError=.TRUE.) 
 			IF (J .EQ. 0) THEN
 				
 				!Check if it is an organic compound (Phase=2)

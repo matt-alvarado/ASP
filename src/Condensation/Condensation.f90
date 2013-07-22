@@ -8,37 +8,37 @@
 !! It mainly links all the header files together.
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
-!! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP        !!
-!!                                 a one-box model or subroutine.            !!
+!! UPDATE HISTORY								!!
+!!										!!
+!! Month  Year   Name              Description					!!
+!! 07     2006   Matt Alvarado     Began Update History				!!
+!! 02/17  2012   Matt Alvarado     Removed Eulerian grids, making ASP           !!
+!!                                 a one-box model or subroutine.               !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! DEPENDENCIES						        !!
-!! 1. ModelParameters						!!
-!! 2. InfrastructuralCode					!!
-!! 3. GridPointFields						!!
-!! 4. Chemistry								!!
-!! 5. Aerosols								!!
+!! DEPENDENCIES		                    !!
+!! 1. ModelParameters			    !!
+!! 2. InfrastructuralCode		    !!
+!! 3. GridPointFields			    !!
+!! 4. Chemistry				    !!
+!! 5. Aerosols				    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! LINKED HEADER FILES												!!
-!! 1. CondensationInitialization.h									!!
-!! 2. CondensationIntegrator.h										!!
-!! 3. CondensationRelatedFunctions.h								!!
-!! 4. HydrophobicCondensationFunctions.h							!!
-!! 5. binsolu.h (Organic water content data)						!!
-!! 6. OrgCondensationIntegrator.h									!!
-!! 7. AqOrgCondensationIntegrator.h									!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! LINKED HEADER FILES				        !!
+!! 1. CondensationInitialization.h		        !!
+!! 2. CondensationIntegrator.h			        !!
+!! 3. CondensationRelatedFunctions.h			!!
+!! 4. HydrophobicCondensationFunctions.h		!!
+!! 5. binsolu.h (Organic water content data)		!!
+!! 6. OrgCondensationIntegrator.h			!!
+!! 7. AqOrgCondensationIntegrator.h			!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:			!!	
-!! 1. NONE																!!
+!! This file contains the following functions and subroutines:		!!	
+!! 1. NONE								!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 MODULE Condensation
@@ -46,38 +46,20 @@ MODULE Condensation
 USE Aerosols, ONLY : Particle
 
 PRIVATE
-PUBLIC :: GetThermalVelocity,	&
-		  TestCondensation,		&
-		  StepCondensation,		&
-		  StepCondensationAll,  &
-		  IsActivated,			&
-		  SetAllDissolution,	&
-		  SetDissolution,		&
-		  SetOrganicDissolution, &
-		  SetHydrophilicOrganicDissolution, &
-		  CountActivated,		&
-		  EquilibrateGridPoint, &
-		  EquilibrateSulfate,	&
-		  EquilibrateAmmonia, &
-		  OrganicDissolutionData, &
-		  CalculateSurrogateGasConc, &
-		 EquilibrateHydrophobicPhaseAtGridPoint, &
-			HydrophilicOrganicWaterContent, &
-			EquilibrateAllOrganicsAtGridPoint, &
-			EquilibrateAllRxnsAtGridPoint, &
-			EquilibrateGridPointAll, &
-			dev, &
-			EqAllWater, &
-			EquilibrateOrganicParticle, &
-			EquilibrateInternallyatGridPoint, &
-			SaturationVaporPressure, &
-			DumpParticleContentsAtError
+PUBLIC :: StepCondensation,		   &
+          StepCondensationAll,             &
+          SetAllDissolution,	           &
+          EquilibrateGridPoint,            &
+          EqAllWater,                      &
+          EquilibrateOrganicParticle,      &
+          EquilibrateInternallyatGridPoint,&
+          OrganicDissolutionData
 
-	LOGICAL, PARAMETER :: DoDissolution = .FALSE.
-
+        !!These should be replaced by Get functions, so
+        !!outside routines can't change them MJA, 20130719
 	INTEGER :: HowManyDissolutionReactions, &
-			   HowManyOrganicDissolutionReactions, &
-			   HowManyAqOrganicDissolutionReactions
+                   HowManyOrganicDissolutionReactions, &
+	           HowManyAqOrganicDissolutionReactions
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! The primary array is DissolutionData(i,j), defined in 
@@ -91,8 +73,10 @@ PUBLIC :: GetThermalVelocity,	&
 	!! DissolutionData(i,5) : Henrys Law Coefficient (H_298)
 	!! DissolutionData(i,6) : Henrys Law Coefficient (Delta H / R)
 	!! DissolutionData(i,7) : Index of AqEquilibriaList for related Aq reaction
+	!! These are loaded in from the input files Dissolution.in, 
 
-	!! These are loaded in from input decks
+        !!These should be replaced by Get functions, so
+        !!outside routines can't change them MJA, 20130719
 	REAL*8,	ALLOCATABLE :: DissolutionData(:,:)
 	REAL*8,	ALLOCATABLE :: OrganicDissolutionData(:,:)
 	REAL*8,	ALLOCATABLE :: AqOrganicDissolutionData(:,:)

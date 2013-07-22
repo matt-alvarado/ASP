@@ -85,35 +85,22 @@ MODULE Chemistry
 	PRIVATE
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Specify which variables, arrays, subroutines, and functions	!!
-	!! and may be accessed from outside the module					!!
+	!! and may be accessed from outside the module			!!
 	PUBLIC	::      EnthalpyOfVaporization,		&
 		        HowManyGasChems,		&	!Variables
 			HowManyAqChems,			&	!	  "
 			HowManyAqCations,		&	!     "
 			HowManyAqAnions,		&	!     "
-			HowManyCondensingChems,		&	!	  "
 			HowManyOrgChems,                &   !
 			HowManyAqOrgChems,              &
 			HowManyAqEqReactions,		&	!	  "
-			HowManyGasAqEqReactions,	&   !     "
 			HowManyEvolveGasChems,		&	!     "
-			HowManyEvolveAqChems,		&	!     "
-			HowManyNonZeroGasJacTerms,	&	!	  "
-			HowManyNonZeroAqJacTerms,	&	!	  "
 			HowManyKMParams,		&	!     "
-			GasPhaseODESet,			&	!     " 
-			GasPhaseJacobian,		&	!	  "
-			GasPhaseSensitivityMatrix,      &
 			GasPhaseReactionRates,		&
 			GasPhaseReactionRateArraySize,  &	
-			GasIa, GasJa,			&	!     "
-			ChemTerm,			&	! Derived Types
-			DiffEqTerm,			&	!     "
-			DiffEqList,			&	!     "
 			SetChemistryParams,		&	! Subroutines
 			SetPhaseIfs,			&	!     "
 			ReadPhotolysisRates,		&
-			PhotoRates,                     &
 			GasPhaseChemicalNames,		&	! Names for Error Checking and Messaging
 			AqPhaseChemicalNames,		&	!     "
 			AqCationNames,AqAnionNames,	&	!     "
@@ -142,20 +129,15 @@ MODULE Chemistry
 			FindChem,			&! Indexing Functions & Variables
 			FindIon,			&	!	  "
 			FindCation,FindAnion,		&
-			GasPhase,AqPhase,SolidPhase,    &
+			GasPhase,AqPhase,               & 
 			StepGasChemistry,		&
 			MolecularDiffusionCoefficient,  &
-			AqWaterDissociationReaction,    & ! The aq dissociation rxn of water, if any
-			TestChems,			&
 			GasPhaseBackground,             &
 			AqOrgNumCarbon,                 &
 			GasPhaseDepVel,                 &
                         CationIonicRefraction,          &
                         AnionIonicRefraction,           &
                         RefIndFlag,                     &
-                        GasPhasePeroxy,                 &
-                        GetTotalPeroxy,                 &
-                        GetTotalAcylPeroxy,             &
                         AqOrgActivityFlag,              &
                         AqOrgActivityIndex,             &
                         Kappa,                          &

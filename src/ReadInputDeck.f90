@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2013, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -42,6 +42,7 @@
 	SUBROUTINE ReadMainInputDeck ()
 
 		USE Chemistry,	         ONLY : SetPhaseIfs
+
 		USE InfrastructuralCode, ONLY : GetFileHandle,		&
 						ReturnFileHandle,	&
 						GetLine,		&
@@ -54,6 +55,7 @@
 						EOF,			&
 						ERROR,WARN,		&
 						Transcript
+
 		USE GridPointFields,     ONLY : InitializeGridPointFields, &
 						SetWaterVaporField 
 		USE ModelParameters

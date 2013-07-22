@@ -89,10 +89,10 @@
 !! purpose)						   !!
  CHARACTER (len = 5000) FUNCTION PrintAqEqReaction (ReactIndex)
 
-	USE Chemistry, ONLY : AqPhaseChemicalNames, &
+	USE Chemistry, ONLY : AqPhaseChemicalNames,     &
 				AqCationNames,		&
-				AqAnionNames,			&
-				HowManyAqEqReactions, &
+				AqAnionNames,		&
+				HowManyAqEqReactions,   &
 				AqEquilibriaList
 
 	USE InfrastructuralCode, ONLY : ERROR,REAL2STR,INT2STR
@@ -519,12 +519,13 @@ SUBROUTINE FindAqElectrolyteEquilibriumForGridPoint (UpdateThermo)
 
 	Current => Particles%First
 
-10  CALL FindElectrolyteEquilibrium (Current, UpdateThermo, FirstEquilibration=.FALSE., ReturnType = GG)
+        CALL FindElectrolyteEquilibrium (Current, UpdateThermo, FirstEquilibration=.FALSE., ReturnType = GG)
 
-	IF (Associated(Current%Next)) THEN
+	DO WHILE (Associated(Current%Next))
 		Current => Current%Next
-		GOTO 10
-	END IF
+		CALL FindElectrolyteEquilibrium (Current, UpdateThermo, &
+                     FirstEquilibration=.FALSE., ReturnType = GG)
+	END DO
 
 
 	RETURN
@@ -2140,6 +2141,8 @@ END SUBROUTINE KusikMeissner
 !! formulation				     !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL *8 FUNCTION CalcLogGammaPure (K, InParticle)
+     
+        USE InfrastructuralCode, ONLY : IsNaN
 
 	IMPLICIT NONE
 
@@ -2393,7 +2396,7 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 					SmallestAerosolPossible,            &
                                         MinimumWater
 
-	USE InfrastructuralCode, ONLY : Error
+	USE InfrastructuralCode, ONLY : Error, IsNaN
 
 	USE GridPointFields,	 ONLY : GetRelativeHumidity, GetGasBurden, &
 					ReplaceGridCellChemBurden
@@ -2459,7 +2462,8 @@ SUBROUTINE EquilibriumWaterContentAmount (InParticle, EquilibToThisRH, &
 		CALL DumpParticleContentsAtError(InParticle, "UnEquilableParticle.txt",InDoSurfaceTension=.FALSE., &
                       InRelativeHumidity=.TRUE., InRadius=.TRUE., InpH=.TRUE., InDoWaterActivity=.TRUE., &
 		      InDensity=.TRUE., InIonicStrength=.TRUE.)
-		CALL ERROR("In the initial call to WaterResidual, EquilibriumWaterContentAmount() in Thermodynamics.h, the water residual "// &
+		CALL ERROR("In the initial call to WaterResidual, EquilibriumWaterContentAmount()"// &
+                           " in Thermodynamics.h, the water residual "// &
 		           "calculation returned NaN.  Something is quite wrong.")
 	END IF
 

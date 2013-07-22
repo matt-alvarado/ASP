@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (mjalvara@mit.edu)
+!! ASP (c), 2004-2013, Matt Alvarado (mjalvara@mit.edu)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -74,7 +74,9 @@ REAL*8 FUNCTION CollisionEfficiency (Particle1, Particle2)
 
 	!From Jacobson, "Fundamentals of Atmospheric Modeling", p. 510
 	IF(Particle2%EffectiveRadius .GE. Particle1%EffectiveRadius) THEN
-		Stokes = TerminalVelocity(Particle1)*ABS(TerminalVelocity(Particle2) - TerminalVelocity(Particle1))/Particle2%EffectiveRadius/g
+		Stokes = TerminalVelocity(Particle1) &
+                         *ABS(TerminalVelocity(Particle2) - TerminalVelocity(Particle1)) &
+                         /Particle2%EffectiveRadius/g
 		Reynolds = ReynoldsNumber(Particle2)
 		Ea = (Stokes**2.0)/((Stokes+0.5)**2.0)
 		IF(Stokes .LE. 1.214) THEN
@@ -114,48 +116,37 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 !! Jacobson, "Fundamentals of Atmospheric Modeling"
 !! , 2nd ed., Section 15.2, (2005)
 
-	USE InfrastructuralCode, ONLY : INT2STR, REAL2STR, ERROR
+	USE InfrastructuralCode, ONLY : INT2STR, ERROR
 
 	USE Aerosols,            ONLY : Particles, Particle,		&
 				SortAerosolAtGridPointForCoagulation,	&
 					RecalculateRadius,		&
-					ParticleMass,			&
-					HowManyAerosolModes,		&
-					TerminalVelocity, &
-				FindAqElectrolyteEquilibriumForGridPoint, &
 					RegridAerosol
 
-	USE ModelParameters,	 ONLY : ThermoBulkMode,		  &
-					StochasticOrNot,	  &
-					HowManyBins,		  &
-					BinEdges,		&
-					micron, &
-					Pi, &
-					ConstantKernel, &
-					DoCoagulationFlag, &
-					Monodisperse, &
-					CoagKernel
+	USE ModelParameters,	  ONLY : ThermoBulkMode,		  &
+					 Pi, &
+					 ConstantKernel, &
+					 DoCoagulationFlag, &
+					 Monodisperse, &
+					 CoagKernel
 
-	USE Chemistry,			 ONLY : HowManyAqChems,		&
-					        HowManyAqCations,	&
-						HowManyAqAnions, &
-						AqMolecularMass, &
-						HowManyOrgChems, &
-						OrgMolecularMass, &
-						OrgDensity, &
-						HowManyAqOrgChems, &
-						AqOrgMolecularMass, &
-						AqOrgDensity, &
-						SolidSaltDensity, &
-						AqPhaseChemicalNames
-
-
-	USE OutputRoutines,		 ONLY : SpillBeans
+	USE Chemistry,	          ONLY : HowManyAqChems,		&
+					 HowManyAqCations,	&
+				         HowManyAqAnions, &
+					 AqMolecularMass, &
+					 HowManyOrgChems, &
+					 OrgMolecularMass, &
+					 OrgDensity, &
+					 HowManyAqOrgChems, &
+					 AqOrgMolecularMass, &
+					 AqOrgDensity, &
+					 SolidSaltDensity, &
+					 AqPhaseChemicalNames
 
 	IMPLICIT NONE
 
 	!! External Variables
-	REAL*8  :: TimeStep
+	REAL*8, INTENT(IN)  :: TimeStep
 
 	!! Internal Variables
 	INTEGER	:: HowManyLinks, I, J, K, L, M, Q, Count, JJ
@@ -420,7 +411,6 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 			AqOrgVolConc(JJ,I)  = Particle1%AqOrgChems(I) * Particle1%NumberOfParticles*AqOrgMolecularMass(I)/AqOrgDensity(I)
 			IF(AqOrgVolConc(JJ,I) .LT. 0.0) THEN
 				WRITE(*,*) "Negative AqOrgVolume Conc!", JJ, I, Particle1%NumberOfParticles, Particle1%AqOrgChems(I)
-				!CALL SpillBeans(XP, YP, ZP)
 			END IF
 		END DO
 		

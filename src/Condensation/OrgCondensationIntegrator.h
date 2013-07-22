@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -50,30 +50,16 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 					GetRelativeHumidity,    &
 					AddToGridCellChemBurden
 
-	USE Aerosols,            ONLY : Particles, Particle,		&
-		                        ParticleArray,			&
-					RecalculateRadius,		&
-					EqCoeff,			&
-					Molality,			&
-					CalculateIonicStrength,		&
-				        KusikMeissner,			&
-					SortAerosolAtGridPointForCondensation,&
-				FindAqElectrolyteEquilibriumForGridPoint
+	USE Aerosols,            ONLY : Particles, Particle
 
 	USE Chemistry,		ONLY : HowManyGasChems,			&
 					HowManyEvolveGasChems,		&
-					HowManyEvolveAqChems,		&
 					GasPhaseChemicalNames,		&
-					HowManyCondensingChems,		&
-					AqEquilibriaList,		&
-					HowManyAqChems,			&
-					HowManyAqCations, &
 					FindChem
 
 	USE ModelParameters,     ONLY : Avogadro,			&
 					AerosolWaterEquilibriumRHThreshold,&
 					WaterEquilibriumIndex,	&
-					ThermoBulkMode,			&
 					DissolutionEquilibriumOrFlux,   &
 					AqThermoEquilibriumError,	&
 					WaterContentPrecision,		&
@@ -139,13 +125,13 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 
 	!! COUNT the number of LINKS in the gridcell that we should condense upon
 	HowManyLinks  =  1
-15	IF(ASSOCIATED(CurrentParticle%Next)) THEN
-		CurrentParticle => CurrentParticle%Next
-		IF (CurrentParticle%NumberOfParticles .GT. 0 .AND. .NOT.CurrentParticle%Dry) THEN
-			HowManyLinks  = HowManyLinks + 1
-			GOTO 15
-		END IF
-	ENDIF
+	DO WHILE (ASSOCIATED(CurrentParticle%Next))
+           CurrentParticle => CurrentParticle%Next
+           IF (CurrentParticle%NumberOfParticles .GT. 0 .AND. &
+                .NOT.CurrentParticle%Dry) THEN
+              HowManyLinks  = HowManyLinks + 1
+           END IF
+	ENDDO
 	CurrentParticle => FirstParticle
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

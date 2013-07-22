@@ -13,6 +13,7 @@
 !!								    !!
 !! Month  Year   Name              Description			    !!
 !! 07     2006   Matt Alvarado     Began Update History		    !!
+!! 07/19  2013   Matt Alvarado     Made Module private by default   !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -29,8 +30,26 @@
 
 MODULE InfrastructuralCode
 
-PUBLIC
-PRIVATE FH, AID
+PRIVATE
+PUBLIC ::  GetLine,              &
+           Error,                &
+           Warn,                 &
+           Transcript,           &
+           REAL2STR,             &
+           INT2STR,              &
+           STR2REAL,             &
+           STR2INT,              &
+           GetToken,             &
+           StripToken,           &
+           IsReal,               &
+           IsInteger,            &
+           SetFileHandleCounter, &
+           GetFileHandle,        &
+           ReturnFileHandle,     &
+           GetParticleID,        &
+           SetParticleID,        &
+           EOF,                  &
+           IsNaN
 
 !! This is the current file handle
 INTEGER :: FH
@@ -39,12 +58,23 @@ INTEGER :: FH
 INTEGER :: AID
 
 !! This is the generic end-of-file statement
-CHARACTER (len=33) :: EOF = "END-OF-FILE-012343210-ELIF-FO-DNE"
+CHARACTER (len=33), PARAMETER :: EOF = "END-OF-FILE-012343210-ELIF-FO-DNE"
 
 CONTAINS
 
 INCLUDE "InputOutputCommands.h"
 INCLUDE "StringCommands.h"
 INCLUDE "Counters.h"
+
+logical function IsNaN(a)
+   IMPLICIT NONE
+   real ::  a
+   if (a.ne.a) then
+       isnan = .true.
+   else
+       isnan = .false.
+   end if
+   return
+end function
 
 END MODULE InfrastructuralCode

@@ -54,11 +54,7 @@
 MODULE OutputRoutines
 
 PRIVATE
-PUBLIC ::         BinEntireDomainForPrinting,		&
-		  SummarizeDomainMassForOutput,		&
-		  BinLagrangianParticlesForOutput,	&
-		  EachAerosolOutput,                    &
-		  SpillBeans,                           &
+PUBLIC ::         SpillBeans,                           &
 		  SizeDistOutput,                       &
                   GasOutput,                            &
                   GasEnhanceOutput,                     &
@@ -81,8 +77,6 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 					HowManyAqAnions,		&
 					AqPhaseChemicalNames,		&
 					AqCationNames,AqAnionNames
-
-	USE Condensation,        ONLY : IsActivated
 
 	USE InfrastructuralCode, ONLY : WARN, ERROR, INT2STR, REAL2STR,	 &
 					GetFileHandle, ReturnFileHandle
@@ -129,7 +123,6 @@ SUBROUTINE EachAerosolOutput (OutputFileName)
 	WRITE (FH, '(a)', advance='no') "ParticleID, "//		&
 		"Particle Distribution #,"// &
 		"Number Of Particles,"//	 &
-		"Activated (1 is yes 0 is no),"// &
 		"Effective Radius,"//		 &
 		"Solution Embryo Radius,"//	 &
 		"InsolCoreRadius,"//		 &
@@ -1626,7 +1619,7 @@ SUBROUTINE AerosolOutput(InParticle, FH, t, First, Thermo)
 
 	IF (First) THEN !On first call, write header line
            
-           IF (Thermo) THEN
+           IF (NOT(Thermo)) THEN
                WRITE(FH, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
            ELSE
                WRITE(FH, FMT='(A4,A11)', ADVANCE='NO') "RH  ", " "

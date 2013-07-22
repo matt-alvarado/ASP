@@ -226,7 +226,7 @@ MODULE ModelParameters
 	INTEGER, PARAMETER :: AqThermoNumbAllowedIterations = 100
 	INTEGER, PARAMETER :: AqThermoNumbAllowedIterationsForHypLoop = 20
 	REAL*8, PARAMETER  :: AerosolWaterEquilibriumRHThreshold = 0.98 !! If RH is above this value, simply don't equilibrate the 
-																	!! water.  Trust what is there
+									!! water.  Trust what is there
 	LOGICAL            :: ThermoBulkMode                  !! Resolve the particle distributions or not?
 	
 	INTEGER :: WaterEquilibriumIndex
