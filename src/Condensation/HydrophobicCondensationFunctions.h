@@ -97,14 +97,17 @@ REAL*8 FUNCTION SaturationVaporPressure  (Temperature, OrganicDissolutionRxn)
 
 	    !Units of mbar, see Myrdal and Yalkowski and Schwarzenbach et al.,2003
 	    !"Environmental Organic Chemistry"
-            SaturationVaporPressure  = 1000*EXP ( -1.0*(21.2 + 0.3*OrganicDissolutionData(OrganicDissolutionRxn,6) &
-	                                 + 177.0*OrganicDissolutionData(OrganicDissolutionRxn,7) ) &
-					 *(TempRatio - 1.0) + (10.8 + 0.25*OrganicDissolutionData(OrganicDissolutionRxn,6)) &
-					 *LOG(TempRatio) ) / OrganicDissolutionData(OrganicDissolutionRxn,8)
+            SaturationVaporPressure  = 1000*EXP ( &
+                 -1.0*(21.2 + 0.3*OrganicDissolutionData(OrganicDissolutionRxn,6) &
+                 + 177.0*OrganicDissolutionData(OrganicDissolutionRxn,7) ) &
+                 *(TempRatio - 1.0) + (10.8 + 0.25*OrganicDissolutionData(OrganicDissolutionRxn,6)) &
+                 *LOG(TempRatio) ) / OrganicDissolutionData(OrganicDissolutionRxn,8)
         ELSE
         
-            SaturationVaporPressure = OrganicDissolutionData(OrganicDissolutionRxn,14)*(300.0/Temperature) & 
-                                  *exp(OrganicDissolutionData(OrganicDissolutionRxn,15)*(1000.0/8.314)*(1.0/300.0-1.0/Temperature))
+            SaturationVaporPressure = OrganicDissolutionData(OrganicDissolutionRxn,14)&
+                 *(300.0/Temperature) & 
+                 *exp(OrganicDissolutionData(OrganicDissolutionRxn,15)*(1000.0/8.314) &
+                 *(1.0/300.0-1.0/Temperature))
         END IF   
 
 	RETURN

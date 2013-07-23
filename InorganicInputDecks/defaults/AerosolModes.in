@@ -1,6 +1,6 @@
 !! AerosolModel.in
 !! ASP
-!! Matt Alvarado, 2004-2012 (c)
+!! Matt Alvarado, 2004-2013 (c)
 !! Based on MELAM by Donnan Steele, 2000-2004 (c)
 !!
 !! This input deck specifies the traits of aerosol distributions
@@ -89,6 +89,19 @@ F !!
 !! Please remember, composition must be in ug/m3, or in total dry mass % (no water)
 !
 !
+234000 ; 0.1 ; 1.9;
+Williams;
+NH4Cl; 15.28;
+NH4NO3; 36.65;
+KCl; 2.074;
+K2SO4; 1.451;
+BC; 175.1;
+IVOC3; 79.37;
+IVOC4; 111.1;
+IVOC5; 261.9;
+IVOC6; 341.3;
+!
+!
 !0 ; 1.0 ; 2.0
 !Lake McKay;
 !(NH4)2SO4; 2.636;
@@ -134,30 +147,30 @@ F !!
 !CBIO; 8.
 !CPD3; 1.
 !
-!34000; 0.11; 1.91;  
-!Timbavati Size Test;
-!KCl; 13.58; 
-!NH4Cl; 20.46; 
+!34000; 0.11; 1.91  
+!Timbavati Size Test
+!KCl; 135.8; 
+!NH4Cl; 204.6; 
 !KCl; 421;
 !HCl; 139.4;
-!NH4NO3; 1.76; 
-!(NH4)2SO4; 3.43; 
-!BC; 3.50; 
-!POA1; 9.66; 
-!CBIO; 27.83;
+!NH4NO3; 17.6; 
+!(NH4)2SO4; 34.3; 
+!BC; 35.0; 
+!POA1; 96.6; 
+!CBIO; 278.3;
 !
 !
-!66000 ; 0.02 ; 1.175; 
-!RemConMode1; 
-!KCl; 13.58;
-!NH4Cl; 20.46;  
-!KCl; 421;
-!HCl; 139.4;
-!NH4NO3; 1.76; 
-!(NH4)2SO4; 3.43;  
-!BC; 3.50;
-!POA1; 9.66; 
-!CBIO; 27.83; 
+!66000 ; 0.02 ; 1.175 
+!RemConMode1 
+!KCl; 135.8 !
+!NH4Cl; 204.6  
+!KCl; 421
+!HCl; 139.4
+!NH4NO3; 17.6 
+!(NH4)2SO4; 34.3  
+!BC; 35.0
+!POA1; 96.6 
+!CBIO; 278.3 
 !
 !
 !0; 0.2; 1.4
@@ -218,30 +231,30 @@ F !!
 !NH4NO3; 9.28
 !(NH4)2SO4; 12.48
 !
-!0; 0.2; 1.4!
-!Urban Case ISORROPIA
-!NH3; 3.4!
-!H2SO4; 9.143!
-!HNO3; 1.953!
+!0; 0.2; 1.4;
+!Urban Case ISORROPIA;
+!NH3; 3.4;
+!H2SO4; 9.143;
+!HNO3; 1.953;
 !
-!0; 0.2; 1.4!
-!High Sulfate
-!NH3; 5.11!
-!H2SO4; 19.61!
+!0; 0.2; 1.4;
+!High Sulfate;
+!NH3; 5.11;
+!H2SO4; 19.61;
 !
-!0; 0.2; 1.4!
-!Marine Case ISORROPIA!
-!NH3; 0.02!
-!H2SO4; 0.510!
-!HNO3; 0.163!
-!NaCl; 5.01!
-!HCl; 0.002!
+!0; 0.2; 1.4;
+!Marine Case ISORROPIA;
+!NH3; 0.02;
+!H2SO4; 0.510;
+!HNO3; 0.163;
+!NaCl; 5.01;
+!HCl; 0.002;
 !
-!0; 0.2; 1.4!
-!Remote Case ISORROPIA
-!NH3; 4.25!
-!H2SO4; 11.270!
-!HNO3; 0.145!
+!0; 0.2; 1.4;
+!Remote Case ISORROPIA;
+!NH3; 4.25;
+!H2SO4; 11.270;
+!HNO3; 0.145;
 !
 !0; 0.2; 1.4
 !WaterTest
@@ -253,10 +266,10 @@ F !!
 !HCl; 1.189
 !NH3; 16.73 
 !
-0; 0.2; 1.4
-ThermoTests
+!0; 0.2; 1.4
+!ThermoTests
 !KCl; 74.55;
-NH4Cl; 155.9;
+!NH4Cl; 155.9;
 !NH4NO3; 233.25;
 !KNO3; 101.1;
 !K2SO4; 17.43;

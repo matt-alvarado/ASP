@@ -2484,13 +2484,21 @@ TERPSOA + NO        => NO  + 0.0066 IVOC3 + 0.0664 IVOC4 + 0.1098 IVOC5 + 0.2769
 TERPSOA + NO3       => NO3 + 0.0066 IVOC3 + 0.0664 IVOC4 + 0.1098 IVOC5 + 0.2769 IVOC6   ; 1.20e-12; 0.;0.0; 1.;
 TERPSOA + HO2       => HO2 + 0.0586 IVOC3 + 0.0501 IVOC4 + 0.1959 IVOC5 + 0.3318 IVOC6   ; 1.66e-13; 0.;1300.0; 1.;
 TERPSOA             => 0.0586 IVOC3 + 0.0501 IVOC4 + 0.1959 IVOC5 + 0.3318 IVOC6         ;12. ; 1.480e-12;	0.;	520.;	1.; 
-!
-IVOC2 + OH => 1.075 IVOC1 						; 4.0e-11; 0.;  0.;         1.;
-IVOC3 + OH => 1.075 IVOC2 						; 4.0e-11; 0.;  0.;         1.;
-IVOC4 + OH => 1.075 IVOC3 						; 4.0e-11; 0.;  0.;         1.;
-IVOC5 + OH => 1.075 IVOC4 						; 4.0e-11; 0.;  0.;         1.;
-IVOC6 + OH => 1.075 IVOC5 						; 4.0e-11; 0.;  0.;         1.;
-IVOC7 + OH => 1.075 IVOC6 						; 4.0e-11; 0.;  0.;         1.;
-IVOC8 + OH => 1.075 IVOC7 						; 4.0e-11; 0.;  0.;         1.;
-IVOC9 + OH => 1.075 IVOC8 						; 4.0e-11; 0.;  0.;         1.;
-!
+!Ahmadov Reactions (Ahmadov et al., ACP, 2012)
+!IVOC2 + OH => 1.075 IVOC1 						; 4.0e-11; 0.;  0.;         1.;
+!IVOC3 + OH => 1.075 IVOC2 						; 4.0e-11; 0.;  0.;         1.;
+!IVOC4 + OH => 1.075 IVOC3 						; 4.0e-11; 0.;  0.;         1.;
+!IVOC5 + OH => 1.075 IVOC4 						; 4.0e-11; 0.;  0.;         1.;
+!IVOC6 + OH => 1.075 IVOC5 						; 4.0e-11; 0.;  0.;         1.;
+!IVOC7 + OH => 1.075 IVOC6 						; 4.0e-11; 0.;  0.;         1.;
+!IVOC8 + OH => 1.075 IVOC7 						; 4.0e-11; 0.;  0.;         1.;
+!IVOC9 + OH => 1.075 IVOC8 						; 4.0e-11; 0.;  0.;         1.;
+!Grieshop Reactions (Grieshop et al., ACP, 2009)
+IVOC2 + OH => 1.4 IVOC1 						; 2.0e-11; 0.;  0.;         1.;
+IVOC3 + OH => 1.4 IVOC1 						; 2.0e-11; 0.;  0.;         1.;
+IVOC4 + OH => 1.4 IVOC2 						; 2.0e-11; 0.;  0.;         1.;
+IVOC5 + OH => 1.4 IVOC3 						; 2.0e-11; 0.;  0.;         1.;
+IVOC6 + OH => 1.4 IVOC4 						; 2.0e-11; 0.;  0.;         1.;
+IVOC7 + OH => 1.4 IVOC5 						; 2.0e-11; 0.;  0.;         1.;
+IVOC8 + OH => 1.4 IVOC6 						; 2.0e-11; 0.;  0.;         1.;
+IVOC9 + OH => 1.4 IVOC7 						; 2.0e-11; 0.;  0.;         1.;
