@@ -149,7 +149,8 @@ PROGRAM ASP
                    NH3Gas, HNO3Gas, HClGas, H2SO4Gas, NumAqOrgChems, &
                    ReturnType, Hi, NumModes, clock, BCi, status, &
                    NaHSO4i, Na2SO4i, NH4HSO4i, NH42SO4i, &
-                   SO4i, HSO4i,  LEVi, FH1
+                   SO4i, HSO4i,  LEVi, FH1, EnhFH, NH3i, NH4i, NH4NO3i, &
+                   NH4Cli
 
 	REAL*8  :: ii, T_mix, Tau_Dep, slope, b, ChemTimestep, MixTimestep, &
 		   CoagTimeStep, CondTimeStep, t, Mgas, Temp, &
@@ -158,7 +159,8 @@ PROGRAM ASP
                    TotalPotassiumMass, RH, &
                    K2SO4Mass, Kmass, TotalMass, TimeStepSize, PressEq, &
                    P1, EnvMass, InitialMass, NewMass, ChemPercentage, sum, &
-                   Total, Yield, Store_H2O, Store_Dens,InvHgt, BC, Sulf
+                   Total, Yield, Store_H2O, Store_Dens,InvHgt, BC, Sulf, &
+                   OA, TotalNH4
 
 	REAL*4  :: etimearray(2), etime
 	
@@ -508,6 +510,7 @@ PROGRAM ASP
                    !15  !Yokelson Williams Fire fast 
                    !106.87357 !Yokelson Williams Fire (California, Nov. 17 2009) 
                                !estimated from curvefit of CO data
+                   !212.22/3600.0 !Dilution time, Williams, slow, in hr.
                    !4000 ! slow fit for MILAGRO Fire (Yucatan March 23, 2006)
                    !100 !fast fit for MILAGRO Fire (Yucatan March 23, 2006)
                    !529.7 ! MILAGRO Fire (Yucatan March 23, 2006), middle curvefit
@@ -603,6 +606,11 @@ PROGRAM ASP
                 SO4i = FindChem("SO4--", 1)
                 HSO4i = FindChem("HSO4-", 1)
 
+                NH3i = FindChem("NH3", 1)
+                NH4i = FindChem("NH4+", 1)
+                NH4NO3i = FindChem("NH4NO3", 1)
+                NH4Cli = FindChem("NH4Cl", 1)
+
 		!Count # of bins, # of Aq. Chems
 		current => particles%first
 		NumBins = 0
@@ -657,11 +665,13 @@ PROGRAM ASP
 		Mgas = GetM   ()
 
 		!Count # of bins, # of Aq. Chems
-		current => particles%first
+		current => boundaryparticles%first
 		NumBins = 0
 		Potassium = 0.0
                 BC = 0.0
                 Sulf = 0.0
+                OA = 0.0
+                TotalNH4 = 0.0
 		DO WHILE(associated(current))
                    NumBins = NumBins + 1
                    NumAqChems = size(current%AqChems)
@@ -669,6 +679,8 @@ PROGRAM ASP
                    NumAqOrgChems = size(current%AqOrgChems)
 
                    BC        = BC + current%OrgChems(1)*current%numberofparticles
+
+                   OA        = OA + current%OrgChems(14)*current%numberofparticles
 
                    Potassium = Potassium + current%AqChems(PotassiumIndex)*current%numberofparticles
                    Potassium = Potassium + current%AqChems(KNO3i)*current%numberofparticles
@@ -685,14 +697,22 @@ PROGRAM ASP
                    Sulf = Sulf +  2*current%AqChems(LEVi)*current%numberofparticles  
                    Sulf = Sulf +  current%AqChems(SO4i)*current%numberofparticles  
                    Sulf = Sulf +  current%AqChems(HSO4i)*current%numberofparticles
-                   
+
+                   TotalNH4 = TotalNH4 + current%Aqchems(NH3i)*current%numberofparticles
+                   TotalNH4 = TotalNH4 + current%Aqchems(NH4i)*current%numberofparticles
+                   TotalNH4 = TotalNH4 + current%Aqchems(NH4NO3i)*current%numberofparticles
+                   TotalNH4 = TotalNH4 + current%Aqchems(NH4Cli)*current%numberofparticles
+                   TotalNH4 = TotalNH4 + current%Aqchems(NH4HSO4i)*current%numberofparticles
+                   TotalNH4 = TotalNH4 + 2*current%Aqchems(NH42SO4i)*current%numberofparticles
+                   TotalNH4 = TotalNH4 + 3*current%Aqchems(LEVi)*current%numberofparticles
+
                    current => current%next
 		END DO
 
-		WRITE(*,*) "Potassium (ug/m3): ", Potassium*AqMolecularMass(PotassiumIndex)*1.0E12
-		WRITE(*,*) "BC        (ug/m3): ", BC*OrgMolecularMass(1)*1.0E12
-                WRITE(*,*) "Sulfate   (ug/m3): ",Sulf*AqMolecularMass(SO4i)*1.0E12
-                
+		WRITE(*,*) "Env Ammonium  (ug/m3): ", TotalNH4*AqMolecularMass(NH4i)*1.0E12
+		WRITE(*,*) "Env BC        (ug/m3): ", BC*OrgMolecularMass(1)*1.0E12
+                WRITE(*,*) "Env Sulfate   (ug/m3): ",Sulf*AqMolecularMass(SO4i)*1.0E12
+                WRITE(*,*) "Env OA        (ug/m3): ",OA*OrgMolecularMass(14)*1.0E12                
 
 		ALLOCATE(NumConc(NumBins), STAT = status)
                 IF (status > 0) THEN
@@ -763,6 +783,16 @@ PROGRAM ASP
 		OPEN(UNIT = OutFH(3), FILE=TRIM(OutputDeckSubDir)//"GasOut3.txt", STATUS="REPLACE")
 
                 CALL GasOutput(OutFH(1),OutFH(2),OutFH(3),0.0,.TRUE.,.FALSE.)	
+
+		!MJA, 12-28-2012
+                !New output file for enhancement ratios
+                !Of important species for GEOS-Chem study	
+                EnhFH = GetFileHandle()
+	        OPEN(UNIT=EnhFH, & 
+                     FILE=TRIM(OutputDeckSubDir)//"EnhanceRatios.txt", &
+                     STATUS="REPLACE")
+                CALL GasEnhanceOutput(EnhFH,0.0,.TRUE.)
+
 		WRITE(*,*) "After GasOutput1"		
 		current => particles%first
 		DO I = 4, 3 + NumBins
@@ -779,7 +809,9 @@ PROGRAM ASP
 		t=0	
 
                 CALL GasOutput(OutFH(1),OutFH(2),OutFH(3),t,.FALSE.,.FALSE.)	
+                CALL GasEnhanceOutput(EnhFH,t,.FALSE.)
 		WRITE(*,*) "After GasOutput2"
+
 		current => particles%first
 		DO I = 4, 3+NumBins
                    CALL AerosolOutput(current, OutFH(I), t, .FALSE.,.FALSE.)
@@ -984,7 +1016,8 @@ PROGRAM ASP
                    IF (MOD(t,60.0) .LT. 0.01) THEN
                       WRITE(*,*) "Before GasOutput3"
                       CALL GasOutput(OutFH(1),OutFH(2),OutFH(3),t,.FALSE.,.FALSE.)
-                      
+                      CALL GasEnhanceOutput(EnhFH,t,.FALSE.)    
+                  
                       current => particles%first
                       DO I = 4, 3+NumBins
                          WRITE(*,*) "Before AerosolOutput, Bin #", I-3
@@ -1008,6 +1041,8 @@ PROGRAM ASP
                    !Update time
                    t = t + MixTimestep
                    ut = ut + MixTimeStep/3600.
+
+                   IF(ut .GE. 24.0) ut = 0.0
                    IF(t .GE. 600) THEN !Reset to input mix time after 600 s
                       ChemTimestep = ChemStep
                       MixTimestep = MixStep    

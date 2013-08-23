@@ -439,7 +439,8 @@ MODULE Chemistry
 	SUBROUTINE RecalculateReactionRates(IFGAS, IFAQ)
 
 		USE Time, ONLY : CurrentTime, BeginningTime
-		USE GridPointFields, ONLY : ResetGasPhaseReactionRates, GridGasChem
+		USE GridPointFields, ONLY : ResetGasPhaseReactionRates, &
+                                            GridGasChem
 		implicit none
 
 		!! Input Variables
