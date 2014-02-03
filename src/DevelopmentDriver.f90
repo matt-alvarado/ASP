@@ -160,7 +160,7 @@ PROGRAM ASP
                    K2SO4Mass, Kmass, TotalMass, TimeStepSize, PressEq, &
                    P1, EnvMass, InitialMass, NewMass, ChemPercentage, sum, &
                    Total, Yield, Store_H2O, Store_Dens,InvHgt, BC, Sulf, &
-                   OA, TotalNH4
+                   OA, TotalNH4, TermV
 
 	REAL*4  :: etimearray(2), etime
 	
@@ -922,19 +922,28 @@ PROGRAM ASP
                          !CALL ERROR("Env. Aerosol not lined up!")					
                       END IF
                       CALL RecalculateRadius(current)
+
+                      !Get Particle Terminal Velocity
+                      IF (ThermoBulkMode) THEN 
+                          TermV = 0.0 
+                      ELSE 
+                          TermV = TerminalVelocity(Current)
+                      ENDIF
+
                       !Get Number Concentration of particles in particles/cm3
                       InitNumConc(I) = current%numberofparticles 
                       EnvNumConc(I) = Env%numberofparticles
+                      
                       !Dilute and Dep number of particles (assume no background for now)
                       current%numberofparticles = (InitNumConc(I) + (EnvNumConc(I)*MixTimestep/T_mix))/ &
-                           (1.0 + MixTimestep*(1.0/T_mix + TerminalVelocity(Current)/InvHgt))
+                           (1.0 + MixTimestep*(1.0/T_mix + TermV/InvHgt))
                       !WRITE(*,*) I, InitNumConc(I), current%numberofparticles, TerminalVelocity(Current)
                       IF(current%Numberofparticles .GT. 0.) THEN
                          DO J = 1, NumAqChems
                             InitialMass = InitNumConc(I)*current%AqChems(J)
                             EnvMass = EnvNumConc(I)*Env%AqChems(J)
                             NewMass = (InitialMass + EnvMass*MixTimestep/T_mix)/ &
-                                 (1+ MixTimestep*(1.0/T_mix + TerminalVelocity(Current)/InvHgt))
+                                 (1+ MixTimestep*(1.0/T_mix + TermV/InvHgt))
                             Current%AqChems(J) = NewMass/current%numberofparticles
 					
                          END DO
@@ -943,7 +952,7 @@ PROGRAM ASP
                             InitialMass = InitNumConc(I)*current%OrgChems(J)
                             EnvMass = EnvNumConc(I)*Env%OrgChems(J)
                             NewMass = (InitialMass + EnvMass*MixTimestep/T_mix)/ &
-                                 (1+ MixTimestep*(1.0/T_mix + TerminalVelocity(Current)/InvHgt))
+                                 (1+ MixTimestep*(1.0/T_mix + TermV/InvHgt))
                             Current%OrgChems(J) = NewMass/current%numberofparticles
                          END DO
 				
@@ -951,7 +960,7 @@ PROGRAM ASP
                             InitialMass = InitNumConc(I)*current%AqOrgChems(J)
                             EnvMass = EnvNumConc(I)*Env%AqOrgChems(J)
                             NewMass = (InitialMass + EnvMass*MixTimestep/T_mix)/ &
-                                 (1+ MixTimestep*(1.0/T_mix + TerminalVelocity(Current)/InvHgt))
+                                 (1+ MixTimestep*(1.0/T_mix + TermV/InvHgt))
                             Current%AqOrgChems(J) = NewMass/current%numberofparticles
                          END DO
                       ELSE !No particles
