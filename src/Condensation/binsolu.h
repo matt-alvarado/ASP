@@ -14,7 +14,7 @@
 !! Month  Year   Name              Description					!!
 !! 07     2006   Matt Alvarado     Began Update History				!!
 !! 01/30  2013   Matt Alvarado     Changed HydrophilicOrganicWaterContent to    !!
-!!                                   use Kappa
+!!                                   use Kappa                                  !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -45,10 +45,10 @@ REAL*8 FUNCTION HydrophilicOrganicWaterContent(InParticle, Temp, RH)
 	Sum = 0.0
 	DO I = 1, HowManyAqOrgChems
                 !Assume water density = 1.0 g/cm3
-		MOLALRH(I) = (AqOrgDensity(I)/1.0)*((1-RH)/RH)/Kappa(I)/AqMolecularMass(1) 
+		MOLALRH(I) = (AqOrgDensity(I)/1.0)*((1-RH)/RH)/Kappa(I)/AqOrgMolecularMass(I) 
                 !umol/ug = mol org/g H2O
 	
-		ORGCONC(I) = InParticle%AqOrgChems(I)*InParticle%NumberofParticles !Mol org/cm3
+ 		ORGCONC(I) = InParticle%AqOrgChems(I)*InParticle%NumberofParticles !Mol org/cm3
 		
 		!ZSR formula
 		Sum = Sum + (ORGCONC(I)/MOLALRH(I)) !g H2O /cm3 air
