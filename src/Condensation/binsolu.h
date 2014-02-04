@@ -26,7 +26,7 @@
 !hydrophilic oprganic using Kappa param
 REAL*8 FUNCTION HydrophilicOrganicWaterContent(InParticle, Temp, RH)
       
-        USE Chemistry,  ONLY : Kappa, AqOrgDensity, &
+        USE Chemistry,  ONLY : Kappa, AqOrgDensity, AqOrgMolecularMass,&
                                AqMolecularMass, HowManyAqOrgChems 
 	
         IMPLICIT NONE
