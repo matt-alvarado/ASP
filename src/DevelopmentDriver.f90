@@ -306,7 +306,8 @@ PROGRAM ASP
              ENDDO
 
              !!Reset Sectional Parameters, currently hardwired distribution
-             CALL SetSectionalParameters (20.0*micron,0.005*micron,100,.FALSE.)
+             CALL SetSectionalParameters (10.0*micron,0.005*micron,40,.FALSE.)
+             !CALL SetSectionalParameters (20.0*micron,0.005*micron,100,.FALSE.)
  
              !!CALL ReadDistributionsOrganic()
              InputFlagRatioOrMass = 0
