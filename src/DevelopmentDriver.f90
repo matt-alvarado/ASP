@@ -563,7 +563,7 @@ PROGRAM ASP
 
                 DEALLOCATE(HeteroNumberConc, HeteroRadii, Chem, OutFH, STAT=status)
 
-	    ELSE !Bulk, Mono, or Size dist aerosols
+	    ELSE IF (IncludeAerosols) THEN!Bulk, Mono, or Size dist aerosols
 	        CALL TRANSCRIPT("")
 	        CALL TRANSCRIPT("Gas and Aerosol Chemisty Selected.")
 
@@ -1594,6 +1594,7 @@ PROGRAM ASP
                                        OrganicDissolutionData(1,1)))*1e9/Mgas)), " ppb"
 	
            DEALLOCATE(Chem, HeteroNumberConc, HeteroRadii, OutFH, STAT=status)
+
 	ELSE IF (SmogChamberModel) THEN !Chamber TESTS
            CALL TRANSCRIPT("")
            CALL TRANSCRIPT("Smog Chamber Model Selected.")
@@ -1603,42 +1604,49 @@ PROGRAM ASP
            CALL ReadPhotolysisRates
 		
            CALL RecalculateReactionRates(IFGAS,IFAQ)
-		
+           !Recalculate Photolysis Rates
+	   CALL RecalculatePhotoRates(ut, .TRUE.)             
+           !Recalculate Heterogeneous Rates
+           CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .TRUE.)
+				
            ALLOCATE(Chem(HowManyGasChems), STAT = status)
            IF (status > 0) THEN
               CALL ERROR("Allocation error for Chem in " &
                    //"Smog Chamber Model of DevelopmentDriver.f90.")
            ENDIF
            !! INITIALIZE the DISSOLUTION routine
-           CALL SetAllDissolution
+           WRITE(*,*) IncludeAerosols
+           IF (IncludeAerosols) THEN 
+              CALL SetAllDissolution
            !WRITE(*,*) "Dissolution Okay"
            !STOP
-
            !! INITIALIZE the PARTICLES
-           CALL InitializeParticlesSectional	
-		
+              CALL InitializeParticlesSectional	
+
            !WRITE(*,*) "Check 1"
            !!WARNING Force initial equilibrium between gas and aerosol
            !!(Uses open system for water eq.)
-           CALL EquilibrateGridPoint(EquilibrateWater=.FALSE., &                   
+              CALL EquilibrateGridPoint(EquilibrateWater=.FALSE., &                   
                 WaterOpenSystem=.FALSE., InorgOnly=.FALSE.)
            !WRITE(*,*) "Check 2"
            
-           CALL SpillBeans()
+              CALL SpillBeans()
 		
            !Count # of bins, # of Aq. Chems
-           current => particles%first
-           NumBins = 0
-           DO WHILE(associated(current))
-              NumBins = NumBins + 1
-              NumAqChems = size(current%AqChems)
-              NumOrgChems = size(current%OrgChems)
-              current => current%next
-           END DO
-           ALLOCATE(NumConc(NumBins), STAT = status)
-           IF (status > 0) THEN
-              CALL ERROR("Allocation error for NumConc in " &
+
+              current => particles%first
+              NumBins = 0
+              DO WHILE(associated(current))
+                 NumBins = NumBins + 1
+                 NumAqChems = size(current%AqChems)
+                 NumOrgChems = size(current%OrgChems)
+                 current => current%next
+              END DO
+              ALLOCATE(NumConc(NumBins), STAT = status)
+              IF (status > 0) THEN
+                 CALL ERROR("Allocation error for NumConc in " &
                    //"Smog Chamber Model of DevelopmentDriver.f90.")
+              ENDIF
            ENDIF
 	
            TEMP = GetTemp()
@@ -1659,23 +1667,26 @@ PROGRAM ASP
            OPEN(UNIT = OutFH(3), FILE=TRIM(OutputDeckSubDir)//"GasOutChamber3.txt", STATUS="REPLACE")
            
            CALL GasOutput(OutFH(1),OutFH(2),OutFH(3),0.0,.TRUE.,.FALSE.)
-
-           IF (NumBins .GT. 1) CALL ERROR("Smog Chamber Model only works with bulk aerosol.") 
-           OPEN(UNIT = OutFH(4), FILE=TRIM(OutputDeckSubDir)//"AerosolOutChamber.txt", STATUS="REPLACE")
-           CALL AerosolOutput(current, OutFH(4), 0.0, .TRUE., .FALSE.)
-
+           IF (IncludeAerosols) THEN !Gas Chemistry Only
+              IF (NumBins .GT. 1) CALL ERROR("Smog Chamber Model only works with bulk aerosol.") 
+              OPEN(UNIT = OutFH(4), FILE=TRIM(OutputDeckSubDir)//"AerosolOutChamber.txt", STATUS="REPLACE")
+              CALL AerosolOutput(current, OutFH(4), 0.0, .TRUE., .FALSE.)
+           ENDIF
            t = 0.0
            ChemTimestep = ChemStep
            MixTimestep = Mixstep !Should always be an integer multiple!
            !Run the main loop with above timesteps
            DO r = 1, INT(RunLength*60/MixTimestep+1)
 
-              !Write Output to file every minute in units of ppb
+              !Write Output to file every hour in units of ppb
+
               IF (MOD(t,3600.0)<=0.05) THEN
-				
+	      !IF (MOD(t,60.0)<=0.05) THEN			
                  CALL GasOutput(OutFH(1),OutFH(2),OutFH(3),t,.FALSE.,.FALSE.)
-                 current => particles%first
-                 CALL AerosolOutput(current, OutFH(4), t, .FALSE., .FALSE.)	
+                 IF (IncludeAerosols) THEN !Gas Chemistry Only
+                    current => particles%first
+                    CALL AerosolOutput(current, OutFH(4), t, .FALSE., .FALSE.)	
+                 ENDIF
 
               END IF !Write Output
 		
@@ -1687,34 +1698,41 @@ PROGRAM ASP
               CALL RecalculateReactionRates(IFGAS,IFAQ)
               !WARNING: You MUST call RecalculatePhotoRates and RecalculateHeteroRates
               !after this step, or those rates will be set to 0!
-			
+              CALL RecalculatePhotoRates(ut, .FALSE.)             
+              !Recalculate Heterogeneous Rates
+              CALL RecalculateHeteroRates (HeteroRadii, HeteroNumberConc, HeteroBins, .FALSE.)
+		
               !Step Gas Chemistry
               !UR21i = FindChem("UR21", 0)
-              !WRITE(*,*) "Before Chem", GridGasChem(UR21i)
+              WRITE(*,*) "Before Chem"
               CALL StepGasChemistry(ChemTimestep,INT(MixTimestep/ChemTimestep))			
-              !WRITE(*,*) "After Chem", GridGasChem(UR21i)
+              WRITE(*,*) "After Chem"
               !Only Equilibrate every 60 s (one second before the minute)
               !IF (MOD(t,CondTimeStep) .LT. 59.01 .AND. MOD(t,CondTimeStep) .GT. 58.99) THEN
 
               !Equilibrate Gases and particles
               !CALL EquilibrateGridPointAll( .TRUE., .TRUE., .TRUE.)
               !WRITE(*,*) "Before Eq", GridGasChem(,UR21i)
-              CALL EquilibrateGridPoint(EquilibrateWater=.FALSE., &                   
+              IF (IncludeAerosols) THEN !Gas Chemistry Only
+                 CALL EquilibrateGridPoint(EquilibrateWater=.FALSE., &                   
                    WaterOpenSystem=.FALSE., InorgOnly=.FALSE.)	
+              ENDIF
               !WRITE(*,*) "After Eq", GridGasChem(,UR21i)
               !END IF
 								
               !Update time
               t = t + MixTimestep
 
-              IF (MOD(t,60.0)<=0.05) THEN
-                 WRITE(*,*) trim(real2str(t/60)), " minutes done"
-              END IF
+              !IF (MOD(t,60.0)<=0.05) THEN
+              WRITE(*,*) trim(real2str(t/60)), " minutes done"
+              !END IF
 
            END DO
 
            !Spill Beans
-           CALL SpillBeans()
+           IF (IncludeAerosols) THEN !Gas Chemistry Only
+              CALL SpillBeans()
+           ENDIF
            DEALLOCATE(Chem, NumConc, OutFH, STAT=status)		    
 	END IF !Chamber Tests
 

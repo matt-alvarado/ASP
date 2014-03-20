@@ -76,10 +76,11 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
   INTEGER :: L
   REAL*8	:: Temp,Mgas,X(3),k0,ki, Y_o, Y_o_term, Y_inf_term, Z, F, &
   	   alpha, beta, m_o, m_inf, Ratio, Scale, Pres, k1, k2, k3, kf, Keq, &
-	   KO, KINF, NCD, FD, RO2_T, RCO3_T, C_H2O
+	   KINF, NCD, FD, RO2_T, RCO3_T, C_H2O, Knaught
 
   Temp = GetTemp()
   Mgas = GetM   ()
+  WRITE(*,*) "Mgas", Mgas
   Pres = GetPress() !mbar
   RO2_T = TotalPeroxy
   RCO3_T = TotalAcylPeroxy  
@@ -133,19 +134,26 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 						
 	!HNO4 Thermal degradation (obsolete!)
         ELSE IF (INT(ReactionRates(L,3)) .EQ. 6) THEN
-          KO = 4.1E-5*EXP(-10649.2/TEMP)*Mgas
+          Knaught = 4.1E-5*EXP(-10649.2/TEMP)*Mgas
 	  KINF = 5.7E+15*EXP(-11172.6/TEMP)
-	  GasPhaseChemicalRates(L) = KO/(1.0+(KO/KINF)) &
-				 *0.5**(1.0+(LOG10(KO/KINF))**2)**(-1)
+	  GasPhaseChemicalRates(L) = Knaught/(1.0+(Knaught/KINF)) &
+				 *0.5**(1.0+(LOG10(Knaught/KINF))**2)**(-1)
 							
 	!N2O5 Thermal degradation - IUPAC 2012
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 7) THEN
-	  KO = Mgas*1.0E-3*(300.0/TEMP)**3.5*EXP(-11001.5/TEMP)
-	  KINF = 9.7E+14*(TEMP/300.0)**0.1*EXP(-11082.0/TEMP)
-          NCD = 0.75-1.27*(DLOG10(ReactionRates(L,8)))
-          FD = 10.**(DLOG10(ReactionRates(L,8))/(1.+(DLOG10(k0/ki)/NCD)**2))
-          GasPhaseChemicalRates(L) = FD*(k0*ki)/(k0+ki)	
-							
+	  Knaught = Mgas*1.3E-3*((300.0/TEMP)**3.5)*EXP(-11000.0/TEMP)
+	  KINF = 9.7E+14*((TEMP/300.0)**0.1)*EXP(-11080.0/TEMP)
+          NCD = 0.75-1.27*(DLOG10(0.35))
+          FD = 10.**(DLOG10(0.35)/(1.+(DLOG10(Knaught/KINF)/NCD)**2))
+          GasPhaseChemicalRates(L) = FD*(Knaught*KINF)/(Knaught+KINF)	
+
+          WRITE(*,*) GasPhaseChemicalRates(L), (1.+(DLOG10(Knaught/KINF)/NCD)**2)
+          CALL TRANSCRIPT("N2O5 deg: "//REAL2str(GasPhaseChemicalRates(L)))
+          WRITE(*,*) "Mgas  ", Mgas, EXP(-11000.0/TEMP)
+          CALL TRANSCRIPT("k_o: "//REAL2str(Knaught))
+          CALL TRANSCRIPT("k_inf: "//REAL2str(KINF))
+          CALL TRANSCRIPT("NCD: "//REAL2str(NCD))
+          CALL TRANSCRIPT("FD: "//REAL2str(FD)) 							
         !O1D Thermal deactivation - IUPAC 2012, 
         !Assuming N2 = 0.8*Mgas and O2 = 0.2*Mgas
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 8) THEN
