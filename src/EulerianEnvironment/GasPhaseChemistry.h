@@ -142,6 +142,7 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 	!N2O5 Thermal degradation - IUPAC 2012
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 7) THEN
 	  Knaught = Mgas*1.3E-3*((300.0/TEMP)**3.5)*EXP(-11000.0/TEMP)
+	  !Knaught = Mgas*1.3E-3*((TEMP/300.0)**3.5)*EXP(-11000.0/TEMP)
 	  KINF = 9.7E+14*((TEMP/300.0)**0.1)*EXP(-11080.0/TEMP)
           NCD = 0.75-1.27*(DLOG10(0.35))
           FD = 10.**(DLOG10(0.35)/(1.+(DLOG10(Knaught/KINF)/NCD)**2))
@@ -155,14 +156,18 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
           CALL TRANSCRIPT("NCD: "//REAL2str(NCD))
           CALL TRANSCRIPT("FD: "//REAL2str(FD)) 							
         !O1D Thermal deactivation - IUPAC 2012, 
-        !Assuming N2 = 0.8*Mgas and O2 = 0.2*Mgas
+        !Assuming N2 = 0.79*Mgas and O2 = 0.21*Mgas
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 8) THEN
-	   GasPhaseChemicalRates(L) = Mgas *(0.2*3.2e-11*exp(67./TEMP) &
-                                            +0.8*2.0e-11*exp(130./TEMP))
+
+	   GasPhaseChemicalRates(L) = Mgas *(0.21*3.2e-11*exp(67./TEMP) &
+                                            +0.79*2.0e-11*exp(130./TEMP))
 				
 	!O + O2 + M => O3 + M 
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 9) THEN
-	   GasPhaseChemicalRates(L) = (5.53e16/(Temp**4.8))
+	   N2gas = 0.79*Mgas
+           O2gas = 0.21*Mgas
+           GasPhaseChemicalRates(L) = (5.6e-34*(TEMP/300.)**(-2.6)*N2gas  &
+                                     +6.0e-34*(TEMP/300.)**(-2.6)*O2gas)*O2gas
 							
 	!RAD* + O2  
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 10) THEN
