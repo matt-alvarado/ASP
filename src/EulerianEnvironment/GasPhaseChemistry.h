@@ -76,7 +76,7 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
   INTEGER :: L
   REAL*8	:: Temp,Mgas,X(3),k0,ki, Y_o, Y_o_term, Y_inf_term, Z, F, &
   	   alpha, beta, m_o, m_inf, Ratio, Scale, Pres, k1, k2, k3, kf, Keq, &
-	   KINF, NCD, FD, RO2_T, RCO3_T, C_H2O, Knaught
+	   KINF, NCD, FD, RO2_T, RCO3_T, C_H2O, Knaught, N2gas, O2gas
 
   Temp = GetTemp()
   Mgas = GetM   ()
