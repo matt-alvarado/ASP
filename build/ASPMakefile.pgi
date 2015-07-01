@@ -83,7 +83,7 @@ PARTINC = $(PARTDIR)InitializationAndSamplingRoutines.h  \
 UNIFACINC = $(UNIFACDIR)unifacparam.h \
             $(UNIFACDIR)unifacparamMattAq.h
 
-ALLINC = $(CHEMINC) $(COAGINC) $(EULERINC) $(INFINC) $(PARTINC) $(UNIFACINC)
+ALLINC = $(CHEMINC) $(COAGINC) $(CONDINC) $(EULERINC) $(INFINC) $(PARTINC) $(UNIFACINC)
 
 FILESINC = $(ALLINC)
 
