@@ -83,7 +83,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REAL*8 FUNCTION SaturationVaporPressure  (Temperature, OrganicDissolutionRxn)
 
-	USE ModelParameters, ONLY : EqCoeffTref 
+	USE ModelParameters, ONLY : EqCoeffTref, RstarMB
 
 	IMPLICIT NONE
 
@@ -104,10 +104,15 @@ REAL*8 FUNCTION SaturationVaporPressure  (Temperature, OrganicDissolutionRxn)
                  *LOG(TempRatio) ) / OrganicDissolutionData(OrganicDissolutionRxn,8)
         ELSE
         
+!            SaturationVaporPressure = OrganicDissolutionData(OrganicDissolutionRxn,14)&
+!                 *(300.0/Temperature) & 
+!                 *exp(OrganicDissolutionData(OrganicDissolutionRxn,15)*(1000.0/8.314) &
+!                 *(1.0/300.0-1.0/Temperature))
             SaturationVaporPressure = OrganicDissolutionData(OrganicDissolutionRxn,14)&
-                 *(300.0/Temperature) & 
-                 *exp(OrganicDissolutionData(OrganicDissolutionRxn,15)*(1000.0/8.314) &
+                 *exp(OrganicDissolutionData(OrganicDissolutionRxn,15)*(1000.0/8.3145) &
                  *(1.0/300.0-1.0/Temperature))
+!            WRITE(*,*) RstarMB, SaturationVaporPressure, OrganicDissolutionRxn
+!            IF(OrganicDissolutionRxn .EQ. 21) STOP
         END IF   
 
 	RETURN
@@ -643,7 +648,8 @@ REAL*8 FUNCTION HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, &
 	!! Make the primary calculation !!	
 		
 	HydrophobicEquilibriumConstantsRatio = OrgCurvatureCorrection(InParticle)*OrgMolFrac*ActCoeff*Pvap/P1
-				
+        !WRITE(*,*) WhichRxn, OrgMolFrac, Pvap, P1
+	!IF(WhichRxn .EQ. 21) STOP			
 	!IF(WhichRxn .EQ. 23) WRITE(*,*) "Phobic Ratio", HydrophobicEquilibriumConstantsRatio, GasPhaseBurden
 	!WRITE(*,*) "Ratio", HydrophobicEquilibriumConstantsRatio
 	!WRITE(*,*) "Flag 8"

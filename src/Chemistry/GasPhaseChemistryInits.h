@@ -96,6 +96,7 @@ SUBROUTINE SetGasPhaseChemistry ()
 	!!  1 if inputs are in mg / m3
         !WRITE(*,*) "Open GasPhaseChems.in"
 	CurrLine = GetLine(FH)
+        !WRITE(*,*) CurrLine
         !WRITE(*,*) STR2REAL("0.     ")
 
 	GasConcInputTypeFlag = 0 !Force ppb, mja 08/27/2010 
@@ -109,11 +110,12 @@ SUBROUTINE SetGasPhaseChemistry ()
 	!! chemicals specified therein.
 	!! Need this number early to allocate all of the arrays.
 10	CurrLine = GetLine(FH)
+        !WRITE(*,*) CurrLine
 	IF (CurrLine .NE. EOF) THEN
 		HowManyGasChems = HowManyGasChems+1
 		GOTO 10
 	END IF
-
+        
 	!! Send this value to the grid point module
 	CALL SetHowManyGasChems(HowManyGasChems)
 

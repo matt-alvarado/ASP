@@ -288,7 +288,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          "  apparently has a bad rate expression ("//		&
+				          " 1 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 				
@@ -300,7 +300,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 2 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -321,7 +321,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   " 3 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 
@@ -334,7 +334,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				      RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 				      CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						 "apparently has a bad rate expression ("//		&
+						 " 4 apparently has a bad rate expression ("//		&
 						 Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -354,7 +354,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   " 5 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 
@@ -367,7 +367,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				      RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 6 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -388,7 +388,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   " 7 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 
@@ -401,7 +401,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				      RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 8 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -421,7 +421,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   " 9 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 
@@ -434,7 +434,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				      RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 				      CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 10 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -455,7 +455,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 11 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 			
@@ -467,7 +467,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			            RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 				    CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					 "apparently has a bad rate expression ("//		&
+					 " 12 apparently has a bad rate expression ("//		&
 					Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -489,7 +489,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 13 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 			
@@ -510,7 +510,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 14 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 			
@@ -531,7 +531,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 15 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 			
@@ -552,7 +552,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 16 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 			
@@ -573,7 +573,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 17 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 			
@@ -592,7 +592,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   " 18 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 
@@ -605,7 +605,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				      RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 				      CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						 "apparently has a bad rate expression ("//		&
+						 " 100 apparently has a bad rate expression ("//		&
 						 Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO	
@@ -624,7 +624,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   " 19 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 
@@ -637,7 +637,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				      RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 20 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -673,7 +673,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-				   "apparently has a bad rate expression ("//		&
+				   " 21 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 
@@ -686,7 +686,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			               RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 22 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -706,7 +706,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   " 23 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 
@@ -718,7 +718,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				     RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 				     CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 24 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -738,7 +738,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 25 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 
@@ -751,7 +751,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 					RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 26 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -772,7 +772,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 27 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 
@@ -784,7 +784,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			               RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 28 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -805,7 +805,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 29 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 
@@ -817,7 +817,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			               RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 30 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -838,7 +838,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 31 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 
@@ -850,7 +850,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 					RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 32 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -871,7 +871,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 33 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 
@@ -883,7 +883,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 34 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -904,7 +904,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 35 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 
@@ -916,7 +916,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   "36 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -937,7 +937,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 37 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 
@@ -949,7 +949,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 38 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -970,7 +970,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 39 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 
@@ -982,7 +982,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 40 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -1002,7 +1002,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 41 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 
@@ -1014,7 +1014,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 42 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO
@@ -1038,7 +1038,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 43 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 
@@ -1050,7 +1050,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 44 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 				END IF
 			END DO				
@@ -1088,7 +1088,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-				"apparently has a bad rate expression ("//		&
+				" 45 apparently has a bad rate expression ("//		&
 				Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 				
@@ -1100,7 +1100,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				   RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						" apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
+						" 46 apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
 						//"):  "//TRIM(FullLine))
 				END IF
 			END DO
@@ -1118,7 +1118,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 		        ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   "47 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 	        	END IF
 				
@@ -1130,7 +1130,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
   				      RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   " apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
+						   " 48 apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
 						   //"):  "//TRIM(FullLine))
 				END IF
 			END DO
@@ -1148,7 +1148,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 		        ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   " 49 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 	        	END IF
 				
@@ -1160,7 +1160,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
   				      RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   " apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
+						   " 50 apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
 						   //"):  "//TRIM(FullLine))
 				END IF
 			END DO
@@ -1178,7 +1178,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(1) = STR2REAL(StripToken(Rate))
 		        ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-					   "apparently has a bad rate expression ("//		&
+					   " 51 apparently has a bad rate expression ("//		&
 					   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 	        	END IF
 				
@@ -1190,7 +1190,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
   				      RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE
 					CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   " apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
+						   " 52 apparently has a bad rate expression ("//Trim(StripToken(Rate))  &
 						   //"):  "//TRIM(FullLine))
 				END IF
 			END DO
@@ -1246,7 +1246,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(I) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("  The following line from "//Trim(InputDeck)//	&
-				          " apparently has a bad rate expression ("//		&
+				          " 54 apparently has a bad rate expression ("//		&
 						  Trim(StripToken(Rate))//"):"//TRIM(FullLine))
 			END IF
 		END DO
@@ -1278,7 +1278,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 				RateFacs(I) = STR2REAL(StripToken(Rate))
 			ELSE
 				CALL ERROR("The following line from "//Trim(InputDeck)//	&
-						   "apparently has a bad rate expression ("//		&
+						   " 55 apparently has a bad rate expression ("//		&
 						   Trim(StripToken(Rate))//"):"//"    "//TRIM(FullLine))
 			END IF
 		END DO

@@ -35,7 +35,7 @@ CHARACTER (len=1024) FUNCTION GetLine(FileHandle) RESULT (OutLine)
 
 	!! Take a new line from the input deck that is not a comment and has some data
 5	READ(FileHandle,"(a)",iostat=Status),OutLine
-        !WRITE(*,*) "Line Read"
+        !WRITE(*,*) Outline
 
 	IF (Status < 0) THEN
 		OutLine = EOF	! This is an END OF FILE, defined in ModelParameters

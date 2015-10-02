@@ -150,7 +150,7 @@ PROGRAM ASP
                    ReturnType, Hi, NumModes, clock, BCi, status, &
                    NaHSO4i, Na2SO4i, NH4HSO4i, NH42SO4i, &
                    SO4i, HSO4i,  LEVi, FH1, EnhFH, NH3i, NH4i, NH4NO3i, &
-                   NH4Cli
+                   NH4Cli, NO2i, ETHEi, HCHOi, Aceti, NOi
 
 	REAL*8  :: ii, T_mix, Tau_Dep, slope, b, ChemTimestep, MixTimestep, &
 		   CoagTimeStep, CondTimeStep, t, Mgas, Temp, &
@@ -908,6 +908,23 @@ PROGRAM ASP
                            /(1+ MixTimestep/T_mix + MixTimestep*GasPhaseDepVel(q)/InvHgt)
                    END DO
 
+!FOR SC ONLY, TRY PUMPING UP NOX!
+!                   if(t .gt. 2695 .and. t .lt. 2705) then
+!                    if(t .gt. 1795 .and. t .lt. 1805) then
+!                          NO2i = FindChem("NO2", 0)
+!                          NOi = FindChem("NO", 0)
+!                          ETHEi = FindChem("HCHO", 0)
+!                          HCHOi = FindChem("ETHE", 0)
+!                          Aceti = FindChem("Acetaldehyde",0)
+!                          Mgas = GetM()
+!                          Chem(NO2i) = 60.0*1.0e-9*Mgas                          
+!                          Chem(NOi) = 20.0*1.0e-9*Mgas  
+!                          Chem(ETHEi) = 3.0*1.0e-9*Mgas   
+!                          Chem(HCHOi) = 5.5*1.0e-9*Mgas   
+!                          Chem(Aceti) = 1.0*1.0e-9*Mgas   
+!                   endif
+
+
                    !Update chemical concentrations
                    CALL UpdateChemicalConcentrations( Chem(1:HowManyEvolveGasChems))
 
@@ -998,7 +1015,7 @@ PROGRAM ASP
                    !Call SpillBeans
 		   !WRITE(*,*) "After SpillBeans"
                    !Only call AOD every 10 min
-                   IF (MOD(t,600.0) .LT. 0.01 .AND. t .NE. 0.0) THEN
+                   IF (MOD(t,600.0) .LT. 0.01) THEN
                       current => particles%first
                       I = 1
                       DO WHILE(associated(current))

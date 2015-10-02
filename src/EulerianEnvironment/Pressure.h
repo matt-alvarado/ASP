@@ -76,8 +76,8 @@ REAL*8 FUNCTION GetM () RESULT (M)
 	implicit none
 
 	!! Use the Ideal Gas Law to scale a reference M to local values
-	M =	2.688e19 * (GetPress()/1013./PressureScale)/(GetTemp ()/273.)
-
+!	M =	2.688e19 * (GetPress()/1013./PressureScale)/(GetTemp ()/273.)
+	M =	2.68758e19 * (GetPress()/1013./PressureScale)/(GetTemp ()/273.)
 	return
 END FUNCTION GetM
 

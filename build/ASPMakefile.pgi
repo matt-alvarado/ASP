@@ -308,4 +308,5 @@ cleandump:
 
 tags:
 	rm -rf ./HTML/ftagshtml
-	/project/rs_sw/local/ftagshtml-0.522/bin/ftagshtml -nojava -latex $(FILES) $(MODULES) $(FILESINC) $(SOURCEDIR)DevelopmentDriver.f90
+	/project/rs_sw/local/ftagshtml-0.522/bin/ftagshtml -latex -nojava -f90 -l2h $(FILES) $(MODULES) $(FILESINC) $(SOURCEDIR)DevelopmentDriver.f90
+
