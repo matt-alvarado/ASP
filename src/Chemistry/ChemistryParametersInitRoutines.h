@@ -1254,7 +1254,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!  For TWO-BODY OR MORE BODY REACTIONS,				     !!
 !!  assume the form:							     !!
-!!			k = A * exp(B/T)^B				     !!
+!!			k = A * exp(B*((To/T)-1))		             !!
 !!  All units are appropriate combinations of moles, cm, seconds, and K      !!
 !!  So, specify:  1. "A": Reaction Rate at 298				     !!
 !!	          2. "B": Temperature Dependence	                     !!

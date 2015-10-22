@@ -1,5 +1,5 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!  ASP Model (c) 2004-2013 Matt Alvarado (malvarad@aer.com)		     !!
+!!  ASP Model (c) 2004-2015 Matt Alvarado (malvarad@aer.com)		     !!
 !!                                                                           !!
 !!  Originally developed by Matt Alvarado for his thesis                     !!
 !!  with Prof. R.G. Prinn (rprinn@mit.edu) at MIT with funding from          !!
@@ -9,8 +9,8 @@
 !!  and foundation sponsors of the MIT Joint Program on the Science and      !!
 !!  Policy of Global Change.(2004-2008)		                             !!
 !!									     !!
-!!  Recent updates to ASP (2011-present) were funded through NASA Grant      !!
-!!  NNX11AN72G and NSF Grant AGS-1144165.                                    !!
+!!  Recent updates to ASP (2011-present) were funded through NSF Grant       !!
+!!  AGS-1144165 and NASA Grants NNX11AN72G and NNX14AP45G.                   !!
 !!                                                                           !!
 !!  ASP is an updated, expanded version of the				     !!
 !!  Mixed Eulerian-Lagrangian Aerosol Model (MELAM) developed by 	     !!
@@ -273,10 +273,10 @@ PROGRAM ASP
              NumAqChems = Hi-1
 	     NumOrgChems = size(current%OrgChems)
              NumModes = ubound(AerosolModes, 1)
-             WRITE(*,*) "NumModes: ", NumModes
-             WRITE(*,*) "Store_Dens: ", Store_Dens
-             WRITE(*,*) "NumAqChems: ", NumAqChems
-             WRITE(*,*) "NumOrgChems: ", NumOrgChems
+             !WRITE(*,*) "NumModes: ", NumModes
+             !WRITE(*,*) "Store_Dens: ", Store_Dens
+             !WRITE(*,*) "NumAqChems: ", NumAqChems
+             !WRITE(*,*) "NumOrgChems: ", NumOrgChems
 
              !Set Sectional Distribution
              Monodisperse = .FALSE.
@@ -290,19 +290,19 @@ PROGRAM ASP
                   AerosolModes(I,4) = 0.0
                ENDIF
                InputFlagRatioOrMass = 0
-               WRITE(*,*) "Store_H2O: ", Store_H2O
+               !WRITE(*,*) "Store_H2O: ", Store_H2O
                !!Renormalize mass fractions including water
                ChemPercentage = 0
                Sum = 0
                DO J = 4, NumAqChems+NumOrgChems+3
-			WRITE(*,*) J, AerosolModes(I,J)
+			!WRITE(*,*) J, AerosolModes(I,J)
                         ChemPercentage = AerosolModes(I,J) + ChemPercentage
                END DO
                DO J = 4, NumAqChems+NumOrgChems+3
 			AerosolModes(I,J) = AerosolModes(I,J)/ChemPercentage
                         Sum = Sum + AerosolModes(I,J)
                END DO
-               WRITE(*,*) "After Renorm: ", Sum, I, AerosolModes(I,4), ChemPercentage
+               !WRITE(*,*) "After Renorm: ", Sum, I, AerosolModes(I,4), ChemPercentage
              ENDDO
 
              !!Reset Sectional Parameters, currently hardwired distribution
@@ -645,22 +645,22 @@ PROGRAM ASP
                    current => current%next
 		END DO
 
-		WRITE(*,*) "Potassium (ug/m3): ", Potassium*AqMolecularMass(PotassiumIndex)*1.0E12
-		WRITE(*,*) "BC        (ug/m3): ", BC*OrgMolecularMass(1)*1.0E12
-                WRITE(*,*) "Sulfate   (ug/m3): ",Sulf*AqMolecularMass(SO4i)*1.0E12
-		CALL SpillBeans()
-
+		!WRITE(*,*) "Potassium (ug/m3): ", Potassium*AqMolecularMass(PotassiumIndex)*1.0E12
+		!WRITE(*,*) "BC        (ug/m3): ", BC*OrgMolecularMass(1)*1.0E12
+                !WRITE(*,*) "Sulfate   (ug/m3): ",Sulf*AqMolecularMass(SO4i)*1.0E12
+		!CALL SpillBeans()
+                
 		!! Call Boundary distributions
 		CALL ReadBoundaryDistributionsOrganic
 		CALL PopulateParticlesSectionsRightAway(.TRUE.)
 		CALL SortBoundaryPart
-		CALL SpillBeans(Env=.TRUE.)
+		!CALL SpillBeans(Env=.TRUE.)
 		
 		!!WARNING Force initial water equilibrium between gas and aerosol
 		!!(Uses open system for water eq.)
 		CALL EquilibrateInternallyAtGridPoint(EquilibrateWater = .TRUE., WaterOpenSystem = .TRUE.)
 		CALL RegridAerosol ()
-		CALL SpillBeans()
+		!CALL SpillBeans()
                 	
 		TEMP = GetTemp()
 		Mgas = GetM   ()
@@ -710,10 +710,10 @@ PROGRAM ASP
                    current => current%next
 		END DO
 
-		WRITE(*,*) "Env Ammonium  (ug/m3): ", TotalNH4*AqMolecularMass(NH4i)*1.0E12
-		WRITE(*,*) "Env BC        (ug/m3): ", BC*OrgMolecularMass(1)*1.0E12
-                WRITE(*,*) "Env Sulfate   (ug/m3): ",Sulf*AqMolecularMass(SO4i)*1.0E12
-                WRITE(*,*) "Env OA        (ug/m3): ",OA*OrgMolecularMass(14)*1.0E12                
+		!WRITE(*,*) "Env Ammonium  (ug/m3): ", TotalNH4*AqMolecularMass(NH4i)*1.0E12
+		!WRITE(*,*) "Env BC        (ug/m3): ", BC*OrgMolecularMass(1)*1.0E12
+                !WRITE(*,*) "Env Sulfate   (ug/m3): ",Sulf*AqMolecularMass(SO4i)*1.0E12
+                !WRITE(*,*) "Env OA        (ug/m3): ",OA*OrgMolecularMass(14)*1.0E12                
 
 		ALLOCATE(NumConc(NumBins), STAT = status)
                 IF (status > 0) THEN
@@ -1523,10 +1523,10 @@ PROGRAM ASP
            !Output size distribution
            CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
 			
-           WRITE(*,*) "Initial NH3 : ", trim(real2str(GridGasChem(NH3Gas)*1e9/Mgas)), " ppb"
-           WRITE(*,*) "Initial HNO3 : ", trim(real2str(GridGasChem(HNO3Gas)*1e9/Mgas)), " ppb"
-           WRITE(*,*) "Initial HCl : ", trim(real2str(GridGasChem(HClGas)*1e9/Mgas)), " ppb"
-           WRITE(*,*) "Initial H2SO4 : ", trim(real2str(GridGasChem(H2SO4Gas)*1e9/Mgas)), " ppb"
+           !WRITE(*,*) "Initial NH3 : ", trim(real2str(GridGasChem(NH3Gas)*1e9/Mgas)), " ppb"
+           !WRITE(*,*) "Initial HNO3 : ", trim(real2str(GridGasChem(HNO3Gas)*1e9/Mgas)), " ppb"
+           !WRITE(*,*) "Initial HCl : ", trim(real2str(GridGasChem(HClGas)*1e9/Mgas)), " ppb"
+           !WRITE(*,*) "Initial H2SO4 : ", trim(real2str(GridGasChem(H2SO4Gas)*1e9/Mgas)), " ppb"
 				
            !Run the main loop with above timesteps
            TimeStepSize = 60.0

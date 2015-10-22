@@ -988,7 +988,7 @@ SUBROUTINE SpillBeans(Env)
 					AqOrgMolecularMass, &
 					HowManyAqChems, FindChem, &
 					GasPhaseBackground
-	USE ModelParameters,	 ONLY : micron 
+	USE ModelParameters,	 ONLY : micron, Avogadro
 	USE GridPointFields,     ONLY : GetAirDensity, GetM, &
 				        GridGasChem
 
@@ -1074,7 +1074,7 @@ SUBROUTINE SpillBeans(Env)
 		DO A = 1, NumOrgChems		
 			IF(currentparticle%Orgchems(A) .GT. 1e-40) THEN
 				write(*,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles))
-                                WRITE(*,*) currentparticle%Orgchems(A)
+                                WRITE(*,*) trim(int2str(A))," : ",currentparticle%Orgchems(A)," (molec/particle): ", trim(real2str(currentparticle%Orgchems(A)*Avogadro))
 				!write(*,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (ppbm): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles* &
 				!																							OrgMolecularMass(A)*1.0e9/Dens))
 				!write(*,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (ppbm/ppbm CO): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles* &
@@ -1486,17 +1486,17 @@ SUBROUTINE GasOutput(FH1, FH2, FH3,t,First, Thermo)
 		WRITE(FH3,FMT='(ES16.5E2)', ADVANCE='NO') t
 
 		Mgas = GetM()
-                Print *,'time = ',t
+                !Print *,'time = ',t
 		DO q = 1, HowManyGasChems		
                    IF (q .LE. 70) THEN
                       WRITE(FH1,FMT='(ES16.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas !from molec/cm3 to ppb
-                      Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
+                      !Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
                    ELSE IF (q .GT. 70 .AND. q .LE. 140) THEN
                       WRITE(FH2,FMT='(ES16.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
-                      Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
+                      !Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
                    ELSE 
                       WRITE(FH3,FMT='(ES16.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
-                      Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
+                      !Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
                    END IF
                 END DO
 		
@@ -1562,59 +1562,59 @@ SUBROUTINE GasEnhanceOutput(FH, t, First)
                 Print *,'time = ',t
 
                 del_CO = (GridGasChem(COi)*1e9/Mgas)-(GasPhaseBackground(COi)*1e9/Mgas)
-                Print *,'del_CO_convertedbefore = ', del_CO
+                !Print *,'del_CO_convertedbefore = ', del_CO
                 
                 del_CO = GridGasChem(COi)-GasPhaseBackground(COi)
-                Print *, 'del_CO_unconverted = ', del_CO
-                Print *, 'del_CO_convereted after = ',del_CO*1e9/Mgas
+                !Print *, 'del_CO_unconverted = ', del_CO
+                !Print *, 'del_CO_convereted after = ',del_CO*1e9/Mgas
 
 
                 WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(O3i)-GasPhaseBackground(O3i))/del_CO
-                Print *, 'GridGasChem(O3i)= ',GridGasChem(O3i)*1e9/Mgas
-                Print *, 'GasPhaseBackground(O3i) =',GasPhaseBackground(O3i)*1e9/Mgas
+                !Print *, 'GridGasChem(O3i)= ',GridGasChem(O3i)*1e9/Mgas
+                !Print *, 'GasPhaseBackground(O3i) =',GasPhaseBackground(O3i)*1e9/Mgas
 
-                Print *, 'del_O3_after = ', (GridGasChem(O3i)-GasPhaseBackground(O3i))*1e9/Mgas                
-                Print *, 'del_O3_before = ', ((GridGasChem(O3i)*1e9/Mgas)-(GasPhaseBackground(O3i)*1e9/Mgas))
+                !Print *, 'del_O3_after = ', (GridGasChem(O3i)-GasPhaseBackground(O3i))*1e9/Mgas                
+                !Print *, 'del_O3_before = ', ((GridGasChem(O3i)*1e9/Mgas)-(GasPhaseBackground(O3i)*1e9/Mgas))
 
-                Print *, 'del_O3/del_CO_converted = ', ((GridGasChem(O3i)*1e9/Mgas)-(GasPhaseBackground(O3i)*1e9/Mgas))/(del_CO*1e9/Mgas)
-                Print *, 'del_O3/del_CO_RATIO = ', (GridGasChem(O3i)-GasPhaseBackground(O3i))/del_CO
+                !Print *, 'del_O3/del_CO_converted = ', ((GridGasChem(O3i)*1e9/Mgas)-(GasPhaseBackground(O3i)*1e9/Mgas))/(del_CO*1e9/Mgas)
+                !Print *, 'del_O3/del_CO_RATIO = ', (GridGasChem(O3i)-GasPhaseBackground(O3i))/del_CO
 
 
                 WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(NOi)-GasPhaseBackground(NOi) &
                                                            +GridGasChem(NO2i)-GasPhaseBackground(NO2i))/del_CO
-                Print *, '(GridGasChem(NOi) = ',GridGasChem(NOi)*1e9/Mgas
-                Print *, '-GasPhaseBackground(NOi) = ',GasPhaseBackground(NOi)*1e9/Mgas
-                Print *, 'GridGasChem(NO2i) = ', GridGasChem(NO2i)*1e9/Mgas
-                Print *, 'GasPhaseBackground(NO2i)) = ', GasPhaseBackground(NO2i)*1e9/Mgas
-                Print *, 'del_NOx_after = ',(GridGasChem(NOi)-GasPhaseBackground(NOi) &
-                                                           +GridGasChem(NO2i)-GasPhaseBackground(NO2i))*1e9/Mgas
+                !Print *, '(GridGasChem(NOi) = ',GridGasChem(NOi)*1e9/Mgas
+                !Print *, '-GasPhaseBackground(NOi) = ',GasPhaseBackground(NOi)*1e9/Mgas
+                !Print *, 'GridGasChem(NO2i) = ', GridGasChem(NO2i)*1e9/Mgas
+                !Print *, 'GasPhaseBackground(NO2i)) = ', GasPhaseBackground(NO2i)*1e9/Mgas
+                !Print *, 'del_NOx_after = ',(GridGasChem(NOi)-GasPhaseBackground(NOi) &
+                !                                           +GridGasChem(NO2i)-GasPhaseBackground(NO2i))*1e9/Mgas
 
-                Print *, 'del_NOx_before = ',((GridGasChem(NOi)*1e9/Mgas)-(GasPhaseBackground(NOi)*1e9/Mgas) &
-                                                           +(GridGasChem(NO2i)*1e9/Mgas)-(GasPhaseBackground(NO2i)*1e9/Mgas))
-
-
-
-                Print *, 'del_NOx_del_CO_convert = ',(((GridGasChem(NOi)*1e9/Mgas)-(GasPhaseBackground(NOi)*1e9/Mgas)) &
-                                                           +((GridGasChem(NO2i)*1e9/Mgas)-(GasPhaseBackground(NO2i)*1e9/Mgas)))/(del_CO*1e9/Mgas)
+                !Print *, 'del_NOx_before = ',((GridGasChem(NOi)*1e9/Mgas)-(GasPhaseBackground(NOi)*1e9/Mgas) &
+                !                                           +(GridGasChem(NO2i)*1e9/Mgas)-(GasPhaseBackground(NO2i)*1e9/Mgas))
 
 
-                Print *, 'del_NOx_del_CO_ratio = ', (GridGasChem(NOi)-GasPhaseBackground(NOi) &
-                                                           +GridGasChem(NO2i)-GasPhaseBackground(NO2i))/del_CO
+
+                !Print *, 'del_NOx_del_CO_convert = ',(((GridGasChem(NOi)*1e9/Mgas)-(GasPhaseBackground(NOi)*1e9/Mgas)) &
+                !                                           +((GridGasChem(NO2i)*1e9/Mgas)-(GasPhaseBackground(NO2i)*1e9/Mgas)))/(del_CO*1e9/Mgas)
+
+
+                !Print *, 'del_NOx_del_CO_ratio = ', (GridGasChem(NOi)-GasPhaseBackground(NOi) &
+                !                                           +GridGasChem(NO2i)-GasPhaseBackground(NO2i))/del_CO
 
                 WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(HNO3i)-GasPhaseBackground(HNO3i))/del_CO
-                Print *, 'GridGasChem(HNO3i) = ',GridGasChem(HNO3i)*1e9/Mgas
-                Print *, 'GasPhaseBackground(HNO3i) = ',GasPhaseBackground(HNO3i)*1e9/Mgas
-                Print *, 'del_HNO3i = ', ((GridGasChem(HNO3i)*1e9/Mgas)-(GasPhaseBackground(HNO3i)*1e9/Mgas))
-                Print *, 'del_HNO3_del_CO_converted = ',((GridGasChem(HNO3i)*1e9/Mgas)-(GasPhaseBackground(HNO3i)*1e9/Mgas))/(del_CO*1e9/Mgas)
-                Print *, 'del_HNO3_del_CO_ratio = ',(GridGasChem(HNO3i)-GasPhaseBackground(HNO3i))/del_CO
+                !Print *, 'GridGasChem(HNO3i) = ',GridGasChem(HNO3i)*1e9/Mgas
+                !Print *, 'GasPhaseBackground(HNO3i) = ',GasPhaseBackground(HNO3i)*1e9/Mgas
+                !Print *, 'del_HNO3i = ', ((GridGasChem(HNO3i)*1e9/Mgas)-(GasPhaseBackground(HNO3i)*1e9/Mgas))
+                !Print *, 'del_HNO3_del_CO_converted = ',((GridGasChem(HNO3i)*1e9/Mgas)-(GasPhaseBackground(HNO3i)*1e9/Mgas))/(del_CO*1e9/Mgas)
+                !Print *, 'del_HNO3_del_CO_ratio = ',(GridGasChem(HNO3i)-GasPhaseBackground(HNO3i))/del_CO
 
 
                 WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(PANi)-GasPhaseBackground(PANi))/del_CO
-                Print *,'(GridGasChem(PANi) = ',GridGasChem(PANi)*1e9/Mgas
-                Print *,'GasPhaseBackground(PANi) = ',GasPhaseBackground(PANi)*1e9/Mgas
-                Print *, 'del_PAN = ', (GridGasChem(PANi)*1e9/Mgas)-(GasPhaseBackground(PANi)*1e9/Mgas)
-                Print *, 'del_PAN/del_CO_converted = ', ((GridGasChem(PANi)*1e9/Mgas)-(GasPhaseBackground(PANi)*1e9/Mgas))/(del_CO*1e9/Mgas)
-                Print *, 'del_PAN/del_CO_ratio = ', (GridGasChem(PANi)-GasPhaseBackground(PANi))/del_CO
+                !Print *,'(GridGasChem(PANi) = ',GridGasChem(PANi)*1e9/Mgas
+                !Print *,'GasPhaseBackground(PANi) = ',GasPhaseBackground(PANi)*1e9/Mgas
+                !Print *, 'del_PAN = ', (GridGasChem(PANi)*1e9/Mgas)-(GasPhaseBackground(PANi)*1e9/Mgas)
+                !Print *, 'del_PAN/del_CO_converted = ', ((GridGasChem(PANi)*1e9/Mgas)-(GasPhaseBackground(PANi)*1e9/Mgas))/(del_CO*1e9/Mgas)
+                !Print *, 'del_PAN/del_CO_ratio = ', (GridGasChem(PANi)-GasPhaseBackground(PANi))/del_CO
 
 
                 del_PAN = 0.0
@@ -1622,9 +1622,9 @@ SUBROUTINE GasEnhanceOutput(FH, t, First)
                      del_PAN = del_PAN+GridGasChem(PANi+q)-GasPhaseBackground(PANi+q)
                 END DO 
                 WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') del_PAN/del_CO
-                Print *, 'del_PN = ', del_PAN*1e9/Mgas
-                Print *, 'dal_PN/del_CO_converted', (del_PAN*1e9/Mgas)/(del_CO*1e9/Mgas)
-                Print *, 'del_PN/del_CO = ',del_PAN/del_CO
+                !Print *, 'del_PN = ', del_PAN*1e9/Mgas
+                !Print *, 'dal_PN/del_CO_converted', (del_PAN*1e9/Mgas)/(del_CO*1e9/Mgas)
+                !Print *, 'del_PN/del_CO = ',del_PAN/del_CO
 
 
                 del_AN = 0.0
@@ -1632,32 +1632,32 @@ SUBROUTINE GasEnhanceOutput(FH, t, First)
                      del_AN = del_AN+GridGasChem(ANi+q)-GasPhaseBackground(ANi+q)
                 END DO 
                 WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') del_AN/del_CO
-                Print *, 'del_AN = ',del_AN*1e9/Mgas
-                Print *, 'del_AN/del_CO_converted = ',(del_AN*1e9/Mgas)/(del_CO*1e9/Mgas)
-                Print *, 'del_AN/del_CO_ratio = ',del_AN/del_CO
+                !Print *, 'del_AN = ',del_AN*1e9/Mgas
+                !Print *, 'del_AN/del_CO_converted = ',(del_AN*1e9/Mgas)/(del_CO*1e9/Mgas)
+                !Print *, 'del_AN/del_CO_ratio = ',del_AN/del_CO
 
                 WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(NO3i)-GasPhaseBackground(NO3i))/del_CO
-                Print *, 'GridGasChem(NO3i) = ',GridGasChem(NO3i)*1e9/Mgas
-                Print *, 'GasPhaseBackground(NO3i) = ',GasPhaseBackground(NO3i)*1e9/Mgas
-                Print *, 'del_NO3i = ', ((GridGasChem(NO3i)*1e9/Mgas)-(GasPhaseBackground(NO3i)*1e9/Mgas))
-                Print *, 'del_NO3i/del_CO_converted = ', ((GridGasChem(NO3i)*1e9/Mgas)-(GasPhaseBackground(NO3i)*1e9/Mgas))/(del_CO*1e9/Mgas)
-                Print *, 'del_NO3i/del_CO_ratio = ', (GridGasChem(NO3i)-GasPhaseBackground(NO3i))/del_CO
+                !Print *, 'GridGasChem(NO3i) = ',GridGasChem(NO3i)*1e9/Mgas
+                !Print *, 'GasPhaseBackground(NO3i) = ',GasPhaseBackground(NO3i)*1e9/Mgas
+                !Print *, 'del_NO3i = ', ((GridGasChem(NO3i)*1e9/Mgas)-(GasPhaseBackground(NO3i)*1e9/Mgas))
+                !Print *, 'del_NO3i/del_CO_converted = ', ((GridGasChem(NO3i)*1e9/Mgas)-(GasPhaseBackground(NO3i)*1e9/Mgas))/(del_CO*1e9/Mgas)
+                !Print *, 'del_NO3i/del_CO_ratio = ', (GridGasChem(NO3i)-GasPhaseBackground(NO3i))/del_CO
 
 
                 WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(N2O5i)-GasPhaseBackground(N2O5i))/del_CO
-                Print *, 'GridGasChem(N2O5i) = ',GridGasChem(N2O5i)*1e9/Mgas
-                Print *, 'GasPhaseBackground(N2O5i) = ',GasPhaseBackground(N2O5i)*1e9/Mgas
-                Print *, 'del_N2O5i = ', ((GridGasChem(N2O5i)*1e9/Mgas)-(GasPhaseBackground(N2O5i)*1e9/Mgas))
-                Print *, 'del_N2O5i/del_CO_converted = ', ((GridGasChem(N2O5i)*1e9/Mgas)-(GasPhaseBackground(N2O5i)*1e9/Mgas))/(del_CO*1e9/Mgas)
-                Print *, 'del_N2O5i/del_CO_ratio = ', (GridGasChem(N2O5i)-GasPhaseBackground(N2O5i))/del_CO
+                !Print *, 'GridGasChem(N2O5i) = ',GridGasChem(N2O5i)*1e9/Mgas
+                !Print *, 'GasPhaseBackground(N2O5i) = ',GasPhaseBackground(N2O5i)*1e9/Mgas
+                !Print *, 'del_N2O5i = ', ((GridGasChem(N2O5i)*1e9/Mgas)-(GasPhaseBackground(N2O5i)*1e9/Mgas))
+                !Print *, 'del_N2O5i/del_CO_converted = ', ((GridGasChem(N2O5i)*1e9/Mgas)-(GasPhaseBackground(N2O5i)*1e9/Mgas))/(del_CO*1e9/Mgas)
+                !Print *, 'del_N2O5i/del_CO_ratio = ', (GridGasChem(N2O5i)-GasPhaseBackground(N2O5i))/del_CO
 
 
                 WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') (GridGasChem(HONOi)-GasPhaseBackground(HONOi))/del_CO
-                Print *, 'GridGasChem(HONOi) = ',GridGasChem(HONOi)*1e9/Mgas
-                Print *, 'GasPhaseBackground(HONOi) = ',GasPhaseBackground(HONOi)*1e9/Mgas
-                Print *, 'del_HONOi = ',(GridGasChem(HONOi)*1e9/Mgas)-(GasPhaseBackground(HONOi)*1e9/Mgas)
-                Print *, 'del_HONOi/del_CO_converted = ',((GridGasChem(HONOi)*1e9/Mgas)-(GasPhaseBackground(HONOi)*1e9/Mgas))/(del_CO*1e9/Mgas)
-                Print *, 'del_HONOi/del_CO_ratio = ',(GridGasChem(HONOi)-GasPhaseBackground(HONOi))/del_CO
+                !Print *, 'GridGasChem(HONOi) = ',GridGasChem(HONOi)*1e9/Mgas
+                !Print *, 'GasPhaseBackground(HONOi) = ',GasPhaseBackground(HONOi)*1e9/Mgas
+                !Print *, 'del_HONOi = ',(GridGasChem(HONOi)*1e9/Mgas)-(GasPhaseBackground(HONOi)*1e9/Mgas)
+                !Print *, 'del_HONOi/del_CO_converted = ',((GridGasChem(HONOi)*1e9/Mgas)-(GasPhaseBackground(HONOi)*1e9/Mgas))/(del_CO*1e9/Mgas)
+                !Print *, 'del_HONOi/del_CO_ratio = ',(GridGasChem(HONOi)-GasPhaseBackground(HONOi))/del_CO
 		WRITE(FH, FMT='(A1)') ""
          ENDIF
 END SUBROUTINE GasEnhanceOutput    

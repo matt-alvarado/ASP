@@ -532,6 +532,8 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 				  Y(HowManyLinks*5+8:HowManyLinks*6+7), Y(HowManyLinks*6+13:HowManyLinks*7+12), ReturnType, Y(HowManyLinks*7+13:HowManyLinks*8+12))
 
 
+
+
 			!! Store the concentrations for later
 			DO J = 1, NEQ
 				InitialConcsArray(J) = Y(J)

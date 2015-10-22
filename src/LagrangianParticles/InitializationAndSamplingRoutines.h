@@ -896,7 +896,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
                                        mass_bin = mtot*(del_diam/diam) &
                                                       *exp(-0.5*(log(diam/d_mass_mean)**2)/ln_sigma_sq) &
                                                       /sqrt(2*Pi*ln_sigma_sq)
-                                       write(*,*) "mass check: ", mass_bin, d_mass_mean
+                                       !write(*,*) "mass check: ", mass_bin, d_mass_mean
                                        if(new_num .gt. 1.0e-6) then !Skip bins with less than 1e-6 particles/cm3
                                           sum_mass = sum_mass+mass_bin
                                        endif
@@ -1080,7 +1080,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 				II = II + Current%OrgChems(I)
 			END DO
 
-                        WRITE(*,*) "H2O: ", Current%AqChems(1)
+                        !WRITE(*,*) "H2O: ", Current%AqChems(1)
 			!! Add a token amount of water to avoid initial numerical problems
 			IF (II .GT. 0.0) THEN
                            Current%AqChems(1) = II*1.
@@ -1103,7 +1103,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
                            Current%AqChems(1) = InorgWaterContent
 			   IF(Scaffolding) WRITE(*,*) "After Water EQ"
 			ENDIF
-                         WRITE(*,*) "H2O Second: ", Current%AqChems(1)
+                         !WRITE(*,*) "H2O Second: ", Current%AqChems(1)
                         CALL RecalculateRadius (Current)
 				IF(Scaffolding) WRITE(*,*) "After RecalculateRadius"
 

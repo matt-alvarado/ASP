@@ -8,29 +8,30 @@
 !! Right now, it can only store and reproduce reaction rates.
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! UPDATE HISTORY																!!
-!!																				!!
-!! Month  Year   Name              Description									!!
-!! 07     2006   Matt Alvarado     Began Update History							!!
+!! UPDATE HISTORY								!!
+!!										!!
+!! Month  Year   Name              Description					!!
+!! 07     2006   Matt Alvarado     Began Update History				!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! This file contains the following functions and subroutines:		!!
-!! 1. SUBROUTINE SetAqPhaseReactionRates (ReactionRates,ArraySize)	!!
+!! This file contains the following functions and subroutines:	    !!
+!! 1. SUBROUTINE SetAqPhaseReactionRates (ReactionRates,ArraySize)  !!
 !! 2. FUNCTION GetAqPhaseReactionRates (Temp) RESULT (RateVec)      !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Reaction Rates for Aqueous Phase Reactions are Stored !!
-	!! in an intepolatable array (against temperature).		 !!
+	!! in an intepolatable array (against temperature).      !!
 	!! The idea is to simply grab the vector in the least	 !!
 	!! computationally expensive manner inside the LSODES	 !!
-	!! call for each droplet.								 !!
+	!! call for each droplet.				 !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	SUBROUTINE SetAqPhaseReactionRates (ReactionRates,ArraySize)
 
 		Use ModelParameters
-		IMPLICIT NONE
+		USE GridPointFields,      ONLY : GetTemp
+                IMPLICIT NONE
 
 		REAL*8,  INTENT(in) :: ReactionRates(:,:)
 		INTEGER, INTENT(in) :: ArraySize(2)
@@ -51,8 +52,8 @@
 						
 				!! Two or More (use Arrheneous form, with Concentration units)
 				CASE(2:)
-				Temp = MinAqPhaseRateTemp + J * (MaxAqPhaseRateTemp-MinAqPhaseRateTemp)/(NumbAqPhaseRateTemps-1)
-				AqPhaseReactionRates(I,J) = ReactionRates(I,3) * EXP(-1*ReactionRates(I,4)/Temp)
+				Temp = GetTemp()
+				AqPhaseReactionRates(I,J) = ReactionRates(I,3) * EXP(ReactionRates(I,4)*((298.15/Temp)-1))
 
 				END SELECT
 			END DO
@@ -63,10 +64,10 @@
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! "The idea is to simply grab the vector in the least	 !!
 	!! computationally expensive manner inside the LSODES	 !!
-	!! call for each droplet." (from last note)				 !!
-	!!														 !!
+	!! call for each droplet." (from last note)		 !!
+	!!							 !!
 	!! This is the function that grabs this vector (using    !!
-	!! linear interpolation).								 !!
+	!! linear interpolation).				 !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	FUNCTION GetAqPhaseReactionRates (Temp) RESULT (RateVec)
 

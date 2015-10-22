@@ -80,7 +80,7 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 
   Temp = GetTemp()
   Mgas = GetM   ()
-  WRITE(*,*) "Mgas", Mgas
+!  WRITE(*,*) "Mgas", Mgas
   Pres = GetPress() !mbar
   RO2_T = TotalPeroxy
   RCO3_T = TotalAcylPeroxy  
@@ -148,13 +148,14 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
           FD = 10.**(DLOG10(0.35)/(1.+(DLOG10(Knaught/KINF)/NCD)**2))
           GasPhaseChemicalRates(L) = FD*(Knaught*KINF)/(Knaught+KINF)	
 
-          WRITE(*,*) GasPhaseChemicalRates(L), (1.+(DLOG10(Knaught/KINF)/NCD)**2)
-          CALL TRANSCRIPT("N2O5 deg: "//REAL2str(GasPhaseChemicalRates(L)))
-          WRITE(*,*) "Mgas  ", Mgas, EXP(-11000.0/TEMP)
-          CALL TRANSCRIPT("k_o: "//REAL2str(Knaught))
-          CALL TRANSCRIPT("k_inf: "//REAL2str(KINF))
-          CALL TRANSCRIPT("NCD: "//REAL2str(NCD))
-          CALL TRANSCRIPT("FD: "//REAL2str(FD)) 							
+!          WRITE(*,*) GasPhaseChemicalRates(L), (1.+(DLOG10(Knaught/KINF)/NCD)**2)
+!          CALL TRANSCRIPT("N2O5 deg: "//REAL2str(GasPhaseChemicalRates(L)))
+!          WRITE(*,*) "Mgas  ", Mgas, EXP(-11000.0/TEMP)
+!          CALL TRANSCRIPT("k_o: "//REAL2str(Knaught))
+!          CALL TRANSCRIPT("k_inf: "//REAL2str(KINF))
+!          CALL TRANSCRIPT("NCD: "//REAL2str(NCD))
+!          CALL TRANSCRIPT("FD: "//REAL2str(FD)) 							
+
         !O1D Thermal deactivation - IUPAC 2012, 
         !Assuming N2 = 0.79*Mgas and O2 = 0.21*Mgas
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 8) THEN
