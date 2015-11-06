@@ -597,7 +597,7 @@ MODULE Chemistry
 		FH = GetFileHandle()
 	    OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//"PhotoRates.in", STATUS='OLD')
 		
-		!The input file must have 96 lines and 50 reactions (52 column total, first one time, second solar zenith angle)
+		!The input file must have 96 lines and 51 reactions (53 column total, first one time, second solar zenith angle)
 		
 		DO I = 1, 96
 			!! Get a new data line (non-comment) from the input deck
