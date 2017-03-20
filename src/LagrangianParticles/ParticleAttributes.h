@@ -282,7 +282,7 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
 	TempElectrolytes = HypotheticalElectrolyteConcentrations (InParticle)
 	!For some reason, This routine returns NaN if there isn't a write
 	!statement here. MJA, 070507
-	WRITE(1234,*) TempElectrolytes(1)
+	!WRITE(1234,*) TempElectrolytes(1)
 
 	!! Get the weightings for the Patwardhan and Kumar mixing rule
 	PatKumWeights = GetPatwardhandAndKumarWeightings (InParticle)
