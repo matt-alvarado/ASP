@@ -432,7 +432,9 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, &
 	!! SCSCSCSCSC
 	LOGICAL :: Scaffolding = .TRUE. ! .TRUE.
 
-	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
+	! CMB: floating-point equality
+	if (inparticle%numberofparticles .le. 1.0e-40 .or. inparticle%dry) return
+	!IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
 
 	ErrorTolerance = OptErrorTolerance
@@ -503,7 +505,9 @@ SUBROUTINE EquilibrateHydrophobicReaction (GasPhaseBurden, WhichRxn, &
 	dX = Qdenom - Z				!! The Mass Flux Factor
 	
 	!! Loop over Corrections until convergence if there is anything to do
-	IF (.NOT. (Qnumer .EQ. 0 .AND. Qdenom .EQ. 0)) THEN
+	! CMB: floating-point inequality
+	if (dabs(qnumer) .gt. 1.0-40 .or. dabs(qdenom) .gt. 1.0e-40) then
+	!IF (.NOT. (Qnumer .EQ. 0 .AND. Qdenom .EQ. 0)) THEN
 	DO WHILE ((ABS(EqRatio-1) .GT. ErrorTolerance))
 
 	!WRITE(*,*) "Check 5"
@@ -610,8 +614,11 @@ REAL*8 FUNCTION HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, &
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! See if the reaction is empty !!
-	IF (InParticle%OrgChems(INT(OrganicDissolutionData(WhichRxn,3))) .EQ. 0. & 
-            .AND. GasPhaseBurden .EQ. 0) THEN
+	! CMB (AER, Inc): floating-point equality check
+	if (inparticle%orgchems(int(organicdissolutionData(WhichRxn, 3))) .le. 1.0e-40 &
+			.and. GasPhaseBurden .le. 1.0e-40) then
+	!IF (InParticle%OrgChems(INT(OrganicDissolutionData(WhichRxn,3))) .EQ. 0. & 
+    !        .AND. GasPhaseBurden .EQ. 0) THEN
 		
 		HydrophobicEquilibriumConstantsRatio = 1.
 		RETURN
@@ -638,7 +645,9 @@ REAL*8 FUNCTION HydrophobicEquilibriumConstantsRatio (GasPhaseBurden, &
 	P1 = GasPhaseBurden*RstarMB*Temperature/Avogadro
 	!WRITE(*,*) "Flag 3d"	
 	!! If the solution is set to blow up, then establish a large artificial value.
-	IF (GasPhaseBurden .LE. 0.) THEN
+	! CMB: float equality check
+	if (gasphaseburden .le. 1.0e-40) then
+	!IF (GasPhaseBurden .LE. 0.) THEN
 		HydrophobicEquilibriumConstantsRatio = 1.e12
 		RETURN
 	END IF
@@ -703,8 +712,10 @@ SUBROUTINE EquilibrateHydrophilicReaction (GasPhaseBurden, WhichRxn, &
 	!! SCSCSCSCSC
 	LOGICAL :: Scaffolding = .TRUE. ! .TRUE.
 
-	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
-
+	! CMB (AER, Inc): floating-point equality check
+	!IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
+	IF (InParticle%NumberOfParticles .le. 1.0e-40 .OR. InParticle%Dry) RETURN
+	
 	!! Set the error tolerance
 	ErrorTolerance = AqThermoEquilibriumError / 2.
 
@@ -898,8 +909,11 @@ REAL*8 FUNCTION HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, &
 	!WRITE(*,*) WhichRxn
 	!WRITE(*,*) InParticle%AqOrgChems(AqOrganicDissolutionData(WhichRxn,3))
 	!WRITE(*,*) GasPhaseBurden
-	IF (InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) .EQ. 0. .AND.	&
-		GasPhaseBurden .EQ. 0) THEN
+	! CMB: floating-point equality checks
+	IF (InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) .le. 1.0e-40 .AND.	&
+			GasPhaseBurden .le. 1.0e-40) THEN
+	!IF (InParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) .EQ. 0. .AND.	&
+	!	GasPhaseBurden .EQ. 0) THEN
 		
 		HydrophilicEquilibriumConstantsRatio = 1.
 		RETURN
@@ -907,7 +921,9 @@ REAL*8 FUNCTION HydrophilicEquilibriumConstantsRatio (GasPhaseBurden, &
 	!WRITE(*,*) "Flag 2"
 
 	!! If the solution is set to blow up, then establish a large artificial value.
-	IF (GasPhaseBurden .LE. 0.) THEN
+	! CMB: floating-point equality check
+	if (GasPhaseBurden .le. 1.0e-40) then
+	!IF (GasPhaseBurden .LE. 0.) THEN
 		HydrophilicEquilibriumConstantsRatio = 1.e12
 		RETURN
 	END IF
@@ -950,7 +966,7 @@ END FUNCTION HydrophilicEquilibriumConstantsRatio
 REAL*8 FUNCTION EffectiveOrganicHenrysLaw  (Temperature, ProtonMolality, AqOrganicDissolutionRxn)
 
 	USE ModelParameters, ONLY : EqCoeffTref
-	USE InfrastructuralCode, ONLY : Error 
+	USE InfrastructuralCode, ONLY : Error, warn	! cmb add warn 
 
 	IMPLICIT NONE
 
@@ -968,8 +984,16 @@ REAL*8 FUNCTION EffectiveOrganicHenrysLaw  (Temperature, ProtonMolality, AqOrgan
 	
 	!Correction to Henry's law due to acid dissociation
 	AcidFactor = 1 + KA1/ProtonMolality + KA1*KA2/(ProtonMolality**2)
-		
-	IF(AcidFactor .LT. 1.0) CALL ERROR("Error in EffectiveOrganicHenrysLaw - corrected value is less than uncorrected.")
+	
+	! CMB (AER, Inc): Temporarily, let's comment this out to allow an aerosol run to finish
+	!				  and replace it with a less-strict version
+	IF(AcidFactor .LT. 1.0) then
+		write(*,*) 'AcidFactor < 1; ProtonMolality = ', ProtonMolality
+		! CMB: seg fault?
+		write(*,*) "Error in EffectiveOrganicHenrysLaw - corrected value is less than uncorrected."
+		!CALL ERROR("Error in EffectiveOrganicHenrysLaw - corrected value is less than uncorrected.")
+	endif
+	!if (acidFactor .lt. 1.0) acidFactor = 1.0
 
 	!in (ug i/ ug H2O) / (ug i / m3 air)
 	Henry = AqOrganicDissolutionData(i,5)
@@ -1307,8 +1331,9 @@ end function dev
 SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, &
                InParticle, Temperature, ReturnType, OptErrorTolerance)
 
+        ! CB: Ifort complains when HowMany is included
 	USE Chemistry,	ONLY :	AqEquilibriaList,		&
-				HowManyOrgChems,		&
+				!HowManyOrgChems,		&
 				OrgPhaseChemicalNames,	&
 				HowManyEvolveGasChems
 
@@ -1343,7 +1368,7 @@ SUBROUTINE EquilibrateOrganicReaction (WhichAqRxn, WhichOrgRxn, &
 	!If there are no particles, dissolution isn't allowed into one phase
 	!or org phase is empty, skip this step
 	IF (InParticle%NumberOfParticles .EQ. 0.) RETURN
-	IF (NOT(DoHydrophobicOrgDissolutionFlag) .OR. NOT(DoHydrophilicOrgDissolutionFlag)) RETURN
+	IF (.NOT.(DoHydrophobicOrgDissolutionFlag) .OR. .NOT.(DoHydrophilicOrgDissolutionFlag)) RETURN
 	IF (TotalMolesOM(InParticle) .LE. 0.0) RETURN 
 
 	!! Set the error tolerance according to the 
@@ -1551,8 +1576,9 @@ END FUNCTION TwoPhaseOrgEqRatio
 SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, &
                                       ReturnType, OptErrorTolerance)
 
+        ! CB: Ifort complains when HowMany is included
 	USE Chemistry,	ONLY :	AqEquilibriaList,		&
-				HowManyOrgChems,		&
+				!HowManyOrgChems,		&
 				OrgPhaseChemicalNames,	&
 				HowManyEvolveGasChems
 
@@ -1586,7 +1612,8 @@ SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, &
 	!If there are no particles, dissolution isn't allowed into one phase
 	!or org phase is empty, skip this step
 	IF (InParticle%NumberOfParticles .EQ. 0.) RETURN
-	IF (NOT(DoHydrophobicOrgDissolutionFlag) .OR. NOT(DoHydrophilicOrgDissolutionFlag)) RETURN
+    ! CMB (AER): Make conditional play nice with gfortran
+	IF (.NOT.(DoHydrophobicOrgDissolutionFlag) .OR. .NOT.(DoHydrophilicOrgDissolutionFlag)) RETURN
 	!WRITE(*,*) "Total OM in EquilibrateOrganicParticle ", TotalMolesOM(InParticle)
 	IF (TotalMolesOM(InParticle) .LE. 0.0) RETURN 
 
@@ -1615,7 +1642,7 @@ SUBROUTINE EquilibrateOrganicParticle (InParticle, Temperature, &
 	K = 0
 	Eq = .FALSE.
 
-	DO WHILE(NOT(Eq))
+	DO WHILE(.NOT.(Eq))
 
 		ReturnType = 2
 		Eq = .TRUE.
