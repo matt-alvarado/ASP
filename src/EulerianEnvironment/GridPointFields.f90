@@ -101,7 +101,8 @@
 			AddToGridCellChemBurden,		&
 			ReplaceGridCellChemBurden,		&
 			AllSameGrid,				&
-                        gridgaschem
+                        !gridgaschem    ! cb out
+                        gridgaschem, linear2dInterp ! cb in
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Each of the EULERIAN GRIDS have their own GRID SPACING !!
@@ -165,6 +166,41 @@
 		HowManyEvolveGasChems = inHowManyEvolveGasChems
 	END SUBROUTINE
 
+        ! CB: Need to access this header file...
+        !     Nope, let's just include that source file here...
+        !include "InterpolateGrid.h"
+        ! CB: Add simple linear interpolation routine.  Yeah, it 
+        !     uses floating-point equality...I know that's bad, but
+        !     it will suit us for the purposes of this example.
+        !
+        ! UPDATE: The sqrt(-1.0) does not work for a NaN set under
+        ! gfortran.  Let's try tricking the compiler...
+        subroutine linear2dInterp(x1, y1, x2, y2, x3, y3)
+        implicit none
+
+        real*8, intent(in) :: x1, y1, x2, y2, x3
+        real*8, intent(out) :: y3
+        real*8 :: slope, intercept
+        
+        ! CMB: Hack here
+        real*4 :: nan
+        nan = 0.
+
+        if (x1 .eq. x2) then
+            if (y1 .ne. y2) then
+                y3 = nan/nan !sqrt(-1.0)     ! force NaN
+            else
+                y3 = y2
+            endif
+        else
+            slope = (y2 - y1)/(x2 - x1)
+            intercept = y2 - slope*x2
+            y3 = slope*x3 + intercept
+        endif
+
+        end subroutine linear2dInterp
+        ! end cb add
+
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! This series of includes specify target files that contain       !!
         !! grid point field subrountines to be included in this module     !!
@@ -177,4 +213,4 @@
 	include "Water.h"
 	include "GasPhaseChemistry.h"
 
-	end module GridPointFields
+        end module GridPointFields
