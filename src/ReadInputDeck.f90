@@ -32,6 +32,11 @@
 !! This file contains the following functions and subroutines:	    !!	
 !! 1. SUBROUTINE ReadMainInputDeck()				    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
+
+!!
+!! CMB: Modified the conditionals so that ints were no longer compared
+!!      against bools
+!!
 	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! READ INPUT DECK !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -91,12 +96,20 @@
 		CurrLine = GetLine(FH)
 
 			!!! Gas Phase
+                !print *, 'CMB: Gas Phase'
 			CALL GetToken(CurrLine,";",Token)
 
-			IF (IsInteger(Token) .EQ. 0) &
+                        !print *, 'Token = "', Token(1:len(trim(token))), '"'
+                        ! CMB (AER): Modifed to pass a certain portion
+                        ! of the token
+                        ! UPDATE: No, I just changed the IsInteger
+                        ! calls, they should have "nots" when errors are
+                        ! sought
+			if (.not. isInteger(token)) &
 				CALL ERROR("Must Supply an Integer in ASPInputDeck.in to indicate "//&
 						   "whether Gas Phase Chemistry Should be Included")
 			I = STR2INT(Token)
+                !print *, 'within routine - I = ', I, ' - within routine'
 			IF (I < 0 .OR. I > 1) &
 				CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 						   "whether Gas Phase Chemistry Should be Included.  Received "//StripToken(Token))
@@ -109,9 +122,10 @@
 			END IF
 
 			!!! Aqueous Phase
+                            !print *, 'CMB: Aqueous Phase;'
 			CALL GetToken(CurrLine,";",Token)
 
-			IF (IsInteger(Token) .EQ. 0) &
+			if (.not. isInteger(token)) &
 				CALL ERROR("Must Supply an Integer in ASPInputDeck.in to indicate"//&
 						   "whether Aqueous Phase Chemistry Should be Included")
 			I = STR2INT(Token)
@@ -125,13 +139,14 @@
 				IFAQ = .TRUE.
 				CALL SetAqChemistryFlag (.TRUE.)
 			END IF
-
+                !print *, 'CMB: SetPhaseIfs'
 		CALL SetPhaseIfs(IFGAS,IFAQ)
 		
 		!!! Poly or Mono Disperse?
+                !print *, 'CMB: Poly or Mono disperse?'
 		Token = GetLine(FH)
 
-		IF (IsInteger(Token) .EQ. 0) &
+		if (.not. isInteger(token)) &
 			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 					   "whether Aeresol are Monodisperse.  Received "//StripToken(Token))
 		I = STR2INT(Token)
@@ -145,12 +160,18 @@
 		END IF
 
 		!!! Condensation?
+                !print *, 'CMB: Condensation?'
 		Token = GetLine(FH)
 
-		IF (IsInteger(Token) .EQ. 0) &
+                !print *, 'Token = "', token(1:len(trim(token))), '"'
+                !print *, 'ISInteger (token) = ', isInteger(token)
+		IF (.not. IsInteger(Token)) then ! .EQ. 0) then !&
+                    !print *, 'is integer is not 0'
 			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 					   "whether Condensation is considered.  Received "//StripToken(Token))
+                endif
 		I = STR2INT(Token)
+                !print *, 'I = ', I
 		IF (I < 0 .OR. I > 1) &
 			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 					   "whether Condensation is considered.  Received "//StripToken(Token))
@@ -161,9 +182,10 @@
 		END IF
 
 		!!! Inorganic Dissolution?
+                !print *, 'Inorganic dissolution?'
 		Token = GetLine(FH)
 
-		IF (IsInteger(Token) .EQ. 0) &
+		if (.not. isInteger(token)) &
 			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 					   "whether Dissolution is considered.  Received "//StripToken(Token))
 		I = STR2INT(Token)
@@ -177,9 +199,10 @@
 		END IF
 
 		!!! Hydrophobic Organic Dissolution?
+                !print *, 'hydrophobic organic dissolution?'
 		Token = GetLine(FH)
 
-		IF (IsInteger(Token) .EQ. 0) &
+		if (.not. isInteger(token)) &
 			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 					   "whether Hydrophobic Organic Dissolution is considered.  Received "//StripToken(Token))
 		I = STR2INT(Token)
@@ -193,9 +216,10 @@
 		END IF
 
 		!!! Hydrophilic Organic Dissolution?
+                !print *, 'CMB: hydrophilic organic dissolution?'
 		Token = GetLine(FH)
 
-		IF (IsInteger(Token) .EQ. 0) &
+		if (.not. isInteger(token)) &
 			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 					   "whether Hydrophilic Organic Dissolution is considered.  Received "//StripToken(Token))
 		I = STR2INT(Token)
@@ -210,6 +234,7 @@
 
 		!! Is dissolution equilibrium or flux?
 		Token = GetLine(FH)
+                !print *, 'IS dissolution equilibrium or flux?'
 		IF (.NOT.IsInteger(Token)) &
 			CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 					   "whether disolution is an equilibrium 0 or flux 1 process. Received "//StripToken(Token))	
@@ -220,6 +245,7 @@
 		CALL SetDissolutionEquilibriumOrFlux (I)
 		
 		!! Is Ammonia dissolution equilibrium or flux?
+                !print *, 'CMB: ammonium dissolution equilib or flux?'
 		Token = GetLine(FH)
 		IF (.NOT.IsInteger(Token)) &
 			CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
@@ -236,6 +262,7 @@
 		
 		
 		!!Metastable Inorganic Aerosol?
+                !print *, 'CMB: MEtastable inorganic aerosol?'
 		Token = GetLine(FH)
 		IF (.NOT.IsInteger(Token)) &
 			CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
@@ -252,6 +279,7 @@
 
 		!!Ignore corrections to diffusivity? (Also sets curvature corrections to 1.0!)
 		Token = GetLine(FH)
+                !print *, 'CMB: Ignore corrections to diffusivity?'
 		IF (.NOT.IsInteger(Token)) &
 			CALL ERROR ("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 					   "whether diffusivity corrections are ignored (1) or included (0). Received "//StripToken(Token))	
@@ -267,8 +295,8 @@
 		
 		!!! Coagulation?
 		Token = GetLine(FH)
-
-		IF (IsInteger(Token) .EQ. 0) &
+                !print *, 'CMB: Coagulation?'
+		if (.not. isInteger(token)) &
 			CALL ERROR("Must Supply either a 0 or 1 ASPInputDeck.in to indicate"//&
 					   "whether Coagulation is considered.  Received "//StripToken(Token))
 		I = STR2INT(Token)
@@ -396,12 +424,15 @@
                 !!
                 !!Here we set temperature, pressure, RH, and other parameters needed
                 !!for the run types given above
+                !
+                ! Modified by CMB (AER): Had to put "not" in front of
+                ! each in order to reflect changes in STILT-ASP
 
 		!! -- Get TEMPERATURE
 		Token = GetLine(FH)
 
 		!! Assume it is an input deck if not a real
-		IF (IsReal(Token) .EQ. 0) THEN
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load Temperature from an input "//&
 					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
 		ELSE
@@ -412,7 +443,7 @@
 		Token = GetLine(FH)
 
 		!! Assume it is an input deck if not a real
-		IF (IsReal(Token) .EQ. 0) THEN
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load Pressure from an input "//&
 					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
 		ELSE
@@ -423,7 +454,7 @@
 		Token = GetLine(FH)
 
 		!! Assume it is an input deck if not a real
-		IF (IsReal(Token) .EQ. 0) THEN
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load RH from an input "//&
 					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
 		ELSE
@@ -435,7 +466,7 @@
 		Token = GetLine(FH)
 
 		!! Assume it is an input deck if not a real
-		IF (IsReal(Token) .EQ. 0) THEN
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load RH from an input "//&
 					   "deck.  As much as I'd like to oblige, that isn't implemented yet.")
 		ELSE
@@ -464,7 +495,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added "not"
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real start time.")
 		ELSE
 			II = STR2REAL(Token)
@@ -476,7 +508,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real end time for photolysis interpolation.")
 		ELSE
 			II = STR2REAL(Token)
@@ -487,7 +520,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real run length.")
 		ELSE
 			II = STR2REAL(Token)
@@ -498,7 +532,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real chemistry time step.")
 		ELSE
 			II = STR2REAL(Token)
@@ -509,7 +544,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real mixing time step.")
 		ELSE
 			II = STR2REAL(Token)
@@ -520,7 +556,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real condensation time step.")
 		ELSE
 			II = STR2REAL(Token)
@@ -531,7 +568,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real coagulation time step.")
 		ELSE
 			II = STR2REAL(Token)
@@ -542,7 +580,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real inversion height.")
 		ELSE
 			II = STR2REAL(Token)
@@ -564,7 +603,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real number conc.")
 		ELSE
 			II = STR2REAL(Token)
@@ -574,7 +614,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real aerosol radii.")
 		ELSE
 			II = STR2REAL(Token)
@@ -585,7 +626,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real Lagrangian mixing scale.")
 		ELSE
 			II = STR2REAL(Token)
@@ -596,7 +638,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real wind speed.")
 		ELSE
 			II = STR2REAL(Token)
@@ -606,7 +649,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real box length.")
 		ELSE
 			II = STR2REAL(Token)
@@ -616,7 +660,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real box width.")
 		ELSE
 			II = STR2REAL(Token)
@@ -627,7 +672,8 @@
                 Token = GetLine(FH)
 
 		!! If not a real, give error
-		IF (IsReal(Token) .EQ. 0) THEN
+                ! CMB (AER): Added not
+		if (.not. isReal(token)) then
 			CALL ERROR("In ASPInputDeck.in, You tried to load a non-real CO Emission Rate.")
 		ELSE
 			II = STR2REAL(Token)
@@ -635,4 +681,5 @@
                         Call SetEulerianBox(wind,length,width, II)
 		END IF
 	
+                !print *, 'CMB: END MAIN INPUT DECK'
 	END SUBROUTINE ReadMainInputDeck
