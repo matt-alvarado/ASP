@@ -294,8 +294,9 @@ SUBROUTINE RegridAerosol ()
 					REAL2STR, &
 					INT2STR
 
-	USE Chemistry,		ONLY : HowManyAqCations, &
-					HowManyAqAnions, &
+        ! CB: Need to comment out first two objects; ifort is complaining
+	USE Chemistry,		ONLY : &!HowManyAqCations, &
+					!HowManyAqAnions, &
 					AqPhaseChemicalNames, &	
 					AqCationNames, &
 					AqAnionNames
@@ -303,21 +304,22 @@ SUBROUTINE RegridAerosol ()
 	USE GridPointFields,	 ONLY : GetTempfromGrid
 
 	USE ModelParameters
-
+	!USE OutputRoutines
 	IMPLICIT NONE
 	
 	!! Define the local variables
 	integer :: i, j, k, l, seedarray(2),q, r, NumBins, NumAqChems, NumOrgChems, NumAqOrgChems, GG
 	real*8  :: ii, jj, kk, y(200)
-	real*8  :: Mgas, Temp, Dum1, Dum2, MassFactor, Store
+	real*8  :: Mgas, Temp, Dum1, Dum2, MassFactor, Store, SUM
 
 	REAL*8, ALLOCATABLE	::	NumConc(:)
 	TYPE(Particle), POINTER :: CurrentParticle, BiggerParticle, SmallerParticle
 	LOGICAL :: IonReset
 				
 	!Reorder particles, smallest to biggest 
+	!WRITE(*,*) " Just in Regrid Aerosol()"
 	CALL SortAerosolAtGridPointForCoagulation ()
-		
+	!WRITE(*,*) "After SortAerosolAtGridPointForCoagulation ()"		
 	!Count # of bins, # of Aq. Chems, 
 	!call recalculate radius to get radius and density
 	CurrentParticle => particles%first
@@ -327,7 +329,12 @@ SUBROUTINE RegridAerosol ()
 		NumAqChems = size(currentparticle%AqChems)
 		NumOrgChems = size(currentparticle%OrgChems)
 		NumAqOrgChems = size(currentparticle%AqOrgChems)
-		CALL RecalculateRadius(currentparticle)		
+		!WRITE(*,*) 'currentparticle%EffectiveRadius = ',currentparticle%EffectiveRadius,NumBins
+		!WRITE(*,*) "Before RecalculateRadius()"
+		!WRITE(*,*) 'currentparticle%EffectiveRadius = ',currentparticle%EffectiveRadius,NumBins
+		CALL RecalculateRadius(currentparticle)	
+		!WRITE(*,*) "After RecalculateRadius()"	
+		!WRITE(*,*) 'currentparticle%EffectiveRadius = ',currentparticle%EffectiveRadius,NumBins
 		if (associated(currentparticle%next)) then
 			currentparticle => currentparticle%next
 			goto 8
@@ -335,7 +342,8 @@ SUBROUTINE RegridAerosol ()
 	end if
 	ALLOCATE(NumConc(NumBins))
 
-	!WRITE(*,*) "Before loop"
+	!WRITE(*,*) "Before loop in Regrid Aerosol()"
+
 	CurrentParticle => particles%first
 	J = 1
  40 if (associated(currentparticle)) then    								
@@ -352,8 +360,11 @@ SUBROUTINE RegridAerosol ()
 			!and mass in each bin for numerical stability, while conserving mass and number
 			!The MassFactor places the remaining particles in the middle of the
 			!size bin (in a volume sense).
+
+			!write(*,*) "In loop CurrentParticle%EffectiveRadius = ",CurrentParticle%EffectiveRadius,J
+
 			IF(CurrentParticle%EffectiveRadius .GT.  CurrentParticle%Edges(2) &
-				.AND. associated(currentparticle%next)) THEN
+				.AND. associated(currentparticle%next) .AND. CurrentParticle%numberofparticles .GT. 2.e-4) THEN
 						
 				MassFactor = (CurrentParticle%Edges(1)**3 + CurrentParticle%Edges(2)**3) &
 				              /(2.0*CurrentParticle%EffectiveRadius**3)
@@ -403,18 +414,20 @@ SUBROUTINE RegridAerosol ()
 				IF(BiggerParticle%numberofparticles .LT. 0.0) BiggerParticle%numberofparticles = Store
 				CurrentParticle%numberofparticles = 1.0e-4
 
+				! consider add check for if there is no mass, reset num to zero - CRL
+
 				!WRITE(*,*) "Water: ", BiggerParticle%AqChems(1)
 				!Calculate density to reset radius
-				!WRITE(*,*) "Density 1"
+				!WRITE(*,*) "Density 1CurrentParticle%EffectiveRadius = ",CurrentParticle%EffectiveRadius,J
 				Dum1 = ParticleDensity(BiggerParticle)
-				!WRITE(*,*) "Density 2"
+				!WRITE(*,*) "Density 2CurrentParticle%EffectiveRadius = ",CurrentParticle%EffectiveRadius,J
 				Dum2 = ParticleDensity(CurrentParticle)
-				!WRITE(*,*) "After Density 2"
+				!WRITE(*,*) "After Density 2CurrentParticle%EffectiveRadius = ",CurrentParticle%EffectiveRadius,J
 				!Reequilibrate particles internally (inorganic only)
-				!WRITE(*,*) "Before Eq"
+				!WRITE(*,*) "Before EqCurrentParticle%EffectiveRadius = ",CurrentParticle%EffectiveRadius,J
 				CALL FindElectrolyteEquilibrium (BiggerParticle, UpdateThermo=.TRUE., FirstEquilibration=.FALSE., ReturnType = GG)
 				CALL FindElectrolyteEquilibrium (CurrentParticle, UpdateThermo=.TRUE., FirstEquilibration=.FALSE., ReturnType = GG)
-				!WRITE(*,*) "After Eq"
+				!WRITE(*,*) "After Eq CurrentParticle%EffectiveRadius = ",CurrentParticle%EffectiveRadius,J
 			!This accounts for shrinking particles, which are rare in clouds and plumes
 			!The second condition says do nothing to smallest particle or bulk
 			
@@ -426,9 +439,18 @@ SUBROUTINE RegridAerosol ()
 				ELSE
 					MassFactor = (CurrentParticle%Edges(1)**3 + CurrentParticle%Edges(2)**3) &
 				              /(2.0*CurrentParticle%EffectiveRadius**3)
+					WRITE(*,*) "In SortAerosol.h CurrentParticle%EffectiveRadius = ", CurrentParticle%EffectiveRadius
+					WRITE(*,*) "In SortAerosol.h (CurrentParticle%Edges(1)= ", CurrentParticle%Edges(1)
+					WRITE(*,*) "In SortAerosol.h (CurrentParticle%Edges(2)= ", CurrentParticle%Edges(2)
+					WRITE(*,*) "In SortAerosol.h MassFactor = ", MassFactor
+					!WRITE(*,*) "Calling Spillbeans()"
+					!call spillbeans()
 				END IF
-								
-				!WRITE(*,*) "Shrink", J, CurrentParticle%EffectiveRadius, CurrentParticle%Edges(1), MassFactor
+				!IF (CurrentParticle%EffectiveRadius .EQ. 0.) THEN
+				!	MassFactor = 0.
+				!	Write(*,*) "**Caution: CurrentParticle%EffectiveRadius equals zero, so making MassFactor 0."
+				!END IF				
+				WRITE(*,*) "Shrink", J, CurrentParticle%EffectiveRadius, CurrentParticle%Edges(1),CurrentParticle%Edges(2), MassFactor
 				!Scan back through particle list to find one just below
 				SmallerParticle => particles%first
 				K = 1
@@ -440,14 +462,13 @@ SUBROUTINE RegridAerosol ()
 						!to previous values, they all are
 						IonReset = .FALSE.
 						DO I=1, NumAqChems
-							IF(SmallerParticle%numberofparticles .LT. 1.01e-4) IonReset = .TRUE.
+							!IF(SmallerParticle%numberofparticles .LT. 1.01e-4) IonReset = .TRUE.
 							Store = SmallerParticle%AqChems(I)
 							SmallerParticle%AqChems(I) = (SmallerParticle%AqChems(I)*SmallerParticle%numberofparticles &
-					                             + CurrentParticle%AqChems(I)*CurrentParticle%numberofparticles &
-												 -MassFactor*CurrentParticle%AqChems(I)*1.0e-4) &
-												 /(SmallerParticle%numberofparticles + CurrentParticle%numberofparticles - 1.0e-4)
+					                             + CurrentParticle%AqChems(I)*CurrentParticle%numberofparticles) &
+												 /(SmallerParticle%numberofparticles + CurrentParticle%numberofparticles)
 							IF(SmallerParticle%AqChems(I) .LT. 0.0 .OR. IonReset) THEN
-								!WRITE(*,*) "Below 0!", I, SmallerParticle%numberofparticles
+								WRITE(*,*) "Below 0!", I, SmallerParticle%numberofparticles
 								SmallerParticle%AqChems(I) = Store
 								IF(I .GT. HowManyAqChems) IonReset = .TRUE.
 							END IF
@@ -456,18 +477,16 @@ SUBROUTINE RegridAerosol ()
 						DO I=1, NumOrgChems
 							Store = SmallerParticle%OrgChems(I)
 							SmallerParticle%OrgChems(I) = (SmallerParticle%OrgChems(I)*SmallerParticle%numberofparticles &
-					                             + CurrentParticle%OrgChems(I)*CurrentParticle%numberofparticles &
-												 -MassFactor*CurrentParticle%OrgChems(I)*1.0e-4)&
-												 /(SmallerParticle%numberofparticles + CurrentParticle%numberofparticles - 1.0e-4)
+					                             + CurrentParticle%OrgChems(I)*CurrentParticle%numberofparticles) &
+												 /(SmallerParticle%numberofparticles + CurrentParticle%numberofparticles)
 							IF(SmallerParticle%OrgChems(I) .LT. 0.0) SmallerParticle%OrgChems(I) = Store
 							CurrentParticle%OrgChems(I) = MassFactor*CurrentParticle%OrgChems(I)
 						END DO
 						DO I=1, NumAqOrgChems
 							Store = SmallerParticle%AqOrgChems(I)
 							SmallerParticle%AqOrgChems(I) = (SmallerParticle%AqOrgChems(I)*SmallerParticle%numberofparticles &
-					                             + CurrentParticle%AqOrgChems(I)*CurrentParticle%numberofparticles &
-												 -MassFactor*CurrentParticle%AqOrgChems(I)*1.0e-4) &
-												 /(SmallerParticle%numberofparticles + CurrentParticle%numberofparticles - 1.0e-4)
+					                             + CurrentParticle%AqOrgChems(I)*CurrentParticle%numberofparticles) &
+												 /(SmallerParticle%numberofparticles + CurrentParticle%numberofparticles)
 							IF(SmallerParticle%AqOrgChems(I) .LT. 0.0) SmallerParticle%AqOrgChems(I) = Store
 							CurrentParticle%AqOrgChems(I) = MassFactor*CurrentParticle%AqOrgChems(I)
 						END DO	
@@ -476,7 +495,7 @@ SUBROUTINE RegridAerosol ()
 						!Add particle number to smaller bin
 						Store = SmallerParticle%numberofparticles
 						SmallerParticle%numberofparticles = &
-										SmallerParticle%numberofparticles + CurrentParticle%numberofparticles - 1.0e-4
+										SmallerParticle%numberofparticles + CurrentParticle%numberofparticles
 						IF(SmallerParticle%numberofparticles .LT. 0.0) SmallerParticle%numberofparticles = Store
 						CurrentParticle%numberofparticles = 1.0e-4
 							
@@ -508,13 +527,44 @@ SUBROUTINE RegridAerosol ()
 		
 		!Go to next particle
 		if (associated(currentparticle%next)) then
+
 			currentparticle => currentparticle%next
 			J = J+1
 			goto 40
 		end if	 
 	
 	END IF !Main particle loop
-			
+	
+	! Doing a final check to see if there is mass when numberofparticles exists- CRL
+	CurrentParticle => particles%first
+
+	if (associated(CurrentParticle)) then    								
+	   if(CurrentParticle%numberofparticles .GT. 0.) THEN
+		SUM = 0.
+		DO I=1, NumAqChems
+			SUM = SUM + CurrentParticle%AqChems(I)
+		END DO
+
+		DO I=1, NumOrgChems
+			SUM = SUM + CurrentParticle%OrgChems(I)
+		END DO
+
+		DO I=1, NumAqOrgChems
+			SUM = SUM + CurrentParticle%AqOrgChems(I)
+		END DO	
+		
+		if(SUM .EQ. 0. .AND. CurrentParticle%numberofparticles .GT. 0.) THEN
+			write(*,*) '**Warning numberofparticles exists without mass!!!'
+			CurrentParticle%numberofparticles = 0.
+		end if
+
+	   end if
+
+	   CurrentParticle => CurrentParticle%next
+
+	end if	
+
+		
 	RETURN
 END SUBROUTINE RegridAerosol
 	
