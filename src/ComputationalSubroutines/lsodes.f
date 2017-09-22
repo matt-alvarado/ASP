@@ -95,8 +95,8 @@ c rtol   = relative tolerance parameter (scalar).
 c atol   = absolute tolerance parameter (scalar or array).
 c          the estimated local error in y(i) will be controlled so as
 c          to be roughly less (in magnitude) than
-c             ewt(i) = rtol*abs(y(i)) + atol     if itol = 1, or
-c             ewt(i) = rtol*abs(y(i)) + atol(i)  if itol = 2.
+c             ewt(i) = rtol*dabs(y(i)) + atol     if itol = 1, or
+c             ewt(i) = rtol*dabs(y(i)) + atol(i)  if itol = 2.
 c          thus the local error test passes if, in each component,
 c          either the absolute error is less than atol (or atol(i)),
 c          or the relative error is less than rtol.
@@ -512,7 +512,7 @@ c          the error control performed by the solver.  the solver will
 c          control the vector e = (e(i)) of estimated local errors
 c          in y, according to an inequality of the form
 c                      rms-norm of ( e(i)/ewt(i) )   .le.   1,
-c          where       ewt(i) = rtol(i)*abs(y(i)) + atol(i),
+c          where       ewt(i) = rtol(i)*dabs(y(i)) + atol(i),
 c          and the rms-norm (root-mean-square norm) here is
 c          rms-norm(v) = sqrt(sum v(i)**2 / neq).  here ewt = (ewt(i))
 c          is a vector of weights which must always be positive, and
@@ -521,10 +521,10 @@ c          the following table gives the types (scalar/array) of
 c          rtol and atol, and the corresponding form of ewt(i).
 c
 c             itol    rtol       atol          ewt(i)
-c              1     scalar     scalar     rtol*abs(y(i)) + atol
-c              2     scalar     array      rtol*abs(y(i)) + atol(i)
-c              3     array      scalar     rtol(i)*abs(y(i)) + atol
-c              4     array      array      rtol(i)*abs(y(i)) + atol(i)
+c              1     scalar     scalar     rtol*dabs(y(i)) + atol
+c              2     scalar     array      rtol*dabs(y(i)) + atol(i)
+c              3     array      scalar     rtol(i)*dabs(y(i)) + atol
+c              4     array      array      rtol(i)*dabs(y(i)) + atol(i)
 c
 c          when either of these parameters is a scalar, it need not
 c          be dimensioned in the user-s calling program.
@@ -1217,13 +1217,17 @@ c note..  vnorm and r1mach are function routines.
 c all the others are subroutines.
 c
 c the intrinsic and external routines used by lsodes are..
-c abs, amax1, amin1, float, max0, min0, mod, sign, sqrt, and write.
+c abs, dmax1, dmin1, float, max0, min0, mod, sign, sqrt, and write.
 c
 c-----------------------------------------------------------------------
 c the following card is for optimized compilation on lll compilers.
 clll. optimize
 c-----------------------------------------------------------------------
-
+*
+* 7 October 2016 CMB (AER): Modified for double precision.  So far,
+*                           abs() => dabs(), float() => dble(),
+*                           amax1() => dmax1(), amin1 => dmin1()
+*
 c-----------------------------------------------------------------------
 c the following card is for optimized compilation on lll compilers.
 clll. optimize
@@ -1285,7 +1289,11 @@ c the wordlength for a real number to that for an integer.  usually,
 c lenrat = 1 for single precision and 2 for double precision.  if the
 c true ratio is not an integer, use the next smaller integer (.ge. 1).
 c-----------------------------------------------------------------------
-      data lenrat/1/
+*
+* Oct 7 2016 CMB: Change from single to double precision
+*      data lenrat/1/
+      data lenrat/2/
+*
 c-----------------------------------------------------------------------
 c block a.
 c this code block is executed on every call.
@@ -1552,42 +1560,42 @@ c the coding below computes the step size, h0, to be attempted on the
 c first step, unless the user has supplied a value for this.
 c first check that tout - t differs significantly from zero.
 c a scalar tolerance quantity tol is computed, as max(rtol(i))
-c if this is positive, or max(atol(i)/abs(y(i))) otherwise, adjusted
+c if this is positive, or max(atol(i)/dabs(y(i))) otherwise, adjusted
 c so as to be between 100*uround and 1.0e-3.
 c then the computed value h0 is given by..
 c                                      neq
 c   h0**2 = tol / ( w0**-2 + (1/neq) * sum ( f(i)/ywt(i) )**2  )
 c                                       1
-c where   w0     = max ( abs(t), abs(tout) ),
+c where   w0     = max ( dabs(t), dabs(tout) ),
 c         f(i)   = i-th component of initial value of f,
 c         ywt(i) = ewt(i)/tol  (a weight for y(i)).
 c the sign of h0 is inferred from the initial values of tout and t.
 c-----------------------------------------------------------------------
       lf0 = lyh + nyh
       if (h0 .ne. 0.0e0) go to 180
-      tdist = abs(tout - t)
-      w0 = amax1(abs(t),abs(tout))
+      tdist = dabs(tout - t)
+      w0 = dmax1(dabs(t),dabs(tout))
       if (tdist .lt. 2.0e0*uround*w0) go to 622
       tol = rtol(1)
       if (itol .le. 2) go to 140
       do 130 i = 1,n
-130    tol = amax1(tol,rtol(i))
+130    tol = dmax1(tol,rtol(i))
 140   if (tol .gt. 0.0e0) go to 160
       atoli = atol(1)
       do 150 i = 1,n
         if (itol .eq. 2 .or. itol .eq. 4) atoli = atol(i)
-        ayi = abs(y(i))
-        if (ayi .ne. 0.0e0) tol = amax1(tol,atoli/ayi)
+        ayi = dabs(y(i))
+        if (ayi .ne. 0.0e0) tol = dmax1(tol,atoli/ayi)
 150    continue
-160   tol = amax1(tol,100.0e0*uround)
-      tol = amin1(tol,0.001e0)
+160   tol = dmax1(tol,100.0e0*uround)
+      tol = dmin1(tol,0.001e0)
       sum = vnorm (n, rwork(lf0), rwork(lewt))
       sum = 1.0e0/(tol*w0*w0) + tol*sum**2
       h0 = 1.0e0/sqrt(sum)
-      h0 = amin1(h0,tdist)
+      h0 = dmin1(h0,tdist)
       h0 = sign(h0,tout-t)
 c adjust h0 if necessary to meet hmax bound. ---------------------------
-180   rh = abs(h0)*hmxi
+180   rh = dabs(h0)*hmxi
       if (rh .gt. 1.0e0) h0 = h0/rh
 c load h with h0 and scale yh(*,2) by h0. ------------------------------
       h = h0
@@ -1620,8 +1628,8 @@ c-----------------------------------------------------------------------
       go to 420
 240   tcrit = rwork(1)
       if ((tn - tcrit)*h .gt. 0.0e0) go to 624
-245   hmx = abs(tn) + abs(h)
-      ihit = abs(tn - tcrit) .le. 100.0e0*uround*hmx
+245   hmx = dabs(tn) + dabs(h)
+      ihit = dabs(tn - tcrit) .le. 100.0e0*uround*hmx
       if (ihit) go to 400
       tnext = tn + h*(1.0e0 + 4.0e0*uround)
       if ((tnext - tcrit)*h .le. 0.0e0) go to 250
@@ -1693,8 +1701,8 @@ c itask = 4.  see if tout or tcrit was reached.  adjust h if necessary.
       call intdy (tout, 0, rwork(lyh), nyh, y, iflag)
       t = tout
       go to 420
-345   hmx = abs(tn) + abs(h)
-      ihit = abs(tn - tcrit) .le. 100.0e0*uround*hmx
+345   hmx = dabs(tn) + dabs(h)
+      ihit = dabs(tn - tcrit) .le. 100.0e0*uround*hmx
       if (ihit) go to 400
       tnext = tn + h*(1.0e0 + 4.0e0*uround)
       if ((tnext - tcrit)*h .le. 0.0e0) go to 250
@@ -1702,8 +1710,8 @@ c itask = 4.  see if tout or tcrit was reached.  adjust h if necessary.
       jstart = -2
       go to 250
 c itask = 5.  see if tcrit was reached and jump to exit. ---------------
-350   hmx = abs(tn) + abs(h)
-      ihit = abs(tn - tcrit) .le. 100.0e0*uround*hmx
+350   hmx = dabs(tn) + dabs(h)
+      ihit = dabs(tn - tcrit) .le. 100.0e0*uround*hmx
 c-----------------------------------------------------------------------
 c block g.
 c the following block handles all successful returns from lsodes.
@@ -1771,19 +1779,19 @@ c too much accuracy requested for machine precision. -------------------
       rwork(14) = tolsf
       istate = -2
       go to 580
-c kflag = -1.  error test failed repeatedly or with abs(h) = hmin. -----
+c kflag = -1.  error test failed repeatedly or with dabs(h) = hmin. -----
 530   call xerrwv(50hlsodes-- at t(=r1) and step size h(=r2), the error,
      1   50, 204, 0, 0, 0, 0, 0, 0.0e0, 0.0e0)
       call xerrwv(50h      test failed repeatedly or with abs(h) = hmin,
      1   50, 204, 0, 0, 0, 0, 2, tn, h)
       istate = -4
       go to 560
-c kflag = -2.  convergence failed repeatedly or with abs(h) = hmin. ----
+c kflag = -2.  convergence failed repeatedly or with dabs(h) = hmin. ----
 540   call xerrwv(50hlsodes-- at t (=r1) and step size h (=r2), the    ,
      1   50, 205, 0, 0, 0, 0, 0, 0.0e0, 0.0e0)
       call xerrwv(50h      corrector convergence failed repeatedly     ,
      1   50, 205, 0, 0, 0, 0, 0, 0.0e0, 0.0e0)
-      call xerrwv(30h      or with abs(h) = hmin   ,
+      call xerrwv(30h      or with dabs(h) = hmin   ,
      1   30, 205, 0, 0, 0, 0, 2, tn, h)
       istate = -5
       go to 560
@@ -1800,7 +1808,7 @@ c compute imxer if relevant. -------------------------------------------
 560   big = 0.0e0
       imxer = 1
       do 570 i = 1,n
-        size = abs(rwork(i+lacor-1)*rwork(i+lewt-1))
+        size = dabs(rwork(i+lacor-1)*rwork(i+lewt-1))
         if (big .ge. size) go to 570
         big = size
         imxer = i
@@ -2141,7 +2149,7 @@ c
 c istate = 1 and moss .ne. 0.  perturb y for structure determination. --
       do 10 i = 1,n
         erwt = 1.0e0/ewt(i)
-        fac = 1.0e0 + 1.0e0/(float(i)+1.0e0)
+        fac = 1.0e0 + 1.0e0/(dble(i)+1.0e0)
         y(i) = y(i) + fac*sign(erwt,y(i))
 10     continue
       go to (70, 100), moss
@@ -2190,7 +2198,7 @@ c a dummy call to f allows user to create temporaries for use in jac. --
 75       savf(i) = 0.0e0
         call jac (neq, tn, y, j, iwk(ipian), iwk(ipjan), savf)
         do 80 i = 1,n
-          if (abs(savf(i)) .le. seth) go to 80
+          if (dabs(savf(i)) .le. seth) go to 80
           if (i .eq. j) go to 80
           if (k .gt. liwk) go to 210
           iwk(k) = i
@@ -2216,7 +2224,7 @@ c moss = 2.  compute structure from results of n + 1 calls to f. -------
         y(j) = yj
         do 110 i = 1,n
           dq = (ftem(i) - savf(i))/dyj
-          if (abs(dq) .le. seth) go to 110
+          if (dabs(dq) .le. seth) go to 110
           if (i .eq. j) go to 110
           if (k .gt. liwk) go to 210
           iwk(k) = i
@@ -2490,7 +2498,7 @@ c
       jj1 = l - k
       do 10 jj = jj1,nq
 10     ic = ic*jj
-15    c = float(ic)
+15    c = dble(ic)
       do 20 i = 1,n
 20     dky(i) = c*yh(i,l)
       if (k .eq. nq) go to 55
@@ -2503,7 +2511,7 @@ c
         jj1 = jp1 - k
         do 30 jj = jj1,j
 30       ic = ic*jj
-35     c = float(ic)
+35     c = dble(ic)
         do 40 i = 1,n
 40       dky(i) = c*yh(i,jp1) + s*dky(i)
 50     continue
@@ -2608,7 +2616,7 @@ c              -1  the requested error could not be achieved.
 c              -2  corrector convergence could not be achieved.
 c              -3  fatal error in pjac or slvs.
 c          a return with kflag = -1 or -2 means either
-c          abs(h) = hmin or 10 consecutive failures occurred.
+c          dabs(h) = hmin or 10 consecutive failures occurred.
 c          on a return with kflag negative, the values of tn and
 c          the yh array are as of the beginning of the last
 c          step, and h is the last step size attempted.
@@ -2683,14 +2691,14 @@ c-----------------------------------------------------------------------
       nqnyh = nq*nyh
       rc = rc*el(1)/el0
       el0 = el(1)
-      conit = 0.5e0/float(nq+2)
+      conit = 0.5e0/dble(nq+2)
       ddn = vnorm (n, savf, ewt)/tesco(1,l)
-      exdn = 1.0e0/float(l)
+      exdn = 1.0e0/dble(l)
       rhdn = 1.0e0/(1.3e0*ddn**exdn + 0.0000013e0)
-      rh = amin1(rhdn,1.0e0)
+      rh = dmin1(rhdn,1.0e0)
       iredo = 3
       if (h .eq. hold) go to 170
-      rh = amin1(rh,abs(h/hold))
+      rh = dmin1(rh,dabs(h/hold))
       h = hold
       go to 175
 c-----------------------------------------------------------------------
@@ -2704,7 +2712,7 @@ c-----------------------------------------------------------------------
       nqnyh = nq*nyh
       rc = rc*el(1)/el0
       el0 = el(1)
-      conit = 0.5e0/float(nq+2)
+      conit = 0.5e0/dble(nq+2)
       go to (160, 170, 200), iret
 c-----------------------------------------------------------------------
 c if h is being changed, the h ratio rh is checked against
@@ -2717,9 +2725,9 @@ c-----------------------------------------------------------------------
       h = hold
       iredo = 3
       go to 175
-170   rh = amax1(rh,hmin/abs(h))
-175   rh = amin1(rh,rmax)
-      rh = rh/amax1(1.0e0,abs(h)*hmxi*rh)
+170   rh = dmax1(rh,hmin/dabs(h))
+175   rh = dmin1(rh,rmax)
+      rh = rh/dmax1(1.0e0,dabs(h)*hmxi*rh)
       r = 1.0e0
       do 180 j = 2,l
         r = r*rh
@@ -2737,7 +2745,7 @@ c when rc differs from 1 by more than ccmax, ipup is set to miter
 c to force pjac to be called, if a jacobian is involved.
 c in any case, pjac is called at least every msbp steps.
 c-----------------------------------------------------------------------
-200   if (abs(rc-1.0e0) .gt. ccmax) ipup = miter
+200   if (dabs(rc-1.0e0) .gt. ccmax) ipup = miter
       if (nst .ge. nslp+msbp) ipup = miter
       tn = tn + h
       i1 = nqnyh + 1
@@ -2803,8 +2811,8 @@ c-----------------------------------------------------------------------
 c test for convergence.  if m.gt.0, an estimate of the convergence
 c rate constant is stored in crate, and this is used in the test.
 c-----------------------------------------------------------------------
-400   if (m .ne. 0) crate = amax1(0.2e0*crate,del/delp)
-      dcon = del*amin1(1.0e0,1.5e0*crate)/(tesco(2,nq)*conit)
+400   if (m .ne. 0) crate = dmax1(0.2e0*crate,del/delp)
+      dcon = del*dmin1(1.0e0,1.5e0*crate)/(tesco(2,nq)*conit)
 	if (dcon .le. 1.0e0) go to 450
       m = m + 1
 	if (m .eq. maxcor) go to 410
@@ -2836,7 +2844,7 @@ cdir$ ivdep
 440      yh1(i) = yh1(i) - yh1(i+nyh)
 445    continue
       if (ierpj .lt. 0 .or. iersl .lt. 0) go to 680
-      if (abs(h) .le. hmin*1.00001e0) go to 670
+      if (dabs(h) .le. hmin*1.00001e0) go to 670
       if (ncf .eq. mxncf) go to 670
       rh = 0.25e0
       ipup = miter
@@ -2894,7 +2902,7 @@ cdir$ ivdep
 510      yh1(i) = yh1(i) - yh1(i+nyh)
 515    continue
       rmax = 2.0e0
-      if (abs(h) .le. hmin*1.00001e0) go to 660
+      if (dabs(h) .le. hmin*1.00001e0) go to 660
       if (kflag .le. -3) go to 640
       iredo = 2
       rhup = 0.0e0
@@ -2913,14 +2921,14 @@ c-----------------------------------------------------------------------
       do 530 i = 1,n
 530    savf(i) = acor(i) - yh(i,lmax)
       dup = vnorm (n, savf, ewt)/tesco(3,nq)
-      exup = 1.0e0/float(l+1)
+      exup = 1.0e0/dble(l+1)
       rhup = 1.0e0/(1.4e0*dup**exup + 0.0000014e0)
-540   exsm = 1.0e0/float(l)
+540   exsm = 1.0e0/dble(l)
       rhsm = 1.0e0/(1.2e0*dsm**exsm + 0.0000012e0)
       rhdn = 0.0e0
       if (nq .eq. 1) go to 560
       ddn = vnorm (n, yh(1,l), ewt)/tesco(1,nq)
-      exdn = 1.0e0/float(nq)
+      exdn = 1.0e0/dble(nq)
       rhdn = 1.0e0/(1.3e0*ddn**exdn + 0.0000013e0)
 560   if (rhsm .ge. rhup) go to 570
       if (rhup .gt. rhdn) go to 590
@@ -2936,14 +2944,14 @@ c-----------------------------------------------------------------------
 590   newq = l
       rh = rhup
       if (rh .lt. 1.1e0) go to 610
-      r = el(l)/float(l)
+      r = el(l)/dble(l)
       do 600 i = 1,n
 600    yh(i,newq+1) = acor(i)*r
       go to 630
 610   ialth = 3
       go to 700
 620   if ((kflag .eq. 0) .and. (rh .lt. 1.1e0)) go to 610
-      if (kflag .le. -2) rh = amin1(rh,0.2e0)
+      if (kflag .le. -2) rh = dmin1(rh,0.2e0)
 c-----------------------------------------------------------------------
 c if there is a change of order, reset nq, l, and the coefficients.
 c in any case h is reset according to rh and the yh array is rescaled.
@@ -2965,7 +2973,7 @@ c until it succeeds or h reaches hmin.
 c-----------------------------------------------------------------------
 640   if (kflag .eq. -10) go to 660
       rh = 0.1e0
-      rh = amax1(hmin/abs(h),rh)
+      rh = dmax1(hmin/dabs(h),rh)
       h = h*rh
       do 645 i = 1,n
 645    y(i) = yh(i,1)
@@ -3052,9 +3060,9 @@ c     p(x) = (x+1)*(x+2)*...*(x+nq-1).
 c initially, p(x) = 1.
 c-----------------------------------------------------------------------
         rq1fac = rqfac
-        rqfac = rqfac/float(nq)
+        rqfac = rqfac/dble(nq)
         nqm1 = nq - 1
-        fnqm1 = float(nqm1)
+        fnqm1 = dble(nqm1)
         nqp1 = nq + 1
 c form coefficients of p(x)*(x+nq-1). ----------------------------------
         pc(nq) = 0.0e0
@@ -3068,17 +3076,17 @@ c compute integral, -1 to 0, of p(x) and x*p(x). -----------------------
         tsign = 1.0e0
         do 120 i = 2,nq
           tsign = -tsign
-          pint = pint + tsign*pc(i)/float(i)
-120      xpin = xpin + tsign*pc(i)/float(i+1)
+          pint = pint + tsign*pc(i)/dble(i)
+120      xpin = xpin + tsign*pc(i)/dble(i+1)
 c store coefficients in elco and tesco. --------------------------------
         elco(1,nq) = pint*rq1fac
         elco(2,nq) = 1.0e0
         do 130 i = 2,nq
-130      elco(i+1,nq) = rq1fac*pc(i)/float(i)
+130      elco(i+1,nq) = rq1fac*pc(i)/dble(i)
         agamq = rqfac*xpin
         ragq = 1.0e0/agamq
         tesco(2,nq) = ragq
-        if (nq .lt. 12) tesco(1,nqp1) = ragq*rqfac/float(nqp1)
+        if (nq .lt. 12) tesco(1,nqp1) = ragq*rqfac/dble(nqp1)
         tesco(3,nqm1) = ragq
 140    continue
       return
@@ -3091,7 +3099,7 @@ c the pc array will contain the coefficients of the polynomial
 c     p(x) = (x+1)*(x+2)*...*(x+nq).
 c initially, p(x) = 1.
 c-----------------------------------------------------------------------
-        fnq = float(nq)
+        fnq = dble(nq)
         nqp1 = nq + 1
 c form coefficients of p(x)*(x+nq). ------------------------------------
         pc(nqp1) = 0.0e0
@@ -3104,8 +3112,8 @@ c store coefficients in elco and tesco. --------------------------------
 220      elco(i,nq) = pc(i)/pc(2)
         elco(2,nq) = 1.0e0
         tesco(1,nq) = rq1fac
-        tesco(2,nq) = float(nqp1)/elco(1,nq)
-        tesco(3,nq) = float(nq+2)/elco(1,nq)
+        tesco(2,nq) = dble(nqp1)/elco(1,nq)
+        tesco(3,nq) = dble(nq+2)/elco(1,nq)
         rq1fac = rq1fac/fnq
 230    continue
       return
@@ -3185,7 +3193,7 @@ c-----------------------------------------------------------------------
 c see whether j should be reevaluated (jok = 0) or not (jok = 1). ------
       jok = 1
       if (nst .eq. 0 .or. nst .ge. nslj+msbj) jok = 0
-      if (icf .eq. 1 .and. abs(rc - 1.0e0) .lt. ccmxj) jok = 0
+      if (icf .eq. 1 .and. dabs(rc - 1.0e0) .lt. ccmxj) jok = 0
       if (icf .eq. 2) jok = 0
       if (jok .eq. 1) go to 250
 c
@@ -3194,7 +3202,7 @@ c miter = 1 or 2, and the jacobian is to be reevaluated. ---------------
       nje = nje + 1
       nslj = nst
       iplost = 0
-      conmin = abs(con)
+      conmin = dabs(con)
       go to (100, 200), miter
 c
 c if miter = 1, call jac, multiply by scalar, and add identity. --------
@@ -3217,7 +3225,7 @@ c
 c if miter = 2, make ngp calls to f to approximate j and p. ------------
 200   continue
       fac = vnorm(n, savf, ewt)
-      r0 = 1000.0e0 * abs(h) * uround * float(n) * fac
+      r0 = 1000.0e0 * dabs(h) * uround * dble(n) * fac
       if (r0 .eq. 0.0e0) r0 = 1.0e0
       srur = wk(1)
       jmin = iwk(ipigp)
@@ -3225,13 +3233,13 @@ c if miter = 2, make ngp calls to f to approximate j and p. ------------
         jmax = iwk(ipigp+ng) - 1
         do 210 j = jmin,jmax
           jj = iwk(ibjgp+j)
-          r = amax1(srur*abs(y(jj)),r0/ewt(jj))
+          r = dmax1(srur*dabs(y(jj)),r0/ewt(jj))
 210      y(jj) = y(jj) + r
         call f (neq, tn, y, ftem)
         do 230 j = jmin,jmax
           jj = iwk(ibjgp+j)
           y(jj) = yh(jj,1)
-          r = amax1(srur*abs(y(jj)),r0/ewt(jj))
+          r = dmax1(srur*dabs(y(jj)),r0/ewt(jj))
           fac = -hl0/r
           kmin =iwk(ibian+jj)
           kmax =iwk(ibian+jj+1) - 1
@@ -3249,7 +3257,7 @@ c
 c if jok = 1, reconstruct new p from old p. ----------------------------
 250   jcur = 0
       rcon = con/con0
-      rcont = abs(con)/conmin
+      rcont = dabs(con)/conmin
       if (rcont .gt. rbig .and. iplost .eq. 1) go to 20
       kmin = iwk(ipian)
       do 275 j = 1,n
@@ -3259,9 +3267,9 @@ c if jok = 1, reconstruct new p from old p. ----------------------------
           pij = wk(iba+k)
           if (i .ne. j) go to 260
           pij = pij - 1.0e0
-          if (abs(pij) .ge. psmall) go to 260
+          if (dabs(pij) .ge. psmall) go to 260
             iplost = 1
-            conmin = amin1(abs(con0),conmin)
+            conmin = dmin1(dabs(con0),conmin)
 260      pij = pij*rcon
           if (i .eq. j) pij = pij + 1.0e0
           wk(iba+k) = pij
@@ -3299,8 +3307,8 @@ c if miter = 3, construct a diagonal approximation to j and p. ---------
         r0 = h*savf(i) - yh(i,2)
         di = 0.1e0*r0 - h*(wk(i+2) - savf(i))
         wk(i+2) = 1.0e0
-        if (abs(r0) .lt. uround/ewt(i)) go to 320
-        if (abs(di) .eq. 0.0e0) go to 330
+        if (dabs(r0) .lt. uround/ewt(i)) go to 320
+        if (dabs(di) .eq. 0.0e0) go to 330
         wk(i+2) = 0.1e0*r0/di
 320    continue
       return
@@ -3375,7 +3383,7 @@ c
       r = hl0/phl0
       do 320 i = 1,n
         di = 1.0e0 - r*(1.0e0 - 1.0e0/wk(i+2))
-        if (abs(di) .eq. 0.0e0) go to 390
+        if (dabs(di) .eq. 0.0e0) go to 390
 320    wk(i+2) = 1.0e0/di
 330   do 340 i = 1,n
 340    x(i) = wk(i+2)*x(i)
@@ -3390,7 +3398,7 @@ c----------------------- end of subroutine slss ------------------------
 clll. optimize
 c-----------------------------------------------------------------------
 c this subroutine sets the error weight vector ewt according to
-c     ewt(i) = rtol(i)*abs(ycur(i)) + atol(i),  i = 1,...,n,
+c     ewt(i) = rtol(i)*dabs(ycur(i)) + atol(i),  i = 1,...,n,
 c with the subscript on rtol and/or atol possibly replaced by 1 above,
 c depending on the value of itol.
 c-----------------------------------------------------------------------
@@ -3402,19 +3410,19 @@ c-----------------------------------------------------------------------
       go to (10, 20, 30, 40), itol
 10    continue
       do 15 i = 1,n
-15     ewt(i) = rtol(1)*abs(ycur(i)) + atol(1)
+15     ewt(i) = rtol(1)*dabs(ycur(i)) + atol(1)
       return
 20    continue
       do 25 i = 1,n
-25     ewt(i) = rtol(1)*abs(ycur(i)) + atol(i)
+25     ewt(i) = rtol(1)*dabs(ycur(i)) + atol(i)
       return
 30    continue
       do 35 i = 1,n
-35     ewt(i) = rtol(i)*abs(ycur(i)) + atol(1)
+35     ewt(i) = rtol(i)*dabs(ycur(i)) + atol(1)
       return
 40    continue
       do 45 i = 1,n
-45     ewt(i) = rtol(i)*abs(ycur(i)) + atol(i)
+45     ewt(i) = rtol(i)*dabs(ycur(i)) + atol(i)
       return
 c----------------------- end of subroutine ewset -----------------------
       end
@@ -3424,7 +3432,7 @@ c      subroutine ewset (n, itol, rtol, atol, ycur, ewt)
 cclll. optimize
 cc-----------------------------------------------------------------------
 cc this subroutine sets the error weight vector ewt according to
-cc     ewt(i) = rtol(i)*abs(ycur(i)) + atol(i),  i = 1,...,n,
+cc     ewt(i) = rtol(i)*dabs(ycur(i)) + atol(i),  i = 1,...,n,
 cc with the subscript on rtol and/or atol possibly replaced by 1 above,
 cc depending on the value of itol.
 cc-----------------------------------------------------------------------
@@ -3441,7 +3449,7 @@ c      aaa = rtol(1)
 c      bbb = atol(1)
 c
 c      do 1 i=1,n
-c        ewt(i) = aaa*abs(ycur(i)) + bbb
+c        ewt(i) = aaa*dabs(ycur(i)) + bbb
 c1     continue
 c
 c      return
@@ -3461,7 +3469,7 @@ c-----------------------------------------------------------------------
       sum = 0.0e0
       do 10 i = 1,n
 10     sum = sum + (v(i)*w(i))**2
-      vnorm = sqrt(sum/float(n))
+      vnorm = sqrt(sum/dble(n))
       return
 c----------------------- end of function vnorm -------------------------
       end
