@@ -152,7 +152,19 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
                                           RegridAerosol,		&
                                           SortAerosolAtGridPointForCondensation
 						  		
-	IMPLICIT NONE
+	use gridpointfields, ONLY : getRelativeHumidity, getTemp, GridGasChem	! cmb add last one
+	
+	! cmb add
+	use OutputRoutines
+	use chemistry, only : getTimestepIndex, getParcelIndex
+	! end cmb add
+
+        IMPLICIT NONE
+
+        ! CMB (AER, Inc): Add parameters
+        real*8, parameter :: tempThresh = 273.15
+        real*8, parameter :: rhThresh = 0.2
+        ! end CMB
 
 	!! External Variables
 	REAL*8  :: TimeStepSize		!! Should be in Seconds
@@ -165,6 +177,21 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 	LOGICAL :: EmptyGridCell
 	TYPE(Particle), POINTER :: FirstParticle, CurrentParticle
 	
+	! CMB (AER, Inc): floating-point equality issue
+	real*8 :: filler_value
+	!filler_value = 1.0E-64
+	! end CMB add
+
+        ! CMB (AER, Inc): Add getters for temp and RH
+        real*8 :: tempK, relativeHumidity
+        
+        tempK = GetTemp()
+        relativeHumidity = GetRelativeHumidity()
+        !write(*,*) '----> RH = ', relativehumidity
+        filler_value = 1.0E-40
+
+	
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! If there are no aerosol at the gridcell (or if they are all hydrophobic),  !
 !! then there is no need to condense                                          !
@@ -172,7 +199,10 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 	CurrentParticle => Particles%First
 
 	DO WHILE (ASSOCIATED(CurrentParticle))
-           IF ((CurrentParticle%Sectional .AND. CurrentParticle%NumberOfParticles .EQ. 0) &
+		   ! CMB (AER, Inc): Change the .eq. 0 to a boundary value
+		   if ((currentparticle%sectional .and. &
+		           (currentparticle%numberofparticles .le. filler_value)) &
+!           IF ((CurrentParticle%Sectional .AND. CurrentParticle%NumberOfParticles .EQ. 0) &
                 .OR. CurrentParticle%Dry) THEN
 
               CurrentParticle => CurrentParticle%Next			
@@ -187,47 +217,185 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 	
            !If doing equilibrium (09/18/06 MJA)
            IF(.NOT. DissolutionEquilibriumOrFlux) THEN
+		   	   print *, '---> Calling StepCondensation if doing equilibrium'
               CALL StepCondensation (TimestepSize, 1)
-	
+				call flush(6)
+
+				! CMB:
+				!write(*,*) 'after stepcondensation if doing equilibrium'
+				!call spillbeans(tout_unit=1031)
+				!write(*,*) 'GridGasChem(599) at CondensationIntegrator.h line 226 = ', &
+				!		GridGasChem(599)
+				!call GasOutput(301, 302, 303, real(900), .true., .true.)
+				!do while(associated(currentparticle))
+			!		write(*,*) 
+			!		write(*,*) 'Particle ID: ', currentparticle%particleid
+		!			write(*,*) 'Particle Distribution: ', currentparticle%particledistr
+		!		enddo
+				
            !If doing flux
            ELSE
               IF (ThermoBulkMode) &
                    CALL ERROR("Can't try to use the kinetic based condensation and "// &
                                    "dissolution routine when running in bulk mode "// &
 				   "(specified in AerosolModes.in).  Please remedy.")
-
+			 ! write(*,*) 'getTimeStepIndeX() = ', getTimeStepIndeX()
+			  !write(*,*) 'getParcelIndex() = ', getParcelIndex()
+			  !stop
               !! Sort the gridcell, pushing all empty sections to the end
+			  !if (getTimestepIndex() .eq. 23 .and. getParcelIndex(
+	 	!write(*,*) 'Before Sort AerosolAtGridPointForCondensation calling spillbeans'
+			!	call spillbeans(tout_unit=234)
+			!	endif
+				!write(*,*) 'GridGasChem(599) CondensationIntegrator.h line 245 = ', &
+				!	GridGasChem(599)
+				!call GasOutput(304, 305, 306, real(900), .true., .true.)
+				call flush(6)
               CALL SortAerosolAtGridPointForCondensation ()
-	
+				!call spillbeans(tout_unit=1032)
+				!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
+				!write(234,*)
+				!write(234,*) 'after sorting aerosol at grid point for condensation'
+	 	!write(*,*) 'After Sort AerosolAtGridPointForCondensation calling spillbeans'
+				!call spillbeans(tout_unit=234)
+				!endif
+				!write(*,*) 'GridGasChem(599) CondensationIntegrator.h line 245 = ', &
+				!					GridGasChem(599)
+				!call GasOutput(307, 308, 309, real(900), .true., .true.)
               DO I = 1, NumTimeSteps
-                 WRITE(*,*) "StepDissolutionAll Check 0"
-                 IF(DoDissolutionFlag .OR. DoCondensationFlag) &
+                 !WRITE(*,*) "StepDissolutionAll Check 0"
+                
+                ! CMB (AER, Inc): We're doing to try skipping the inorganics
+                !                 until we figure out what is wrong 
+                IF(DoDissolutionFlag .OR. DoCondensationFlag) then
+                    if ((tempK .gt. tempThresh) .and. (relativeHumidity .gt. &
+                            rhThresh)) then
+                      !write(*,*) "---> Calling StepCondensation if doing flux"
+				
+                      !stop
+					  !call spillbeans(tout_unit=567)
+					!call spillbeans(tout_unit=1033)
+				!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
+				!write(287,*) 
+				!write(287,*) 'before stepcondensation at condensationintegrator.h line 271'
+				!					  call spillbeans(tout_unit=287)
+				!call spillbeans(tout_unit=287)
+				!endif
                       CALL StepCondensation (TimestepSize, 1)
-		
-                 WRITE(*,*) "StepDissolutionAll Check 1"
+				!call spillbeans(tout_unit=1034)
+				!if (getTimestepIndex() .eq. 23 .and. getParcelIndeX() .eq. 20) then
+				!write(287,*)
+				!write(287,*) 'after stepcondensation at condensationintegrator.h line 289'
+			!		  call spillbeans(tout_unit=287)
+			!	endif
+					!print *, 'GridGasChem(599) at CondensationIntegrator.h line 267 = ', &
+					!	GridGasChem(599)
+						!call GasOutput(310, 311, 312, real(900), .true., .true.)
+                    endif
+                else
+                	!write(*,*) 'DoDissolutionFlag and DoCondensationFlag are F'
+                endif
+                    	
+
+                 !WRITE(*,*) "StepDissolutionAll Check 1"
                  IF(DoHydrophobicOrgDissolutionFlag) THEN
+				 !print *, 'GridGasChem(599) at CondensationIntegrator.h line 278 = ', &
+				 !						GridGasChem(599)
                     CALL UpdateHydrophobicUNIFAC_all
+					
+					!print *, 'GridGasChem(599) at CondensationIntegrator.h line 281 = ', &
+					!						GridGasChem(599)
+					!print *, '---> Calling StepOrgCondensation if doing flux'
+					call flush(6)
+				!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
+				!write(288,*) 
+				!write(288,*) 'Calling StepOrgCondensation at line 311 of condensationintegrator.h'
+				!call spillbeans(tout_unit=288)
+				!endif
                     CALL StepOrgCondensation (TimestepSize, 1)
-                 ENDIF
+				!print *, 'GridGasChem(599) at CondensationIntegrator.h line 286 = ', &
+				!						GridGasChem(599)
+					!write(*,*) 'after steporgcondensation'
+					!write(*,*)
+					!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
+					!				write(288,*) 
+					!				write(288,*) 'After StepOrgCondensation at line 321 of condensationintegrator.h'
+					!				call spillbeans(tout_unit=288)
+					!				endif
+					!write(288,*) 'calling spillbeans line 296 of CondensationIntegrator.h, after StepOrgCondensation'
+					!call spillbeans(tout_unit=288)
+				!print *, 'GridGasChem(599) at CondensationIntegrator.h line 291 = ', &
+				!										GridGasChem(599)
+						!call GasOutput(313, 314, 315, real(900), .true., .true.)
+                 Else
+				 	 !write(*,*) 'DoHydrophobicOrgDissolutionFlag is false'
+				 endif
 		
-                 WRITE(*,*) "StepDissolutionAll Check 2"
+                 !WRITE(*,*) "StepDissolutionAll Check 2"
                  IF(DoHydrophilicOrgDissolutionFlag) THEN
+				 !print *, 'GridGasChem(599) at CondensationIntegrator.h line 300 = ', &
+				 !										GridGasChem(599)
                     CALL UpdateHydrophilicUNIFAC_all
-                    WRITE(*,*) "StepDissolutionAll Check 2.1"
-                    CALL StepAqOrgCondensation (TimestepSize, 1)
-                 ENDIF
-                 WRITE(*,*) "StepDissolutionAll Check 3"
+					!print *, 'GridGasChem(599) at CondensationIntegrator.h line 303 = ', &
+					!										GridGasChem(599)
+                    !WRITE(*,*) "StepDissolutionAll Check 2.1"
+                    ! CMB (AER, Inc): Turn off Aq Orgs too, if conditions
+                    !                 are appropriate
+                    if ((tempK .gt. tempThresh) .and. (relativeHumidity .gt. &
+                            rhThresh)) then
+							!call spillbeans(tout_unit=289)
+                        !print *, '---> Calling StepAqOrgCondensation if doing flux; temp = ', tempK, ' and RH = ', relativeHumidity
+                        !stop
+						!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
+						!				write(289,*) 
+						!				write(289,*) 'Calling StepAqOrgCondensation at line 350 of condensationintegrator.h'
+						!				call spillbeans(tout_unit=289)
+						!				endif
+                        CALL StepAqOrgCondensation (TimestepSize, 1)
+				!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
+				!										write(289,*) 
+				!										write(289,*) 'done with StepAqOrgCondensation at line 356 of condensationintegrator.h'
+				!										call spillbeans(tout_unit=289)
+				!										endif
+				!write(289,*) 'after stepaqorgcondensation condensationintegrator.h line 322'
+				!call spillbeans(tout_unit=289)
+						!print *, 'done with stepaqorgcondensation'
+                    endif
+
+                 Else
+				 	 !write(*,*) 'DoHydrophilicDissolutionFlag is false'
+				 endif
+				 
+                 !WRITE(*,*) "StepDissolutionAll Check 3"
               END DO
 
            END IF
 
            !WRITE(*,*) "StepDissolutionAll Check 4"
            !Move particles across bin boundaries, if necessary
-           CALL RegridAerosol ()		
+		   !write(456, *) 'Calling SpillBeans prior to RegridAerosol at line 336 of CondensationIntegrator.h"'
+		   !write(456, *) 'before regridaerosol() in stepcondensationall'
+		   !write(456,*)
+		   !call spillbeans(tout_unit=456)
+				!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
+				!										write(290,*) 
+				!										write(290,*) 'Calling regridaerosol at line 381 of condensationintegrator.h'
+				!										call spillbeans(tout_unit=290)
+				!										endif
+           CALL RegridAerosol ()	
+			!write(456, *)
+			!write(456, *) 'Just after CondensationIntegrator.h line 337'	
+			!call spillbeans(tout_unit=456)
+				!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
+				!														write(290,*) 
+				!														write(290,*) 'done with regridaerosol at line 390 of condensationintegrator.h'
+				!														call spillbeans(tout_unit=290)
+				!														endif
 	
 	END IF !Empty Grid Cell
 			
 	!WRITE(*,*) "StepDissolutionAll Check 5"
+        call flush(6)   ! CMB add
 END SUBROUTINE StepCondensationAll
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -300,7 +468,8 @@ SUBROUTINE DissolutionFactors (WhichRxn, HowManyLinks, Temperature, &
 
 	!! If there is a positive gas phase concentration, 
         !! then return positive return flag.
-	IF (ReactionType .EQ. 0.) ReturnType = 1
+	!IF (ReactionType .EQ. 0.) ReturnType = 1
+	IF (ReactionType .EQ. 0) ReturnType = 1	! cmb
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Take the burdens and # of Particles from each of the aerosol particles !!
@@ -638,7 +807,10 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 	INTEGER			:: itol,itask,istate,iopt,mf,neq,LIW,LRW
 		
 	!! Non-LSODES Local Variables
-	INTEGER	                :: I, J, K, L, LLLL, C, allocation_error, & 
+	! October 7 2016 CMB (AER): "L" is a variable used in a common block by 
+	!							DLSODES and I don't think it is used anymore.
+	!							Going to remove it from here.
+	INTEGER	                :: I, J, K, LLLL, C, allocation_error, & 
                                    Rxn, HowManyLinks, YLen, GG,		  &
 				   HowManyNonZeroJacobianTerms,           &
                                    GasChemIndex1, TimeStep,	          &
@@ -657,10 +829,44 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 	REAL*4  :: etimearray(2)
 	REAL*8  :: WaterTime, CondTime, AmmoniaTime
 
-	LOGICAL, PARAMETER :: Scaffolding = .FALSE., OpenSystem = .FALSE., &
+	! 8 October 2016 CMB: AS per the migration from lsodes to dlsodes,
+	!					  we need to declare and store these common blocks
+	!					  on each routine that calls dlsodes.
+	real*8 :: diffs
+	integer :: num_nans
+	real*8 :: rowns, ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround
+	integer :: init, mxstep, mxhnil, nhnil, NSLAST, NYH, IOWNS, ICF, IERPJ, &
+			   IERSL, JCUR, JSTART, KFLAG, L, LYH, LEWT, LACOR, LSAVF, &
+			   LWM, LIWM, METH, MITER, MAXORD, MAXCOR, MSBP, MXNCF, N, &
+			   NQ, NST, NFE, NJE, NQU
+	COMMON /DLS001/ ROWNS(209), CCMAX, EL0, H, HMIN, HMXI, HU, RC, &
+					TN, UROUND, INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, &
+					NYH, IOWNS(6), ICF, IERPJ, IERSL, JCUR, JSTART, &
+					KFLAG, L, LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, &
+					MITER, MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, &
+					NFE, NJE, NQU
+	real*8 :: con0, conmin, ccmxj, psmall, rbig, seth
+	integer :: IPLOST, IESP, ISTATC, IYS, IBA, IBIAN, IBJAN, IBJGP, &
+			   IPIAN, IPJAN, IPJGP, IPIGP, IPR, IPC, IPIC, IPISP, IPRSP, IPA,&
+			   LENYH, LENYHM, LENWK, LREQ, LRAT, LREST, LWMIN, MOSS, MSBJ,&
+			   NSLJ, NGP, NLU, NNZ, NSP, NZL, NZU			
+	COMMON /DLSS01/ CON0, CONMIN, CCMXJ, PSMALL, RBIG, SETH, &
+					IPLOST, IESP, ISTATC, IYS, IBA, IBIAN, IBJAN, IBJGP, &
+					IPIAN, IPJAN, IPJGP, IPIGP, IPR, IPC, IPIC, IPISP, IPRSP, IPA,&
+					LENYH, LENYHM, LENWK, LREQ, LRAT, LREST, LWMIN, MOSS, MSBJ,&
+					NSLJ, NGP, NLU, NNZ, NSP, NZL, NZU				
+	! end CMB
+	
+	! CMB (temporarily turn on scaffolding in step condensation)
+	! 10/10/2016: Try setting OpenSystem to true
+	LOGICAL, PARAMETER :: Scaffolding = .FALSE., OpenSystem = .TRUE., &
                                ForceEquilibrium = .TRUE.
 	LOGICAL :: Equilibrated, UseEq
 
+	! cb
+	real*8 :: bef
+	! end cb
+	
 	TYPE(Particle), POINTER :: FirstParticle, CurrentParticle
 
 	!! SCSCSCSC
@@ -994,7 +1200,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! IF EQUILIBRIUM RATHER THAN FLUX, DO THAT HERE AND RETURN !!
 		IF (.NOT. DissolutionEquilibriumOrFlux .AND. RH .LE. AerosolWaterEquilibriumRHThreshold) THEN
-			WRITE(*,*) "Calling Equilibrium Routine"
+			!WRITE(*,*) "Calling Equilibrium Routine"
 			CALL EquilibrateGridPoint(EquilibrateWater=.TRUE., WaterOpenSystem=.FALSE., &
                                                      InorgOnly=.FALSE.)
 			RETURN
@@ -1034,7 +1240,10 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		END IF
 		
 		!Send an error if this tries to do ammonia in flux form
-	        IF(AmmoniaFlux .EQ. .TRUE. .AND. CombinedInorgDiss .EQ. .FALSE.) CALL ERROR("Operator split method only works if Ammonia is done as eq.")
+            ! CMB (AER): Make conditional play nice with gfortran
+            if (ammoniaFlux .and. (.not. combinedInorgDiss)) &
+                call error("Operator split method only works if ammonia is done as eq.")
+!//	        IF(AmmoniaFlux .EQ. .TRUE. .AND. CombinedInorgDiss .EQ. .FALSE.) CALL ERROR("Operator split method only works if Ammonia is done as eq.")
 
 
 		!! The allowed error for water content may be different than
@@ -1055,54 +1264,65 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		
 	!! If Water is condensing and the RH Flag is below the critical value,
 	!! then simply equilibrate it. (Uses total water content: org + inorg)
-		IF (Rxn .EQ. 1 .AND.  &
-                    RH .LE. AerosolWaterEquilibriumRHThreshold) THEN
+		!write(*,*) 'Rxn: ', Rxn
+		!write(*,*) 'RH: ', RH
+		!write(*,*) 'AerosolEquilibriumRHThreshold: ', AerosolWaterEquilibriumRHThreshold
+		!call flush(6)
+		IF (Rxn .EQ. 1 .AND. RH .LE. AerosolWaterEquilibriumRHThreshold) THEN
+			!write(*,*) '>>>Rxn = 1 and RH < thresh<<<'
 			Equilibrated = .FALSE.
 
-                        !Add global iteration Counter
+            !Add global iteration Counter
 			Global = 0
 
-			DO WHILE (NOT(Equilibrated))
+			DO WHILE (.NOT.(Equilibrated))
 				CurrentParticle => Particles%First
 				Equilibrated = .TRUE.
 
-			        Global = Global + 1
+			    Global = Global + 1
 
 				DO J = 1, HowManyLinks
 				
-				        !Skip empty particles
-				        IF(CurrentParticle%NumberofParticles .LE. 1.0e-6) THEN
-                                            CYCLE
-                                        END IF
+					!Skip empty particles
+					IF(CurrentParticle%NumberofParticles .LE. 1.0e-6) THEN
+						!write(*,*) 'Empty particle, skipping...'
+						!call flush(6)
+						CYCLE
+					END IF
 
 					LLLL = 1
 					ReturnType = 1
 					DO WHILE (ReturnType .NE. 2)
 					
 						ABCD = CurrentParticle%AqChems(1)
-                                                IF(Scaffolding) THEN
-                                                   Write(*,*) "Before EqAllWater, link = ", J
-                                                   Write(*,*) "Iteration = ", LLLL
-                                                   Write(*,*) "Global Iteration = ", Global
-                                                END IF
- 
+						IF(Scaffolding) THEN
+						   Write(*,*) "Before EqAllWater, link = ", J
+						   Write(*,*) "Iteration = ", LLLL
+						   Write(*,*) "Global Iteration = ", Global
+						END IF
+						!call flush(6)
+						!write(*,*) "************ CALLING EQALLWATER LINE 1240 **********"
 						CALL EqAllWater(CurrentParticle, ReturnType, OpenSystem)
-
+						!write(*,*) "************ AFTER CALLING EQALLWATER LINE 1242 **********"
 						IF(ReturnType .NE. 2) Equilibrated = .FALSE.
-
-                                                !If change in aero water content is lt 0.5%, particle in Eq.
-						IF(ABS((ABCD-CurrentParticle%AqChems(1)) &
-                                                      /CurrentParticle%AqChems(1)) .LE. 0.005) THEN
+						!call flush(6)
+		
+						! CMB: Switch to double precision
+                        ! If change in aero water content is lt 0.5%, particle in Eq.
+						!IF(ABS((ABCD-CurrentParticle%AqChems(1)) &
+                        !        /CurrentParticle%AqChems(1)) .LE. 0.005) THEN
+						IF(dABS((ABCD-CurrentParticle%AqChems(1)) &
+						        /CurrentParticle%AqChems(1)) .LE. 0.005) THEN		
 						  ReturnType  = 2
 						  Equilibrated = .TRUE.
 						END IF
 
 						LLLL = LLLL+1
-						IF(LLLL .GT. 25) THEN
-                                                   !CALL WARN("Over 25 water iterations "// &
-                                                   !          "for a single particle "//&
-                                                   !          "in StepCondensation().")
-                                                   !CALL WARN("RH equals :"//trim(real2str(RH)))
+						IF(LLLL .GT. 25) THEN	! CB: uncommented warns
+                                                   CALL WARN("Over 25 water iterations "// &
+                                                             "for a single particle "//&
+                                                             "in StepCondensation().")
+                                                   CALL WARN("RH equals :"//trim(real2str(RH)))
                                                    ReturnType  = 2
                                                    Equilibrated = .TRUE.
 						END IF
@@ -1111,10 +1331,10 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 					CurrentParticle => CurrentParticle%Next
 				END DO
 
-                                !Exit after 25 global iterations
-                                IF (Global .GT. 25) THEN
-                                   Equilibrated = .TRUE.
-                                END IF
+				!Exit after 25 global iterations
+				IF (Global .GT. 25) THEN
+				   Equilibrated = .TRUE.
+				END IF
 			END DO
 			CYCLE
 		END IF
@@ -1308,7 +1528,13 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 
 
 			!! Store the concentrations for later
+			! CMB (AER, INC): Check for NaN's
 			DO J = 1, NEQ
+				if (isNaN(Y(J))) then
+					write(*,*) 'Error (StepCondensation): Concentration prior to LSODES is NaN for ', &
+							'Y-vector index ', J, '.  This should not happen!'
+					stop
+				endif
 				InitialConcsArray(J) = Y(J)
 			END DO
 
@@ -1321,29 +1547,56 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 			END DO
 			
 			!! Cycle if not
+			!SELECT CASE (INT(DissolutionData(Rxn,11)))
+			!CASE (:1)
+			!	IF (Y(1) .EQ. 0 .AND. II .EQ. 0) CYCLE
+			!CASE (2)
+			!	IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0)) CYCLE
+			!CASE (3)
+			!	IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0) .AND. KK .EQ. 0) CYCLE
+			!CASE (4)
+			!	IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0) CYCLE
+			!CASE (5)
+			!	IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0 .AND. KK .EQ. 0) CYCLE
+			!END SELECT
 			SELECT CASE (INT(DissolutionData(Rxn,11)))
 			CASE (:1)
-				IF (Y(1) .EQ. 0 .AND. II .EQ. 0) CYCLE
+				IF (dabs(Y(1)) .le. 1.0e-40 .AND. dabs(II) .le. 1.0e-40) CYCLE
 			CASE (2)
-				IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0)) CYCLE
+				IF (dabs(Y(1)) .le. 1.0e-40 .AND. &
+						(dabs(II) .le. 1.0e-40 .OR. dabs(JJ) .le. 1.0e-40)) CYCLE
 			CASE (3)
-				IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0) .AND. KK .EQ. 0) CYCLE
+				IF (dabs(Y(1)) .le. 1.0e-40 .AND. &
+						(dabs(II) .le. 1.0e-40 .OR. &
+								dabs(JJ) .le. 1.0e-40) .AND. &
+								dabs(KK) .le. 1.0e-40) CYCLE
 			CASE (4)
-				IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0) CYCLE
+				IF ((dabs(Y(1)) .le. 1.0e-40 .OR. dabs(JJ) .le. 1.0e-40) .AND. &
+						dabs(II) .le. 1.0e-40) CYCLE
 			CASE (5)
-				IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0 .AND. KK .EQ. 0) CYCLE
+				IF ((dabs(Y(1)) .le. 1.0e-40 .OR. dabs(JJ) .le. 1.0e-40) .AND. &
+						dabs(II) .le. 1.0e-40 .AND. dabs(KK) .le. 1.0e-40) CYCLE
 			END SELECT
 
 		
 			!! Each chemical starts as if a new run
 			istate = 1
+			
+			! Octoer 8 2016 CMB: We are going to attempt to run with a 
+			!					 double-precision, updated version of the 
+			! 					 Livermore ODE solver.
+30			call dlsodes(condensationodeevaluator, neq, y, t, &
+						 outtime, itol, rtol, atol, itask, &
+						 istate, iopt, rwork, lrw, iwork, liw, &
+						 condensationjacobianevaluator, mf)
+			! end CMB
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-30			CALL LSODES (CondensationODEEvaluator,neq,y,t, &
-                                     outtime,itol,rtol,atol,itask, &
-		                     istate,iopt,rwork,lrw,iwork,liw, &
-                                     CondensationJacobianEvaluator,mf)
+!30			CALL LSODES (CondensationODEEvaluator,neq,y,t, &
+!                                     outtime,itol,rtol,atol,itask, &
+!		                     istate,iopt,rwork,lrw,iwork,liw, &
+!                                     CondensationJacobianEvaluator,mf)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             IF (SCAFFOLDING) WRITE(*,*) "After Condensation LSODES"
@@ -1364,11 +1617,58 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 						  " Should have been of size "//TRIM(INT2STR(iwork(17)))//" but was only "//					&
 						  TRIM(INT2STR(LRW))//" instead.  Fix the assignment in EvolveGasChemistry's SetEvolveGasChemConstants().")
 
+			! CMB (AER): Got sick of LSODES errors, let's let it keep going
+			!			 if we get -5
+			!if (istate .lt. -1 .and. istate .ne. -5) &
 			IF (ISTATE .LT. -1) &
-			CALL ERROR("In StepCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
+			!CALL ERROR("In StepCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
+			CALL warn("In StepCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
 						TRIM(INT2STR(ISTATE))//".  Please investigate.")
+			if (istate .lt. -1) then
+				CALL warn("In StepCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
+						  TRIM(INT2STR(ISTATE))//".  Please investigate.")
+				WRITE(*,*) "Reaction #", Rxn
+				write(*,*) "Before LSODES Gas Conc: ", InitialConcsArray(1)
+				num_nans = 0
+				diffs = 0.0D0
+				do i = 1, NEQ
+					write(*,*) 'Before/After LSODES: (', i, ') = ', InitialConcsArray(i), Y(i)
+					if (isNaN(Y(i))) then
+						num_nans = num_nans + 1
+						write(*,*) 'New Y(I) is NaN; apply a small perturbation to the value and try ODE again OR set to orig and continue'
+						!Y(i) = InitialConcsArray(i) !Y(i) + 1D-10
+					else
+						diffs = diffs + dabs(Y(i) - InitialConcsArray(i))
+					endif
+				enddo
+				if (dabs(diffs) .lt. 1.0D-10) then
+					do i = 1, NEQ
+						if (isNaN(Y(i))) Y(i) = InitialConcsArray(i)
+					enddo
+				!endif
+				else
+					if (num_nans .gt. 0) then
+						write(*,*) 'Error (StepCondensation): We have at least 1 NaN after DLSODES, ', &
+								'yet the net difference in concentration (', diffs, ') is > 1d-10.'
+						write(*,*) 'Investigate this further before rerunning...'
+						call flush(6)
+						stop
+					endif
+				endif
+				!WRITE(*,*) "Gas Conc : ", Y(1)
+								  !WRITE(*,*) "Compound: ", GasPhaseChemicalNames(nINT(OrganicDissolutionData(Rxn,1)))
+								  !WRITE(*,*) "Num Bins", HowManyLinks
+				!if (isNaN(Y(1))) Y(1) = 0.0D0			
+				!CALL WARN("In StepOrgCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
+				!		TRIM(INT2STR(ISTATE))//".  Please investigate.")
+				if (num_nans .gt. 0) then
+					!write(*,*) 'Trying ODE with slight perturbations...'
+					!istate = 1
+					!goto 30
+				endif
+				call flush(6)
+			endif
 			
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Store the output concentrations until we !!
 !! have considered all of the chemicals     !!
@@ -1383,6 +1683,8 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 !! ChemStorageArray(Rxn, 2*HML+1)   = Change in Aerosol Conc 2 (HowManyLinks)!!
 !! ChemStorageArray(Rxn, 2*HML+2)   = Change in Gas Phase Conc 2	     !!
 			DO K = 1, NEQ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				  !write(*,*) 'Rxn, K, Y(K), InitialConcsArray(K), ChemStorageArray(K) = ', Rxn, K, Y(K), &
+				  !	  InitialConcsArray(K), Y(K) - InitialConcsArray(K)
 		          ChemStorageArray(Rxn,K) = Y(K) - InitialConcsArray(K)
 			END DO
 
@@ -1392,6 +1694,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! Replace the background chemical concentrations !!
 		DO I = 1, 2 !HowManyDissolutionReactionsMJA, We skip all but H2O and sulfate
+			!write(*,*) 'Replacing the background chemical concentrations'
 			IF (SCAFFOLDING) WRITE(*,*) I, ChemStorageArray(I,1), ChemStorageArray(I,2) 
 			!Skip replace if gas is to be held constant
 			IF(INT(DissolutionData(I,1)) .LE. HowManyEvolveGasChems) THEN
@@ -1415,16 +1718,33 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 
 			!! How we replace depends on the 
 			!! reaction type
-
-			IF (Scaffolding) WRITE(*,*) J, CurrentParticle%AqChems(INT(DissolutionData(J,3))) + &
-															ChemStorageArray(J,I+1) / Avogadro
+			! cmb mod
+			if (scaffolding) then
+				write(*,*) 'J = ', j
+				write(*,*) 'I = ', i
+				write(*,*) 'ChemStorageArray(J, I+1) = ', ChemStorageArray(J, I+1)
+				write(*,*) 'CurrentParticle%AqChems(INT(DissolutionData(J,3)) = ', &
+					CurrentParticle%AqChems(INT(DissolutionData(J,3)))
+			endif
+			!IF (Scaffolding) WRITE(*,*) J, CurrentParticle%AqChems(INT(DissolutionData(J,3))) + &
+			!												ChemStorageArray(J,I+1) / Avogadro
 
 			CurrentParticle%AqChems(INT(DissolutionData(J,3))) = CurrentParticle%AqChems(INT(DissolutionData(J,3))) + &
 															ChemStorageArray(J,I+1) / Avogadro
 
 			IF(CurrentParticle%AqChems(INT(DissolutionData(J,3))) .LT. 0.0) THEN
-				!WRITE(*,*) "Negative Cation error, reaction #", J
+				WRITE(*,*) "Negative Cation error, reaction #", J
+				write(*,*) "I = ", I
+				write(*,*) "Reaction Type: ", int(dissolutiondata(j,11))
+				write(*,*) "CurrentParticle%AqChems(1) = ", CurrentParticle%AqChems(1)
+				write(*,*) "DissolutionData(J,3) = ", DissolutionData(J,3)
+				write(*,*) "int(dissolutionData(J, 3)) = ", int(dissolutiondata(j,3))
 				!WRITE(*,*) AqPhaseChemicalNames(DissolutionData(J,3)), CurrentParticle%AqChems(DissolutionData(J,3))
+				WRITE(*,*) AqPhaseChemicalNames(int(DissolutionData(J,3))), CurrentParticle%AqChems(int(DissolutionData(J,3)))
+
+				! CMB: let's try this...'
+				!CurrentParticle%AqChems(int(DissolutionData(J,3))) = 1.0e-80
+				! end CMB
 			END IF
 
 			RxnType = INT(DissolutionData(J,11)) 
@@ -1433,9 +1753,17 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 				
 				CASE (2)
 				
+				! CMB (uncommented the write statements here)
 				IF(CurrentParticle%AqChems(INT(DissolutionData(J,4))) .LT. 0.0) THEN
-					!WRITE(*,*) "Negative Anion error, reaction #", J
+					WRITE(*,*) "Negative Anion error, reaction #", J
+					write(*,*) "I = ", I
+					write(*,*) "Reaction Type: ", int(dissolutiondata(j,11))
+					write(*,*) "CurrentParticle%AqChems(1) = ", CurrentParticle%AqChems(1)
+					write(*,*) "DissolutionData(J,4) = ", DissolutionData(J,4)
+					write(*,*) "int(dissolutionData(J, 4)) = ", int(dissolutiondata(j,4))
 					!WRITE(*,*) AqPhaseChemicalNames(DissolutionData(J,4)), CurrentParticle%AqChems(DissolutionData(J,4))
+					WRITE(*,*) AqPhaseChemicalNames(int(DissolutionData(J,4))), CurrentParticle%AqChems(int(DissolutionData(J,4)))
+					
 				END IF
 
 				IF (Scaffolding) WRITE(*,*) J, CurrentParticle%AqChems(INT(DissolutionData(J,4))) + &
@@ -1445,7 +1773,8 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 
 			20	IF(CurrentParticle%AqChems(INT(DissolutionData(J,3))) .LT. 0.0 .OR. &
 				   CurrentParticle%AqChems(INT(DissolutionData(J,4))) .LT. 0.0) THEN
-					!CALL Transcript("In CondensationIntegrator, an acid reaction went below zero.")
+					! CMB (uncommented this)
+				    CALL Transcript("In CondensationIntegrator, an acid reaction went below zero.")
 					
 					!Reset concs to previous value
 					!Cation
@@ -1466,9 +1795,12 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 						END IF
 					END DO
 					
-					IF(INT(Electrolyte) .NE. 0. .AND. & !Gas-solid Reaction exists
-					   CurrentParticle%AqChems(INT(Electrolyte)) .GT. ABS(ChemStorageArray(J,I+1) / Avogadro)) THEN !There is enough salt
-						!WRITE(*,*) "Salt Evaporation!"
+					! CMB: comparing an integer to a float, extra precision
+					if(nint(Electrolyte) .ne. 0 .and. &
+					!IF(INT(Electrolyte) .NE. 0. .AND. & !Gas-solid Reaction exists
+					   !CurrentParticle%AqChems(INT(Electrolyte)) .GT. ABS(ChemStorageArray(J,I+1) / Avogadro)) THEN !There is enough salt
+					   CurrentParticle%AqChems(nINT(Electrolyte)) .GT. dABS(ChemStorageArray(J,I+1) / Avogadro)) THEN !There is enough salt
+						WRITE(*,*) "Salt Evaporation!"
 		
 						!Evaporate Electrolyte (remember chemstoragearray is negative here!)
 						CurrentParticle%AqChems(INT(Electrolyte)) = CurrentParticle%AqChems(INT(Electrolyte)) + ChemStorageArray(J,I+1) / Avogadro
@@ -1483,7 +1815,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 						DO C = 1, HowManyDissolutionReactions
 							IF (GasPhaseChemicalNames(INT(DissolutionData(C,1))) .EQ. "NH3" &
 								.AND. INT(DissolutionData(C,11)) .EQ.  4 &
-								.AND. AmmoniaFlux .EQ. .FALSE. ) THEN
+								.AND. (.not. ammoniaFlux)) then !AmmoniaFlux .EQ. .FALSE. ) THEN
 								IF (SCAFFOLDING) WRITE(*,*) "Before Ammonia Equilibrate, particle #", J
 				
 								IF (SCAFFOLDING) WRITE(*,*) "Equilibrating Ammonia!"
@@ -1561,6 +1893,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 					
 				
 				CASE (3) !No zero check!
+				write(*,*) 'Case 3, no zero check!'
 				CurrentParticle%AqChems(INT(DissolutionData(J,4))) = CurrentParticle%AqChems(INT(DissolutionData(J,4))) + &
 																ChemStorageArray(J,I+HowManyLinks+1) / Avogadro
 
@@ -1570,6 +1903,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 															ChemStorageArray(J,I+2*HowManyLinks+1) / Avogadro
 
 				CASE (4)
+				write(*,*) 'Case 4, no zero check!'
 				IF (Scaffolding) WRITE(*,*) J, CurrentParticle%AqChems(INT(DissolutionData(J,2))) + ChemStorageArray(J,I+HowManyLinks+1) / Avogadro 
 				
 				CurrentParticle%AqChems(INT(DissolutionData(J,2))) = CurrentParticle%AqChems(INT(DissolutionData(J,2))) + &
@@ -1577,7 +1911,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 
 				IF (CurrentParticle%AqChems(INT(DissolutionData(J,2))) .LT. 0) THEN
 					
-					!CALL Transcript("In CondensationIntegrator, there was a cation concentration that went below zero.")
+					CALL Transcript("In CondensationIntegrator, there was a cation concentration that went below zero.")
 					!Reset concs to previous value
 					!NH4+
 					CurrentParticle%AqChems(INT(DissolutionData(J,3))) = CurrentParticle%AqChems(INT(DissolutionData(J,3))) - &
@@ -1643,9 +1977,18 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 		END DO 
 		
 		!! Re-Equilibrate
-                !WRITE(*,*) "Before FindElectrolyteEquilibrium"
-		CALL FindElectrolyteEquilibrium(CurrentParticle, UpdateThermo = .TRUE., FirstEquilibration=.FALSE., ReturnType=GG)
-
+		bef = currentparticle%aqchems(1)
+				!write(*,*) 'Particle ID = ', currentparticle%particleid
+                !WRITE(*,*) "Before FindElectrolyteEquilibrium in StepCondensation, water for this particle = ", &
+				!	currentparticle%aqchems(1)
+				!	call flush(6)
+		! cmb: add if statement
+		!if (currentparticle%aqchems(1) .gt. 1.0e-40) then
+			CALL FindElectrolyteEquilibrium(CurrentParticle, UpdateThermo = .TRUE., FirstEquilibration=.FALSE., ReturnType=GG)
+					!WRITE(*,*) "After FindElectrolyteEquilibrium in StepCondensation, water for this particle went from ", &
+					!	bef, " to ", currentparticle%aqchems(1), ' for particle ID = ', &
+					!	currentparticle%particleid
+		!endif		
 		CurrentParticle => CurrentParticle%Next
 
 		END DO !! Quit loop over particles for replacement
@@ -1688,6 +2031,10 @@ SUBROUTINE CondensationJacobianEvaluator (neq, t, y, I, ia, ja, pdj)
 
 	LOGICAL, PARAMETER :: SCAFFOLDING = .FALSE.
 
+	! CMB
+	call flush(6)
+	! end CMB
+	
 	!WRITE(*,*) "Entering Condensation Jacobian."
 	!! Determine HowManyLinks by backing out of the -1 reference point
 	IF (Y(2*neq+9) .EQ. -1) THEN
