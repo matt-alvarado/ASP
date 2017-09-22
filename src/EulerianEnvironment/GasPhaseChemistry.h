@@ -59,6 +59,11 @@
 !!16. SUBROUTINE SetWaterVaporField (RH)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+! ************************************************************************
+! Modified by CMB for use by gfortran: dlog10() needs a double precision
+! value, so I forced an explicit cast each time
+! ************************************************************************
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Each timestep the reaction rates are recalculated !!
 !! This subroutine performs that service.	     !!
@@ -104,7 +109,7 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 	  k0   = ReactionRates(L,4)*EXP(ReactionRates(L,5)/Temp)* Mgas
 	  ki   = ReactionRates(L,6)*EXP(ReactionRates(L,7)/Temp)
 	  GasPhaseChemicalRates(L) = (k0*ki)/(k0+ki) * ReactionRates(L,8)** &
-						(1./(1.+(DLOG10(k0/ki)**2.)))
+						(1./(1.+(DLOG10(dble(k0/ki))**2.)))
 								
         !Isomerization Case
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 2) THEN
@@ -122,7 +127,7 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 	  k0  = ReactionRates(L,4)*(Temp/300.)**(-1.*ReactionRates(L,5)) * Mgas
 	  ki  = ReactionRates(L,6)*(Temp/300.)**(-1.*ReactionRates(L,7))
 	  kf  =	(k0*ki)/(k0+ki) * ReactionRates(L,8)**			&
-				(1./(1.+(DLOG10(k0/ki)**2.)))
+				(1./(1.+(DLOG10(dble(k0/ki))**2.)))
 	  Keq = ReactionRates(L,9)*EXP(ReactionRates(L,10)/TEMP)
 								
 	  GasPhaseChemicalRates(L) = kf/Keq
@@ -144,8 +149,12 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 	  Knaught = Mgas*1.3E-3*((300.0/TEMP)**3.5)*EXP(-11000.0/TEMP)
 	  !Knaught = Mgas*1.3E-3*((TEMP/300.0)**3.5)*EXP(-11000.0/TEMP)
 	  KINF = 9.7E+14*((TEMP/300.0)**0.1)*EXP(-11080.0/TEMP)
-          NCD = 0.75-1.27*(DLOG10(0.35))
-          FD = 10.**(DLOG10(0.35)/(1.+(DLOG10(Knaught/KINF)/NCD)**2))
+          NCD = 0.75-1.27*(DLOG10(dble(0.35)))
+!          FD = 10.**(DLOG10(0.35)/(1.+(DLOG10(Knaught/KINF)/NCD)**2))
+          FD = 10.**(DLOG10(dble(0.35))/(1.+(DLOG10(dble(Knaught/KINF))/NCD)**2))
+          GasPhaseChemicalRates(L) = FD*(Knaught*KINF)/(Knaught+KINF)	
+!          FD = 10.**(DLOG10(0.35)/(1.+(DLOG10(Knaught/KINF)/NCD)**2))
+          FD = 10.**(DLOG10(dble(0.35))/(1.+(DLOG10(dble(Knaught/KINF))/NCD)**2))
           GasPhaseChemicalRates(L) = FD*(Knaught*KINF)/(Knaught+KINF)	
 
 !          WRITE(*,*) GasPhaseChemicalRates(L), (1.+(DLOG10(Knaught/KINF)/NCD)**2)
@@ -180,8 +189,8 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 11) THEN
 	  k0 = ReactionRates(L,4)*exp(ReactionRates(L,5)/TEMP) * Mgas
 	  ki = ReactionRates(L,6)*exp(ReactionRates(L,7)/TEMP)
-	  NCD = 0.75-1.27*(DLOG10(ReactionRates(L,8)))
-          FD = 10.**(DLOG10(ReactionRates(L,8))/(1.+(DLOG10(k0/ki)/NCD)**2))
+	  NCD = 0.75-1.27*(DLOG10(dble(ReactionRates(L,8))))
+          FD = 10.**(DLOG10(dble(ReactionRates(L,8)))/(1.+(DLOG10(dble(k0/ki))/NCD)**2))
           GasPhaseChemicalRates(L) = FD*(k0*ki)/(k0+ki)
 
         !+ RO2_T pseudo-1st order Case (MJA, 01-25-2013)
@@ -316,15 +325,15 @@ SUBROUTINE ResetGasPhaseReactionRates (ReactionRates,ArraySize, TotalPeroxy, Tot
 	ELSE IF (INT(ReactionRates(L,3)) .EQ. 3) THEN
 	  k0 = ReactionRates(L,4)*(Temp/300.)**(-1.*ReactionRates(L,5)) * Mgas
 	  ki = ReactionRates(L,6)*(Temp/300.)**(-1.*ReactionRates(L,7))
-	  NCD = 0.75-1.27*(DLOG10(ReactionRates(L,8)))
-          FD = 10.**(DLOG10(ReactionRates(L,8))/(1.+(DLOG10(k0/ki)/NCD)**2))
+	  NCD = 0.75-1.27*(DLOG10(dble(ReactionRates(L,8))))
+          FD = 10.**(DLOG10(dble(ReactionRates(L,8)))/(1.+(DLOG10(dble(k0/ki))/NCD)**2))
           GasPhaseChemicalRates(L) = FD*(k0*ki)/(k0+ki)													
 	!Calculate pseudo-2nd order rate constant
 	ELSE !JPL Style							
 	  k0 = ReactionRates(L,3)*(Temp/300.)**(-1.*ReactionRates(L,4)) * Mgas
 	  ki = ReactionRates(L,5)*(Temp/300.)**(-1.*ReactionRates(L,6))
 	  GasPhaseChemicalRates(L) = (k0*ki)/(k0+ki) * ReactionRates(L,7)** &
-					(1./(1.+(DLOG10(k0/ki)**2.)))
+					(1./(1.+(DLOG10(dble(k0/ki))**2.)))
 	END IF
       END SELECT
 
