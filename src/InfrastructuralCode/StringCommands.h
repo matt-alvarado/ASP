@@ -30,12 +30,67 @@
 !! 9. FUNCTION IsReal( InString ) RESULT ( Flag )			    !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+! ! CB add
+! integer function fstrtok_c(return_status, input_string, delimiters, &
+!                            first_token) RESULT (token_length)
+!    implicit none
+!
+!    character(LEN=*), intent(in) :: delimiters
+!    character(LEN=*), intent(inout) :: input_string, first_token
+!    integer, intent(inout) :: return_status
+!    
+!    ! TODO: Do I need this?
+!    integer :: STRTOK_FROM_FORTRAN, i, ra
+!    external STRTOK_FROM_FORTRAN
+!
+!    ! Fill first token with blank spaces to ensure no newline comes over?
+!    do i = 1, len(first_token)
+!        first_token(i:i) = ' '
+!    enddo 
+!
+!    ! Call the C
+!    print *, 'About to Call String Token pointer: '
+!    print *, 'Input String: ', input_string(1:len(trim(input_string)))
+!    print *, 'Delimiters: ', delimiters(1:len(trim(delimiters)))
+!    token_length = STRTOK_FROM_FORTRAN(return_status, &
+!            input_string(1:len(trim(input_string)))//CHAR(0), &
+!            delimiters(1:len(trim(delimiters)))//CHAR(0), &
+!            first_token)
+!
+!    !first_token = first_token(
+!    !print *, 'Returned from C: first_token = "', first_token(1:len(trim(first_token))), '"' 
+!    print *, 'Returned from C: first_token = "', first_token(1:token_length), '"' 
+!
+!    ! add the stripping of the token (whitespace)
+!    !first_token = stripToken(first_token)(1:
+!    !print *, 'First token after striptoken = "', first_token(1:len(trim(first_token))), '"'
+!    ra = replace_newline_null_w_space(first_token)
+!    print *, 'token after removal = "', first_token(1:len(trim(first_token))), '"' 
+!    ! Advance pointer ahead to next token.   
+!    input_string = input_string(token_length+len(trim(delimiters))+1:len(trim(input_string)))
+!    return
+! end function
+! ! end CB add
+
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!! This Strips leading and trailing whitespace from a string !!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! Modified by CMB to use StringIO library instead of native ASP
  CHARACTER (len = 1024) FUNCTION StripToken (InLine) RESULT (OutLine)
-	CHARACTER*(*) :: InLine
+!	use StringIO    ! CMB add
+!
+        CHARACTER*(*) :: InLine
 	INTEGER       :: i, j
+!		!print *, 'In ASP: inline prior to strip = "', inLine(1:len(inline)), '"'
+!        i = copyString(inLine, outLine)
+!        j = stripString(outLine)
+!		if (len(trim(outline)) .gt. 0) then
+!			!print *, 'In ASP: first byte = ', ichar(outline(1:1))
+!		endif
+!		!print *, 'In ASP: inline after strip = "', outline(1:len(trim(outline))), '".'
 
 	!! String might be an empty string
 	IF (LEN_TRIM(Inline) .EQ. 0) THEN
@@ -45,7 +100,7 @@
 
                 
 
-	!! Strip Leading Whitespace
+	!! Strip Leading Whitespace 
 	i=1
 	DO WHILE (InLine(i:i) == " " .or. InLine(i:i) == "	") 
         ! The second option has a tab character in it
@@ -58,8 +113,15 @@
 		END IF							
 	END DO								
 
-	!! Strip Trailing Whitespace					
+	!! Strip Trailing Whitespace
+        ! CB: Modified to strip trailing newline characters as well        
 	j=LEN(InLine)
+        !do while (inLine(j:j) == CHAR(9) .or. &
+        !          inLine(j:j) == CHAR(10) .or. &
+        !          inLine(j:j) == CHAR(13) .or. &
+        !          inLine(j:j) == " " .or. &
+        !          inLine(j:j) == "  " .or. & 
+        !          inLine(j:j) == CHAR(0))
 	DO WHILE (InLine(j:j) == " " .or. InLine(j:j) == "	") 
         ! The second option has a tab character in it
 		IF (j .le. 1) EXIT ! Trip trailing spaces / tabs off
@@ -186,7 +248,9 @@ END FUNCTION CountDigits
 	!! Now check to see if it's really small
 	ELSE
 		IF (WorkReal .LT. 1 ) THEN
-		e = FLOOR(dlog10(WorkReal))
+                   ! CMB (AER): Gfortran expects WorkReal to be a double; need to cast
+                   !            it to a double in the call here
+		   e = FLOOR(dlog10(dble(WorkReal)))
 		   IF (e .LT. MinUnSci) THEN
 			WorkReal = WorkReal / 10.**e
 		   END IF
@@ -245,8 +309,25 @@ END FUNCTION CountDigits
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	 SUBROUTINE GetToken(InLine, Delimitor, OutLine)
 
+!                use StringIO
 		CHARACTER*(*) :: InLine, Delimitor, OutLine
-		INTEGER		  :: i, ld, lt
+		INTEGER		  :: i, ld, lt, nullint
+!                call getTokenASP(inLine, Delimitor, OutLine)
+
+                !character*1024 outline_temp
+
+                ! CB: Comment all of this out and replace it with the call to 
+                !     C Code
+                integer :: token_length, return_status
+
+                !do i = 1, 1024
+                !    outline_temp(i:i) = char(32)
+                !enddo
+
+                ! Call the C wrapper
+                !print *, 'In GetToken(): Inline = ', inLine(1:len(trim(inLine)))
+                !print *, 'In GetToken(): Delimiter = "', delimitor(1:len(trim(delimitor))), '"'                         
+                !token_length = fstrtok_c(return_status, inLine, Delimitor, OutLine)
 
 		!! Measure the Delimitor
 		ld = LEN(Delimitor)
@@ -255,8 +336,11 @@ END FUNCTION CountDigits
 		lt = LEN_TRIM(InLine)
 
 		!! Chercher the delimitor in the string
+                !! CB: Modify this to also blank out at newlines (windows or linux)
 		DO i = 1,lt+1-ld
-			IF (InLine(i:i+ld-1) .eq. Delimitor) EXIT
+			IF ( (InLine(i:i+ld-1) .eq. Delimitor) ) EXIT !.or. &
+                             !(InLine(i:i+ld-1) .eq. CHAR(10)) .or. &
+                             !(InLine(i:i+ld-1) .eq. CHAR(13)) )EXIT
 		END DO
 
 		!! If the string does not include the delimitor, then it is either
@@ -267,7 +351,7 @@ END FUNCTION CountDigits
 			IF (LEN(OutLine) .lt. LEN_TRIM(StripToken(InLine))) &
 				CALL ERROR("Output string in call to GetToken is of insufficient length")
 			OutLine   = TRIM(StripToken(InLine))! The whole line is the token
-			InLine  = ""						! The instring is updated to be blank
+			InLine  = ""	! The instring is updated to be blank
 		ELSE
 		!! If the token exists, then return that token and strip it from the 
 		!! InLine.
@@ -277,6 +361,15 @@ END FUNCTION CountDigits
 			OutLine  = StripToken(InLine(1:i-1))
 			InLine   = StripToken(InLine(i+ld:lt)) ! This has to be shorter than the imput line, 
 		END IF					       ! which is why this formulation is copacetic
+
+                ! remove newlines
+                !nullint = ichar(0)
+                !do i = 1, len(outline)
+                !    if (ichar(outline(i:i)) .eq. 13 .or. ichar(outline(i:i)) .eq. 10) then
+                !        print *, 'Calling remove!!!'
+                !        outline(i:i) = ' '
+                !    endif
+                !enddo
 
 		RETURN
 
@@ -305,7 +398,9 @@ END FUNCTION CountDigits
 		CurrString = TRIM(StripToken(InString))
 
 		!! Make sure the input string is not blank
-		IF (LEN_TRIM(CurrString) == 0) CALL ERROR("Empty input string into STR2INT")
+		! Modified by CMB (AER, Inc): LEN_TRIM is bad news on some platforms
+		!IF (LEN_TRIM(CurrString) == 0) CALL ERROR("Empty input string into STR2INT")
+		if (len(trim(currstring)) == 0) call error("Empty input string into STR2INT")
 
 		!! I is the position variable with which we nibble
 		i = 1
@@ -323,8 +418,11 @@ END FUNCTION CountDigits
 		I0		= ICHAR('0')
 
 		!! Now total the integer
-		DO  J = I, LEN_TRIM(CurrString)
+		! Modified by CMB (AER, Inc): LEN_TRIM is bad news on some platforms
+		!DO  J = I, LEN_TRIM(CurrString)
+		do j = i, len(trim(currstring))
 			IC = ICHAR(CurrString(J:J) ) - I0
+                        !print *, 'i = ', j, ', ic = ', ic
 			IF (IC .LT. 0  .OR.  IC .GT. 9 ) EXIT	! This is a non-integral value.  Bugger out of the loop.
 			OutInt = 10 * OutInt +  IC
 			k = k+1
@@ -364,8 +462,12 @@ END FUNCTION CountDigits
 
 		!! Look for Bad Characters and Set a Flag if You See One
 		K = 0
+                ! CB: let's diagnose the problem...
 		DO J = 1, LEN_TRIM(CurrString) 
-			IF (INDEX (Numbers, CurrString(J:J)) == 0) K = 1
+			!IF (INDEX (Numbers, CurrString(J:J)) == 0) K = 1
+                        if (index (numbers, currstring(j:j)) == 0) then
+                            call Error ("confusing character in string = "//">>"//currstring(j:j)//"<<")
+                        endif
 		END DO
 		IF (K == 1) &								! Non-Numerical Numbers
 			CALL ERROR ("STR2REAL Received the Following Confusing String:"//">>"//TRIM(CurrString)//"<<")
@@ -405,18 +507,32 @@ END FUNCTION CountDigits
 		!! Input typing
 		CHARACTER*(*) :: InString
 
+                !integer, optional :: num_chars_input
+                !integer :: num_chars
+
 		!! Local variable typing
 		INTEGER				:: I, J, LT
 		CHARACTER (len=128) :: CurrString
 
+                !if (.not. present(num_chars_input)) then
+                !    num_chars = 128
+                !else
+                !    num_chars = num_chars_input
+                !endif
+
 		!! Dump leading and trailing spaces and tabs
 		CurrString = StripToken(InString)
-		LT		   = len_trim(CurrString)
+                ! 3/21/2016 CMB (AER, Inc): LEN_TRIM doesn't always work,
+                !                           replace with full call
+		!LT		   = len_trim(CurrString)
+                lt = len(trim(currstring))
+                ! end CMB mods
 		Flag	   = .TRUE.
 		J		   = 1
 
 		!! If the string is too long, then it is denied integral status
 		IF (LT > 128 .OR. LT ==0 ) THEN
+                    print *, 'lt = ', lt
 			Flag = .FALSE.
 			RETURN
 		END IF
