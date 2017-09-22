@@ -122,7 +122,11 @@ OBJECTS := $(OBJECTS) \
 	   $(OBJDIR)ReadInputDeck.o \
 	   $(OBJDIR)StepASP.o $(OBJDIR)DevelopmentDriver.o \
            $(OBJDIR)EulerianBoxDriver.o
-	
+OBJECTS := $(OBJECTS) \
+           $(OBJDIR)opkda2.o \
+           $(OBJDIR)opkda1.o \
+           $(OBJDIR)opkdmain.o	
+
 # === Modules: 0 grid define; 1 essential; d type define; s all
 MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
            $(OBJDIR)PPND16.o \
@@ -142,6 +146,11 @@ MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.
 	   $(OBJDIR)StepASP.o $(OBJDIR)DevelopmentDriver.o \
            $(OBJDIR)EulerianBoxDriver.o
 
+MODASP := $(MODASP) \
+          $(OBJDIR)opkda2.o \
+          $(OBJDIR)opkda1.o \
+          $(OBJDIR)opkdmain.o
+
 MODS := $(MODASP)
 
 PROG = asp_linux_pgi_dbl
@@ -156,6 +165,16 @@ $(EXEDIR)$(PROG): $(OBJECTS)
 	$(FC) $(FFLAGS) -o $@ $(OBJECTS) $(MODS) $(LDFLAGS)
 
 OBJECTS : $(MODS) $(FILESINC)
+
+$(OBJDIR)opkda1.o: $(COMPDIR)opkda1.f
+	$(FC) -c $(FFLAGS) $<
+	  \mv opkda1.o $(OBJDIR)
+$(OBJDIR)opkda2.o: $(COMPDIR)opkda2.f
+	$(FC) -c $(FFLAGS) $<
+	  \mv opkda2.o $(OBJDIR)
+$(OBJDIR)opkdmain.o: $(COMPDIR)opkdmain.f $(OBJDIR)opkda1.o $(OBJDIR)opkda2.o
+	$(FC) -c $(FFLAGS) $<
+	  \mv opkdmain.o $(OBJDIR)
 
 $(OBJDIR)CDFNor.o: $(COMPDIR)CDFNor.f90	
 	  $(FC) -c $(F90FLAGS) $<

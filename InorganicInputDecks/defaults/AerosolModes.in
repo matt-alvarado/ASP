@@ -47,7 +47,7 @@ F !!
 !! (0) mass fraction (Sectional Distribution) or
 !! (1) total mass abundance in ug/m3 (Bulk or Monodisperse Distribution)
 !!
-1 !!
+0 !!
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Next, specify the CHARACTERISTICS of the SECTIONAL DISTRIBUTION

@@ -69,7 +69,7 @@
 !!              If 1, linearly interpolate photolysis rates
 !!                    between starting and ending time below
 0      !! PHOTO FLAG
-3.0    !! Starting Time for Photolysis (h UTC to match PhotoRates.in)
+14.0    !! Starting Time for Photolysis (h UTC to match PhotoRates.in)
 !!***Below only used if PHOTO FLAG = 1
 5.0    !! Ending Time for Photolysis (h UTC to match PhotoRates.in)
 !!***Above only used if PHOTO FLAG = 1

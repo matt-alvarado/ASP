@@ -974,7 +974,7 @@ RECURSIVE SUBROUTINE EquilibrateAqueousDissociationReaction &
 	USE GridPointFields, ONLY : GetRelativeHumidity
 
 	USE InfrastructuralCode, ONLY : INT2STR, Real2Str, Transcript,  &
-                                        ERROR, WARN
+                                        ERROR, WARN, IsNaN
 
 	IMPLICIT NONE
 

@@ -749,7 +749,7 @@ SUBROUTINE StepCondensation (TimestepSize, NumTimeSteps)
 
 	USE InfrastructuralCode, ONLY : INT2STR, ERROR,		&
 					Warn, Transcript,	&
-					REAL2STR
+					REAL2STR, IsNaN
 
 	USE GridPointFields,	 ONLY : getM,			        &
 					GetGridCellChemBurden,		&
