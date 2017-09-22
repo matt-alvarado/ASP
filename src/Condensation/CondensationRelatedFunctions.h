@@ -233,7 +233,9 @@ FUNCTION CondensationRateCoefficients (ReactionNumb, NumbLinks)
 
 	!! If it's a section, make sure there's something in it
 	!! Or if the particle can't attract water
-	IF ((Current%Sectional .AND. Current%NumberOfParticles .EQ. 0) .OR. Current%Dry) THEN
+	! CMB: Mod for floating-point inequality
+	if ((current%sectional .and. current%numberofparticles .le. 1.0e-40) .or. current%dry) then
+	!IF ((Current%Sectional .AND. Current%NumberOfParticles .EQ. 0) .OR. Current%Dry) THEN
 		CondensationRateCoefficients(I) = 0.
 		CYCLE
 	END IF
@@ -449,7 +451,9 @@ REAL*8 FUNCTION SatVapPressRatio (InParticle , ChemIndex )
 !! form).  We then here choose either a Kohler or	!!
 !! a Gorbunov and Hamilton type approach.		!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-              IF (InParticle%InsolubleRadius .EQ. 0.) THEN	
+			  ! CMB: floating-point inequality mod
+			  if (dabs(inparticle%insolubleradius) .le. 1.0e-40) then
+              !IF (InParticle%InsolubleRadius .EQ. 0.) THEN	
 
                  !! The Kelvin Effect is abstracted to a function 
                  !! and housed in "ParticleAttributes.h"
@@ -465,7 +469,9 @@ REAL*8 FUNCTION SatVapPressRatio (InParticle , ChemIndex )
 
                  !! If this is the Kohler Example, there may 
                  !! be problems if we use Fletcher's Approx.
-                 IF (InParticle%InsolubleRadius .EQ. 0. .OR. & 
+				 ! CMB (AER, Inc): floating-point inequality mod
+				 if (dabs(inparticle%insolubleradius) .le. 1.0e-40 .or. &
+                 !IF (InParticle%InsolubleRadius .EQ. 0. .OR. & 
                       CosContactAngle+1. .LT. 0.0000001) THEN
 
                     !! The core is not involved in this 
@@ -476,7 +482,9 @@ REAL*8 FUNCTION SatVapPressRatio (InParticle , ChemIndex )
 
                     !! This is a problem, meaning either no
                     !! or negative volume for the embryo
-                    IF ((ABS(CosContactAngle -1.)<0.0000001) .AND.			&
+					! CMB: double precision
+					if ((dabs(CosContactAngle - 1.) .lt. 0.0000001) .and. &
+                    !IF ((ABS(CosContactAngle -1.)<0.0000001) .AND.			&
                          (InParticle%InsolubleRadius .GE. InParticle%EffectiveRadius))   &
                          CALL ERROR("In SUBROUTINE SatVapPressRatio (), a water "// &
                                     "condensation related function that " //	&
@@ -567,7 +575,9 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 	!! SCSCSCSCSC
 	LOGICAL :: Scaffolding = .FALSE. ! .TRUE.
 
-	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
+	! CMB (AER): floating-point inequality check
+	if (dabs(inparticle%numberofparticles) .le. 1.0e-40 .or. inparticle%dry) return
+	!IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
         !WRITE(*,*) "Entering EquilibrateDissolutionReaction, Reaction # ", WhichRxn
    
@@ -1015,7 +1025,9 @@ REAL*8 FUNCTION DissolutionEquilibriumConstantsRatio (GasPhaseBurden, &
 	Eq = HenrysLaw (Temperature, WhichRxn)
 
 	!! If the solution is set to blow up, then establish a large artificial value.
-	IF (GasPhaseBurden .EQ. 0. .OR. (Eq .EQ. 0. .AND. WhichRxn .NE. 1)) THEN
+	! CMB (AER, Inc): floating-point equality mods
+	if (dabs(GasPhaseBurden) .le. 1.0e-40 .or. (dabs(Eq) .le. 1.0e-40 .and. WhichRxn .ne. 1)) then
+	!IF (GasPhaseBurden .EQ. 0. .OR. (Eq .EQ. 0. .AND. WhichRxn .NE. 1)) THEN
 		DissolutionEquilibriumConstantsRatio = 1.e12
 		RETURN
 	END IF
@@ -1139,12 +1151,13 @@ SUBROUTINE EquilibrateSulfate()
 					INT2STR, &
 					GetFileHandle
 
+        ! CB: ifort complains when the "HowMany" are included
 	USE Chemistry,		 ONLY : HowManyGasChems, &
 				        HowManyEvolveGasChems, &
 					GasPhaseChemicalNames, &
-					HowManyAqChems, &
-					HowManyAqCations, &
-					HowManyAqAnions, &
+					!HowManyAqChems, &
+					!HowManyAqCations, &
+					!HowManyAqAnions, &
 					AqPhaseChemicalNames, &	
 					AqCationNames, &
 					AqAnionNames, &
@@ -1221,7 +1234,8 @@ SUBROUTINE EquilibrateSulfate()
 	TransferSum = 0				
 	I = 1
  	DO WHILE (associated(currentparticle))
-	   Write(*,*) "Number of Particles", CurrentParticle%NumberofParticles	
+           ! CMB (AER, Inc): comment this out
+	   !Write(*,*) "Number of Particles", CurrentParticle%NumberofParticles	
 	   IF(CurrentParticle%NumberofParticles .GT. 1e-6) THEN
                                         
               !Calculate correction for collision geometry 
@@ -1336,12 +1350,13 @@ SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, &
 					INT2STR, &
 					GetFileHandle
 
+        ! CB: Ifort complains when the "HowMany" are included
 	USE Chemistry,		 ONLY : HowManyGasChems, &
 					HowManyEvolveGasChems, &
 					GasPhaseChemicalNames, &
-					HowManyAqChems, &
-					HowManyAqCations, &
-					HowManyAqAnions, &
+					!HowManyAqChems, &
+					!HowManyAqCations, &
+					!HowManyAqAnions, &
 					AqPhaseChemicalNames, &	
 					AqCationNames, &
 					AqAnionNames, &
@@ -1739,7 +1754,8 @@ SUBROUTINE EquilibrateGasSolidReactions(GasPhaseBurden, WhichRxn, &
 			
 			J = J+1
 			IF (J .GT. 100) THEN
-				WRITE(*,*) RemainingSolidtoEvaporate
+                                ! CMB(AER, Inc): Comment write out
+				!WRITE(*,*) RemainingSolidtoEvaporate
 				CALL WARN("Apparent Infinite loop in EquilibrateGasSolidReactions()")
                                 DEALLOCATE(NumConc, SurfArea, STAT = status)
 	                        RETURN		
@@ -1857,7 +1873,7 @@ SUBROUTINE EquilibrateGridPoint(EquilibrateWater, &
 	END DO
 
 	!Equilibrate gas-phase sulfate (using mass-transfer rate to remove non-uniqueness)
-	IF(DoDissolutionFlag .AND. NOT(InorgOnly)) CALL EquilibrateSulfate()
+	IF(DoDissolutionFlag .AND. .NOT.(InorgOnly)) CALL EquilibrateSulfate()
 		
 	Temperature = GetTemp()
 
@@ -1942,7 +1958,7 @@ SUBROUTINE EquilibrateGridPoint(EquilibrateWater, &
                               !If a closed system and the RH changes by less than 0.5% from stored,
                               !force ReturnType = 2
                               IF (Scaffolding) WRITE(*,*) "After EqAllWater", Current%AqChems(1)
-                              IF(NOT(LocalWaterOpenSystem) .AND. ABS(StoreRH/RH-1.0) .LT. 0.005) &
+                              IF(.NOT.(LocalWaterOpenSystem) .AND. ABS(StoreRH/RH-1.0) .LT. 0.005) &
                                 ReturnType = 2			
 
                               !If an open system and the aerorosl water content changes 
@@ -2233,6 +2249,9 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 
 	Scaffolding = .FALSE.
 
+	!write(*,*) '#particles: ', current%numberofparticles
+	!write(*,*) 'edge[1] = ', current%edges(1)
+	!write(*,*) 'edge[2] = ', current%edges(2)
 	IF(Scaffolding) WRITE(*,*) "Check 1"
 	IF(Current%NumberofParticles .LE. 0.) THEN
 		Current%AqChems(1) = 0.
@@ -2244,11 +2263,13 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 
 	IF(Scaffolding) WRITE(*,*) "Check 2"
 	!Calculate equilibrium orgabnic water content at this RH
+	! MAtt says that this should be 0 if no AqOrgs
 	OrgWaterContent = HydrophilicOrganicWaterContent(Current, Temperature, RH)
 	
 	  IF(Scaffolding) WRITE(*,*) "Check 3", OrgWaterContent
 	!Calculate equilibrium inorganic water content at this RH
 	ForceEquilibrium = .TRUE.
+	! Matt says this gets water associated w/ions
 	CALL EquilibriumWaterContentAmount (Current, RH, ReturnType, ForceEquilibrium, InorgWaterContent)
 	IF(Scaffolding) WRITE(*,*) "Check 3a", InorgWaterContent
 
@@ -2324,7 +2345,7 @@ SUBROUTINE EqAllWater(Current, ReturnType, OpenSystem)
 		RETURN
 	
 	END IF
-
+!	write(*,*) "End of EqAllWater!!!!!!!!",Current%NumberofParticles,Current%AqChems(1)
 END SUBROUTINE EqAllWater
 
 !! This subroutine only equilibrates all the particles internally.
@@ -2440,7 +2461,7 @@ SUBROUTINE EquilibrateInternallyatGridPoint(EquilibrateWater, WaterOpenSystem)
 			IF(ReturnType .NE. 2) ParticleEquilibrated = .FALSE.
 			!WRITE(*,*) "OrganicReturnType", ReturnType	
 			
-			IF(NOT(ParticleEquilibrated)) Equilibrated = .FALSE.
+			IF(.NOT.(ParticleEquilibrated)) Equilibrated = .FALSE.
 			if (associated(current%next)) then
 				current => current%next
 			end if
