@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2017, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -65,7 +65,7 @@ SUBROUTINE SetAqPhaseChemistry ()
 
 		!! Transcribe?  Use Scaffolding Code?
 		LOGICAL			   :: Transcribe
-		LOGICAL, PARAMETER :: Scaffolding =  .TRUE. !.FALSE. 
+		LOGICAL, PARAMETER :: Scaffolding =  .FALSE. 
 
 		!! And there is a file handle to be used
 		integer	:: FH,FH2
@@ -130,7 +130,8 @@ SUBROUTINE SetAqPhaseChemistry ()
 		ELSE
 			Transcribe = .FALSE.
 		END IF
-
+		Transcribe = .false.	! cmb mod, don't want this right now
+		
 		IF (Transcribe) THEN
 			CALL Transcript("")
 			CALL Transcript("__Initializing_Aqueous_Phase_Chemicals_("//TRIM(INT2STR(HowManyAqChems))//"_Species)_")
@@ -434,13 +435,14 @@ SUBROUTINE SetAqPhaseChemistry ()
 		logical	:: Scaffolding, Transcribe
 
 		!! Use Scaffolding Code?  Transcribe?
-		Scaffolding = .TRUE. ! .FALSE.
+		Scaffolding = .FALSE. ! .true. ! cmb
 		IF (TranscriptFH > 0) THEN
 			Transcribe = .TRUE.
 		ELSE
 			Transcribe = .FALSE.
 		END IF
-
+		transcribe = .false.	! cmb
+		
 		!!! -- The ODE Set for Gas Phase Chemistry -- !!
 		ALLOCATE (AqPhaseODESet(HowManyEvolveAqChems), stat = allocation_error)
 		if (allocation_error > 0) &
@@ -521,14 +523,15 @@ SUBROUTINE SetAqPhaseChemistry ()
 		FH  = GetFileHandle()
 
 		!! Use Scaffolding Code?  Transcribe?
-		Scaffolding = .TRUE. ! .FALSE.
+		Scaffolding = .FALSE. ! .true. ! cmb
 
 		IF (TranscriptFH > 0) THEN
 			Transcribe = .TRUE.
 		ELSE
 			Transcribe = .FALSE.
 		END IF
-
+		transcribe = .false.	! cmb
+		
 		!! SCSCSCSC -- Announce Arrival
 		IF (Scaffolding) CALL Transcript("")
 		IF (Scaffolding) CALL Transcript(">>Entering SetAqPhaseEquilibriumReactions()<<")
@@ -640,8 +643,9 @@ SUBROUTINE SetAqPhaseChemistry ()
 		!!! -- HYDRATE REACTIONS NOT YET IMPLEMENTED
 		!!! -- will need a data structure and other issues
 
-		CALL TRANSCRIPT("")
-		CALL TRANSCRIPT("_About_to_Import_Aqueous_Phase_Equilibrium_Reactions_")
+		! CMB: don't want these print statements right now
+		!CALL TRANSCRIPT("")
+		!CALL TRANSCRIPT("_About_to_Import_Aqueous_Phase_Equilibrium_Reactions_")
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!!!!!! READ THE DATA !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -661,7 +665,8 @@ SUBROUTINE SetAqPhaseChemistry ()
 			CALL GetToken(CurrLine, ";",   DissociatedForm)
 
 			!! Record the Reaction
-			CALL TRANSCRIPT(TRIM(AssociatedForm)//" <=> "//TRIM(DissociatedForm))
+			! CMB: don't print this every time 
+			!CALL TRANSCRIPT(TRIM(AssociatedForm)//" <=> "//TRIM(DissociatedForm))
 
 			!! Find the Index Point in terms of Anions & Cations
 			K = 0; L = 0; MM = 0; N = 0; O = 0; P = 0; Q = 0; R = 0;
@@ -795,10 +800,6 @@ SUBROUTINE SetAqPhaseChemistry ()
 
 			!! If there are more associated elements in the pipe then get confused
 			IF (LEN_TRIM(StripToken(AssociatedForm)) .NE. 0) THEN
-				
-				
-
-
 				CALL WARN ("  Warning!! The following Electrolyte: ("//TRIM(StripToken(AssociatedForm))//	&
 					   ") Appeared to be Extra in Line... "//"  >>"//TRIM(FullLine)//&
 					   "<<  Perhaps you "// &
@@ -1023,9 +1024,10 @@ SUBROUTINE SetAqPhaseChemistry ()
 		END DO
 
 		!! Report if all is copacetic
-		CALL TRANSCRIPT("")
-		CALL TRANSCRIPT("Mass and Charge Balance of Equilibrium Reactions OK")
-		CALL TRANSCRIPT("")
+		! CMB: Comment this out right now
+		!CALL TRANSCRIPT("")
+		!CALL TRANSCRIPT("Mass and Charge Balance of Equilibrium Reactions OK")
+		!CALL TRANSCRIPT("")
 
 		CLOSE(FH)
 		CALL ReturnFileHandle(FH)
@@ -1114,7 +1116,8 @@ SUBROUTINE SetAqPhaseChemistry ()
 			CALL GetToken(CurrLine, ";",   DissociatedForm)
 
 			!! Record the Reaction
-			CALL TRANSCRIPT(TRIM(AssociatedForm)//" <=> "//TRIM(DissociatedForm))
+			! CMB: comment this out right now
+			!CALL TRANSCRIPT(TRIM(AssociatedForm)//" <=> "//TRIM(DissociatedForm))
 
 			!! Find the Index Point in terms of Anions & Cations
 			K = 0; L = 0; MM = 0; N = 0
@@ -1317,9 +1320,10 @@ SUBROUTINE SetAqPhaseChemistry ()
 		END DO
 
 		!! Report if all is copacetic
-		CALL TRANSCRIPT("")
-		CALL TRANSCRIPT("Mass and Charge Balance of Equilibrium Reactions OK")
-		CALL TRANSCRIPT("")
+		! cmb: comment this out right now
+		!CALL TRANSCRIPT("")
+		!CALL TRANSCRIPT("Mass and Charge Balance of Equilibrium Reactions OK")
+		!CALL TRANSCRIPT("")
 
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
