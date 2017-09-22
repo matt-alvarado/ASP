@@ -77,7 +77,33 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 	!! External Variables
 	REAL*8  :: TimeStepSize		!! Should be in Seconds
 	INTEGER :: NumTimeSteps 
-
+	
+	! 8 October 2016 CMB: AS per the migration from lsodes to dlsodes,
+		!					  we need to declare and store these common blocks
+		!					  on each routine that calls dlsodes.
+		real*8 :: rowns, ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround
+		integer :: init, mxstep, mxhnil, nhnil, NSLAST, NYH, IOWNS, ICF, IERPJ, &
+				   IERSL, JCUR, JSTART, KFLAG, L, LYH, LEWT, LACOR, LSAVF, &
+				   LWM, LIWM, METH, MITER, MAXORD, MAXCOR, MSBP, MXNCF, N, &
+				   NQ, NST, NFE, NJE, NQU
+		COMMON /DLS001/ ROWNS(209), CCMAX, EL0, H, HMIN, HMXI, HU, RC, &
+						TN, UROUND, INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, &
+						NYH, IOWNS(6), ICF, IERPJ, IERSL, JCUR, JSTART, &
+						KFLAG, L, LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, &
+						MITER, MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, &
+						NFE, NJE, NQU
+		real*8 :: con0, conmin, ccmxj, psmall, rbig, seth
+		integer :: IPLOST, IESP, ISTATC, IYS, IBA, IBIAN, IBJAN, IBJGP, &
+				   IPIAN, IPJAN, IPJGP, IPIGP, IPR, IPC, IPIC, IPISP, IPRSP, IPA,&
+				   LENYH, LENYHM, LENWK, LREQ, LRAT, LREST, LWMIN, MOSS, MSBJ,&
+				   NSLJ, NGP, NLU, NNZ, NSP, NZL, NZU			
+		COMMON /DLSS01/ CON0, CONMIN, CCMXJ, PSMALL, RBIG, SETH, &
+						IPLOST, IESP, ISTATC, IYS, IBA, IBIAN, IBJAN, IBJGP, &
+						IPIAN, IPJAN, IPJGP, IPIGP, IPR, IPC, IPIC, IPISP, IPRSP, IPA,&
+						LENYH, LENYHM, LENWK, LREQ, LRAT, LREST, LWMIN, MOSS, MSBJ,&
+						NSLJ, NGP, NLU, NNZ, NSP, NZL, NZU				
+		! end CMB
+		
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!! LSODES Related Internal Variables !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -103,9 +129,17 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 	LOGICAL, PARAMETER :: Scaffolding = .FALSE., & 
                  OpenSystem = .FALSE., ForceEquilibrium = .TRUE.
 
-
+	
+				 
 	TYPE(Particle), POINTER :: FirstParticle, CurrentParticle
-
+	
+	! cmb add
+	integer :: num_nans
+	real*8 :: diffs
+		character(1024) :: extra_str
+		extra_str = repeat(' ', len(extra_str))
+		! end cmb
+		
 	!! SCSCSCSC
 	IF (Scaffolding) CALL Transcript("")
 	IF (Scaffolding) CALL Transcript("")
@@ -133,8 +167,13 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 	HowManyLinks  =  1
 	DO WHILE (ASSOCIATED(CurrentParticle%Next))
            CurrentParticle => CurrentParticle%Next
-           IF (CurrentParticle%NumberOfParticles .GT. 0 .AND. &
+		   if (currentparticle%numberofparticles .gt. 1.0e-40 .and. &
+           !IF (CurrentParticle%NumberOfParticles .GT. 0 .AND. &
                 .NOT.CurrentParticle%Dry) THEN
+			  !write(*,*) 'CMB: adding an additional link'
+			  !write(*,*) 'CMB: CurrentParticle%NumberOfParticles = ', &
+			  !	  	  currentparticle%numberofparticles
+			  !write(*,*) 'CMB: CurrentParticle%Dry = ', currentparticle%dry
               HowManyLinks  = HowManyLinks + 1
            END IF
 	ENDDO
@@ -434,24 +473,30 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 		IF (Scaffolding) WRITE(*,*) "Aq Org Reaction #", Rxn
 
 		rtol   = (AqThermoEquilibriumError/10.) **(1./NumTimeSteps) ! AqThermoEquilibriumError
-	
+		!write(*,*) "Aq Org Rtol = ", rtol
 
 		!! If the reaction is coupled to another one, the direct dissolution
 		!! is done at the same time as the other one, meaning we skip this
 		!! direct one.  Cycle...
-		IF (AqOrganicDissolutionData(Rxn, 15) .LT. 0) CYCLE
+		!IF (AqOrganicDissolutionData(Rxn, 15) .LT. 0) CYCLE
+		if (AqOrganicDissolutionData(Rxn, 15) .lt. 0) then
+			!write(*,*) 'CMB: AqOrganicDissolutionData(Rxn, 15) < 0; coupled!'
+			cycle
+		endif
 
 		!! Reset timestep to the correct position
 		T = (TimeStep - 1) * TimeStepSize
 
 		!! Identify the gas index of the condensing chemical
 		GasChemIndex1 = AqOrganicDissolutionData(Rxn,1)
+		!write(*,*) 'CMB: GasChemIndex1 = ', GasChemIndex1
 		
 		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! This is the maximum number of internal steps allowed. !!
 		!! The default is 500 and that's not enough.			 !!
-		iwork(6) = 6000 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+		!iwork(6) = 6000 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		iwork(6) = 200000
+		
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! SET THE Y-VECTOR FOR THE CONDENSING CHEMICAL				     !!
 !! The Y-Vector we will integrate with LSODES looks like this:		     !!
@@ -484,7 +529,47 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Initialize the Concentrations from the local chemical concentrations: !!
 			Y(1) = GetGridCellChemBurden ( GasChemIndex1) !!!!!
-
+			!write(*,*) 'CMB: Y(1) early on = ', Y(1)
+			!write(*,*) 'CMB: HowManyLinks = ', HowManyLinks
+			!do j = 1, size(AqOrganicDissolutionData(Rxn, :))
+			!	select case (j)
+			!	case(1)
+			!		extra_str = "Index in Gas Phase of Primay Chemical"
+			!	case(2)
+			!		extra_str = "Empty"
+			!	case(3)
+			!		extra_str = "Index in Aqueous Phase of Primary Chemical	"
+			!	case(4)
+			!	    extra_Str = "Empty"											!!
+			!	case(5)
+			!		extra_str = "Henry's Law Constant"
+			!	case(6)
+			!		extra_str = "DelH of Henry's Law Const"					!!
+			!	case(7)
+			!		extra_str = "Acid K1"								!!
+			!	case(8)
+			!		extra_str = "DelH of Acid K1"											!!
+			!	case(9)
+			!		extra_str = "Acid K2"											!!
+			!	case(10)
+			!		extra_str = "Mass Accommodation Coefficient"					!!
+			!	case(11)
+			!		extra_str = "Reaction Type"									!!
+			!	case(12)
+			!		extra_str = "DelH of Acid K2"										!!
+			!	case(13)
+			!		extra_str = "Stoicheometry of r.h.s. slot 1"					!!
+			!	case(14)
+			!		extra_str = "Blank"											!!!
+			!	case(15)
+			!		extra_str = "Blank"
+			!	end select
+			!	
+			!	write(*,*) '    CMB: AqOrganicDissolutionData[', j, '] = ', &
+			!		AqOrganicDissolutionData(Rxn, j), '"', extra_str(1:len(trim(&
+			!				extra_str)))
+			!enddo
+			
 			!! Tell LSODES which chemical we are to consider
 			Y(3*HowManyLinks+6) = GasChemIndex1
 
@@ -533,16 +618,30 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 
 
 			!! Fill the remainder of the Y vector off-site
-			CALL AqOrgDissolutionFactors ( Rxn, HowManyLinks, Temperature, INT(Y(6*HowManyLinks+10)), 	 &
-			      Y(2:1+HowManyLinks), Y(HowManyLinks+2:2*HowManyLinks+1), Y(2*HowManyLinks+2:3*HowManyLinks+1), &  ! initial concs
-				  Y(HowManyLinks*5+8:HowManyLinks*6+7), Y(HowManyLinks*6+13:HowManyLinks*7+12), ReturnType, Y(HowManyLinks*7+13:HowManyLinks*8+12))
+			CALL AqOrgDissolutionFactors (& 
+					Rxn, HowManyLinks, Temperature, &
+					INT(Y(6*HowManyLinks+10)), 	 &			  ! Y[58]						
+					Y(2:1+HowManyLinks), &					  ! Y[2:9]
+					Y(HowManyLinks+2:2*HowManyLinks+1), &	  ! Y[10:17]
+					Y(2*HowManyLinks+2:3*HowManyLinks+1), &   !	Y[18:25]		! initial concs
+				    Y(HowManyLinks*5+8:HowManyLinks*6+7), &	  ! Y[48:55]
+					Y(HowManyLinks*6+13:HowManyLinks*7+12), & ! Y[61:68]
+					ReturnType, &
+					Y(HowManyLinks*7+13:HowManyLinks*8+12))	  ! Y[69:76]
 
 
 			!! Store the concentrations for later
+			! CMB (AER, Inc): Check for NaN's
 			DO J = 1, NEQ
+				if (isNaN(Y(J))) then
+					write(*,*) 'Error (StepAqOrgCondensation): Concentration prior to LSODES is NaN for ', &
+							'Y-vector index ', J, '.  This should not happen!'
+					stop
+				endif
 				InitialConcsArray(J) = Y(J)
+				!write(*,*) 'CMB: InitialConcsArray[', j, '] = ', InitialConcsArray(j)
 			END DO
-
+			
 			!! Check to see if there is any of the chemical in the system
 			II = 0. ; JJ = 0.
 			DO K = 1, HowManyLinks
@@ -550,31 +649,97 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 				JJ = JJ + Y(1+HowManyLinks+K)*Y(4*HowManyLinks+7+K)
 				KK = KK + Y(1+2*HowManyLinks+K)*Y(4*HowManyLinks+7+K)
 			END DO
-	
+			!write(*,*) 'CMB: II, JJ, KK = ', II, JJ, KK
+			
 			!! Cycle if conc. too low
+			!SELECT CASE (INT(AqOrganicDissolutionData(Rxn,11)))
+			!CASE (:1, 8, 9)
+		!		IF (Y(1)+II .LT. 1.0) CYCLE
+		!	CASE (2)
+		!		IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0)) CYCLE
+		!	CASE (3)
+		!		IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0) .AND. KK .EQ. 0) CYCLE
+		!	CASE (4)
+		!		IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0) CYCLE
+		!	CASE (5)
+		!		IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0 .AND. KK .EQ. 0) CYCLE
+		!	END SELECT
+			!print *, 'Int(AqOrganicDissolutionData(Rxn,11)) = ', &
+			!	int(AqOrganicDissolutionData(Rxn,11))
 			SELECT CASE (INT(AqOrganicDissolutionData(Rxn,11)))
 			CASE (:1, 8, 9)
-				IF (Y(1)+II .LT. 1.0) CYCLE
+				IF (Y(1)+II .LT. 1.0) then
+					!print *, 'cond1'
+					!print *, 'Y(1) = ', y(1)
+					!print *, 'II = ', II
+					!print *, 'Y[1] + II = ', y(1) + II
+					CYCLE
+				endif
 			CASE (2)
-				IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0)) CYCLE
+				IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0)) then
+					!print *, 'cond2'
+					!print *, 'Y(1) = ', y(1)
+					!print *, 'II = ', ii
+					!print *, 'JJ = ', JJ
+					CYCLE
+				endif
 			CASE (3)
-				IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0) .AND. KK .EQ. 0) CYCLE
+				IF (Y(1) .EQ. 0 .AND. (II .EQ. 0 .OR. JJ .EQ. 0) .AND. KK .EQ. 0) then
+					!print *, 'cond3'
+					!print *, 'Y(1) = ', y(1)
+					!print *, 'II = ', ii
+					!print *, 'JJ = ', JJ
+					!print *, 'KK = ', kk
+					CYCLE
+				endif
 			CASE (4)
-				IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0) CYCLE
+				IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0) then
+					!print *, 'cond4'
+					!print *, 'Y(1) = ', y(1)
+					!print *, 'II = ', ii
+					!print *, 'JJ = ', JJ
+					CYCLE
+				endif
 			CASE (5)
-				IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0 .AND. KK .EQ. 0) CYCLE
+				IF ((Y(1) .EQ. 0 .OR. JJ .EQ. 0) .AND. II .EQ. 0 .AND. KK .EQ. 0) then
+					!print *, 'cond5'
+					!print *, 'Y(1) = ', y(1)
+					!print *, 'II = ', ii
+					!print *, 'JJ = ', JJ
+					!print *, 'KK = ', kk
+					CYCLE
+				endif
 			END SELECT
-
 		
 			!! Each chemical starts as if a new run
 			istate = 1
-
+			! CMB add
+999			continue
+			!if (scaffolding) then
+			!	write(*,*) "CMB prior: Time: ", T, ', Outtime = ', outtime, 'mf = ', mf !, 'Y = ', y
+			!	do i = 1, size(y)
+			!		write(*,*) 'Y[', i, '] = ', y(i)
+			!	enddo
+			!	call flush(6)
+			!endif
+			! end CMB
+			
+			!print *, 'rtol = ', rtol
+			!print *, 'atol = ', atol
+			
+			! CMB 
+30			CALL dLSODES (AqOrgCondensationODEEvaluator,neq,y,t, & 
+			              outtime,itol,rtol,atol,itask, &
+						  istate,iopt,rwork,lrw,iwork,liw, &
+			              AqOrgCondensationJacobianEvaluator,mf)
+			! end cmb
+			
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-30			CALL LSODES (AqOrgCondensationODEEvaluator,neq,y,t, & 
-                                     outtime,itol,rtol,atol,itask, &
-				     istate,iopt,rwork,lrw,iwork,liw, &
-                                     AqOrgCondensationJacobianEvaluator,mf)
+!30			CALL LSODES (AqOrgCondensationODEEvaluator,neq,y,t, & 
+!                                     outtime,itol,rtol,atol,itask, &
+!				     istate,iopt,rwork,lrw,iwork,liw, &
+!                                     AqOrgCondensationJacobianEvaluator,mf)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
@@ -582,12 +747,26 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 			!! If the maximum number of steps occurred, then warn the user (in Scaffolding
 			!! mode) and push the integration back into LSODES until the appropriate end time 
 			!! is reached.
-			IF (ISTATE .EQ. -1 ) THEN !.AND. T < OUTTIME) THEN
-				IF (Scaffolding) &
-				CALL WARN("Warning! Nominal maximun number of steps in LSODES was exceeded in AqOrgCondensation Integration for "	&
-				 	     //TRIM(GasPhaseChemicalNames(GasChemIndex1))//" ("//trim(int2str(iwork(6)))//" steps)... Recycling")
+			
+			if (scaffolding) write(*,*) "CMB after: Time: ", T, ', Outtime = ', outtime
+			call flush(6)
+			
+			! CMB: trying the time thing...
+			if ((istate .eq. -1) .and. (t .lt. outtime)) then		! me
+			!IF (ISTATE .EQ. -1 ) THEN !.AND. T < OUTTIME) THEN		! was
+				!IF (Scaffolding) &
+				!CALL WARN("Warning! Nominal maximun number of steps in LSODES was exceeded in AqOrgCondensation Integration for "	&
+				! 	     //TRIM(GasPhaseChemicalNames(GasChemIndex1))//" ("//trim(int2str(iwork(6)))//" steps)... Recycling")
+					CALL WARN("Warning! Nominal maximun number of steps in LSODES was exceeded in AqOrgCondensation Integration for "	&
+					  	     //TRIM(GasPhaseChemicalNames(GasChemIndex1))//" ("//trim(int2str(iwork(6)))//" steps)... Recycling")
 				ISTATE = 2
+				! CMB: try for debugging
 				GOTO 30
+				!do i = 1, size(y)
+				!	write(*,*) 'Y[', i, '] = ', y(i)
+				!enddo
+				!stop ! cmb add
+				!goto 999	! let's see what happens if I continue?'
 			END IF
 
 			!! An Error will occur if the array lengths were too small
@@ -596,10 +775,55 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 						  " Should have been of size "//TRIM(INT2STR(iwork(17)))//" but was only "//					&
 						  TRIM(INT2STR(LRW))//" instead.  Fix the assignment in EvolveGasChemistry's SetEvolveGasChemConstants().")
 
-			IF (ISTATE .LT. -1) &
-			CALL ERROR("In StepAqOrgCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
+			! CMB (AER, Inc): Can't stand these ISODES errors anymore, 
+			!				  keep going if error is -5
+			!if (istate .lt. -1 .and. istate .ne. -5) &
+			!IF (ISTATE .LT. -1) 
+			!CALL ERROR("In StepAqOrgCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
+			!			TRIM(INT2STR(ISTATE))//".  Please investigate.")
+			if (istate .lt. -1) then
+				CALL WARN("In StepAqOrgCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
+						  TRIM(INT2STR(ISTATE))//".  Please investigate.")
+				WRITE(*,*) "Reaction #", Rxn
+				write(*,*) "Before LSODES Gas Conc: ", InitialConcsArray(1)
+				num_nans = 0
+				diffs = 0.0D0
+				do i = 1, NEQ
+					write(*,*) 'Before/After LSODES: (', i, ') = ', InitialConcsArray(i), Y(i)
+					if (isNaN(Y(i))) then
+						num_nans = num_nans + 1
+						!write(*,*) 'New Y(I) is NaN; apply a small perturbation to the value and try ODE again OR set to orig and continue'
+						!Y(i) = InitialConcsArray(i) !Y(i) + 1D-10
+					else
+						diffs = diffs + dabs(Y(i) - InitialConcsArray(i))
+					endif
+				enddo
+				if (dabs(diffs) .lt. 1d-10) then
+					do i = 1, NEQ
+						if (isNaN(Y(i))) Y(i) = InitialConcsArray(i)
+					enddo
+				else
+					if (num_nans .gt. 0) then
+						write(*,*) 'Error (StepAqOrgCondensation): We have at least 1 NaN after DLSODES, ', &
+								'yet the net difference in concentration (', diffs, ') is > 1d-10.'
+						write(*,*) 'Investigate this further before rerunning...'
+						call flush(6)
+						stop
+					endif
+				endif
+				!WRITE(*,*) "Gas Conc : ", Y(1)
+								!WRITE(*,*) "Compound: ", GasPhaseChemicalNames(nINT(OrganicDissolutionData(Rxn,1)))
+								!WRITE(*,*) "Num Bins", HowManyLinks
+				!if (isNaN(Y(1))) Y(1) = 0.0D0			
+				CALL WARN("In StepAqOrgCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
 						TRIM(INT2STR(ISTATE))//".  Please investigate.")
-			
+				if (num_nans .gt. 0) then
+					!write(*,*) 'Trying ODE with slight perturbations...'
+					!istate = 1
+					!goto 30
+				endif
+				call flush(6)
+			endif
 
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			!! Store the output concentrations until we !!
@@ -662,7 +886,11 @@ SUBROUTINE StepAqOrgCondensation (TimestepSize, NumTimeSteps)
 
 		!Equilibrate organics across phases
 		!NOTE: This should only be done ifBoth phases are allowed 
-		IF(DoHydrophobicOrgDissolutionFlag .EQ. .TRUE. .AND. DoHydrophilicOrgDissolutionFlag .EQ. .TRUE.) THEN
+        ! CMB (AER): Make the conditional play well with gfortran, make 
+        ! text editor play well with syntax highlighting
+        if (dohydrophobicorgdissolutionflag .and. &
+            dohydrophilicorgdissolutionflag) then 
+!//		IF(DoHydrophobicOrgDissolutionFlag .EQ. .TRUE. .AND. DoHydrophilicOrgDissolutionFlag .EQ. .TRUE.) THEN
 				CALL EquilibrateOrganicParticle (CurrentParticle, Temperature, ReturnType, OptErrorTolerance=AqThermoEquilibriumError/2.)	 
 		END IF
 		IF (Scaffolding) WRITE(*,*) "After Org Eq"
@@ -871,6 +1099,18 @@ SUBROUTINE AqOrgDissolutionFactors (WhichRxn, HowManyLinks, Temperature,  &
                                     SoverH2, ReturnType, RealFlag)
 
 
+	!! Fill the remainder of the Y vector off-site
+	!CALL AqOrgDissolutionFactors (& 
+!			Rxn, HowManyLinks, Temperature, &
+!			INT(Y(6*HowManyLinks+10)), 	 &			  ! Y[58]						
+!			Y(2:1+HowManyLinks), &					  ! Y[2:9]
+!			Y(HowManyLinks+2:2*HowManyLinks+1), &	  ! Y[10:17]
+!			Y(2*HowManyLinks+2:3*HowManyLinks+1), &   !	Y[18:25]		! initial concs
+!		    Y(HowManyLinks*5+8:HowManyLinks*6+7), &	  ! Y[48:55]
+!			Y(HowManyLinks*6+13:HowManyLinks*7+12), & ! Y[61:68]
+!			ReturnType, &
+!			Y(HowManyLinks*7+13:HowManyLinks*8+12))	  ! Y[69:76]
+														  
 	USE GridPointFields, ONLY :     GasPhaseChemicalRates,		&
 					GetSatVapBurden,		&
 					GetGridCellChemBurden
@@ -919,10 +1159,12 @@ SUBROUTINE AqOrgDissolutionFactors (WhichRxn, HowManyLinks, Temperature,  &
 	!! If Water Condensation, we need a couple of extra items...
 	IF (ReactionType .EQ. 0) THEN
 		II = GetSatVapBurden()
+		returntype = 1	! cmb add
 	END IF
 
 	!! If there is a positive gas phase concentration, then return positive return flag.
-	IF (ReactionType .EQ. 0.) ReturnType = 1
+	! CMB (AER, Inc): No need for this extra statement, put into above conditional
+	!IF (ReactionType .EQ. 0.) ReturnType = 1
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!Take the burdens and # of Particles counts from each of the aerosol particles
@@ -935,8 +1177,11 @@ SUBROUTINE AqOrgDissolutionFactors (WhichRxn, HowManyLinks, Temperature,  &
 		!! Direct dissolution into AqOrganic phase
 		CASE (9)
 
+			!if ( (returntype .eq. -1) .and. &
+			!		(CurrentParticle%AqOrgChems(int(AqOrganicDissolutionData(&
+			!				WhichRxn, 3))) .gt. 1.0e-40) ) &
 			IF (ReturnType .EQ. -1 .AND. CurrentParticle%AqOrgChems(INT(AqOrganicDissolutionData(WhichRxn,3))) .GT. 0.)	&
-			ReturnType = 1
+				ReturnType = 1
 
 			ProtonMolality = Molality (ProtonIndex, CurrentParticle)
 	
@@ -1061,7 +1306,9 @@ FUNCTION AqOrgCondensationRateCoefficients (ReactionNumb, NumbLinks)
 
 	!! If it's a section, make sure there's something in it
 	!! Or if the particle can't attract water
-	IF ((Current%Sectional .AND. Current%NumberOfParticles .EQ. 0) .OR. Current%Dry) THEN
+	! CMB (AER, Inc): Floating-point equality fix for gfortran
+	!IF ((Current%Sectional .AND. Current%NumberOfParticles .EQ. 0) .OR. Current%Dry) THEN
+	if ((current%sectional .and. current%numberofparticles .le. 1.0e-40) .or. current%dry) then
 		AqOrgCondensationRateCoefficients(I) = 0.
 		CYCLE
 	END IF
