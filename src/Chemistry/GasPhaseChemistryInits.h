@@ -118,8 +118,10 @@ SUBROUTINE SetGasPhaseChemistry ()
 	CurrLine = GetLine(FH)
  
 
-        !MJA 2016-09-13: First token of first uncommeted line is 0 if initial concentration shsould be calculated 
-        !and 1 if they should be set to a negligible value, as in STILT mode
+        !MJA 2016-09-13: First token of first uncommeted line is:
+        ! 0 if initial concentration should be calculated from the emission factors
+        ! 1 if they should be set to a negligible value, as in STILT mode, and 
+        ! 2 if they should be read in from the emission factor slot (to have back-compatability with older input files)
         STILT = .FALSE.         
         CALL GetToken(CurrLine, ";", Token)
         k = STR2INT (Token)
