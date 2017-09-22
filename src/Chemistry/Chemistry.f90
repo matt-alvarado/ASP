@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2016, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -37,6 +37,8 @@
 !!                                    Kappa, and GammaInf                    !!
 !! 07/03  2013   Matt Alvarado     Added abilty to interpolate between 2     !!
 !!                                 arbitrary points to ResetPhotoRates       !!
+!! 09/13  2016   Matt Alvarado     Added array GasPhaseEmisFactor to store   !!
+!!                                   fire emission factors in g/kg           !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -82,7 +84,9 @@
 
 MODULE Chemistry
 
-	PRIVATE
+    ! CMB: add these two
+	PRIVATE :: parcelIndex, timestepIndex
+	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Specify which variables, arrays, subroutines, and functions	!!
 	!! and may be accessed from outside the module			!!
@@ -133,6 +137,7 @@ MODULE Chemistry
 			StepGasChemistry,		&
 			MolecularDiffusionCoefficient,  &
 			GasPhaseBackground,             &
+                        GasPhaseEmisFactor,              & !g/kg dry matter burned, MJA, 2016-09-13
 			AqOrgNumCarbon,                 &
 			GasPhaseDepVel,                 &
                         CationIonicRefraction,          &
@@ -141,7 +146,29 @@ MODULE Chemistry
                         AqOrgActivityFlag,              &
                         AqOrgActivityIndex,             &
                         Kappa,                          &
-                        GammaInf   
+                        ! CB: Add a Photolysis array for tracer
+                        GammaInf,                       &
+                        !PhotoRateTimes,                 &
+                        !PhotoRateZenithAngles,          &
+                        DegToRad,                        &
+                        RadToDeg,                        &
+                        piDouble,                       &
+                        RecalculatePhotoRatesSZA,       &
+                        getSzaIndices,                  &
+                        ResetPhotoRatesSZA,  &
+                        
+                        ! CMB (AER): Add these from the locals; initialize
+                        !            first one in initializeASP 
+                        GasPhasePeroxy, &
+                        GetTotalPeroxy, &
+                        GetTotalAcylPeroxy, &
+                        getTimestepIndex, setTimestepIndex, getParcelIndex, setParcelIndex
+                        
+                        
+                        
+                        !GasPhaseAcylPeroxy !, !, &
+                        !PhotoRates  ! CMB: let's try allowing access here        
+                        !GammaInf   ! CB out
 					!     "
 	!! These are indexed by the GAS PHASE INDEX
 	CHARACTER (len=15), ALLOCATABLE :: GasPhaseChemicalNames(:)	   !
@@ -155,8 +182,17 @@ MODULE Chemistry
 	REAL*8,		    ALLOCATABLE :: GasPhaseReactionRates(:,:)  
 ! This holds reaction rate information
 	REAL*8,		    ALLOCATABLE :: GasPhaseBackground(:)
+	REAL*8,		    ALLOCATABLE :: GasPhaseEmisFactor(:) !g/kg dry matter burned, MJA, 2016-09-13
 	REAL*8,		    ALLOCATABLE :: GasPhaseDepVel(:)		
 	REAL*8				:: PhotoRates(96,51)
+
+        ! CB add (this will have to be made configurable in the future!)
+        REAL*8, PARAMETER :: piDouble = 3.1415926535897932384626433
+        REAL*8, PARAMETER :: DegToRad = piDouble/180.0
+        REAL*8, PARAMETER :: RadToDeg = 1.0/DegToRad
+        REAL*8 :: PhotoRateTimes(96), PhotoRateZenithAngles(96)
+        !REAL*8 :: piDouble, DegToRad, RadToDeg
+        ! end CB add
 
 	INTEGER :: GasConcInputTypeFlag
 
@@ -341,8 +377,31 @@ MODULE Chemistry
 	!! The Phases to Include
 	LOGICAL :: IFGAS, IFAQ
 
-	CONTAINS
+! CB add
+        integer :: parcelIndex, timeIndex
+! end CB
 
+	CONTAINS
+! cmb add	
+ integer function getParcelIndex() result(parcInd)
+        !integer :: parcInd
+        parcInd = parcelIndex
+    end function
+    subroutine setParcelIndex(parcInd)
+        integer, intent(in) :: parcInd
+        parcelIndex = parcInd
+    end subroutine 
+    
+    integer function getTimestepIndex() result(timeInd)
+        !integer :: timeInd
+        timeInd = timestepIndex
+    end function
+    subroutine setTimestepIndex(timeInd)
+        integer, intent(in) :: timeInd
+        timestepIndex = timeInd
+    end subroutine 
+    ! end CMB
+    
 	SUBROUTINE SetPhaseIfs(iIFGAS, iIFAQ)
 
 		!! Which Kinds of Chemistry Will Be Included?
@@ -365,15 +424,23 @@ MODULE Chemistry
 		IMPLICIT NONE
 
 		!! Deal with Gas Phase Initialization
+        !        print *, 'CMB: Setting GasPhaseChemistry'
+                !call flush(6)
 		CALL SetGasPhaseChemistry ()
 
 		!! Deal with Aq Phase Initialization
+        !        print *, 'CMB: Setting AqPhaseChemistry'
+                !call flush(6)
 		CALL SetAqPhaseChemistry ()
 
 		!! Deal with hydrophobic org. phase initialization
+        !        print *, 'CMB: Setting organic phase chemistry'
+                !call flush(6)
 		CALL SetOrgPhaseChemistry ()
 
 		!! Deal with hydrophilic org. compound initialization
+        !        print *, 'CMB: SEtting hydrophilic org phase chemistry'
+                !call flush(6)
 		CALL SetHydrophilicOrgPhaseChemistry ()
 
 		!!!!!!!!!!!!!!!
@@ -381,21 +448,30 @@ MODULE Chemistry
 		IF (IFGAS) THEN
 
 			!! Set the Gas Phase Chemistry ODE Set and Jacobian
+            !            print *, 'CMB: setting gas phase ODE stuff'
+                        !call flush(6)
 			CALL SetGasPhaseODEandJacobian ()
 
 			!! This Routine Sets the LSODES-related code
+            !            print *, 'CMB: setting evolvegaschemconstants'
+                        !call flush(6)
 			CALL SetEvolveGasChemConstants ()
 
 		END IF
 
 		!!!!!!!!!!!!!!!!!!!
 		!! AQUEOUS PHASE !!
-		IF (IFAQ) &
+		IF (IFAQ) then
+            !            print *, 'CMB: Setting aqueous phase ODE set, etc'
+            !            call flush(6)
 			!! Set the Aqueous Phase Chemistry ODE Set and Jacobian
 			CALL SetAqPhaseODEandJacobian ()
+                endif
 
 		!! Prepare the Dissociation Reactions
 		!! (this always happens)
+		!print *, 'CMB: Setting aq phase equil'
+		!call flush(6)
 		CALL SetAqPhaseEquilibriumReactions ()
 		
 		RETURN
@@ -453,15 +529,22 @@ MODULE Chemistry
 		!!!!!!!!!!!!!!!
 		!! Gas Phase !!
 		IF (IFGAS) THEN
+		    !write(678,*) 'In IFGAS() in RecalculateReactionRates: IFGAS = true, calling getters...'
                    RO2_T = GetTotalPeroxy() !molecules/cm3, Also resets RO2_T in chem array
                    RCO3_T = GetTotalAcylPeroxy() !molecules/cm3,Also resets RCO3_T in chem array
                    C_H2O = GridGasChem(1) !molecules/cm3
+                   
+                   !write(678,*) 'RO2_T = ', RO2_T
+                   !write(678,*) 'RCO3_T = ', RCO3_T
+                   !write(678,*) 'C_H2O = ', C_H2O
+                   !write(678,*) 'In IFGAS: Calling ResetGasPhaseReactionRates'
                    CALL ResetGasPhaseReactionRates (GasPhaseReactionRates,GasPhaseReactionRateArraySize, RO2_T, RCO3_T, C_H2O)
 		END IF	
 		
 		!!!!!!!!!!!!!!!!!!!
 		!! Aqueous Phase !!
 		IF (IFAQ) THEN
+		    !print *, 'In IFAQ() in RecalculateReactionRates: IFAQ = true'
 			IF (CurrentTime .EQ. BeginningTime) &
 			CALL SetAqPhaseReactionRates (AqPhaseReactionRateInfo,AqPhaseReactionRateArraySize)
 		END IF
@@ -552,7 +635,10 @@ MODULE Chemistry
 				END DO
 
 				GasPhaseChemicalRates(L) = Total 						
-				IF (FirstTime) CALL TRANSCRIPT("Heterogeneous Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")	
+				IF (FirstTime) then
+                                    CALL TRANSCRIPT("Heterogeneous Reaction #"//TRIM(INT2STR(L))//&
+                                                    " Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")
+                                endif
 
 			!Second order heterogeneous reactions
 			ELSE IF (INT(ReactionRates(L,1)) .EQ. 2 .AND. &
@@ -565,7 +651,10 @@ MODULE Chemistry
 				END DO
 				
 				GasPhaseChemicalRates(L) = (Total/100)*ReactionRates(L,4)						
-				IF (FirstTime) CALL TRANSCRIPT("2nd order Heterogeneous Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")						
+				IF (FirstTime) then
+                                    CALL TRANSCRIPT("2nd order Heterogeneous Reaction #"//TRIM(INT2STR(L))//&
+                                                    " Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")
+                                endif
 			END IF						
 		END DO
 	END SUBROUTINE ResetHeteroRates
@@ -595,7 +684,9 @@ MODULE Chemistry
 
 
 		FH = GetFileHandle()
-	    OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//"PhotoRates.in", STATUS='OLD')
+            ! CB: separated into 2 lines for VIM
+	    OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//"PhotoRates.in", &
+                 STATUS='OLD')
 		
 		!The input file must have 96 lines and 51 reactions (53 column total, first one time, second solar zenith angle)
 		
@@ -606,6 +697,16 @@ MODULE Chemistry
 			CALL GetToken(CurrLine," ", Time)
 			!! Store the sza
 			CALL GetToken(CurrLine," ", Sza)
+
+                        ! CB: Add these to the array
+                        PhotoRateZenithAngles(i) = STR2REAL(Sza)
+                        !print *, 'I = ', i
+                        !print *, 'Sza = ', Sza(1:len(trim(Sza)))
+                        !print *, 'PhotoRateZenithAngles = ', &
+                        !         PhotoRateZenithAngles(i)
+                        !print *, 'nextchar'
+                        PhotoRateTimes(i) = STR2REAL(Time)
+                        ! end CB add
 
 			!Do for each photolysis reaction
 			DO J = 1, 51
@@ -621,7 +722,228 @@ MODULE Chemistry
 		END DO
 
 	END SUBROUTINE ReadPhotolysisRates
-	
+        
+        ! CB: I have added a routine to 
+        SUBROUTINE getSzaIndices(sza, previous, next_indx)
+        implicit none
+
+        real*8, intent(in) :: sza
+        integer, intent(out) :: previous, next_indx
+        integer :: i
+        real*8 :: current_zenith_angle, previous_angle
+        real*8 :: next_angle
+
+        previous = -1
+        previous_angle = -360
+        next_angle = 360
+        next_indx = -1
+
+        !print *, '-------- Input Zenith Angle  = ', &
+        !         sza, ' --------------------'
+        do i = 1, 96
+            current_zenith_angle = PhotoRateZenithAngles(i)
+            !print *, 'Current Zenith Angle: ', current_zenith_angle
+            
+            if (current_zenith_angle .le. sza) then
+                if (current_zenith_angle .ge. previous_angle) then
+                    !print *, '    resetting previous to ', i
+                    previous_angle = current_zenith_angle
+                    previous = i
+                endif
+            else !iif (current_zenith_angle .ge. sza) then
+                if (current_zenith_angle .le. next_angle) then
+                    !print *, '    resetting next to ', i
+                    next_angle = current_zenith_angle
+                    next_indx = i
+                endif
+!            else
+!                print *, 'TODO: Equality case in Chemistry.', &
+!                         'setSzaIndices(): sza of ', sza, ' is ', &
+!                         'on a bin boundary...'
+!                previous = i
+!                next_indx = i
+!            if ( (current_zenith_angle .lt. next_angle) .and. &
+!                 (current_zenith_angle .gt. sza) ) then
+!                next_angle = current_zenith_angle
+!                next_indx = i
+!            endif
+!
+!            if (current_zenith_angle < sza) then
+!                print *, '    resetting previous to ', i
+!                previous = i
+!            else if (current_zenith_angle > sza) then
+!                print *, '    resetting next to ', i
+!                next = i
+!            else
+!                print *, 'TODO: Equality case in Chemistry.', &
+!                         'setSzaIndices(): sza of ', sza, ' is ', &
+!                         'on a bin boundary...'
+!                previous = i
+!                next = i
+            endif
+        enddo
+
+        ! handle wraparound (this gets handled when we interpolate in
+        ! cosine of sza later on I think)
+        if (previous < 1) then
+            previous = 96
+        endif
+        if (next_indx < 1) then
+            next_indx = 1
+        endif
+    
+        !stop ! let's fix this first
+        end subroutine getSzaIndices
+
+    SUBROUTINE ResetPhotoRatesSZA(ReactionRates, ArraySize, &
+                                  FirstTime, sza, transmissivity)
+        Use ModelParameters
+        USE InfrastructuralCode, ONLY : Transcript, ERROR, & 
+                                        Int2Str, Real2Str
+        USE GridPointFields, ONLY : GasPhaseChemicalRates, &
+                                    linear2dInterp
+
+        IMPLICIT NONE
+
+        REAL*8,  INTENT(in) :: ReactionRates(:,:)
+        INTEGER, INTENT(in) :: ArraySize(2)
+        !REAL*8,  INTENT(in) :: ut
+        LOGICAL, INTENT(in) :: FirstTime
+        
+        INTEGER :: I,J,K,L, TimeIndex, RxnIndex
+        REAL*8 :: OldRate, y1, y2, ut1, ut2, A, ut_temp
+        REAL*8, PARAMETER :: Scale = 1.0
+
+        ! cb add
+        integer :: lowerZenithIndex, higherZenithIndex, ii
+        real*8 :: DegHigher, DegLower, cosLower, cosHigher, szarad
+        real*8 :: RateHigher, RateLower, InterpolatedRate, sza, transmissivity
+        ! end cb add
+
+        !! Loop over all reactions
+        DO L = 1, ArraySize(1)
+            !print *, ''
+            !print *, 'L = ', L
+            
+            !do ii = 1, size(ReactionRates(L,:))
+            !    print *, '    ReactionRates(', L, ', ', ii, ') = ', ReactionRates(L, ii)
+            !enddo
+                                    
+            !! Only do photolysis reactions
+            IF (INT(ReactionRates(L,1)) .EQ. 1 .AND. &
+                INT(ReactionRates(L,3)) .EQ. 0.) THEN
+                                                    
+                OldRate = GasPhaseChemicalRates(L)
+                !print *, 'OldRate/GasPhaseChemicalRates(', L, ') = ', oldrate                                    
+                !Find reaction index number
+                RxnIndex = INT(ReactionRates(L,4))
+                !print *, 'rxnindex: ', rxnindex
+!!Option 1 - if PhotoFlag = 0, find corresponding time in PhotoRates.in array
+                IF (.not. PhotoFlag) THEN
+! CB: This is not defined yet for mapping
+!
+                    print *, 'This option (PhotoFlag = false) ', &
+                             'is currently not supported in ', &
+                             'ResetPhotoRatesSZA.  Exiting...'
+                    stop
+!                    !Find lower time index number
+!                    TimeIndex = INT(ut*4 + 1.0)
+!
+!                    ut1 = (TimeIndex - 1)/4.
+!                    IF(TimeIndex .EQ. 96) THEN
+!                        ut2 = 0.
+!                    ELSE
+!                        ut2 = (TimeIndex)/4.
+!                    END IF
+!
+!                    !Early Value
+!                    y1 = PhotoRates(TimeIndex, RxnIndex) 
+!                    !Later Value
+!                    IF(TimeIndex .EQ. 96) THEN
+!                     y2 = PhotoRates(1, RxnIndex)
+!                    ELSE
+!                     y2 = PhotoRates(TimeIndex+1, RxnIndex)
+!                    END IF
+!
+!                    A = (ut2 - ut)/(ut2 - ut1)
+!                    !WRITE(*,*) A
+!                                            
+!                    GasPhaseChemicalRates(L) = Scale*(A*y1 + (1-A)*y2)
+
+!!Option 2 - if PhotoFlag = 1, interpolate between starting and ending times of photolysis as given in the input deck
+!! CB: This modification interpolates in the cosine of solar zenith
+!angle
+                ELSE
+
+                    ! Find lower zenith angle index number
+                    !print *, 'sza = ', sza
+                    call getSzaIndices(sza, lowerZenithIndex, &
+                                       higherZenithIndex)
+                    !print *, 'Lower SZA index: ', lowerZenithIndex
+                    !print *, 'Higher SZA index: ', higherZenithIndex
+                    DegHigher=PhotoRateZenithAngles(higherZenithIndex)
+                    DegLower=PhotoRateZenithAngles(lowerZenithIndex)
+
+                    !print *, 'DegHigher = ', DegHigher
+                    !print *, 'DegLower = ', DegLower
+                    cosLower = dcos(DegLower*RadToDeg)
+                    cosHigher = dcos(DegHigher*RadToDeg)
+                    szarad = sza*DegToRad
+
+                    RateLower = PhotoRates(lowerZenithIndex, RxnIndex)
+                    RateHigher = PhotoRates(higherZenithIndex, &
+                                            RxnIndex)
+
+                    !print *, 'RateLower = ', RateLower
+                    !print *, 'RateHigher = ', RateHigher
+
+                    call linear2dInterp(cosLower, RateLower, &
+                                        cosHigher, RateHigher, &
+                                        dcos(szarad), InterpolatedRate)
+                    !print *, 'Interpolated Rate = ', InterpolatedRate
+                    !print *, 'Scale Factor = ', Scale
+                    GasPhaseChemicalRates(L) = Scale*transmissivity*abs(InterpolatedRate)
+                    !print *, 'GasPhaseChemicalRates(', l, ') = ', GasPhaseChemicalRates(L)
+                    !!Find lower time index number
+                    !ut1 = UTCStartTime
+                    !TimeIndex = INT(ut1*4 + 1.0)
+                    !!Early Value
+                    !y1 = PhotoRates(TimeIndex, RxnIndex) 
+                    !
+                    !ut2 = PhotoEndTime
+                    !TimeIndex = INT(ut2*4 + 1.0)
+                    !!Later Value
+                    !y2 = PhotoRates(TimeIndex, RxnIndex)
+                    !
+                    !!Calculate run end time in UTC
+                    !ut2 = ut1+(RunLength/60.0)
+                    !!Correct time for passing 24 hrs
+                    !IF (ut .LT. ut1) THEN 
+                    !      ut_temp = ut + 24.0
+                    !ELSE
+                    !      ut_temp = ut
+                    !ENDIF
+                    !A = (ut2 - ut_temp)/(ut2 - ut1)
+                    !IF (L .EQ. 6) then
+                    !    WRITE(*,*) ut, y1, y2, Scale*(A*y1 + (1-A)*y2)
+                    !endif
+                    !                        
+                    !GasPhaseChemicalRates(L) = Scale*(A*y1 + (1-A)*y2)
+                                                        
+                ENDIF
+
+                IF (FirstTime) then
+                    CALL TRANSCRIPT("Photolysis Reaction #" & 
+                                    //TRIM(INT2STR(L)) &
+                                    //" Rate Constant:"// &
+                                    TRIM(REAL2STR(&
+                                    GasPhaseChemicalRates(L)))//"")
+                endif
+            END IF
+        END DO
+
+    end SUBROUTINE ResetPhotoRatesSZA
+
 	SUBROUTINE ResetPhotoRates(ReactionRates,ArraySize, ut, FirstTime)
 	!!This subroutine looks for the appropriate value of the 
         !! photolysis rate constant
@@ -647,20 +969,23 @@ MODULE Chemistry
 
 	        !! Loop over all reactions
 		DO L = 1, ArraySize(1)
+		    !print *, ''
+		    !print *, 'L = ', L
 					
 			!! Only do photolysis reactions
 			IF (INT(ReactionRates(L,1)) .EQ. 1 .AND. &
                             INT(ReactionRates(L,3)) .EQ. 0.) THEN	
 								
 				OldRate = GasPhaseChemicalRates(L)
-								
+				!print *, 'OldRate: ', oldrate				
 				!Find reaction index number
 				RxnIndex = INT(ReactionRates(L,4))
-
+                !print *, 'RxnIndex: ', RxnIndex
 !!Option 1 - if PhotoFlag = 0, find corresponding time in PhotoRates.in array
-                                IF (PhotoFlag .EQ. 0) THEN								
-				        !Find lower time index number
-				        TimeIndex = INT(ut*4 + 1.0)
+                IF (.not. PhotoFlag) THEN	
+                							
+				    !Find lower time index number
+				    TimeIndex = INT(ut*4 + 1.0)
 
 					ut1 = (TimeIndex - 1)/4.
 					IF(TimeIndex .EQ. 96) THEN
@@ -710,12 +1035,29 @@ MODULE Chemistry
 								        
                                 ENDIF
 
-				IF (FirstTime) CALL TRANSCRIPT("Photolysis Reaction #"//TRIM(INT2STR(L))//" Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")	
+				IF (FirstTime) then
+                                    CALL TRANSCRIPT("Photolysis Reaction #"//TRIM(INT2STR(L))//&
+                                                    " Rate Constant:"//TRIM(REAL2STR(GasPhaseChemicalRates(L)))//"")
+                                endif        
 			END IF	
 		END DO
 
 	END SUBROUTINE ResetPhotoRates
 	
+	! CB: Make a version of this for SZA
+	subroutine RecalculatePhotoRatesSZA(sza, transmissivity, FirstTime)
+	    implicit none
+
+	    real*8 :: sza, transmissivity
+	    logical :: FirstTime
+
+	    call ResetPhotoRatesSZA(GasPhaseReactionRates, &
+	        GasPhaseReactionRateArraySize, &
+	        FirstTime, sza, transmissivity)
+
+	end subroutine RecalculatePhotoRatesSZA
+        ! end CB add
+
 	SUBROUTINE RecalculatePhotoRates(ut, FirstTime)
 		
 		!This subroutine just calls ResetPhotoRates, and must be called
@@ -988,18 +1330,30 @@ MODULE Chemistry
                 
                 GetTotalPeroxy = 0.0
 		!Calculate peroxy sum
+		!write(678,*)''
 		DO q = 1, HowManyGasChems
+		    !write(678,*) 'In GetTotalPeroxy(): q = ', q
 		   IF(GasPhasePeroxy(q) .gt. 0.005) THEN
+		       !write(678,*) '    In GetTotalPeroxy(): GasPhasePeroxy(', q, ') = gt 0.005 = ', &
+		            !GasPhasePeroxy(q)
                        Chem(q) = GridGasChem(q)
+                       !write(678,*)'    Chem(', q, ') = ', Chem(q)
                        GetTotalPeroxy = GetTotalPeroxy + Chem(q) !ppb
+                       !write(678,*) '    GetTotalPeroxy is now = ', GetTotalPeroxy
                    ENDIF
 	        END DO	
                
                !Place in RO2_T slot
                ind = FindChem("RO2_T", 0)
+               !write(678,*)'In GetTotalPeroxy(): RO2_T index = ', ind
+               !write(678,*)'In GetTotalPeroxy(): Assigning ', GetTotalPeroxy, &
+               !     'to Chem(', ind, ')'
                Chem(ind) = GetTotalPeroxy
+               !write(678,*)'In GetTotalPeroxy(): Going in to ReplaceGridCellChemBurden...'
                CALL ReplaceGridCellChemBurden (ind,Chem(ind)) 
-
+               if (allocated(chem)) deallocate(chem)    ! CMB add
+               !write(678,*)'In GetTotalPeroxy(): GridGasChem(', ind, ') = ', &
+               !     GridGasChem(ind)
 
                !Return value
                RETURN
@@ -1023,18 +1377,33 @@ MODULE Chemistry
 
                 GetTotalAcylPeroxy = 0.0
 		!Calculate peroxy sum
+		!write(678,*)''
 		DO q = 1, HowManyGasChems
+		    !write(678,*) 'In GetTotalAcylPeroxy(): q = ', q
 		   IF(GasPhasePeroxy(q) .gt. 1.005) THEN
+		    !write(678,*) '    In GetTotalAcylPeroxy(): GasPhasePeroxy(', q, ') = gt 1.005 = ', &
+            !        GasPhasePeroxy(q)
                        Chem(q) = GridGasChem(q)
+                       !write(678,*)'    Chem(', q, ') = ', Chem(q)
                        GetTotalAcylPeroxy = GetTotalAcylPeroxy + Chem(q) !ppb
+                       !write(678,*) '    GetTotalAcylPeroxy is now = ', GetTotalAcylPeroxy
                    ENDIF
 	        END DO	
 
                !Place in RCO3_T slot
                ind = FindChem("RCO3_T", 0)
+               !write(678,*)'In GetTotalAcylPeroxy(): RCO3_T index = ', ind
+               !write(678,*)'In GetTotalAcylPeroxy(): Assigning ', GetTotalAcylPeroxy, &
+               !     'to Chem(', ind, ')'
                Chem(ind) = GetTotalAcylPeroxy
+               !write(678,*)'In GetTotalAcylPeroxy(): Going in to ReplaceGridCellChemBurden...'
                CALL ReplaceGridCellChemBurden (ind,Chem(ind)) 
-
+               !write(678,*)'In GetTotalAcylPeroxy(): GridGasChem(', ind, ') = ', &
+               !     GridGasChem(ind)
+               
+               
+               if (allocated(Chem)) deallocate(chem)
+                    
                !Return value
                RETURN
    
