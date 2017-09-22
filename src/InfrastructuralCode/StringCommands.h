@@ -333,7 +333,7 @@ END FUNCTION CountDigits
 		ld = LEN(Delimitor)
 
 		!! Measure the Input Line
-		lt = LEN_TRIM(InLine)
+		lt = LEN(TRIM(InLine))
 
 		!! Chercher the delimitor in the string
                 !! CB: Modify this to also blank out at newlines (windows or linux)
@@ -348,7 +348,7 @@ END FUNCTION CountDigits
 		!! we may set the return values as follows
 		IF (i .ge. lt+1-ld) THEN
 			!! If the string lengths are wrong, errors will result
-			IF (LEN(OutLine) .lt. LEN_TRIM(StripToken(InLine))) &
+			IF (LEN(OutLine) .lt. LEN(TRIM(StripToken(InLine)))) &
 				CALL ERROR("Output string in call to GetToken is of insufficient length")
 			OutLine   = TRIM(StripToken(InLine))! The whole line is the token
 			InLine  = ""	! The instring is updated to be blank
@@ -356,7 +356,7 @@ END FUNCTION CountDigits
 		!! If the token exists, then return that token and strip it from the 
 		!! InLine.
 			!! If the string lengths are wrong, errors will result
-			IF (LEN(OutLine) .lt. LEN_TRIM(StripToken(InLine(1:i-1)))) &
+			IF (LEN(OutLine) .lt. LEN(TRIM(StripToken(InLine(1:i-1))))) &
 			CALL ERROR("Output string in call to GetToken is of insufficient length")
 			OutLine  = StripToken(InLine(1:i-1))
 			InLine   = StripToken(InLine(i+ld:lt)) ! This has to be shorter than the imput line, 
