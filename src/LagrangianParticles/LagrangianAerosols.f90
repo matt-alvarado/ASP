@@ -154,8 +154,9 @@ INCLUDE "SortAerosol.h"
 !! Erase all particles so we can start again !!
 SUBROUTINE ClearParticles ()
 	
-	USE Chemistry,       ONLY : HowManyAqChems, &
-                                    HowManyAqAnions, HowManyAqCations
+        ! CB: what happens if I comment this out?
+	!USE Chemistry,       ONLY : HowManyAqChems, &
+        !                            HowManyAqAnions, HowManyAqCations
 	USE ModelParameters, ONLY : HowManyBins
 	USE InfrastructuralCode, ONLY : TRANSCRIPT, INT2STR
 
@@ -236,6 +237,10 @@ END SUBROUTINE SCInitializeWaterParticles
 !!							  !!
 !! BUT THIS ISN'T SCALED BY MOLES, SO BE CAREFUL!         !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! CMB (AER, Inc): None of these molality functions initialize the value of the 
+!                 returned function, nor do they handle floating-point equality.
+!                 Revisions made...
 REAL*8 FUNCTION Molality (ChemIndex, InParticle)
 
 	USE ModelParameters, ONLY : moles, grams,WaterMolecMass
@@ -245,7 +250,10 @@ REAL*8 FUNCTION Molality (ChemIndex, InParticle)
 	INTEGER		   :: ChemIndex
 	TYPE(Particle) :: InParticle
 
-	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
+    ! CMB: mods for floating-point equality and function initialization
+    Molality = 0.0
+    if (inparticle%numberofparticles .le. 1.0E-40 .or. inparticle%dry) return
+	!IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
 	Molality = InParticle%AqChems(ChemIndex) / InParticle%AqChems(1) / moles * grams / WaterMolecMass * 1000.
 
@@ -261,7 +269,10 @@ REAL*8 FUNCTION CationMolality (ChemIndex, InParticle)
 	INTEGER		   :: ChemIndex
 	TYPE(Particle) :: InParticle
 
-	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
+    ! CMB: mods for floating-point equality and function initialization
+    CationMolality = 0.0
+    if (inparticle%numberofparticles .le. 1.0E-40 .or. inparticle%dry) return
+	!IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
 	CationMolality = Molality (ChemIndex + HowManyAqChems, InParticle)
 
@@ -277,7 +288,10 @@ REAL*8 FUNCTION AnionMolality (ChemIndex, InParticle)
 	INTEGER		   :: ChemIndex
 	TYPE(Particle) :: InParticle
 
-	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
+    ! CMB: mods for floating-point equality and function initialization
+    AnionMolality = 0.0
+    if (inparticle%numberofparticles .le. 1.0E-40 .or. inparticle%dry) return
+	!IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
 	AnionMolality = Molality (ChemIndex + HowManyAqChems + HowManyAqCations, InParticle)
 
@@ -299,7 +313,9 @@ SUBROUTINE ChangeMolality (MolalityChange, ChemIndex, InParticle)
 	INTEGER		   :: ChemIndex
 	TYPE(Particle) :: InParticle
 
-	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
+    ! CMB: mods for floating-point equality and function initialization
+    if (inparticle%numberofparticles .le. 1.0E-40 .or. inparticle%dry) return
+	!IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
 	!! Change the molality by the requested amount.
 	InParticle%AqChems(ChemIndex) = InParticle%AqChems(ChemIndex) + MolalityChange / 1000. *	&
@@ -318,7 +334,9 @@ SUBROUTINE ChangeCationMolality (MolalityChange, ChemIndex, InParticle)
 	INTEGER		   :: ChemIndex
 	TYPE(Particle) :: InParticle
 
-	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
+    ! CMB: mods for floating-point equality and function initialization
+    if (inparticle%numberofparticles .le. 1.0E-40 .or. inparticle%dry) return
+	!IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
 !print *, "Before Cation Molality:", MOLALITY(ChemIndex+ HowManyAqChems,InParticle)," + ",MolalityChange
 
@@ -340,7 +358,9 @@ SUBROUTINE ChangeAnionMolality (MolalityChange, ChemIndex, InParticle)
 	INTEGER		   :: ChemIndex
 	TYPE(Particle) :: InParticle
 
-	IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
+    ! CMB: mods for floating-point equality and function initialization
+    if (inparticle%numberofparticles .le. 1.0E-40 .or. inparticle%dry) return
+	!IF (InParticle%NumberOfParticles .EQ. 0. .OR. InParticle%Dry) RETURN
 
 	CALL ChangeMolality (MolalityChange, ChemIndex + HowManyAqChems + HowManyAqCations, InParticle)
 

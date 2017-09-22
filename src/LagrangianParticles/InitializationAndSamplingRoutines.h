@@ -60,11 +60,21 @@
 !! 8. SUBROUTINE ReadBoundaryDistributionsOrganic ()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+!
+! Modified by CMB (AER): gfortran doesn't like string formatting...
+!
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Initializes and returns a sectional pseudo-particle following !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 FUNCTION MakeSection(WhichPopulation, WhichBin)
 
+	! 3/30/2016 CMB (AER, Inc): In order to figure out why I am getting
+	!							a massive conversion into Wall_NOx, let's
+	!							change "0" for the initialization value
+	!						    of floating-point quantities to 1e-30
+	!							or some small value.
+	
 	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
 	USE Chemistry,		ONLY : HowManyAqChems,			&
@@ -87,7 +97,12 @@ FUNCTION MakeSection(WhichPopulation, WhichBin)
 
 	!! Local Variables
 	INTEGER :: allocation_error, I,J
-
+    
+	! CMB add
+	real*8 :: filler_value
+	filler_value = 1.0e-30
+	! end CMB add
+	
 	!! If particle is large enough to be tracked, 
 	!! create the New Particle and allocate its arrays
 	ALLOCATE (MakeSection, stat = allocation_error)
@@ -128,18 +143,23 @@ FUNCTION MakeSection(WhichPopulation, WhichBin)
 	END DO
 	
 	MakeSection%IonicStr        = 0.
-	
 	MakeSection%EmbryoRadius	= 0. 
 	MakeSection%InsolubleRadius = 0.
 	MakeSection%EffectiveRadius = 0.
-
+	!MakeSection%IonicStr        = filler_value
+	!MakeSection%EmbryoRadius	= filler_value
+	!MakeSection%InsolubleRadius = filler_value
+	!MakeSection%EffectiveRadius = filler_value
+	
 	MakeSection%Dry  = .FALSE.
 	NULLIFY(MakeSection%Next)
 	!MakeSection%Next => Null()
 
 	MakeSection%ParticleID           = 0.
+	!MakeSection%ParticleID = filler_value
 	MakeSection%ParticleDistribution = WhichPopulation
 	MakeSection%NumberOfParticles    = 0.
+	!MakeSection%NumberOfParticles = filler_value
 	MakeSection%Sectional			 = .TRUE.
 
 	MakeSection%Edges(1) = BinEdges(WhichBin,1)
@@ -149,7 +169,11 @@ FUNCTION MakeSection(WhichPopulation, WhichBin)
 	MakeSection%ParticleDensity = 0.
 	MakeSection%SolutionDensity = 0.
 	MakeSection%InsolubleDensity = 0.
-
+	!MakeSection%SurfaceTension  = filler_value
+	!MakeSection%ParticleDensity = filler_value
+	!MakeSection%SolutionDensity = filler_value
+	!MakeSection%InsolubleDensity = filler_value
+		
 	!! For Now, the Initial Temperature of the Particle is that of the 
 	!! Local Environment (1/2002)
 	MakeSection%Temperature = GetTemp()
@@ -160,14 +184,17 @@ FUNCTION MakeSection(WhichPopulation, WhichBin)
 
 	DO I = 1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
 		MakeSection%AqChems(I) = 0.
+		!MakeSection%AqChems(i) = filler_value
 	END DO
 	
 	DO I = 1, HowManyOrgChems
 		MakeSection%OrgChems(I) = 0.
+		!MakeSection%OrgChems(i) = filler_value
 	END DO
 		
 	DO I = 1, HowManyAqOrgChems
 		MakeSection%AqOrgChems(I) = 0.
+		!MakeSection%AqOrgChems(i) = filler_value
 	END DO
 
 	RETURN
@@ -185,7 +212,13 @@ END FUNCTION MakeSection
 !! to be replicated there.            !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDistribution, Boundary)
-
+	
+	! 3/30/2016 CMB (AER, Inc): In order to figure out why I am getting
+	!							a massive conversion into Wall_NOx, let's
+	!							change "0" for the initialization value
+	!						    of floating-point quantities to 1e-30
+	!							or some small value.
+	
 	USE GridPointFields,	 ONLY : GetTemp, GetPress
 
 	USE ModelParameters,	 ONLY : LagrSectSizeCutoff,		&
@@ -233,14 +266,19 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	INTEGER			:: allocation_error, I,J,X,Y,Z
 	LOGICAL, PARAMETER	:: Scaffolding = .FALSE. !.TRUE.
 
-        !!This holds the AerosolModes or EnvAerosolModes arrays, depending on the value of Boundary
-        REAL*8, ALLOCATABLE :: ModesArray(:,:)
-
+    !!This holds the AerosolModes or EnvAerosolModes arrays, depending on the value of Boundary
+    REAL*8, ALLOCATABLE :: ModesArray(:,:)
+	
+	! CMB add
+	real*8 :: filler_value
+	filler_value = 1.0e-30
+	! end CMB add
+	
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticle()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
 
 
-        IF (NOT(BOUNDARY)) THEN
+        IF (.NOT.(BOUNDARY)) THEN
            ALLOCATE (ModesArray(HowManyAerosolModes,3+HowManyAqChems+HowManyOrgChems) , &
                 stat = allocation_error)
         ELSE
@@ -250,7 +288,7 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 	if (allocation_error > 0) CALL ERROR("Allocation of ModesArray Failed in MakeParticle()")
 
-        IF (NOT(BOUNDARY)) THEN
+        IF (.NOT.(BOUNDARY)) THEN
            ModesArray = AerosolModes
         ELSE
            ModesArray = EnvAerosolModes
@@ -264,8 +302,9 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 !! and a standard deviation of pi/sqrt(6):			             !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-
-	IF (MONODISPERSE .EQ. .FALSE.) THEN
+    ! CMB (AER): Rewrite this conditional to play nice with gfortran
+    if (.not. monodisperse) then
+!	IF (MONODISPERSE .EQ. .FALSE.) THEN
 
            CALL PPND (StructuredDistribution, I, II)
 
@@ -280,7 +319,7 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	IF (II .LE. BinEdges(HowManyBins,2) .AND. .NOT.LagrangianOnly) THEN
 
-           IF (NOT(Boundary)) THEN
+           IF (.NOT.(Boundary)) THEN
               CurrentParticle => Particles%First
            ELSE
               CurrentParticle => BoundaryParticles%First
@@ -289,7 +328,9 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 		!! Find the appropriate section to put it in, or err
            IF (ASSOCIATED(CurrentParticle)) THEN
 
-10            IF ((CurrentParticle%Sectional .EQ. .TRUE.) .AND.	&
+               ! CMB (AER): Rewrite this conditional for gfortran
+ 10            if (currentparticle%sectional .and. &
+!10            IF ((CurrentParticle%Sectional .EQ. .TRUE.) .AND.	&
                    (II .GT. CurrentParticle%Edges(1)) .AND.		&
                     (II .LE. CurrentParticle%Edges(2)))	THEN
 			
@@ -319,6 +360,7 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
                  !the organic phase, and none in the hydrophilic phase
                  DO I = 1, HowManyAqOrgChems
                     CurrentParticle%AqOrgChems(I) = 0.0
+					!CurrentParticle%AqOrgChems(i) = filler_value
                  END DO
                         
 
@@ -381,6 +423,7 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 	NewParticle%IonicStr		= 1.
 	NewParticle%InsolubleRadius = 0.
+	!NewParticle%InsolubleRadius = filler_value
 	NewParticle%EmbryoRadius	= II
 	NewParticle%EffectiveRadius = II
 
@@ -390,14 +433,18 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 	NewParticle%Sectional			 = .FALSE.
 	NewParticle%Edges(1)			 = 0.
 	NewParticle%Edges(2)			 = 0.
-	
+	!NewParticle%Edges(1)			 = filler_value
+	!NewParticle%Edges(2)			 = filler_value
+		
 	!! Budge the new particle in at the head of the list
-        IF (NOT(BOUNDARY)) THEN	
+        IF (.NOT.(BOUNDARY)) THEN	
             IF (ASSOCIATED(Particles%First)) THEN
 		CurrentParticle		   => Particles%First
 
 		!! Sectional Bins are at the head of the lists
-20		IF(CurrentParticle%Sectional .EQ. .TRUE. .AND. ASSOCIATED(CurrentParticle%Next)) THEN
+        ! CMB (AER): Rewrite this conditional to play well with gfortran
+ 20     if (currentparticle%sectional .and. associated(currentparticle%next)) then
+!20		IF(CurrentParticle%Sectional .EQ. .TRUE. .AND. ASSOCIATED(CurrentParticle%Next)) THEN
 			CurrentParticle => CurrentParticle%Next
 			GOTO 20	
 		END IF
@@ -420,7 +467,10 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 		CurrentParticle		   => BoundaryParticles%First
 
 		!! Sectional Bins are at the head of the lists
- 88		IF(CurrentParticle%Sectional .EQ. .TRUE. .AND. ASSOCIATED(CurrentParticle%Next)) THEN
+        ! CMB (AER): Rewrite this conditional to play well with gfortran
+ 88     if (currentparticle%sectional .and. &
+            associated(currentparticle%next)) then
+! 88		IF(CurrentParticle%Sectional .EQ. .TRUE. .AND. ASSOCIATED(CurrentParticle%Next)) THEN
 			CurrentParticle => CurrentParticle%Next
 			GOTO 88	
 		END IF
@@ -499,8 +549,9 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 	DO I = 1, HowManyAqOrgChems
  
-			!! Initialize all the organic compounds in the hydrophobic phase	
+			!! Initialize all the organic compounds in the hydrophobic phase
 			NewParticle%AqOrgChems(I) = 0.0
+			!NewParticle%AqOrgChems(i) = filler_value
 	END DO
 	
 	
@@ -509,6 +560,7 @@ SUBROUTINE MakeParticle(WhichPopulation, ResultInt, LagrangianOnly, StructuredDi
 
 	DO I = HowManyAqChems+1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
 		NewParticle%AqChems(I) = 0.
+		!NewParticle%AqChems(i) = filler_value
 	END DO
 
 	!! If didn't just return, then it can deal with water
@@ -622,7 +674,7 @@ FUNCTION MakeBulk(Boundary)
 
 	II = 0.
 	DO I = 2, HowManyAqChems
-		IF(NOT(Boundary)) THEN
+		IF(.NOT.(Boundary)) THEN
                    MakeBulk%AqChems(I) = AerosolModes(1,3+I)
                 ELSE
                    MakeBulk%AqChems(I) = EnvAerosolModes(1,3+I)
@@ -631,7 +683,7 @@ FUNCTION MakeBulk(Boundary)
 	END DO
 
 	DO I = 1, HowManyOrgChems
-		IF(NOT(Boundary)) THEN
+		IF(.NOT.(Boundary)) THEN
                     MakeBulk%OrgChems(I) = AerosolModes(1,3+HowManyAqChems+I)
                 ELSE
                     MakeBulk%OrgChems(I) = EnvAerosolModes(1,3+HowManyAqChems+I)
@@ -733,7 +785,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 	IF(Scaffolding.OR. Transcribe)	CALL Transcript(">>Entering PopulateParticlesSectionsRightAway()<<")
 	IF(Transcribe)	CALL Transcript("_Assigning_Particles_to_Particle_Linked_List_Structure_")
 
-        IF (NOT(BOUNDARY)) THEN
+        IF (.NOT.(BOUNDARY)) THEN
               ALLOCATE (ModesArray(HowManyAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
         ELSE
               ALLOCATE (ModesArray(HowManyEnvAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
@@ -741,7 +793,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 
 	if (allocation_error > 0) CALL ERROR("Allocation of ModesArray Failed in PopulateParticlesSectionsRightAway()")
 
-        IF (NOT(BOUNDARY)) THEN
+        IF (.NOT.(BOUNDARY)) THEN
               ModesArray = AerosolModes
               NumModes = HowManyAerosolModes
         ELSE
@@ -750,17 +802,19 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
         ENDIF  
 
 	!! Start the aerosol ID numbering at 1
-	IF (NOT(BOUNDARY)) CALL SetParticleID (1)
+	IF (.NOT.(BOUNDARY)) CALL SetParticleID (1)
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Each of the modes has its own sectional representation !!
 	!! for particles below the certain size cutoff.			  !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 	IF (HowManyBins .GT. 0. .OR. ThermoBulkMode) THEN
 		IF (.NOT.ThermoBulkMode .AND. .NOT.Monodisperse) THEN
 			DO J = 1, HowManyBins
 				NewSection => MakeSection(I,J) 
-                                IF (NOT(Boundary)) THEN
+                                IF (.NOT.(Boundary)) THEN
 				    !!Budge the new mode in at the head of the list
 				    IF (ASSOCIATED(Particles%First)) THEN	
                                         NewSection%Next	=> Particles%First
@@ -780,14 +834,15 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 					NULLIFY(NewSection%Next)
 					!NewSection%Next=> Null()
 				    END IF
-                                END IF                               
+                                END IF    
+                           
 			END DO
 
 		ELSE IF (Monodisperse) THEN
 			!Monodisperse Distribution
 			!WRITE(*,*) "Check 0"
 			HowManyBins = 1
-                        IF (NOT(Boundary)) THEN
+                        IF (.NOT.(Boundary)) THEN
 			   NewSection => MakeMonodisperse(.FALSE.)
 			   Particles%First => NewSection
 		        ELSE
@@ -796,7 +851,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
                         ENDIF
 		ELSE
 			!Bulk Mode
-                        IF (NOT(Boundary)) THEN
+                        IF (.NOT.(Boundary)) THEN
           		   NewSection => MakeBulk(.FALSE.)
 			   Particles%First => NewSection
                         ELSE
@@ -825,10 +880,10 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 			IF(ModesArray(I,3) .NE. 0.0) THEN !Log-normal mode
 
                                 !MJA 05-29-2012 Old method, only integer numbers of particles
-			    IF (NOT(Jacobson)) THEN
+			    IF (.NOT.(Jacobson)) THEN
                                    DO J = 1, NumbParticles
 					!Matt changed this to hopefully put particles in sections right away
-					IF (NOT(BOUNDARY)) THEN
+					IF (.NOT.(BOUNDARY)) THEN
                                             CALL MakeParticle(I, K, .FALSE., (DFLOAT(J)-0.5)/NumbParticles, .FALSE.)
                                         ELSE
                                             CALL MakeParticle(I, K, .FALSE., (DFLOAT(J)-0.5)/NumbParticles, .TRUE.)
@@ -859,13 +914,15 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 
 
                                 !Loop over sections
-                                IF (NOT(BOUNDARY)) THEN
+                                IF (.NOT.(BOUNDARY)) THEN
 				   Current => PARTICLES%First
 				ELSE
 				   Current => BOUNDARYPARTICLES%First
 				ENDIF
-                     
- 99			        IF (Current%Sectional .EQ. .TRUE. .AND. Current%Edges(2) .LT. 1.0E4 ) THEN
+ 
+                ! CMB(AER): Rewrite this conditional to play nice with gfortran
+ 99             if ((current%sectional) .and. current%edges(2) .lt. 1.0E4) then    
+! 99			        IF (Current%Sectional .EQ. .TRUE. .AND. Current%Edges(2) .LT. 1.0E4 ) THEN
                            
                                     !Jacobson, Eq 13.9
                                     del_diam = 2.0*(Current%Edges(2)-Current%Edges(1)) 
@@ -949,7 +1006,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 			    IF (TRANSCRIBE) CALL TRANSCRIPT ("Allocated "//TRIM(INT2STR(LagrangianParticles))//" Lagrangian particles")
 			    IF (TRANSCRIBE) CALL TRANSCRIPT ("and "//TRIM(INT2STR(SectionalParticles))//" Sectional particles")
 			ELSE !Exponential Mode
-				IF (NOT(BOUNDARY)) THEN
+				IF (.NOT.(BOUNDARY)) THEN
                                    CALL MakeParticleExponential(I, .FALSE.)
                                 ELSE
                                    CALL MakeParticleExponential(I, .TRUE.)
@@ -968,7 +1025,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 	IF (InputFlagRatioOrMass .EQ. 1) THEN
 		
 		!!This should only be called for monodisperse or bulk aerosol
-		IF(NOT(Monodisperse) .AND. NOT(ThermoBulkMode)) &
+		IF(.NOT.(Monodisperse) .AND. .NOT.(ThermoBulkMode)) &
 			CALL ERROR ("You selected a sectional aerosol.  In this mode, you must specify the abundance of chemicals by "// &
 						"the relative mass percentage using the second flag in AerosolModes.in (0); you have selected another "// &
 						"option.  Please remedy.")	
@@ -978,21 +1035,24 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 			RescalingFactors(I,J) = 0.
 		END DO ; END DO
 
-		IF (NOT(BOUNDARY)) THEN
+		IF (.NOT.(BOUNDARY)) THEN
 		    Current => PARTICLES%First
                 ELSE
 		    Current => BOUNDARYPARTICLES%First
                 ENDIF
 
+                ! CMB (AER): Cleaned syntax a bit to play well with gfortran
 	10	IF (ASSOCIATED(Current)) THEN
 
 			DO I = 2,HowManyAqChems
-				RescalingFactors(Current%ParticleDistribution,I) = RescalingFactors(Current%ParticleDistribution,I) + &
+				RescalingFactors(Current%ParticleDistribution,I) = &
+                                    RescalingFactors(Current%ParticleDistribution,I) + &
 				Current%AqChems(I)*Current%NumberOfParticles
 			END DO
 
 			DO I = 1,HowManyOrgChems
-				RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) = RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) + &
+				RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) = &
+                                    RescalingFactors(Current%ParticleDistribution,HowManyAqChems+I) + &
 				Current%OrgChems(I)*Current%NumberOfParticles
 			END DO
 
@@ -1023,7 +1083,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 		END DO
 
 		IF(Scaffolding) WRITE(*,*) "Check 3"
-		IF (NOT(BOUNDARY)) THEN
+		IF (.NOT.(BOUNDARY)) THEN
 		    Current => PARTICLES%First
                 ELSE
 		    Current => BOUNDARYPARTICLES%First
@@ -1059,7 +1119,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 
 	!! Now that all of the consitutents have been added,
 	!! walk through the lists and equilibrate everything
-	IF (NOT(BOUNDARY)) THEN
+	IF (.NOT.(BOUNDARY)) THEN
 	    Current => PARTICLES%First
         ELSE
             Current => BOUNDARYPARTICLES%First
@@ -1091,7 +1151,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
           
 
 
-			IF (NOT(Current%Dry)) THEN 
+			IF (.NOT.(Current%Dry)) THEN 
                            CALL KusikMeissner (Current)
 			   IF(Scaffolding) WRITE(*,*) "Before Equilibrate"
 
@@ -1099,7 +1159,9 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 			   IF(Scaffolding) WRITE(*,*) "After Equilibrate"
 
 		           RH =  GetRelativeHumidity ()
+
                            CALL EquilibriumWaterContentAmount (Current, RH, Q, .TRUE., InorgWaterContent)
+				!write(*,*) 'InorgWaterContent=',InorgWaterContent
                            Current%AqChems(1) = InorgWaterContent
 			   IF(Scaffolding) WRITE(*,*) "After Water EQ"
 			ENDIF
@@ -1118,7 +1180,7 @@ SUBROUTINE PopulateParticlesSectionsRightAway (Boundary)
 	END IF
 
 	!! Report what ended up with
-	IF(NOT(Monodisperse) .AND. NOT(ThermoBulkMode)) THEN
+	IF(.NOT.(Monodisperse) .AND. .NOT.(ThermoBulkMode)) THEN
            CALL TRANSCRIPT("")
 	   CALL TRANSCRIPT("Reallocated "//TRIM(INT2STR(SectionalParticles))//" particles to sections and left "//		&
 	       TRIM(INT2STR(LagrangianParticles))//" as lagrangian particles.")
@@ -1141,6 +1203,7 @@ END SUBROUTINE PopulateParticlesSectionsRightAway
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE ReadDistributionsOrganic ()
 
+        ! CB: Added striptoken
 	USE InfrastructuralCode, ONLY : GetFileHandle,		        &
 					ReturnFileHandle,	        &
 					GetLine,			&
@@ -1154,7 +1217,8 @@ SUBROUTINE ReadDistributionsOrganic ()
 					ERROR,				&
 					WARN,				&
 					Transcript,			&
-					REAL2STR
+					REAL2STR,                       &
+                                        stripToken
 
 	USE ModelParameters,	 ONLY : lengthscale,		&
 					InputDeckSubDir,	&
@@ -1172,7 +1236,7 @@ SUBROUTINE ReadDistributionsOrganic ()
 	INTEGER				:: I, J, K, L, FH, allocation_error
 	REAL*8				:: II,JJ,KK, ChemPercentage
 	LOGICAL				:: Scaffolding, Transcribe
-	CHARACTER (len=256) :: CurrLine, Token
+	CHARACTER (len=256) :: CurrLine, Token, TempLine
 	LOGICAL             :: LagrangianOrNot
 
 	Scaffolding = .TRUE.	!! Blurt Notes to Standard Out and Transcript
@@ -1376,29 +1440,40 @@ SUBROUTINE ReadDistributionsOrganic ()
 
 		ELSE
 
-			IF (Monodisperse .AND. HowManyAerosolModes  .NE. 1) &
-			CALL ERROR ("You selected a monodisperse aerosol in the main input deck. In that mode, you may not specify more than one "// &
-						"aerosol mode. Please remedy.  If you want the model to ignore a mode you've specified in the file, "// &
-						"you must comment it out...")
+			IF (Monodisperse .AND. HowManyAerosolModes  .NE. 1) then
+                            CALL ERROR ("You selected a monodisperse aerosol in the main input deck. "//&
+                                    "In that mode, you may not specify more than one "// &
+				    "aerosol mode. Please remedy.  If you want the model to ignore "//&
+                                    "a mode you've specified in the file, "// &
+				    "you must comment it out...")
+                        endif
 			
-			IF (Monodisperse .AND. InputFlagRatioOrMass .NE. 1) &
-			CALL WARN ("You selected a monodisperse aerosol in the main input deck.  In that mode, you must specify the abundance of chemicals by "// &
-						"the total mass concentration using the second flag in AerosolModes.in (1); you have selected another "// &
-						"option.  Please remedy.")
+			IF (Monodisperse .AND. InputFlagRatioOrMass .NE. 1) then
+                            CALL WARN ("You selected a monodisperse aerosol in the main input deck.  "//&
+                                    "In that mode, you must specify the abundance of chemicals by "// &
+				    "the total mass concentration using the second flag in "//&
+                                    "AerosolModes.in (1); you have selected another "// &
+				    "option.  Please remedy.")
+                        endif
 
-			IF (Monodisperse) CALL TRANSCRIPT ("The model will be run in MONODISPERSE MODE, in which only one particle  is considered.")
-			
-			IF(NOT(Monodisperse) .AND. InputFlagRatioOrMass .NE. 0) &
-			CALL WARN ("You selected a sectional aerosol.  In this mode, you must specify the abundance of chemicals by "// &
-						"the relative mass percentage using the second flag in AerosolModes.in (0); you have selected another "// &
-						"option.  Please remedy.")
+			IF (Monodisperse) then
+                            CALL TRANSCRIPT ("The model will be run in MONODISPERSE MODE, in which "//&
+                                            "only one particle  is considered.")
+			endif
+			IF(.NOT.(Monodisperse) .AND. InputFlagRatioOrMass .NE. 0) &
+			CALL WARN ("You selected a sectional aerosol.  In this mode, you must specify "//&
+                                "the abundance of chemicals by "// &
+				"the relative mass percentage using the second flag in "//&
+                                "AerosolModes.in (0); you have selected another "// &
+				"option.  Please remedy.")
 			
 			IF (Transcribe) CALL Transcript(" Nt:       "//Trim(Token))
 
 			!! Dbar_g_N 
 			IF (.NOT.IsReal(Token)) &
-			CALL ERROR ("In ReadDistributions(), while allocating aerosol modes, expected a real number and got "//TRIM(Token)// &
-						" in line: >>"//TRIM(CurrLine)//"<<")
+			CALL ERROR ("In ReadDistributions(), while allocating aerosol modes, expected "//&
+                                "a real number and got "//TRIM(Token)// &
+				" in line: >>"//TRIM(CurrLine)//"<<")
 
 			CALL GetToken(CurrLine,";",Token)
 			AerosolModes(I,2) = STR2REAL(Token)
@@ -1408,27 +1483,37 @@ SUBROUTINE ReadDistributionsOrganic ()
 			!! Rho_g  
 			CALL GetToken(CurrLine,";",Token)
 			IF (.NOT.IsReal(Token)) &
-			CALL ERROR ("In ReadDistributionsOrganic(), while allocating aerosol modes, expected a real number and got "//TRIM(Token)// &
-						" in line: >>"//TRIM(CurrLine)//"<<")
+			CALL ERROR ("In ReadDistributionsOrganic(), while allocating aerosol modes, "//&
+                                "expected a real number and got "//TRIM(Token)//&
+                                " in line: >>"//TRIM(CurrLine)//"<<")
 
 			AerosolModes(I,3) = STR2REAL(Token)
 
 			IF (Transcribe) CALL Transcript(" Rho_g:    "//Trim(Token))
 
 			IF (AerosolModes(I,3) .LT. 1 .AND. AerosolModes(I,3) .NE. 0) &
-			CALL ERROR("In AerosolModes.in, Rho_g, the geometric standard deviation of aerosol mode "//TRIM(INT2STR(I)) &
-					   //" is less than one.  It cannot be, mathematically, as it is ill defined.  Please correct.")
+			CALL ERROR("In AerosolModes.in, Rho_g, the geometric standard deviation "//&
+                                "of aerosol mode "//TRIM(INT2STR(I))//" is less than one.  It cannot "//&
+                                "be, mathematically, as it is ill defined.  Please correct.")
 			IF (AerosolModes(I,3) .EQ. 1.) &
-			CALL ERROR("In AerosolModes.in, Rho_g, the geometric standard deviation of aerosol mode "//TRIM(INT2STR(I)) &
-					   //" is equal to one, which is ill defined (an infinite concentration in zero radius space.  If you "//    &
-					   "want a mono-dispersion set that flag in MELAMinputdeck.in. ")
+			CALL ERROR("In AerosolModes.in, Rho_g, the geometric standard deviation "//&
+                                "of aerosol mode "//TRIM(INT2STR(I))// &
+				" is equal to one, which is ill defined (an infinite concentration "//&
+                                "in zero radius space.  If you "//    &
+				"want a mono-dispersion set that flag in MELAMinputdeck.in. ")
 			IF (AerosolModes(I,3) .LT. 1.001 .AND. AerosolModes(I,3) .NE. 0) &
-			CALL WARN("In AerosolModes.in, Rho_g, the geometric standard deviation of aerosol mode "//TRIM(INT2STR(I))// &
-					  " is very near to one, which may cause problems.  If you want a mono-dispersion set that flag in "//        &
-					  "MELAMinputdeck.in. ")
-			IF (AerosolModes(I,3) .EQ. 0.0 .AND. Monodisperse .EQ. .FALSE.) &
-			CALL WARN("In AerosolModes.in, Rho_g, the geometric standard deviation of aerosol mode #"//TRIM(INT2STR(I))// &
-					  " is zero. This is the flag for an exponential distribution, and will be treated as such. ")
+			CALL WARN("In AerosolModes.in, Rho_g, the geometric standard deviation "//&
+                                "of aerosol mode "//TRIM(INT2STR(I))// &
+				 " is very near to one, which may cause problems.  If you want a "//&
+                                 "mono-dispersion set that flag in "//        &
+				  "MELAMinputdeck.in. ")
+            ! CMB (AER): Edit this conditional for gfortran
+            IF (AerosolModes(I,3) .EQ. 0.0 .and. (.not. Monodisperse)) &
+!			IF (AerosolModes(I,3) .EQ. 0.0 .AND. Monodisperse .EQ. .FALSE.) &
+			CALL WARN("In AerosolModes.in, Rho_g, the geometric standard deviation of "//&
+                                "aerosol mode #"//TRIM(INT2STR(I))// &
+				" is zero. This is the flag for an exponential distribution, "//&
+                                "and will be treated as such. ")
 		END IF
 
 		!WRITE(*,*) "Hi Matt!"
@@ -1440,8 +1525,17 @@ SUBROUTINE ReadDistributionsOrganic ()
 		ChemPercentage = 0
 
 		!! Get the Name of the Mode
+                !TempLine = GetLine(FH)
+                !do i = 1, 256
+                !    num = ichar(tempLine(i:i))
+                !    if (num .eq. 13) then
+                !        tempLine(i:i) = ' '
+            !    endif
+                !enddo
+                !call GetToken(GetLine(FH), ';', tempLine)  
 		AerosolModeNames(I) = TRIM(GetLine(FH))
-		IF (AerosolModeNames(I) .eq. EOF) &
+		!AerosolModeNames(I) = stripToken(tempLine)
+                IF (AerosolModeNames(I) .eq. EOF) &
 		CALL ERROR ("Reached the end of the Aerosol Input Deck while looking for the name of the "//TRIM(INT2STR(I))//  &
 					"th aerosol mode.")
 
@@ -1585,10 +1679,12 @@ FUNCTION MakeMonodisperse(Boundary)
 	MakeMonodisperse%ParticleID           = 0.
 	MakeMonodisperse%ParticleDistribution = 1
 
-        IF (NOT(BOUNDARY)) THEN
-	     MakeMonodisperse%NumberOfParticles    = ANINT(AerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
+        IF (.NOT.(BOUNDARY)) THEN
+	     MakeMonodisperse%NumberOfParticles = &
+                ANINT(AerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
         ELSE
-	     MakeMonodisperse%NumberOfParticles    = ANINT(EnvAerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
+	     MakeMonodisperse%NumberOfParticles = &
+                ANINT(EnvAerosolModes(1,1) * DomainX/LengthScale * DomainY/LengthScale * DomainZ/LengthScale)
         ENDIF
 
 	MakeMonodisperse%Sectional	      = .TRUE.
@@ -1608,7 +1704,7 @@ FUNCTION MakeMonodisperse(Boundary)
 
 	II = 0.
 	DO I = 2, HowManyAqChems
-            IF (NOT(BOUNDARY)) THEN
+            IF (.NOT.(BOUNDARY)) THEN
 		MakeMonodisperse%AqChems(I) = AerosolModes(1,3+I)
             ELSE
 		MakeMonodisperse%AqChems(I) = EnvAerosolModes(1,3+I)
@@ -1617,7 +1713,7 @@ FUNCTION MakeMonodisperse(Boundary)
 	END DO
 
 	DO I = 1, HowManyOrgChems
-	    IF (NOT(BOUNDARY)) THEN
+	    IF (.NOT.(BOUNDARY)) THEN
                 MakeMonodisperse%OrgChems(I) = AerosolModes(1,3+HowManyAqChems+I)
             ELSE
                 MakeMonodisperse%OrgChems(I) = EnvAerosolModes(1,3+HowManyAqChems+I)
@@ -1632,7 +1728,8 @@ FUNCTION MakeMonodisperse(Boundary)
 	
 	DO I = 3+HowManyAqChems+HowManyOrgChems+1,3+HowManyAqChems+HowManyOrgChems+NumbInsolTypes
 		IF (AerosolModes(1,I) .GT. 0) &
-		CALL ERROR("MakeMonodisperse() Failed.  You cannot specify insoluble cores to aerosol and then try to run in monodisperse mode.  "// &
+		CALL ERROR("MakeMonodisperse() Failed.  You cannot specify insoluble cores "//&
+                        "to aerosol and then try to run in monodisperse mode.  "// &
 		           "This program is not set up to do that.")
 	END DO
 
@@ -1698,7 +1795,7 @@ SUBROUTINE MakeParticleExponential(WhichPopulation, Boundary)
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticleExponential()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
 
-        IF (NOT(BOUNDARY)) THEN
+        IF (.NOT.(BOUNDARY)) THEN
               ALLOCATE (ModesArray(HowManyAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
         ELSE
               ALLOCATE (ModesArray(HowManyEnvAerosolModes,3+HowManyAqChems+HowManyOrgChems) , stat = allocation_error)
@@ -1706,7 +1803,7 @@ SUBROUTINE MakeParticleExponential(WhichPopulation, Boundary)
 
 	if (allocation_error > 0) CALL ERROR("Allocation of ModesArray Failed in MakeParticle()")
 
-        IF (NOT(BOUNDARY)) THEN
+        IF (.NOT.(BOUNDARY)) THEN
               ModesArray = AerosolModes
         ELSE
               ModesArray = EnvAerosolModes
@@ -1715,7 +1812,7 @@ SUBROUTINE MakeParticleExponential(WhichPopulation, Boundary)
 	IF (SCAFFOLDING) CALL Transcript(">>>Entering MakeParticleExponential()<<<")
 	IF (SCAFFOLDING) CALL Transcript("")
 
-	IF (NOT(BOUNDARY)) THEN
+	IF (.NOT.(BOUNDARY)) THEN
             CurrentParticle => Particles%First
         ELSE
             CurrentParticle => BoundaryParticles%First
@@ -1899,7 +1996,8 @@ SUBROUTINE ReadBoundaryDistributionsOrganic ()
 
 		I = I + 1
 		IF (I > MAX(1,HowManyEnvAerosolModes)) &
-		CALL ERROR ("In ReadBoundaryDistributionsOrganic(), while allocating aerosol modes, parsed the input deck incorrectly.  At line: >>"// &
+		CALL ERROR ("In ReadBoundaryDistributionsOrganic(), while allocating aerosol modes, "//&
+                        "parsed the input deck incorrectly.  At line: >>"//&
 				    TRIM(CurrLine)//"<<")
 
 		IF (Transcribe) CALL Transcript("")
@@ -1940,7 +2038,8 @@ SUBROUTINE ReadBoundaryDistributionsOrganic ()
 
 			!! Dbar_g_N 
 			IF (.NOT.IsReal(Token)) &
-			CALL ERROR ("In ReadBoundaryDistributionsOrganic(), while allocating aerosol modes, expected a real number and got "//TRIM(Token)// &
+			CALL ERROR ("In ReadBoundaryDistributionsOrganic(), while allocating "//&
+                                "aerosol modes, expected a real number and got "//TRIM(Token)// &
 						" in line: >>"//TRIM(CurrLine)//"<<")
 
 			CALL GetToken(CurrLine,";",Token)
@@ -1951,7 +2050,8 @@ SUBROUTINE ReadBoundaryDistributionsOrganic ()
 			!! Rho_g  
 			CALL GetToken(CurrLine,";",Token)
 			IF (.NOT.IsReal(Token)) &
-			CALL ERROR ("In ReadBoundaryDistributionsOrganic(), while allocating aerosol modes, expected a real number and got "//TRIM(Token)// &
+			CALL ERROR ("In ReadBoundaryDistributionsOrganic(), while allocating aerosol "//&
+                                "modes, expected a real number and got "//TRIM(Token)// &
 						" in line: >>"//TRIM(CurrLine)//"<<")
 
 			EnvAerosolModes(I,3) = STR2REAL(Token)
