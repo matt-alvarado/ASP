@@ -71,7 +71,11 @@ SUBROUTINE SetGasPhaseChemistry ()
         REAL*8	:: init_conc
 
         ! MJA 2016-09-13: Variable to set initial concentrations to 0 if a STILT run (hardcoded for now!)
-        logical	:: STILT        
+        logical	:: STILT    
+
+        ! MJA 2017-09-22: Variable to assume the emission factor space is actually initial concentrations,
+        !                 like in ASP v2.1 and earlier
+        logical :: OLDASP    
 
         ! MJA 2016-09-13: Variables to stroe CO index and CO initial concentration (hardcoded for now!)
         integer	:: CO_index
@@ -127,17 +131,17 @@ SUBROUTINE SetGasPhaseChemistry ()
         k = STR2INT (Token)
 
         IF (k .EQ. 1) STILT = .TRUE.
-
+        IF (k .EQ. 2) OLDASP = .TRUE.
+        IF (k .GT. 2 .OR. k .LT. 0) &
+	  CALL ERROR("In GasPhaseChems.in, the first non-commentary line should be a flag telling the model how you are "// &
+	  "specifying the initial concentrations.  It must either be 0, 1, or 2, with no decimal points.  Your input "// &
+	  "is out of range.")
+ 
         !MJA 2016-09-13: Second token of first uncommeted line is initial CO concentration in ppbv        
         CALL GetToken(CurrLine, ";", Token)
         CO_init = STR2REAL (Token)
 
 	GasConcInputTypeFlag = 0 !Force ppb, mja 08/27/2010 
-
-	IF (GasConcInputTypeFlag .NE. 0 .AND. GasConcInputTypeFlag .NE. 1) &
-	  CALL ERROR("In GasPhaseChems.in, the first non-commentary line should be a flag telling the model how you are "// &
-	  "specifying the initial concentrations.  It must either be 0 or 1, with no decimal points.  Your input "// &
-	  "appears to be an integer but out of range.")
 
 	!! Make a first pass through the file to determine the number of 
 	!! chemicals specified therein.
@@ -326,7 +330,11 @@ SUBROUTINE SetGasPhaseChemistry ()
                 ! 2/4/2016 CB: We are setting these concentrations to 0
                 !              since we are getting the boundary conditions
                 !              from STILT-Chem
-		CALL SetHomogeneousChemFieldPPB (i, filler_conc)
+		CALL SetHomogeneousChemFieldPPB (i, filler_conc)            
+            ELSE IF (OLDASP) THEN 
+                !Assume Emission factor space is initial concentrations in ppb, like ASP v2.1 and earlier
+                init_conc = GasPhaseEmisFactor(i)
+                CALL SetHomogeneousChemFieldPPB (i, init_conc)    
             ELSE !Calculate initial concentration from CO initial concentration and EFs
 		init_conc = (GasPhaseEmisFactor(i)/GasPhaseEmisFactor(CO_index))*(GasMolecularMass(CO_index)/GasMolecularMass(i)) &
                                *(CO_init - (GasPhaseBackground(CO_index)*1e9/Mgas))+(GasPhaseBackground(i)*1e9/Mgas) !in ppbv

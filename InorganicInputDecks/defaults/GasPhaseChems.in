@@ -23,14 +23,17 @@
 !!	DEPOSITION VELOCITY (cm/s)
 !!
 !! INITIAL CONCENTRATION FLAG AND VALUE:
-!! First flag is 0 if initial concentration shsould be calculated and 1 if they should be set to a negligible value, as in STILT mode
+!! First (integer) flag is:
+!! 0 if initial concentrations should be calculated from Emission factor
+!! 1 if initial concentrations should be set to a negligible value, as in STILT
+!! 2 if initial concentrations should be read in from the emission factor slot 
+!! (to have back-compatability with older input files of ASP v2.1 and earlier)
 !! Second value is the initial CO concentration in ppbv to be used in the calculation of other initial values from the Emission Factors
 0; 10000!
 !!
 !!
 !! Use the same name here as in the aerosol chemistry input deck to 
 !! assure proper matching between the two
-!! NOTE: Values below are for Yokelson Williams Fire (California)
 !! Put CO first to use gasphasechems_scale.pro;Evolve flag;Peroxy Flag;MW;Init Conc;Back Conc;Dep Vel!;;;
 CO		;1	;0;28;75.78;129.213;0!
 CO2		;1	;0;43.984;1669.37;390000;0!
