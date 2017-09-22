@@ -142,6 +142,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 					 AqOrgDensity, &
 					 SolidSaltDensity, &
 					 AqPhaseChemicalNames
+	USE OutputRoutines
 
 	IMPLICIT NONE
 
@@ -183,7 +184,11 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 	!! then there is nothing to do.  Return.    !!
 	Particle1 => Particles%First !!!!!!!
 
-5	IF (Particle1%NumberOfParticles .EQ. 0.) THEN
+
+
+
+
+5	IF (Particle1%NumberOfParticles .EQ. 0.0D0) THEN
 		IF (ASSOCIATED(Particle1%Next)) THEN
 			Particle1 => Particle1%Next
 			GOTO 5
@@ -303,22 +308,26 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 		RETURN		
 	END IF
 
-	
+
 	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! LOOP AND FILL CoagArray with Kernel Values   !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
 	DO I = 1, HowManyLinks
 		DO J = 1, HowManyLinks
 
 			!! If either of these is zero we don't have to actually calculate anything
-			IF (Particle1%NumberOfParticles .EQ. 0.  .OR.  Particle2%NumberOfParticles .EQ. 0.) THEN
+			IF (Particle1%NumberOfParticles .EQ. 0.0D0  .OR.  Particle2%NumberOfParticles .EQ. 0.0D0) THEN
 				CoagArray(I,J) = 0.
 				GOTO 40
 			END IF
 
 			IF (Particle1%EffectiveRadius   .EQ. 0. .OR. Particle2%EffectiveRadius   .EQ. 0. .OR. &
-				Particle1%NumberOfParticles .EQ. 0. .OR. Particle2%NumberOfParticles .EQ. 0.) THEN
+				Particle1%NumberOfParticles .EQ. 0.0D0 .OR. Particle2%NumberOfParticles .EQ. 0.0D0) THEN
 
 				CoagArray(I,J) = 0.
 
@@ -327,11 +336,16 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 				
 				IF(ConstantKernel) THEN
 					CoagArray(I,J) = CoagKernel
+
 				ELSE
 					!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 					!! Add together compenents of the Coagulation Kernel (units cm3 part.-1 s-1) !!
 					CoagArray(I,J) = (CoagKernBrownianDiff   (Particle1, Particle2) &
 					                  + CoagKernGravCollection (Particle1, Particle2)) !! Add Brownian and Convective Contributions
+					!write(*,*) 'CRL: CoagKernBrownianDiff   (Particle1, Particle2) =',CoagKernBrownianDiff   (Particle1, Particle2)
+					!write(*,*) 'CRL: CoagKernGravCollection (Particle1, Particle2) =',CoagKernGravCollection (Particle1, Particle2)
+					!write(*,*) ''
+
 				END IF
 			END IF
 			
@@ -346,6 +360,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 		Particle2 => Particles%First
 
 	END DO
+	!write(*,*) 'CRL: After CoagArray =',CoagArray
 
 !	WRITE(*,*) "Coag Check 1"
 
@@ -371,7 +386,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 	Particle1 => Particles%First
 	JJ = 1
 	InSumVolumeConc = 0.0
-45	IF (Particle1%numberofparticles .GT. 0.0) THEN
+45	IF (Particle1%numberofparticles .GT. 0.0D0) THEN
 		SingleParticleVolume(JJ) = (4.0*Pi/3.0)*(Particle1%effectiveradius)**3 !cm3
 		
 		NumConc(JJ) = Particle1%numberofparticles
@@ -379,14 +394,15 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 		InitNumConc(JJ) = Particle1%numberofparticles 
 
 		VolumeConc(JJ) = SingleParticleVolume(JJ)*Particle1%numberofparticles !cm3/cm3
-		
+
+
 		IF(VolumeConc(JJ) .LT. 0.0) WRITE(*,*) "Negative Volume Conc!"
 		
 		!Convert aqueous concentrations to cm3 solution/cm3 air
 		
 		!Water
 		AqVolConc(JJ,1)  = Particle1%AqChems(1) * Particle1%NumberOfParticles*AqMolecularMass(1)/AvgSolutionDensity !Particle1%SolutionDensity
-				
+
 		!Solid Salts
 		DO I = 2, HowManyAqChems
 			AqVolConc(JJ,I)  = Particle1%AqChems(I) * Particle1%NumberOfParticles*AqMolecularMass(I)/SolidSaltDensity(I)
@@ -413,7 +429,8 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 				WRITE(*,*) "Negative AqOrgVolume Conc!", JJ, I, Particle1%NumberOfParticles, Particle1%AqOrgChems(I)
 			END IF
 		END DO
-		
+					
+
 		TotalAqVolConc = 0.0
 		DO I = 1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
 			TotalAqVolConc = TotalAqVolConc + AqVolConc(JJ,I)
@@ -499,12 +516,11 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 	END DO
 
 !	WRITE(*,*) "Coag Check 3"
-
 	!Calculate change in total volume conc. and use that to get change in number
 	DO K = 1, HowManyLinks    
         LowerSum=0
 		DO J=1, HowManyLinks
-			IF (InitNumConc(J) .GT. 0.0 .AND. CoagArray(K,J) .NE. 0.0 .AND. VolumeFractions(K,J,K) .NE. 1.0) THEN 
+			IF (InitNumConc(J) .GT. 0.0D0 .AND. CoagArray(K,J) .NE. 0.0 .AND. VolumeFractions(K,J,K) .NE. 1.0) THEN 
 				LowerSum = LowerSum + (1-VolumeFractions(K,J,K))*CoagArray(K,J)*InitNumConc(J)
 			END IF
 		END DO
@@ -516,9 +532,11 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 			DO J=1,K
 				InnerSum=0
 				DO I=1, K-1
-					IF (InitNumConc(J) .GT. 0.0 .AND. CoagArray(I,J) .NE. 0.0 .AND. VolumeFractions(I,J,K) .NE. 0.0) THEN 
+					IF (InitNumConc(J) .GT. 0.0D0 .AND. CoagArray(I,J) .NE. 0.0 .AND. VolumeFractions(I,J,K) .NE. 0.0) THEN 
+
 						InnerSum = InnerSum + VolumeFractions(i,j,k)*CoagArray(i,j)*VolumeConc(i)*InitNumConc(J)
-						!WRITE(*,*) "InnerSum", InnerSum
+
+
 					END IF
 				end DO 
 				UpperSum = UpperSum + InnerSum
@@ -526,9 +544,10 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 		END IF    
 		
 		IF (LowerSum .LT. 0.0 ) CALL ERROR("Problem in LowerSum in Coag routine, early")
-		
+
+
 		VolumeConc(K) = (VolumeConc(K)+TimeStep*UpperSum)/(1+TimeStep*LowerSum)
-		
+
 		IF (VolumeConc(K) .GT. 0.0 .AND. SingleParticleVolume(K) .GT. 0.0) THEN
 			!Number concentration estimated from change in volume concentration
 			NumConc(K) = VolumeConc(K)/SingleParticleVolume(K)
@@ -543,7 +562,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 		DO K = 1, HowManyLinks    
 			LowerSum=0
 			DO J=1, HowManyLinks
-				IF (InitNumConc(J) .GT. 0.0 .AND. CoagArray(K,J) .NE. 0.0 .AND. VolumeFractions(K,J,K) .NE. 1.0) THEN 
+				IF (InitNumConc(J) .GT. 0.0D0 .AND. CoagArray(K,J) .NE. 0.0 .AND. VolumeFractions(K,J,K) .NE. 1.0) THEN 
 					!WRITE(*,*) K, J, VolumeFractions(K,J,K), CoagArray(K,J), InitNumConc(J)
 					LowerSum = LowerSum + (1.0-VolumeFractions(K,J,K))*CoagArray(K,J)*InitNumConc(J)
 				END IF
@@ -556,8 +575,9 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 				DO J=1,K
 					InnerSum=0
 					DO I=1, K-1
-						IF (InitNumConc(J) .GT. 0.0 .AND. CoagArray(I,J) .NE. 0.0 .AND. VolumeFractions(I,J,K) .NE. 0.0) THEN 
+						IF (InitNumConc(J) .GT. 0.0D0 .AND. CoagArray(I,J) .NE. 0.0 .AND. VolumeFractions(I,J,K) .NE. 0.0) THEN 
 							InnerSum = InnerSum + VolumeFractions(i,j,k)*CoagArray(i,j)*AqVolConc(i,q)*InitNumConc(J)
+	
 						END IF
 					END DO 
 					
@@ -568,8 +588,9 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 				
 			IF (LowerSum .LT. 0.0 ) CALL ERROR("Problem in LowerSum in Coag routine")
 			IF (UpperSum .LT. 0.0 ) CALL ERROR("Problem in UpperSum in Coag routine")
-				
+	
 			AqVolConc(K,q) = (AqVolConc(K,q)+TimeStep*UpperSum)/(1+TimeStep*LowerSum)
+
 			IF(AqVolConc(K,Q) .LT. 0.0) CALL ERROR("Negative inorganic concentrations from Coag Routine.")
 			
 		END DO  
@@ -580,7 +601,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 		DO K = 1, HowManyLinks    
 				LowerSum=0
 				DO J=1, HowManyLinks
-					IF (InitNumConc(J) .GT. 0.0 .AND. CoagArray(K,J) .NE. 0.0 .AND. VolumeFractions(K,J,K) .NE. 1.0) THEN 
+					IF (InitNumConc(J) .GT. 0.0D0 .AND. CoagArray(K,J) .NE. 0.0 .AND. VolumeFractions(K,J,K) .NE. 1.0) THEN 
 						!WRITE(*,*) K, J, VolumeFractions(K,J,K), CoagArray(K,J), NumConc(J)
 						LowerSum = LowerSum + (1-VolumeFractions(K,J,K))*CoagArray(K,J)*InitNumConc(J)
 					END IF
@@ -593,7 +614,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 					DO J=1,K
 						InnerSum=0
 						DO I=1, K-1
-							IF (InitNumConc(J) .GT. 0.0 .AND. CoagArray(I,J) .NE. 0.0 .AND. VolumeFractions(I,J,K) .NE. 0.0) THEN 
+							IF (InitNumConc(J) .GT. 0.0D0 .AND. CoagArray(I,J) .NE. 0.0 .AND. VolumeFractions(I,J,K) .NE. 0.0) THEN 
 								InnerSum = InnerSum + VolumeFractions(i,j,k)*CoagArray(i,j)*OrgVolConc(i,q)*InitNumConc(J)
 							END IF
 						END DO 
@@ -612,7 +633,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 		DO K = 1, HowManyLinks    
 				LowerSum=0
 				DO J=1, HowManyLinks
-					IF (InitNumConc(J) .GT. 0.0 .AND. CoagArray(K,J) .NE. 0.0 .AND. VolumeFractions(K,J,K) .NE. 1.0) THEN 
+					IF (InitNumConc(J) .GT. 0.0D0 .AND. CoagArray(K,J) .NE. 0.0 .AND. VolumeFractions(K,J,K) .NE. 1.0) THEN 
 						!WRITE(*,*) K, J, VolumeFractions(K,J,K), CoagArray(K,J), NumConc(J)
 						LowerSum = LowerSum + (1-VolumeFractions(K,J,K))*CoagArray(K,J)*InitNumConc(J)
 					END IF
@@ -625,7 +646,7 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 					DO J=1,K
 						InnerSum=0
 						DO I=1, K-1
-							IF (InitNumConc(J) .GT. 0.0 .AND. CoagArray(I,J) .NE. 0.0 .AND. VolumeFractions(I,J,K) .NE. 0.0) THEN 
+							IF (InitNumConc(J) .GT. 0.0D0 .AND. CoagArray(I,J) .NE. 0.0 .AND. VolumeFractions(I,J,K) .NE. 0.0) THEN 
 								InnerSum = InnerSum + VolumeFractions(i,j,k)*CoagArray(i,j)*AqOrgVolConc(i,q)*InitNumConc(J)
 							END IF
 						END DO 
@@ -685,8 +706,9 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 	!!and volume concentrations for each component
 	Particle1 => Particles%First
 	JJ = 1
-55	IF (NumConc(JJ) .GT. 0) THEN
-!		WRITE(*,*) Particle1%numberofparticles
+55	IF (NumConc(JJ) .GT. 0.0D0) THEN
+		!WRITE(*,*) 'In Gt 0 Coauglation.f90 Particle1%AqChem(1) = ',Particle1%AqChems(1),NumConc(JJ),Particle1%NumberOfParticles
+
 		Particle1%numberofparticles = NumConc(JJ)
 		!Convert aqueous concentrations back to mol/particle
 		IF(Particle1%SolutionDensity .EQ. 0.0) THEN
@@ -694,7 +716,16 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 		END IF
 		StoreDensity = Particle1%SolutionDensity
 		Particle1%AqChems(1) = AqVolConc(JJ,1)*AvgSolutionDensity/AqMolecularMass(1)/ Particle1%NumberOfParticles	
-		
+		!write(*,*) 'AqVolConc(JJ,1) = ',AqVolConc(JJ,1)
+		!write(*,*) 'AvgSolutionDensity = ',AvgSolutionDensity 
+		!write(*,*) 'AqMolecularMass(1) = ',AqMolecularMass(1) 
+		!write(*,*) 'Particle1%NumberOfParticles = ',Particle1%NumberOfParticles 
+
+
+
+
+
+
 		DO I = 2, HowManyAqChems
 			Particle1%AqChems(I) = AqVolConc(JJ,I)*SolidSaltDensity(I)/AqMolecularMass(I)/ Particle1%NumberOfParticles		
 		END DO
@@ -712,25 +743,29 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 		DO I = 1, HowManyAqOrgChems
 			Particle1%AqOrgChems(I) = AqOrgVolConc(JJ,I)*AqOrgDensity(I)/AqOrgMolecularMass(I)/ Particle1%NumberOfParticles		
 		END DO
-	
+
 		!! This will do RADIUS, EffectiveRadius, & DENSITY
+		!write(*,*) 'Before RecalculateRadius(Particle1) Particle1%AqChems(1) = ',Particle1%AqChems(1),NumConc(JJ)
 		CALL RecalculateRadius(Particle1) !Calls ParticleDensity!
+		!write(*,*) 'After RecalculateRadius(Particle1)Particle1%AqChems(1) = ',Particle1%AqChems(1),NumConc(JJ)
 
 	ELSE
-		Particle1%numberofparticles = 0.0
+		!WRITE(*,*) 'In Else Coauglation.f90 Particle1%AqChem(1) = ',Particle1%AqChems(1),NumConc(JJ)
+		Particle1%numberofparticles = 0.0D0
 		DO I = 1, HowManyAqChems+HowManyAqCations+HowManyAqAnions
 			Particle1%AqChems(I) = 0.0
 		END DO
 		
-		Particle1%numberofparticles = 0.0
 		DO I = 1, HowManyOrgChems
 			Particle1%OrgChems(I) = 0.0
 		END DO
 		DO I = 1, HowManyAqOrgChems
 			Particle1%AqOrgChems(I) = 0.0
 		END DO
-
+		!WRITE(*,*) 'In Coauglation.f90 Particle1%AqChem(1) = ',Particle1%AqChems(1),NumConc(JJ)
 	END IF
+
+
 
 	!! Go to the next particle
 	IF (ASSOCIATED(Particle1%Next)) THEN
@@ -743,8 +778,11 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 
 	!Regrid the aerosol to make sure sizes work out correctly
 	!(Also calls aqueous equilibrium, and resets temperature)
+	!write(*,*) 'Before RegridAerosol in Coagulation.f90 calling spillbeans...'
+	!call spillbeans()
 	CALL RegridAerosol()
-	
+	!write(*,*) 'After RegridAerosol in Coagulation.f90 calling spillbeans...'
+	!call spillbeans()	
 	!! Houseclean memory
 	DEALLOCATE(CoagArray)
 	DEALLOCATE(SingleParticleVolume)
@@ -757,6 +795,17 @@ SUBROUTINE StepSectionalCoagulationJacobson (TimeStep)  !!!!!!!!!!!!!!!!!!!!!!!!
 			
 !	WRITE(*,*) "Coag Check 7"
 	RETURN
+
+
+   	!Particle1 => particles%first
+	!DO WHILE(associated(Particle1))
+	!	write(*,*) 'CRL: In StepSectionalCoagulation - current%AqChems = ',Particle1%AqChems
+	!	write(*,*) 'CRL: In StepSectionalCoagulation - current%numberofparticles = ',Particle1%numberofparticles
+	!	Particle1 => Particle1%next
+	!END DO !END STEP PARTICLE DILUTION
+
+
+
 END SUBROUTINE StepSectionalCoagulationJacobson
 
 
