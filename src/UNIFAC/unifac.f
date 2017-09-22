@@ -50,6 +50,11 @@ C
 C Revision History: Developed by Pradeep Saxena, EPRI, 95
 C                   Revised by Betty Pun, AER, Nov 99 Under EPRI/CARB
 C                   funding to comply with models-3 standards
+c
+c  Revised 1/29/2016 by CMB (AER): Make compatible with gfortran; changed the 
+c                                  of conditional statements (.eq. .true. is 
+c                                  not valid in gfortran)
+c
 C ***************************************************************** 
 C........Arguments and their description
 C
@@ -116,8 +121,9 @@ C
 C
 C    Subroutine writes to error file, need to open
       SCAF = .FALSE.
-	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 1"
-	OPEN(7,FILE='unifac.err')
+      if (scaf) write(*,*) "UNIFAC Check 1"
+c	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 1"
+	  OPEN(7,FILE='unifac.err')
 C
       ZHALF = 0.5 * Z
 C
@@ -200,7 +206,8 @@ C     SOLVE FOR THE COMBINATORIAL LN(GAMAC)
       WRITE(7,9991)YCLN(1),YCLN(2)
 9991  FORMAT('YCLN in b',2E12.5)
 
-	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 2"
+      if (scaf) write(*,*) "UNIFAC Check 2"
+c	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 2"
 C     *****************************************************************
 C     NOW COMPUTE THE RESIDUAL PART--THIS IS FOR ORIGINAL
 C     UNIFAC.  NEED TO REVISE IT FOR MODIFIED UNIFAC
@@ -236,7 +243,8 @@ C     WRITE(6,7770)I,J,XGP(I,J)
 C
 C
 150   CONTINUE
-	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 3"
+      if (scaf) write(*,*) "UNIFAC Check 3"
+c	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 3"
 C
 C
 C     NOW WE HAVE TOTAL MOLES OF ALL GROUPS IN THE MIX
@@ -258,8 +266,8 @@ C     IN THE MIXTURE
 C     WRITE(6,7771)J,XGM(J)
 7771  FORMAT('XGM in b',I10,E12.5)
 180   CONTINUE
-
-	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 4"
+      if (scaf) write(*,*) "UNIFAC Check 4"
+c	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 4"
 C
 C     COMPUTE TOTAL GROUP AREA & GROUP AREA FRACTIONS
 C     IN PURE COMPOUNDS
@@ -289,7 +297,8 @@ C     WRITE(6,7772)I,J,THTAGP(I,J)
 C
 C
 250   CONTINUE
-	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 5"
+      if (scaf) write(*,*) "UNIFAC Check 5"
+c	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 5"
 C
 C     COMPUTE TOTAL GROUP AREA IN MIXTURE
       SUMTGM = 0.0
@@ -312,7 +321,8 @@ C     IN THE MIXTURE
 C     WRITE(6,7773)J,THTAGM(J)
 7773  FORMAT('THTAGM in b',I10,E12.5)
 280   CONTINUE
-	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 6"
+      if (scaf) write(*,*) "UNIFAC Check 6"
+c	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 6"
 C
 C
 C
@@ -331,7 +341,8 @@ C	WRITE(*,*) "Temp: ", TEMP
 C     WRITE(6,7774)J1,J2,SI(J1,J2)
 7774  FORMAT('SI in b',2I10,E12.5)
 300   CONTINUE
-	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 7"
+      if (scaf) write(*,*) "UNIFAC Check 7"
+c	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 7"
 C
 C
 C
@@ -347,7 +358,8 @@ C
       TTSIM(J1) = TTSIM(J1) + THTAGM(J2) * SI(J2,J1)
 400   CONTINUE
 500   CONTINUE
-	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 8"
+      if (scaf) write(*,*) "UNIFAC Check 8"
+c	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 8"
 C
 C
       DO 550 J1 = 1,NFUNC
@@ -371,7 +383,8 @@ C     WRITE(6,7775)J1,GAMMLN(J1)
       STOP
       END IF
 550   CONTINUE
-	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 9"
+      if (scaf) write(*,*) "UNIFAC Check 9"
+c	IF (SCAF .EQ. .TRUE.) WRITE(*,*) "UNIFAC Check 9"
 C
 C
 C     CAPITAL GAMAS FOR FUNCTIONAL GROUP IN PURE
