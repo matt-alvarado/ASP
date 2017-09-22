@@ -120,12 +120,14 @@ OBJECTS := $(OBJECTS) \
 	   $(OBJDIR)OutputRoutines.o \
 	   $(OBJDIR)Coagulation.o \
 	   $(OBJDIR)ReadInputDeck.o \
-	   $(OBJDIR)StepASP.o $(OBJDIR)DevelopmentDriver.o \
+	   $(OBJDIR)StepASP.o \
            $(OBJDIR)EulerianBoxDriver.o
 OBJECTS := $(OBJECTS) \
            $(OBJDIR)opkda2.o \
            $(OBJDIR)opkda1.o \
-           $(OBJDIR)opkdmain.o	
+           $(OBJDIR)opkdmain.o
+
+EXEOBJECTS := $(OBJECTS) $(OBJDIR)DevelopmentDriver.o	
 
 # === Modules: 0 grid define; 1 essential; d type define; s all
 MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
@@ -143,7 +145,7 @@ MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.
 	   $(OBJDIR)OutputRoutines.o \
 	   $(OBJDIR)Coagulation.o \
 	   $(OBJDIR)ReadInputDeck.o \
-	   $(OBJDIR)StepASP.o $(OBJDIR)DevelopmentDriver.o \
+	   $(OBJDIR)StepASP.o \
            $(OBJDIR)EulerianBoxDriver.o
 
 MODASP := $(MODASP) \
@@ -151,7 +153,11 @@ MODASP := $(MODASP) \
           $(OBJDIR)opkda1.o \
           $(OBJDIR)opkdmain.o
 
+MODASPEXEC := $(MODASP) $(OBJDIR)DevelopmentDriver.o
+
 MODS := $(MODASP)
+
+EXECMODS := $(MODASPEXEC)
 
 PROG = asp_linux_pgi_dbl
 
@@ -161,8 +167,8 @@ PROG = asp_linux_pgi_dbl
 
 ALL: $(EXEDIR)$(PROG)
 
-$(EXEDIR)$(PROG): $(OBJECTS)
-	$(FC) $(FFLAGS) -o $@ $(OBJECTS) $(MODS) $(LDFLAGS)
+$(EXEDIR)$(PROG): $(EXEOBJECTS)
+	$(FC) $(FFLAGS) -o $@ $(EXEOBJECTS) $(EXECMODS) $(LDFLAGS)
 
 OBJECTS : $(MODS) $(FILESINC)
 
