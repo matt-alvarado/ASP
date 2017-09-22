@@ -51,6 +51,10 @@
 !! 9. SUBROUTINE AerosolOutput(InParticle, FH, t, First,, Thermo)       !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+!!
+!! Modifications made by CMB to play nice with gfortran
+!!
+
 MODULE OutputRoutines
 
 PRIVATE
@@ -803,7 +807,7 @@ SUBROUTINE SummarizeDomainMassForOutput (FileName, FirstCall)
 
 	!! Now You Have all of the data.  
 	!! Output the tallied data as an EXCEL type comma delimited file.
-	IF (PRESENT(FirstCall) .AND. FirstCall .EQ. .TRUE.) THEN
+	IF (PRESENT(FirstCall) .AND. FirstCall) THEN
 
 		!! RH 
 		WRITE (FH,'(a)',advance='no') "Mean RH, "
@@ -967,7 +971,8 @@ SUBROUTINE BinLagrangianParticlesForOutput (NumberOfBins,SmallEdge,LargeEdge, FH
 	RETURN
 END SUBROUTINE BinLagrangianParticlesForOutput
 
-SUBROUTINE SpillBeans(Env)
+! CMB: Modified to accept an output unit
+SUBROUTINE SpillBeans(Env, tout_unit)
 	
 	USE InfrastructuralCode, ONLY : ERROR, REAL2STR, INT2STR
 	USE Aerosols,            ONLY : Particles, &
@@ -988,24 +993,35 @@ SUBROUTINE SpillBeans(Env)
 					AqOrgMolecularMass, &
 					HowManyAqChems, FindChem, &
 					GasPhaseBackground
-	USE ModelParameters,	 ONLY : micron, Avogadro
+	USE ModelParameters,	 ONLY : micron, Avogadro, ProtonIndex
 	USE GridPointFields,     ONLY : GetAirDensity, GetM, &
-				        GridGasChem
+				        GridGasChem,GetRelativeHumidity
 
 	Implicit None
 
 	!External
 	LOGICAL, OPTIONAL :: Env !True if we want the boundary distribution
-
+    integer, optional :: tout_unit
+    
 	!Internal
 	INTEGER		:: I, NumAqChems, NumOrgChems, A
-	REAL :: Dens, ppbmCO, Mgas
+	REAL :: Dens, ppbmCO, Mgas, RH
 	REAL*8 :: SaltConc(HowManyAqChems)
+	integer :: out_unit
 	
 	TYPE(Particle), POINTER :: CurrentParticle
+	
+	! cmb 
+	if (present(tout_unit)) then
+	    out_unit = tout_unit
+	else
+	    out_unit = 6    ! default to stdout
+	endif
+	! end cmb
+	
 			
 	! spill the beans...
-	IF (NOT(PRESENT(Env))) THEN
+	IF (.NOT.(PRESENT(Env))) THEN
 		CurrentParticle => particles%first
 	ELSE
 		IF (Env) THEN
@@ -1017,49 +1033,54 @@ SUBROUTINE SpillBeans(Env)
 
 	Dens = GetAirDensity() !g/cm3
 	Mgas = GetM   ()
-	WRITE(*,*) "Dens: ", Dens
+	RH = GetRelativeHumidity()
+	WRITE(out_unit,*) "RH: ", RH
+	WRITE(out_unit,*) "Dens: ", Dens
 	ppbmCO = (GridGasChem(FindChem("CO",0)) - &
 	          GasPhaseBackground(FindChem("CO",0)))*(1e9/Mgas)*(28/28.973)
-	WRITE(*,*) "ppbm CO: ", ppbmCO
+	WRITE(out_unit,*) "ppbm CO: ", ppbmCO
 			
-	NumAqChems = size(currentparticle%AqChems)
+	NumAqChems = size(CurrentParticle%AqChems)
 	NumOrgChems = HowManyOrgChems
 	i = 1
 	99 if (associated(currentparticle)) then
-		print *, ""
-		print *, "Number ",trim(INT2STR(I)),",  ",currentparticle%numberofparticles,currentparticle%sectional
-		print *, "Effective Radius: ",trim(real2str(CurrentParticle%EffectiveRadius/micron)),",  (",trim(real2str(CurrentParticle%Edges(1)/micron))," to ",trim(real2str(CurrentParticle%Edges(2)/micron)),")"
-		print *, "Embryo Radius: ",trim(real2str(CurrentParticle%EmbryoRadius/micron))
-		print *, "Insoluble Radius: ",trim(real2str(CurrentParticle%InsolubleRadius/micron))
-		print *, "Absorbing Core Radius: ",trim(real2str(CurrentParticle%AbsCoreRad/micron))
-		print *, "Shell Real Ref. Ind. 550 nm",trim(real2str(currentparticle%ShellRealRefracInd(1)))
-		print *, "Shell Imag. Ref. Ind. 550 nm",trim(real2str(currentparticle%ShellImagRefracInd(1)))
-		print *, "Extinction Efficiency: 550 nm",trim(real2str(CurrentParticle%ExtEff(1)))
-		print *, "Scattering Efficiency: 550 nm",trim(real2str(currentparticle%ScaEff(1)))
-		print *, "BackScattering Efficiency: 550 nm",trim(real2str(currentparticle%BackScaEff(1)))
-		print *, "Assymetry Parameter: 550 nm",trim(real2str(currentparticle%AssymParam(1)))
+		write(out_unit, *)""
+		write(out_unit, *)"Number ",trim(INT2STR(I)),",  ",currentparticle%numberofparticles,currentparticle%sectional
+		write(out_unit, *)"Effective Radius: ",trim(real2str(CurrentParticle%EffectiveRadius/micron)),",  (",trim(real2str(CurrentParticle%Edges(1)/micron))," to ",trim(real2str(CurrentParticle%Edges(2)/micron)),")"
+		write(out_unit, *)"Embryo Radius: ",trim(real2str(CurrentParticle%EmbryoRadius/micron))
+		write(out_unit, *)"Insoluble Radius: ",trim(real2str(CurrentParticle%InsolubleRadius/micron))
+		write(out_unit, *)"Absorbing Core Radius: ",trim(real2str(CurrentParticle%AbsCoreRad/micron))
+		write(out_unit, *)"Shell Real Ref. Ind. 550 nm",trim(real2str(currentparticle%ShellRealRefracInd(1)))
+		write(out_unit, *)"Shell Imag. Ref. Ind. 550 nm",trim(real2str(currentparticle%ShellImagRefracInd(1)))
+		write(out_unit, *)"Extinction Efficiency: 550 nm",trim(real2str(CurrentParticle%ExtEff(1)))
+		write(out_unit, *)"Scattering Efficiency: 550 nm",trim(real2str(currentparticle%ScaEff(1)))
+		write(out_unit, *)"BackScattering Efficiency: 550 nm",trim(real2str(currentparticle%BackScaEff(1)))
+		write(out_unit, *)"Assymetry Parameter: 550 nm",trim(real2str(currentparticle%AssymParam(1)))
 
 	
-		print *, "Temperature ",trim(real2str(currentparticle%Temperature))
-		print *, "Ionic Strength ",trim(real2str(currentparticle%IonicStr))
-		print *, "Water Activity ",trim(real2str(currentparticle%WaterActivity))
-		print *, "SolutionDensity ",trim(real2str(currentparticle%SolutionDensity))
-		!print *, "InsolubleDensity ",trim(real2str(currentparticle%InsolubleDensity))
-		print *, "ParticleDensity ",trim(real2str(currentparticle%ParticleDensity))
-		print *, "Ph ", trim(real2str(AerosolPh(currentparticle)))
-		print *, "Curvature Correction ", trim(real2str(CurvatureCorrection(currentparticle)))
-		print *, "OrgCurvature Correction ", trim(real2str(OrgCurvatureCorrection(currentparticle)))	
-		print *, "Solution Surface Tension", trim(real2str(currentparticle%SurfaceTension))
+		write(out_unit, *)"Temperature ",trim(real2str(currentparticle%Temperature))
+		write(out_unit, *)"Ionic Strength ",trim(real2str(currentparticle%IonicStr))
+		write(out_unit, *)"Water Activity ",trim(real2str(currentparticle%WaterActivity))
+		write(out_unit, *)"SolutionDensity ",trim(real2str(currentparticle%SolutionDensity))
+		!write(out_unit, *)"InsolubleDensity ",trim(real2str(currentparticle%InsolubleDensity))
+		write(out_unit, *)"ParticleDensity ",trim(real2str(currentparticle%ParticleDensity))
+		write(out_unit, *)"Ph ", trim(real2str(AerosolPh(currentparticle)))
+		write(out_unit, *)"Curvature Correction ", trim(real2str(CurvatureCorrection(currentparticle)))
+		write(out_unit, *)"OrgCurvature Correction ", trim(real2str(OrgCurvatureCorrection(currentparticle)))	
+		write(out_unit, *)"Solution Surface Tension", trim(real2str(currentparticle%SurfaceTension))
 		
-		print *, "Temperature ", trim(real2str(currentparticle%temperature))
+		write(out_unit, *)"Temperature ", trim(real2str(currentparticle%temperature))
 		
 		if (currentparticle%numberofparticles .GT. 0.0) then
                     SaltConc = HypotheticalElectrolyteConcentrations (currentparticle)
-                endif    
+                endif   
+         
+        write(out_unit, *) 'AqChems:'
+        write(out_unit, *) '--------'
 		DO A = 1, NumAqChems		
-			IF(currentparticle%aqchems(A) .GT. 1e-40) THEN
-				write(*,*) trim(int2str(A))," : ",AqPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%aqchems(A)*currentparticle%numberofparticles))
-                                WRITE(*,*) currentparticle%aqchems(A)
+			!IF(currentparticle%aqchems(A) .GT. 1e-40) THEN
+				write(out_unit,*) trim(int2str(A))," : ",AqPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%aqchems(A)*currentparticle%numberofparticles))
+                                !WRITE(*,*) currentparticle%aqchems(A)
 				!IF(A .LE. HowManyAqChems) THEN
 				!write(*,*) trim(int2str(A))," : ",AqPhaseChemicalNames(A) ," (ppbm): ", trim(real2str((SaltConc(A)+currentparticle%aqchems(A))*currentparticle%numberofparticles* &
 				!																						AqMolecularMass(A)*1.0e9/Dens))
@@ -1068,29 +1089,32 @@ SUBROUTINE SpillBeans(Env)
 				!write(*,*) trim(int2str(A))," : ",AqPhaseChemicalNames(A) ," (ppbm/ppbm CO): ", trim(real2str((SaltConc(A)+currentparticle%aqchems(A))*currentparticle%numberofparticles* &
 				!																						AqMolecularMass(A)*1.0e9/Dens/ppbmCO))
 				!END IF
-			END IF
+			!END IF
 		END DO
-		
+		write(out_unit, *) 'OrgChems:'
+        write(out_unit, *) '---------'
 		DO A = 1, NumOrgChems		
-			IF(currentparticle%Orgchems(A) .GT. 1e-40) THEN
-				write(*,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles))
-                                WRITE(*,*) trim(int2str(A))," : ",currentparticle%Orgchems(A)," (molec/particle): ", trim(real2str(currentparticle%Orgchems(A)*Avogadro))
+			!IF(currentparticle%Orgchems(A) .GT. 1e-40) THEN
+				write(out_unit,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles))
+                                !WRITE(*,*) trim(int2str(A))," : ",currentparticle%Orgchems(A)," (molec/particle): ", trim(real2str(currentparticle%Orgchems(A)*Avogadro))
 				!write(*,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (ppbm): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles* &
 				!																							OrgMolecularMass(A)*1.0e9/Dens))
 				!write(*,*) trim(int2str(A))," : ",OrgPhaseChemicalNames(A) ," (ppbm/ppbm CO): ", trim(real2str(currentparticle%Orgchems(A)*currentparticle%numberofparticles* &
 				!																							OrgMolecularMass(A)*1.0e9/Dens/ppbmCO))
 
-			END IF
+			!END IF
 		END DO
+		write(out_unit, *) 'AqOrgChems:'
+        write(out_unit, *) '-----------'
 		DO A = 1, HowManyAqOrgChems		
-			IF(currentparticle%AqOrgchems(A) .GT. 1e-40) THEN
-				write(*,*) trim(int2str(A))," : ",AqOrgPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%AqOrgchems(A)*currentparticle%numberofparticles))
-                                WRITE(*,*) currentparticle%AqOrgchems(A)
+			!IF(currentparticle%AqOrgchems(A) .GT. 1e-40) THEN
+				write(out_unit,*) trim(int2str(A))," : ",AqOrgPhaseChemicalNames(A) ," (mol/cm3 air): ", trim(real2str(currentparticle%AqOrgchems(A)*currentparticle%numberofparticles))
+                !                WRITE(*,*) currentparticle%AqOrgchems(A)
 				!write(*,*) trim(int2str(A))," : ",AqOrgPhaseChemicalNames(A) ," (ppbm): ", trim(real2str(currentparticle%AqOrgchems(A)*currentparticle%numberofparticles* &
 				!																							AqOrgMolecularMass(A)*1.0e9/Dens))
 				!write(*,*) trim(int2str(A))," : ",AqOrgPhaseChemicalNames(A) ," (ppbm/ppbm CO): ", trim(real2str(currentparticle%AqOrgchems(A)*currentparticle%numberofparticles* &
 				!																							AqOrgMolecularMass(A)*1.0e9/Dens/ppbmCO))
-			END IF
+			!END IF
 		END DO
 		I = I + 1
 
@@ -1274,13 +1298,13 @@ SUBROUTINE SizeDistOutput(t, Filename)
 				WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') Current%effectiveradius*1.0e4
 			ELSE
 				IF (I .EQ. NumBins) THEN			
-					IF(Monodisperse .EQ. .FALSE. .AND. ThermoBulkMode .EQ. .FALSE.) THEN
+					IF((.not. Monodisperse) .AND. (.not. ThermoBulkMode)) THEN
 						WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') 10**(log10(Current%Edges(1)*1.0e4)+0.5*DeltaLogRad)
 					ELSE
 						WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') 0.0
 					END IF
 				ELSE
-					IF(Monodisperse .EQ. .FALSE..AND. ThermoBulkMode .EQ. .FALSE.) THEN
+					IF((.not. Monodisperse) .AND. (.not. ThermoBulkMode)) THEN
 						WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') 10**(log10(Current%Edges(2)*1.0e4)-0.5*DeltaLogRad)
 					ELSE
 						WRITE(FH,FMT='(7ES13.5E2)', ADVANCE='NO') 0.0
@@ -1459,6 +1483,7 @@ SUBROUTINE GasOutput(FH1, FH2, FH3,t,First, Thermo)
 	IF (First) THEN !On first call, write header line
  
 		IF (Thermo) THEN
+		            !write(*, *)'--------------------------- DERPPPPPPPPPPPPPPPPP --------'
                    WRITE(FH1, FMT='(A4,A12)', ADVANCE='NO') "RH  ", " "
                    WRITE(FH2, FMT='(A4,A12)', ADVANCE='NO') "RH  ", " "
                    WRITE(FH3, FMT='(A4,A12)', ADVANCE='NO') "RH  ", " "
@@ -1486,17 +1511,17 @@ SUBROUTINE GasOutput(FH1, FH2, FH3,t,First, Thermo)
 		WRITE(FH3,FMT='(ES16.5E2)', ADVANCE='NO') t
 
 		Mgas = GetM()
-                !Print *,'time = ',t
+                Print *,'time = ',t
 		DO q = 1, HowManyGasChems		
                    IF (q .LE. 70) THEN
                       WRITE(FH1,FMT='(ES16.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas !from molec/cm3 to ppb
-                      !Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
+                      Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
                    ELSE IF (q .GT. 70 .AND. q .LE. 140) THEN
                       WRITE(FH2,FMT='(ES16.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
-                      !Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
+                      Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
                    ELSE 
                       WRITE(FH3,FMT='(ES16.5E2)', ADVANCE='NO') GridGasChem(q)*1.0e9/Mgas
-                      !Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
+                      Print *, GasPhaseChemicalNames(q),' = ', GridGasChem(q)*1.0e9/Mgas
                    END IF
                 END DO
 		
@@ -1702,7 +1727,7 @@ SUBROUTINE AerosolOutput(InParticle, FH, t, First, Thermo)
 
 	IF (First) THEN !On first call, write header line
            
-           IF (NOT(Thermo)) THEN
+           IF (.NOT.(Thermo)) THEN
                WRITE(FH, FMT='(A4,A7)', ADVANCE='NO') "Time", " "
                !WRITE(FH, FMT='(A4,A11)', ADVANCE='NO') "Time", " "
            ELSE
