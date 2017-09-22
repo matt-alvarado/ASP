@@ -82,7 +82,9 @@ SUBROUTINE SetDissolution ()
 
 		!! Transcribe?  Use Scaffolding Code?
 		LOGICAL :: Transcribe, Match
-		LOGICAL, PARAMETER :: Scaffolding = .TRUE.
+                ! cmb: don't want this reported right now
+		!LOGICAL, PARAMETER :: Scaffolding = .TRUE.
+		LOGICAL, PARAMETER :: Scaffolding = .false.
 
 		!! And there is a file handle to be used
 		INTEGER :: FH
@@ -120,7 +122,7 @@ SUBROUTINE SetDissolution ()
 		ELSE
 			Transcribe = .FALSE.
 		END IF
-
+                Transcribe = .false.  ! cmb
 		IF (Transcribe) CALL TRANSCRIPT("")
 		IF (Transcribe) CALL TRANSCRIPT("_The_Following_Dissolution_Reactions_Are_Defined_")
 
@@ -910,7 +912,7 @@ SUBROUTINE SetDissolution ()
 		ELSE
 			Transcribe = .FALSE.
 		END IF
-
+                Transcribe = .false.    ! cmb
 		IF (Transcribe) CALL TRANSCRIPT("")
 		IF (Transcribe) CALL TRANSCRIPT("_The_Following_Organic_Dissolution_Reactions_Are_Defined_")
 
@@ -1196,7 +1198,7 @@ SUBROUTINE SetDissolution ()
 		ELSE
 			Transcribe = .FALSE.
 		END IF
-
+                Transcribe = .false.    ! cmb
 		IF (Transcribe) CALL TRANSCRIPT("")
 		IF (Transcribe) CALL TRANSCRIPT("_The_Following_Hydrophilic_Organic_Dissolution_Reactions_Are_Defined_")
 
