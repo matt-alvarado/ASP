@@ -323,6 +323,33 @@ MODULE ModelParameters
 	!!!!!!! DEFINE SUBROUTINES !!!!!!!
 	CONTAINS
 
+! 23 September 2016 CMB: Add these functions so that InitializeASP() can work properly
+    real*8 function getHowManyBins()
+        getHowManyBins = HowManyBins
+        return
+    end function
+    real*8 function getHowManyAqChems()
+        getHowManyAqChems = HowManyAqChems
+        return
+    end function
+    real*8 function getHowManyAqCations()
+        getHowManyAqCations = HowManyAqCations
+        return
+    end function     
+    real*8 function getHowManyAqAnions()
+        getHowManyAqAnions = HowManyAqAnions
+        return
+    end function
+    real*8 function getHowManyOrgChems()
+        getHowManyOrgChems = HowManyOrgChems
+        return
+    end function
+    real*8 function getHowManyAqOrgChems()
+        getHowManyAqOrgChems = HowManyAqOrgChems
+        return
+    end function
+! end CMB 
+
 	!! Always call SetGridPointVolumes() with this!  
         !! (Can't from here because of heirarchy)
         !! MJA, 02-15-2012 Should always be 1 cm x 1 cm x 1 cm
