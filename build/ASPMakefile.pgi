@@ -159,7 +159,7 @@ MODS := $(MODASP)
 
 EXECMODS := $(MODASPEXEC)
 
-PROG = asp_linux_pgi_dbl
+PROG = asp_v2.1.1_linux_pgi_dbl
 
 ##
 ## === Dependency
