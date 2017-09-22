@@ -339,7 +339,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 		        !! This number should match the number of rate inputs 
                         !! for this reaction type
 			NumbRateFacs = 2	 
-			!WRITE(*,*) J
+			WRITE(*,*) 'J =', J
 			IF (J .NE. NumbRateFacs) &
 			CALL ERROR("The following line from "//Trim(InputDeck)//		 &
 			" had the wrong number of rate terms.  Expected "//	 &
@@ -357,7 +357,7 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			DO I = 2, NumbRateFacs
 
 				CALL GetToken(Rates,";",Rate)
-                                !WRITE(*,*) Rate
+                                WRITE(*,*) Rate
 				IF (IsReal(StripToken(Rate))) THEN
 				       RateFacs(I) = STR2REAL(StripToken(Rate))
 				ELSE

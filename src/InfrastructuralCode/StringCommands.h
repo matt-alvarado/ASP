@@ -102,7 +102,7 @@
 
 	!! Strip Leading Whitespace 
 	i=1
-	DO WHILE (InLine(i:i) == " " .or. InLine(i:i) == "	") 
+	DO WHILE (InLine(i:i) == " " .or. InLine(i:i) == "	" .or. InLine(i:i) == ';') 
         ! The second option has a tab character in it
 		IF (i == len(InLine)) EXIT			   
                 ! This is a blank line with tabs in it
@@ -122,7 +122,7 @@
         !          inLine(j:j) == " " .or. &
         !          inLine(j:j) == "  " .or. & 
         !          inLine(j:j) == CHAR(0))
-	DO WHILE (InLine(j:j) == " " .or. InLine(j:j) == "	") 
+	DO WHILE (InLine(j:j) == " " .or. InLine(j:j) == "	" .or. InLine(j:j) == ';') 
         ! The second option has a tab character in it
 		IF (j .le. 1) EXIT ! Trip trailing spaces / tabs off
 		j = j-1						   ! 
@@ -334,7 +334,8 @@ END FUNCTION CountDigits
 
 		!! Measure the Input Line
 		lt = LEN(TRIM(InLine))
-
+		print *, "InLine =", InLine
+                print *, "length =", lt          
 		!! Chercher the delimitor in the string
                 !! CB: Modify this to also blank out at newlines (windows or linux)
 		DO i = 1,lt+1-ld
@@ -342,6 +343,8 @@ END FUNCTION CountDigits
                              !(InLine(i:i+ld-1) .eq. CHAR(10)) .or. &
                              !(InLine(i:i+ld-1) .eq. CHAR(13)) )EXIT
 		END DO
+                !!MJA, 20170922 - So at this point, i has the position of the first
+                !!occurance of the delimitor in the string
 
 		!! If the string does not include the delimitor, then it is either
 		!! an empty string or a single-token incomplete string.  Either way
@@ -350,8 +353,10 @@ END FUNCTION CountDigits
 			!! If the string lengths are wrong, errors will result
 			IF (LEN(OutLine) .lt. LEN(TRIM(StripToken(InLine)))) &
 				CALL ERROR("Output string in call to GetToken is of insufficient length")
-			OutLine   = TRIM(StripToken(InLine))! The whole line is the token
+
+                        OutLine   = TRIM(StripToken(InLine))! The whole line is the token
 			InLine  = ""	! The instring is updated to be blank
+                        print *, Outline
 		ELSE
 		!! If the token exists, then return that token and strip it from the 
 		!! InLine.
