@@ -1,6 +1,6 @@
 ##################################################
-##  A pgi makefile for ASP on rufus				##
-##  Matt Alvarado, 02/13/2012		## 
+##  A pgi makefile for ASP on rufus		##
+##  Matt Alvarado, 02/13/2012		        ## 
 ##################################################
 SHELL = /bin/sh
 ##
@@ -95,11 +95,12 @@ FILESDUMP = asp
 
 # Compile command -- single processor
 
-FC = /usr/local/pgi/linux86-64/10.5/bin/pgf90
+#FC = /usr/local/pgi/linux86-64/10.5/bin/pgf90
+FC = pgf90
 
-FFLAGS =  -fast -r8 -Mcache_align -Wl,-zmuldefs
+LDFLAGS := -Wl,-zmuldefs
+FFLAGS :=  $(LDFLAGS) -fast -r8 -Mcache_align
 F90FLAGS := $(FFLAGS) -Mfree
-LDFLAGS := 
 
 
 OBJECTS :=
