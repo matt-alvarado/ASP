@@ -66,6 +66,22 @@ SUBROUTINE SetGasPhaseChemistry ()
 
 	!! And there is a file handle to be used
 	integer	:: FH
+
+        ! MJA 2016-09-13: Variable to temporarily store initial concentration
+        REAL*8	:: init_conc
+
+        ! MJA 2016-09-13: Variable to set initial concentrations to 0 if a STILT run (hardcoded for now!)
+        logical	:: STILT        
+
+        ! MJA 2016-09-13: Variables to stroe CO index and CO initial concentration (hardcoded for now!)
+        integer	:: CO_index
+        REAL*8	:: CO_init
+
+        ! CMB (AER, Inc): Insert this parameter as a "filler" value for
+        !                 which to analyze 
+        real*8 :: filler_conc
+        filler_conc = 1.0e-12
+
 	FH = GetFileHandle()
 	HowManyGasChems=1
         ! Water is the first, which is why these arent 0
@@ -89,6 +105,10 @@ SUBROUTINE SetGasPhaseChemistry ()
 	!! That deck is "GasPhaseChemistryInputDeck.in" and !!
 	!! is located in the main directory of the program  !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !
+        ! CMB (AER, Inc): Trying to determine reason for ordering
+        !                 differences between mine and ASP Native.
+
 	OPEN(UNIT=FH, FILE=TRIM(InputDeckSubDir)//"GasPhaseChems.in", STATUS='OLD')
 
 	!! The first line is a flag for input concentration type which equals:
@@ -96,8 +116,19 @@ SUBROUTINE SetGasPhaseChemistry ()
 	!!  1 if inputs are in mg / m3
         !WRITE(*,*) "Open GasPhaseChems.in"
 	CurrLine = GetLine(FH)
-        !WRITE(*,*) CurrLine
-        !WRITE(*,*) STR2REAL("0.     ")
+ 
+
+        !MJA 2016-09-13: First token of first uncommeted line is 0 if initial concentration shsould be calculated 
+        !and 1 if they should be set to a negligible value, as in STILT mode
+        STILT = .FALSE.         
+        CALL GetToken(CurrLine, ";", Token)
+        k = STR2INT (Token)
+
+        IF (k .EQ. 1) STILT = .TRUE.
+
+        !MJA 2016-09-13: Second token of first uncommeted line is initial CO concentration in ppbv        
+        CALL GetToken(CurrLine, ";", Token)
+        CO_init = STR2REAL (Token)
 
 	GasConcInputTypeFlag = 0 !Force ppb, mja 08/27/2010 
 
@@ -110,6 +141,7 @@ SUBROUTINE SetGasPhaseChemistry ()
 	!! chemicals specified therein.
 	!! Need this number early to allocate all of the arrays.
 10	CurrLine = GetLine(FH)
+            
         !WRITE(*,*) CurrLine
 	IF (CurrLine .NE. EOF) THEN
 		HowManyGasChems = HowManyGasChems+1
@@ -152,6 +184,10 @@ SUBROUTINE SetGasPhaseChemistry ()
 	ALLOCATE (GasPhasePeroxy(HowManyGasChems), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of GasPhasePeroxy could not proceed in SetChemistryParams()")
 		
+	!!! -- GAS PHASE EMISSION FACTOR in g/kg dry matter burned -- !!!
+	ALLOCATE (GasPhaseEmisFactor(HowManyGasChems), stat = allocation_error)
+	if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseEmisFactor could not proceed in SetChemistryParams()")
+
 	!!! -- GAS PHASE LATERAL BACKGROUND CONCENTRATION in ppb -- !!!
 	ALLOCATE (GasPhaseBackground(HowManyGasChems), stat = allocation_error)
 	if (allocation_error > 0) CALL ERROR("Allocation of GasPhaseBackground could not proceed in SetChemistryParams()")
@@ -177,6 +213,9 @@ SUBROUTINE SetGasPhaseChemistry ()
 	EnthalpyOfVaporization(1)   = 2501. * joules / grams ! (Iribarne and Godson)
 	GasMolecularMass(1)         = 18.016 * grams
 	GasPhaseDepVel(1)	    = 0.0
+	
+	! CMB (AER): Bug fix
+	GasPhasePeroxy(1) = 0.0
 
 	index1 = 2		! Evolving Species are Placed with this index
 	index2 = HowManyGasChems  ! Non Evolving Species are Placed with this index
@@ -196,6 +235,7 @@ SUBROUTINE SetGasPhaseChemistry ()
 		!! The token order is:
 		!! ---	1. Chemical Name (15 Characters Max)
 		CALL GetToken(CurrLine, ";", Name)
+                !print *, 'CMB: Name = ', name(1:len(trim(name)))
 		! Hold until know where to place it
 
 		!! Don't want the user to specify water
@@ -213,19 +253,30 @@ SUBROUTINE SetGasPhaseChemistry ()
 		k = STR2INT (Token)
 
 		IF (k == 1) THEN
+                        !print *, '  CMB: K == 1'
 			HowManyEvolveGasChems = HowManyEvolveGasChems + 1
 			CurrIndex             = index1
 			index1		      = index1 + 1
+                        !print *, '  CMB: HowManyEvolveGasChems = ', &
+                        !        howmanyevolvegaschems
+                        !print *, '  CMB: CurrIndex = ', currindex
+                        !print *, '  CMB: index1 = ', index1
 		ELSE IF (k == 0) THEN
+                        !print *, '  CMB: K = 0'
 			CurrIndex             = index2
 			index2		      = index2 - 1
+                        !print *, '  CMB: CurrIndex = ', CurrIndex
+                        !print *, '  CMB: Index2 = ', index2
 		ELSE
 		        CALL ERROR("Don't Understand "//Trim(StripToken(Token))//" as a value for the Constant or evolve flag"// &
 		        "For Chemical "//Trim(GasPhaseChemicalNames(CurrIndex))//" in GasPhaseChems.in")
 		END IF
 
 		!! Now Place Name in Correct Slot
+
 		GasPhaseChemicalNames(CurrIndex) = Trim(StripToken(Name))
+
+                IF (GasPhaseChemicalNames(CurrIndex) .EQ. "CO") CO_index = CurrIndex !MJA 2016-09-13
 
 		!! ---  3. Peroxy Radical Flag
 		CALL GetToken(CurrLine, ";", Token)
@@ -235,38 +286,68 @@ SUBROUTINE SetGasPhaseChemistry ()
 		CALL GetToken(CurrLine, ";", Token)
 		GasMolecularMass(CurrIndex) = STR2REAL (Token) * grams
 
-		!! ---	5. Initial Concentration (mixing ratio)
+		!! ---	5. Emission factor (g/kg dry matter burned) and Initial Concentration (mixing ratio)
 		CALL GetToken(CurrLine,";",Token) 
-
-		!! The entire box will be set
-                !! to that value homogeneously.
-	        IF (GasConcInputTypeFlag .EQ. 0) THEN
-		   CALL SetHomogeneousChemFieldPPB (CurrIndex, STR2REAL(Token)*ppb)
-		ELSE IF (GasConcInputTypeFlag .EQ. 1) THEN
-		   CALL SetHomogeneousChemFieldMGperM3 (CurrIndex, STR2REAL(Token), GasMolecularMass(CurrIndex))
-		END IF
-
-		!! Transcript
-		IF (Transcribe) CALL Transcript(GasPhaseChemicalNames(CurrIndex)//" ("//TRIM(REAL2STR(STR2REAL(Token),5))//" ppb)")
-	
-		
+                GasPhaseEmisFactor(CurrIndex) = STR2REAL(Token) !g/kg dry matter burned, 09-13-16 MJA
+ 		
 		!! ---  6. Background Conc. of the Gas
-
-		Mgas = GetM   ()
+		!
+                ! 2/4/2016 CB: Hard-set this to 0 for now, since we are
+                !              getting background concentrations from
+                !              STILT-Chem inputs
+				!
+				! Update: Don't need to do this; it's not used in our application
+                Mgas = GetM   ()
 		CALL GetToken(CurrLine, ";", Token)
-		GasPhaseBackground(CurrIndex) = STR2REAL (Token) * Mgas/1e9 
+		GasPhaseBackground(CurrIndex) = STR2REAL (Token) * Mgas/1e9
                 ! convert from ppb to molecules/cm3
+                !GasPhaseBackground(CurrIndex) = 0.0
 		
 		!! ---  7. Deposition Velocity of the gas (cm/s)
+                !
+                ! 2/4/2016 CB: Hard-set this to 0 for now; a specified
+                !              deposition velocity turns off a few of
+                !              the desired deposition parameters in 
+                !              STILT-Chem
 		CALL GetToken(CurrLine, ";", Token)
-		GasPhaseDepVel(CurrIndex) = STR2REAL (Token)
+                GasPhaseDepVel(CurrIndex) = 0.0
+		!GasPhaseDepVel(CurrIndex) = STR2REAL (Token)
 	END DO
 
+        !2016-09-13 MJA: Set initial fire concentrations - for now, use a logical flag to decide between STILT-ASP (set to ~0)
+        ! and regular method 
+        ! NOTE: CO MUST BE THE FIRST SPECIES IN GasPhaseChems.in AND MUST EVOLVE!
+	write(*,*) 'CO_init = ',CO_init
+
+        DO i = 2, HowManyGasChems
+            IF (STILT) THEN                
+                ! 2/4/2016 CB: We are setting these concentrations to 0
+                !              since we are getting the boundary conditions
+                !              from STILT-Chem
+		CALL SetHomogeneousChemFieldPPB (i, filler_conc)
+            ELSE !Calculate initial concentration from CO initial concentration and EFs
+		init_conc = (GasPhaseEmisFactor(i)/GasPhaseEmisFactor(CO_index))*(GasMolecularMass(CO_index)/GasMolecularMass(i)) &
+                               *(CO_init - (GasPhaseBackground(CO_index)*1e9/Mgas))+(GasPhaseBackground(i)*1e9/Mgas) !in ppbv
+
+                IF (GasPhaseChemicalNames(i) .EQ. "O2") init_conc = 210000000 !CRL 2017-03-21
+                IF (GasPhaseChemicalNames(i) .EQ. "N2") init_conc = 780000000 !CRL 2017-03-21
+                CALL SetHomogeneousChemFieldPPB (i, init_conc)     
+            END IF
+
+	    !! Transcript
+	    IF (Transcribe) CALL Transcript(GasPhaseChemicalNames(i)//" "//TRIM(REAL2STR(init_conc))//" (ppb)")
+
+        END DO
+
 	!Set background concentration of water
+        !
+        ! 2/4/2016 CB: For now let's remove this, though we will have
+        !              to account for it in the StepASP steps I think?
 	RH = Back_RH
 	SPress = GetSatVapPress()
 	GasPhaseBackground(1) = ChemScale * SPress * RH * GetM() / (GetPress())
         !MixH2O*RH*Mgas/1e9 !molecules/cm3
+        !GasPhaseBackground(1) = 0
 
 	!! SCSCSCSC -- Double Check ordering and values
 	IF (Scaffolding) THEN
