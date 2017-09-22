@@ -29,9 +29,21 @@
 !! whitespace and trailing comments				!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CHARACTER (len=1024) FUNCTION GetLine(FileHandle) RESULT (OutLine)
-
+!
+! CB: Insert the modified string library routine
+!
+!    use StringIO
+!    implicit none
+!    integer :: fileHandle
+!    outLine = getLineASP(FileHandle)
+    !print *, 'CMB in InputOutputCommands,h: outLine = ', &
+    !        outline(1:len(trim(outline))), '.'
+! end CB; when verified, comment out the rest of this function
 	IMPLICIT NONE
 	INTEGER :: i, FileHandle, Status
+
+        integer :: rcount
+        rcount = 0
 
 	!! Take a new line from the input deck that is not a comment and has some data
 5	READ(FileHandle,"(a)",iostat=Status),OutLine
@@ -40,6 +52,19 @@ CHARACTER (len=1024) FUNCTION GetLine(FileHandle) RESULT (OutLine)
 	IF (Status < 0) THEN
 		OutLine = EOF	! This is an END OF FILE, defined in ModelParameters
 	ELSE
+
+        ! CB: Get rid of the extra windows newline
+        ! UPDATE: doesn't work...need to work out bugs
+        !do i = 1, len(outLine)
+        !    if (ichar(outline(i:i)) .eq. 13) then
+        !        rcount = rcount + 1
+        !        if (rcount .gt. 1) then
+        !            outline(i:i) = ' '
+        !            rcount = rcount - 1
+        !        endif
+        !    endif
+        !enddo
+        ! end cb add
 
 	!! Get rid of trailing and leading spaces / tabs
 	OutLine = TRIM(StripToken(OutLine))

@@ -30,6 +30,8 @@
 
 MODULE InfrastructuralCode
 
+!    use StringIO
+
 PRIVATE
 PUBLIC ::  GetLine,              &
            Error,                &
@@ -66,9 +68,12 @@ INCLUDE "InputOutputCommands.h"
 INCLUDE "StringCommands.h"
 INCLUDE "Counters.h"
 
+! CMB: Modify to account for floating-point issues?
+! Nah, keep this for now.
 logical function IsNaN(a)
    IMPLICIT NONE
    real ::  a
+!   if (a + 1.0 .eq. a) then
    if (a.ne.a) then
        isnan = .true.
    else
