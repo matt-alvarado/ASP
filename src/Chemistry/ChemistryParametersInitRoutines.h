@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2013, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2017, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -63,6 +63,11 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 	USE InfrastructuralCode
 	USE ModelParameters
 	USE GridPointFields, ONLY : AllocateGasReactionGrid
+	
+	! CMB add
+	!use StringIO, ONLY : fortranStr2Float
+	! end CMB
+	
 	IMPLICIT NONE
 
 	!! Input Variables
@@ -92,7 +97,10 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 	TYPE(ChemTerm),   POINTER :: CurrentChem, NewChem
 	TYPE(ReactRate),  POINTER :: FirstRate,CurrentRate,NewRate
 
-	LOGICAL, PARAMETER		  :: Scaffolding = .TRUE.
+	integer :: iter ! CMB add, debugging
+	
+	logical, parameter :: scaffolding = .false.	! cmb in
+	!LOGICAL, PARAMETER		  :: Scaffolding = .TRUE.	! cmb out
 
 	!! SCSCSCSCSC
 	IF (Scaffolding) THEN
@@ -128,18 +136,27 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 	   CALL GetToken(CurrLine,"=>", Reactants)
 	   CALL GetToken(CurrLine,";",  Products)
 	   Rates = Trim(CurrLine)
-
+	   	   !print *, '****** REACTANTS (trimmed) = "', reactants(1:len(trim(reactants))), '".'
+		   !print *, '****** PRODUCTS (trimmed) = "', products(1:len(trim(products))), '".'
+	   	   !print *, '****** RATES (trimmed) = "', rates(1:len(trim(rates))), '".'
 	   !! Check to make sure the line parsed plausibly
-	   IF (Len_Trim(StripToken(Reactants)) == 0 .OR.		&
-		Len_Trim(StripToken(Products))  == 0 .OR.		&
-		Len_Trim(StripToken(Rates))		== 0)		&
+	   ! Modified by CMB (AER, Inc): LEN_TRIM can be broken
+	   if (len(trim(striptoken(reactants))) == 0 .or. &
+	           len(trim(striptoken(products))) == 0 .or. &
+			   len(trim(striptoken(rates))) == 0) then
+			   
+	   !IF (Len_Trim(StripToken(Reactants)) == 0 .OR.		&
+	!	Len_Trim(StripToken(Products))  == 0 .OR.		&
+	!	Len_Trim(StripToken(Rates))		== 0)		&
 		CALL ERROR("The following input Line to MakeODESet() from "//TRIM(InputDeck)//" Parsed incorrectly:"// &
 		"    "//TRIM(FullLine))
-
-           !!Print Reaction to transcript with reaction number
-           CALL TRANSCRIPT("Rxn #"//TRIM(INT2STR(NumbReactions))// &
-		"    "//TRIM(FullLine))
-	   !!!!!!!!!!!!!!!
+	    endif
+		
+        !!Print Reaction to transcript with reaction number
+		! cmb: comment out
+        !CALL TRANSCRIPT("Rxn #"//TRIM(INT2STR(NumbReactions))//"    "//TRIM(FullLine))
+	   
+        !!!!!!!!!!!!!!!
 	   !! REACTANTS !!
 	   !!!!!!!!!!!!!!!
 	
@@ -150,8 +167,10 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 	   DO I = 1, 3
 
 		ii = 1.
+		!print *, 'CMB: Delimitor = "', delimitor, '".'
 		CALL GetToken(Reactants,Delimitor,Reactant)
-		IF (len_trim(Reactant) == 0) EXIT
+		!IF (len_trim(Reactant) == 0) EXIT
+		if (len(trim(reactant)) == 0) exit
 		ReactionType = ReactionType + 1		
                 ! Count the number of bodies in the reaction
 
@@ -175,11 +194,14 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 		    ReactFactors(NumbReactants) = ii
 		END IF
 
-		IF (len_trim(StripToken(Reactants)) == 0) EXIT
+		! CMB (AER, Inc): More replacements of len_trim
+		!IF (len_trim(StripToken(Reactants)) == 0) EXIT
+		if (len(trim(striptoken(reactants))) == 0) exit
 	   END DO
 
 	   !! If there is more reactant text in the pipe, then get confused
-	   IF (len_trim(StripToken(Reactants)) .NE. 0) &
+	   if (len(trim(striptoken(reactants))) .ne. 0) &
+	   !IF (len_trim(StripToken(Reactants)) .NE. 0) &
 		CALL WARN ("  Warning!! The following Reactant: ("//TRIM(StripToken(Reactants))// &
 		     ") Appeared to be Extra in Line... "//"  >>"//TRIM(FullLine)//"<<  Ignoring and Continuing...")
 
@@ -187,16 +209,25 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 	   !! PRODUCTS !!
 	   !!!!!!!!!!!!!!
 	   NumbProducts = 0
-
+	   
+	   !print *, 'CMB: Tokenized reactants'
+	   !print *, '------------------------'
+	   !do iter = 1, NumbReactants
+	   !	   print *, '    Reactant[', iter, '] = "', &
+	!	   	   	   reacts(iter), '".  Factor = ', ReactFactors(iter), '.'
+	 !  enddo
+	   
+	   
 	   !! Tokenize the Products (up to three)
 	   DO
 		ii = 1.
 		CALL GetToken(Products,Delimitor,Product)
-		IF (len_trim(Product) == 0) EXIT
-
+		!IF (len_trim(Product) == 0) EXIT
+		IF (len(trim(Product)) == 0) EXIT
+		
 		!! Check Token for Leading Factor
 		CALL GetToken(Product," ",Token)
-
+		!print *, '--- > Token = ', token
 		IF (IsReal(Token)) THEN
 			ii    = STR2REAL(Token)			! Store
 			Token = StripToken(Product)	    ! Push to Chemical
@@ -210,26 +241,50 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 			ProdFactors(NumbProducts) = ii
 		END IF
 
-		IF (len_trim(StripToken(Products)) == 0) EXIT
+		!IF (len_trim(StripToken(Products)) == 0) EXIT
+		IF (len(trim(StripToken(Products))) == 0) EXIT
 	   END DO
 
 	   !! If there is more reactant text in the pipe, then get confused
-	   IF (len_trim(StripToken(Products)) .NE. 0) &
+	   if (len(trim(striptoken(products))) .ne. 0) &
+	   !IF (len_trim(StripToken(Products)) .NE. 0) &
 		CALL WARN("Warning!! The following Product: ("//TRIM(StripToken(Products))//") Appeared to be Extra in Line... "//  &
 		"  >>"//TRIM(FullLine)//"  Ignoring and Continuing...")
 
+				 !print *, 'CMB: Tokenized products'
+				!	   print *, '------------------------'
+				!	   do iter = 1, NumbProducts
+				!	   	   print *, '    Products[', iter, '] = "', Prods(iter), '".  Factor = ', ProdFactors(iter), '.'
+				!	   enddo		
 	   !!!!!!!!!!!
 	   !! RATES !!
 	   !!!!!!!!!!!
 
 	   !! Count the number of rate terms in Rates
 	   J = 1
+	   !print *, 'CMB: Trying to count the # of rate terms...'
+	   !print *, 'CMB: prior to that if statement: '
+	   !print *, 'CMB: # products = ', NumbProducts
+	   !	   print *, 'CMB: len(trim(Rates)) = "', rates(1:len(trim(rates))), '".'
 	   IF (Rates(Len_Trim(StripToken(Rates))+1:Len_Trim(StripToken(Rates))+1) == ';') &
 	    Rates(Len_Trim(StripToken(Rates))+1:Len_Trim(StripToken(Rates))+1) = ' '
+	   ! IF (Rates(Len(Trim(StripToken(Rates))) + 1:Len(Trim(StripToken(Rates)))+1) == ';') &
+	   ! 	Rates(Len(Trim(StripToken(Rates))) + 1:Len(Trim(StripToken(Rates)))+1) = ' '
+	   !print *, 'CMB: after that if statement'
+	   !print *, 'CMB: # products = ', NumbProducts
+	   !print *, 'CMB: len(trim(Rates)) = "', rates(1:len(trim(rates))), '".'
 	   DO I = 1, len(Rates)
-		IF (Rates(i:i) .EQ. ';') J = J+1    
+	   	   !print *, '    CMB: i = ', i
+		IF (Rates(i:i) .EQ. ';') then
+			!print *, '        CMB: found semicolon at i = ', i
+			J = J+1 
+			endif
            END DO
-           J = J-1 !mja, 09/16/2010
+		   
+		   ! CMB :try removing this?
+           !J = J-1 !mja, 09/16/2010
+		   ! end CMB mods
+	!print *, 'CMB: j = ', j	   
 	   DO I = 1, 20
 		RateFacs(I) = 0.
 	   END DO
@@ -271,7 +326,14 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 
 	        !Check for PAN, Degradation, or Heterogeneous flag
 		CALL GetToken(Rates,";",Rate)
-			
+
+		!print *, '*** CMB: Rate = "', rate, '".'
+		!print *, '*** CMB: Trimmed rate = "', rate(1:len(trim(rate))), '".'
+		!print *, '*** CMB: StripToken(rate) = "', stripToken(rate), '".'
+		!print *, '*** CMB: STR2REAL(stripToken(Rate)) = ', str2real(striptoken(rate)), '.'
+		!print *, '*** CMB: INT of this = ', int(str2real(striptoken(rate))), '.'
+		!print *, '*** CMB: J = (number of rate terms) = ', j
+		
 		!Photolysis Case (Flag = 0)
 		IF (INT(STR2REAL(StripToken(Rate))) .EQ. 0) THEN
 		        !! This number should match the number of rate inputs 
@@ -1425,7 +1487,9 @@ SUBROUTINE MakeODESet(InputDeck,ODEs,Size,ChemSize,Delimitor,Phase)
 						END IF
 					END DO
 				END IF
-				Current%LeadingFactor = Current%LeadingFactor * -1.
+
+                                ! CMB (AER): gfortran requires () around the -1
+				Current%LeadingFactor = Current%LeadingFactor * (-1.)
 				Nullify(Current)
 			END IF
 		END DO
@@ -1897,7 +1961,7 @@ END SUBROUTINE MakeODESet
 		DO I = 1, Size
 						
 			WRITE (FH,*) " "
-			WRITE (FH,'(a,I3,a)') "*****Begin Row ",I," of Jacobian*****"
+			WRITE (FH,'(a,I5,a)') "*****Begin Row ",I," of Jacobian*****"
 			DO J = 1, Size
 				Current => Jac(I,J)%FirstTerm
 
@@ -1919,9 +1983,9 @@ END SUBROUTINE MakeODESet
 10					IF (Current%LeadingFactor > 0) WRITE (FH,'(a)',advance='no') " +"
 					IF (Current%LeadingFactor == -1) WRITE (FH,'(a)',advance='no') " -"
 					IF (Current%LeadingFactor .NE. -1 .AND. Current%LeadingFactor .NE. 1) &
-					WRITE (FH,'(F5.3)',advance='no') Current%LeadingFactor 
+					WRITE (FH,'(F7.3)',advance='no') Current%LeadingFactor 
 
-					WRITE (FH,'(a,i3,a)',advance='no') "k(",Current%ReactionNumber,")"
+					WRITE (FH,'(a,i5,a)',advance='no') "k(",Current%ReactionNumber,")"
 					
 					CurrentChem => Current%DerefChem
 20					IF(Associated(CurrentChem)) THEN
@@ -2215,7 +2279,7 @@ END SUBROUTINE MakeODESet
 		!! Loop over the Jacobian elements, row by row, and print them to the file
 		DO I = 1, NumChems
 			WRITE (FH,*) " "
-			WRITE (FH,'(a,I3,a)') "*****Begin Row ",I," of Sensitivity Matrix*****"
+			WRITE (FH,'(a,I5,a)') "*****Begin Row ",I," of Sensitivity Matrix*****"
 			DO J = 1, NumRxns
 				
 				Current => Sens(I,J)%FirstTerm
