@@ -37,21 +37,34 @@
 !!14. FUNCTION GetCpm ()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+! ****************************************************************
+! Modified by CMB (AER): gfortran requires some explicit casting
+!                        to double precision (dexp)
+! 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Retrieve the Saturation Vapor Pressure Values.  At some point,
 	!! this may be updated to take interpolated values.
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!!! This function checks out (07/13/07, MJA)
-	REAL*8 FUNCTION GetSatVapPress()  RESULT (SatVapPress)
-
+!#ifdef __GFORTRAN__
+        REAL*8 function GetSatVapPress()
+!#else
+!	REAL*8 FUNCTION GetSatVapPress()  RESULT (SatVapPress)
+!#endif
 	  USE ModelParameters, ONLY : mbar
 
 	  implicit none
  
 	  real*8  :: Temp
 
-	  Temp  = GetTemp 
-	  SatVapPress = 6.112 * dexp(17.67*(Temp-273.15) /(Temp-29.65)) * mbar
+          ! CB: Modify to make it look like a function call so ifort doesn't complain 
+	  !Temp  = GetTemp 
+          Temp = GetTemp()
+!#ifdef __GFORTRAN__
+          GetSatVapPress = 6.112 * dexp(17.67*(Temp-273.15)/(Temp-29.65)) * mbar
+!#else
+!	  SatVapPress = 6.112 * dexp(17.67*(Temp-273.15) /(Temp-29.65)) * mbar
+!#endif
 
 	RETURN
 	END FUNCTION GetSatVapPress
@@ -60,16 +73,18 @@
 	!! Retrieve the Saturation Vapor Concentration Values.  At some point,
 	!! this may be updated to take interpolated values.
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	REAL*8 FUNCTION GetSatVapBurden
+	REAL*8 FUNCTION GetSatVapBurden()
 
 	  IMPLICIT NONE
-
-	  GetSatVapBurden = GetSatVapConcentration 
+          
+          ! CB: make look like a func call...
+	  !GetSatVapBurden = GetSatVapConcentration 
+	  GetSatVapBurden = GetSatVapConcentration() 
 
 	RETURN
 	END FUNCTION GetSatVapBurden
 
-	REAL*8 FUNCTION GetSatVapConcentration  
+	REAL*8 FUNCTION GetSatVapConcentration()  
 
 	  USE ModelParameters, ONLY : eps, ChemScale
 
@@ -88,18 +103,23 @@
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! Retrieve the Saturation Mass Mixing Ratio of water wv_sat
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	REAL*8 FUNCTION GetSatMixingRatio () RESULT (SatMixRatio)
+!        REAL*8 FUNCTION GetSatMixingRatio () RESULT (SatMixRatio)
+        REAL*8 FUNCTION GetSatMixingRatio()
 
 		use ModelParameters, ONLY : eps, ppb
 		implicit none
 
 		real*8			   :: SatVapPress	! internal
 
-		SatVapPress = GetSatVapPress
+                ! CB: add parentheses at end so that ifort doesn't complain
+		SatVapPress = GetSatVapPress()
 
-		SatMixRatio = SatVapPress*eps/	& ! ppb; See Emanuel, 1994
-			      (GetPress - SatVapPress) * 1.0d9 * ppb
-
+                ! CB: add parentheses after getpress
+!		SatMixRatio = SatVapPress*eps/	& ! ppb; See Emanuel, 1994
+!			      (GetPress() - SatVapPress) * 1.0d9 * ppb
+		GetSatMixingRatio = SatVapPress*eps/	& ! ppb; See Emanuel, 1994
+			      (GetPress() - SatVapPress) * 1.0d9 * ppb
+                
 	RETURN
 	END FUNCTION GetSatMixingRatio
 
@@ -107,7 +127,8 @@
 	!! Retrieve the Mass Mixing Ratio  of Water Vapor, wv
 	!! See 2.31 of Jacobson, 2005 (2nd ed.)
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	REAL*8 FUNCTION GetMixingRatio (RHin) RESULT (MixRatio)
+!	REAL*8 FUNCTION GetMixingRatio (RHin) RESULT (MixRatio)
+	REAL*8 FUNCTION GetMixingRatio(RHin)
 
 		use ModelParameters, ONLY : eps, ppb
 		implicit none
@@ -118,11 +139,15 @@
 		IF (Present(RHin)) THEN
 			RH = RHin
 		ELSE
-			RH = GetRelativeHumidity
+                        ! CB: Add parenthesis so that ifort doesn't complain
+			RH = GetRelativeHumidity()
 		END IF
 
-		SatVapPress = GetSatVapPress
-		MixRatio = RH*SatVapPress*eps /(GetPress-RH*SatVapPress) 
+                ! CB: add parentheses so that ifort doesnt complain
+		SatVapPress = GetSatVapPress()
+!		MixRatio = RH*SatVapPress*eps /(GetPress()-RH*SatVapPress) 
+		GetMixingRatio = RH*SatVapPress*eps /(GetPress()-RH*SatVapPress) 
+
                 ! Mixing ratio (-)
 		!! removed a factor of 1e9 from this, 11/12/2002
 
@@ -136,7 +161,8 @@
 	!! Output is Air Density in (g / lengthscale^3)		!!
 	!! Tested against Example 2.3 in Jacobson	        !!
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	REAL*8 FUNCTION GetAirDensity () RESULT (Density)
+!	REAL*8 FUNCTION GetAirDensity () RESULT (Density)
+	REAL*8 FUNCTION GetAirDensity()
 
 		use ModelParameters
 		implicit none
@@ -144,7 +170,9 @@
 		real*8			   :: MixRatio, RH
 
 		MixRatio = GetMixingRatio ()
-		Density = GetPress () * (1. + MixRatio) /		&
+!		Density = GetPress () * (1. + MixRatio) /		&
+!				  (GetTemp () * Rdry * (1. + MixRatio/eps))
+		GetAirDensity = GetPress () * (1. + MixRatio) /		&
 				  (GetTemp () * Rdry * (1. + MixRatio/eps))
 
 	RETURN
@@ -155,7 +183,7 @@
 	!! Invert the Concentration of Water to get the                     !!
         !! local relative humidity                                          !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	REAL*8 FUNCTION GetRelativeHumidity ()
+	REAL*8 FUNCTION GetRelativeHumidity()
 
 		USE ModelParameters, ONLY : eps, ChemScale
 
@@ -169,6 +197,15 @@
 		GetRelativeHumidity = GetPress() * WaterConc / &
 					(GetSatVapPress() * (GetM()))
 
+
+
+		!write(*,*) 'CRL: GetRelativeHumidity = ',GetRelativeHumidity 
+
+		!write(*,*) 'CRL: GetPress() = ',GetPress()
+		!write(*,*) 'CRL: WaterConc = ',WaterConc 
+		!write(*,*) 'CRL: GetSatVapPress()= ',GetSatVapPress()
+		!write(*,*) 'CRL: GetM()= ',GetM()
+		!write(*,*) ''
 
 		RETURN
 	END FUNCTION GetRelativeHumidity

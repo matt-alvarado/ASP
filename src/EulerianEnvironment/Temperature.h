@@ -161,6 +161,12 @@ REAL*8 FUNCTION MeanFreePathOfAir ()
 					(GetThermalVelocityOfAir() *	&
 					GetAirDensity()*lengthscale)
 
+	!write(*,*) 'CRL: In Temperature.h: MeanFreePathOfAir = ',MeanFreePathOfAir
+	!write(*,*) 'CRL: GetDynamicViscosityOfAir() = ', GetDynamicViscosityOfAir()
+	!write(*,*) 'CRL: GetThermalVelocityOfAir() = ',GetThermalVelocityOfAir() 
+	!write(*,*) 'CRL: GetAirDensity() = ',GetAirDensity()
+	!write(*,*) 'CRL: lengthscale = ',lengthscale 
+	!write(*,*) ''
 	!! This result does include an implicit factor of lengthscale!
 	RETURN
 END FUNCTION MeanFreePathOfAir
