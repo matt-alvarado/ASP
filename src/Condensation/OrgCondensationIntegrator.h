@@ -64,7 +64,7 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 					AqThermoEquilibriumError,	&
 					WaterContentPrecision,		&
 					micron
-
+	!USE OutputRoutines
 	IMPLICIT NONE
 
 	!! External Variables
@@ -92,8 +92,36 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 	REAL*8, ALLOCATABLE :: InitialConcsArray(:), ChemStorageArray(:,:)
 	LOGICAL :: EmptyGridCell
 	REAL*8  :: BeginTime,EndTime
-
-	LOGICAL, PARAMETER :: Scaffolding = .FALSE.
+	
+	! 8 October 2016 CMB: AS per the migration from lsodes to dlsodes,
+		!					  we need to declare and store these common blocks
+		!					  on each routine that calls dlsodes.
+		integer :: num_nans
+		real*8 :: diffs
+		real*8 :: rowns, ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround
+		integer :: init, mxstep, mxhnil, nhnil, NSLAST, NYH, IOWNS, ICF, IERPJ, &
+				   IERSL, JCUR, JSTART, KFLAG, L, LYH, LEWT, LACOR, LSAVF, &
+				   LWM, LIWM, METH, MITER, MAXORD, MAXCOR, MSBP, MXNCF, N, &
+				   NQ, NST, NFE, NJE, NQU
+		COMMON /DLS001/ ROWNS(209), CCMAX, EL0, H, HMIN, HMXI, HU, RC, &
+						TN, UROUND, INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, &
+						NYH, IOWNS(6), ICF, IERPJ, IERSL, JCUR, JSTART, &
+						KFLAG, L, LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, &
+						MITER, MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, &
+						NFE, NJE, NQU
+		real*8 :: con0, conmin, ccmxj, psmall, rbig, seth
+		integer :: IPLOST, IESP, ISTATC, IYS, IBA, IBIAN, IBJAN, IBJGP, &
+				   IPIAN, IPJAN, IPJGP, IPIGP, IPR, IPC, IPIC, IPISP, IPRSP, IPA,&
+				   LENYH, LENYHM, LENWK, LREQ, LRAT, LREST, LWMIN, MOSS, MSBJ,&
+				   NSLJ, NGP, NLU, NNZ, NSP, NZL, NZU			
+		COMMON /DLSS01/ CON0, CONMIN, CCMXJ, PSMALL, RBIG, SETH, &
+						IPLOST, IESP, ISTATC, IYS, IBA, IBIAN, IBJAN, IBJGP, &
+						IPIAN, IPJAN, IPJGP, IPIGP, IPR, IPC, IPIC, IPISP, IPRSP, IPA,&
+						LENYH, LENYHM, LENWK, LREQ, LRAT, LREST, LWMIN, MOSS, MSBJ,&
+						NSLJ, NGP, NLU, NNZ, NSP, NZL, NZU				
+		! end CMB
+		
+	LOGICAL, PARAMETER :: Scaffolding = .FALSE. 
 
 
 	TYPE(Particle), POINTER :: FirstParticle, CurrentParticle
@@ -105,7 +133,10 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 
 	Temperature = GetTemp()
 	RH          = GetRelativeHumidity()
-		
+
+	!print *, 'CB: temperature in StepOrgCondensation = ', temperature
+	!print *, 'CB: RH in StepOrgCondensation = ', RH
+	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! IF EQUILIBRIUM RATHER THAN FLUX, JUST RETURN                  !!
 	!! (Equilibrium of all components is handled in StepCondensation !!
@@ -127,7 +158,9 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 	HowManyLinks  =  1
 	DO WHILE (ASSOCIATED(CurrentParticle%Next))
            CurrentParticle => CurrentParticle%Next
-           IF (CurrentParticle%NumberOfParticles .GT. 0 .AND. &
+		   ! CMB: floating-point inequality check
+		   if (currentparticle%numberofparticles .gt. 1.0d-40 .and. &
+           !IF (CurrentParticle%NumberOfParticles .GT. 0 .AND. &
                 .NOT.CurrentParticle%Dry) THEN
               HowManyLinks  = HowManyLinks + 1
            END IF
@@ -535,7 +568,13 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 
 
 			!! Store the concentrations for later
+			! CMB (AER, INc): Check for NaN's
 			DO J = 1, NEQ
+				if (isNaN(Y(J))) then
+					write(*,*) 'Error (StepOrgCondensation): Concentration prior to LSODES is NaN for ', &
+							'Y-vector index ', J, '.  This should not happen!'
+					stop
+				endif
 				InitialConcsArray(J) = Y(J)
 			END DO
 
@@ -566,12 +605,19 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 			!! Each chemical starts as if a new run
 			istate = 1
 
+			!
+30			CALL dLSODES (OrgCondensationODEEvaluator,neq,y,t, &
+			              outtime,itol,rtol,atol,itask, &
+					      istate,iopt,rwork,lrw,iwork,liw, & 
+			              OrgCondensationJacobianEvaluator,mf)
+			!
+			
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-30			CALL LSODES (OrgCondensationODEEvaluator,neq,y,t, &
-                                      outtime,itol,rtol,atol,itask, &
-				      istate,iopt,rwork,lrw,iwork,liw, & 
-                                      OrgCondensationJacobianEvaluator,mf)
+!30			CALL LSODES (OrgCondensationODEEvaluator,neq,y,t, &
+!                                      outtime,itol,rtol,atol,itask, &
+!				      istate,iopt,rwork,lrw,iwork,liw, & 
+!                                      OrgCondensationJacobianEvaluator,mf)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -594,12 +640,49 @@ SUBROUTINE StepOrgCondensation (TimestepSize, NumTimeSteps)
 						  TRIM(INT2STR(LRW))//" instead.  Fix the assignment in EvolveGasChemistry's SetEvolveGasChemConstants().")
 
 			IF (ISTATE .LT. -1) THEN
-				WRITE(*,*) "Reaction #", Rxn
-				WRITE(*,*) "Gas Conc : ", Y(1)
-                                WRITE(*,*) "Compound: ", GasPhaseChemicalNames(INT(OrganicDissolutionData(Rxn,1)))
-                                WRITE(*,*) "Num Bins", HowManyLinks
 				CALL WARN("In StepOrgCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
-						TRIM(INT2STR(ISTATE))//".  Please investigate.")
+						  TRIM(INT2STR(ISTATE))//".  Please investigate.")
+				
+				WRITE(*,*) "Reaction #", Rxn
+				write(*,*) "Before LSODES Gas Conc: ", InitialConcsArray(1)
+				num_nans = 0
+				diffs = 0.0D0
+				do i = 1, NEQ
+					write(*,*) 'Before/After LSODES: (', i, ') = ', InitialConcsArray(i), Y(i)
+					if (isNaN(Y(i))) then
+						num_nans = num_nans + 1
+						!write(*,*) 'New Y(I) is NaN; apply a small perturbation to the value and try ODE again OR set to orig and continue'
+						!Y(i) = InitialConcsArray(i) !Y(i) + 1D-10
+					else
+						diffs = diffs + dabs(Y(i) - InitialConcsArray(i))
+					endif
+				enddo
+				if (dabs(diffs) .lt. 1d-10) then
+					do i = 1, NEQ
+						if (isNaN(Y(i))) Y(i) = InitialConcsArray(i)
+					enddo
+				else
+					if (num_nans .gt. 0) then
+						write(*,*) 'Error (StepOrgCondensation): We have at least 1 NaN after DLSODES, ', &
+								'yet the net difference in concentration (', diffs, ') is > 1d-10.'
+						write(*,*) 'Investigate this further before rerunning...'
+						call flush(6)
+						stop
+					endif
+				endif
+				
+				!WRITE(*,*) "Gas Conc : ", Y(1)
+                                !WRITE(*,*) "Compound: ", GasPhaseChemicalNames(nINT(OrganicDissolutionData(Rxn,1)))
+                                !WRITE(*,*) "Num Bins", HowManyLinks
+				!if (isNaN(Y(1))) Y(1) = 0.0D0			
+				!CALL WARN("In StepOrgCondensation(), LSODES encountered a problem during the integration and returned ISTATE = "//	&
+				!		TRIM(INT2STR(ISTATE))//".  Please investigate.")
+				if (num_nans .gt. 0) then
+					!write(*,*) 'Trying ODE with slight perturbations...'
+					!istate = 1
+					!goto 30
+				endif
+				call flush(6)
 			END IF
 
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
