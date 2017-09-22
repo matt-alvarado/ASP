@@ -1,4 +1,4 @@
-!! ASP (c), 2004-2012, Matt Alvarado (malvarad@aer.com)
+!! ASP (c), 2004-2017, Matt Alvarado (malvarad@aer.com)
 !! Based on MELAM of H.D.Steele (c) 2000-2004
 !!
 !! File Description:
@@ -69,9 +69,37 @@ SUBROUTINE StepGasChemistry(TimeStepSize,NumTimeSteps)
 	REAL*8  :: TimeStepSize		!! Should be in Seconds
 	INTEGER :: NumTimeSteps
 
+	! 8 October 2016 CMB: AS per the migration from lsodes to dlsodes,
+	!					  we need to declare and store these common blocks
+	!					  on each routine that calls dlsodes.
+	real*8 :: rowns, ccmax, el0, h, hmin, hmxi, hu, rc, tn, uround
+	integer :: init, mxstep, mxhnil, nhnil, NSLAST, NYH, IOWNS, ICF, IERPJ, &
+			   IERSL, JCUR, JSTART, KFLAG, L, LYH, LEWT, LACOR, LSAVF, &
+			   LWM, LIWM, METH, MITER, MAXORD, MAXCOR, MSBP, MXNCF, N, &
+			   NQ, NST, NFE, NJE, NQU
+	COMMON /DLS001/ ROWNS(209), CCMAX, EL0, H, HMIN, HMXI, HU, RC, &
+					TN, UROUND, INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, &
+					NYH, IOWNS(6), ICF, IERPJ, IERSL, JCUR, JSTART, &
+					KFLAG, L, LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, &
+					MITER, MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, &
+					NFE, NJE, NQU
+	real*8 :: con0, conmin, ccmxj, psmall, rbig, seth
+	integer :: IPLOST, IESP, ISTATC, IYS, IBA, IBIAN, IBJAN, IBJGP, &
+			   IPIAN, IPJAN, IPJGP, IPIGP, IPR, IPC, IPIC, IPISP, IPRSP, IPA,&
+			   LENYH, LENYHM, LENWK, LREQ, LRAT, LREST, LWMIN, MOSS, MSBJ,&
+			   NSLJ, NGP, NLU, NNZ, NSP, NZL, NZU			
+	COMMON /DLSS01/ CON0, CONMIN, CCMXJ, PSMALL, RBIG, SETH, &
+					IPLOST, IESP, ISTATC, IYS, IBA, IBIAN, IBJAN, IBJGP, &
+					IPIAN, IPJAN, IPJGP, IPIGP, IPR, IPC, IPIC, IPISP, IPRSP, IPA,&
+					LENYH, LENYHM, LENWK, LREQ, LRAT, LREST, LWMIN, MOSS, MSBJ,&
+					NSLJ, NGP, NLU, NNZ, NSP, NZL, NZU				
+	! end CMB
+	
 	!! Internal Variables
+        ! CB: debugging
 	LOGICAL, PARAMETER :: Scaffolding = .FALSE.
-	REAL*8  :: BeginTime,EndTime
+	!LOGICAL, PARAMETER :: Scaffolding = .TRUE.
+        REAL*8  :: BeginTime,EndTime
 	INTEGER	::	q, OutFH
 
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -322,7 +350,10 @@ mf     =  21 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!          components of rtol and atol (i.e. of ewt) should be scaled	!!
 !!          down uniformly.					        !!
 itol   = 1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 12 April 2016 CMB(AER): Request to run with rtol of 1e-3; let's see what happens
+! UPDATE: Had minimal effect on the run time
 rtol   = 1.0e-6
+!rtol = 1.0e-3
 
 	M = getM()
 	atol   = 1.e-6*ppbscale*M
@@ -347,10 +378,19 @@ y = GetGasChemVector()
 	!! Integrate Forward the Specified Number of TimeSteps !!
 	DO J = 0,NumTimeSteps !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	  IF (Scaffolding) CALL TRANSCRIPT("Before LSODES")
-10	  CALL LSODES (GasODEEvaluator,HowManyEvolveGasChems,y,t,outtime, &
-               itol,rtol,atol,itask,&
-	       istate,iopt,rwork,lrw,iwork,GasLIW,GasJacobianEvaluator,mf)
+	  IF (Scaffolding) then
+            CALL TRANSCRIPT("Before LSODES; calling it on GasODEEvaluator and GasJacobianEvaluator")
+            print *, 'istate = ', istate
+            print *, 'howmanyevolvegaschems = ', howmanyevolvegaschems
+          endif
+		  
+	  ! October 7 CMB (AER, Inc): Replacing LSODES with DLSODES
+10	  CALL dLSODES (GasODEEvaluator,HowManyEvolveGasChems,y,t,outtime, &
+	                itol,rtol,atol,itask,&
+	  	            istate,iopt,rwork,lrw,iwork,GasLIW,GasJacobianEvaluator,mf)	  
+!10	  CALL LSODES (GasODEEvaluator,HowManyEvolveGasChems,y,t,outtime, &
+!               itol,rtol,atol,itask,&
+!	       istate,iopt,rwork,lrw,iwork,GasLIW,GasJacobianEvaluator,mf)
 			
 	  IF (Scaffolding) CALL TRANSCRIPT("After LSODES : "//INT2STR(ISTATE))
 	  !! If the maximum number of timesteps occurred, then warn the user 
@@ -421,7 +461,8 @@ SUBROUTINE GasODEEvaluator (neq, t, y, ydot)
 	TYPE (DiffEqTerm), POINTER :: Current
 	TYPE (ChemTerm),   POINTER :: CurrentChem
 
-	LOGICAL, PARAMETER :: Scaffolding =  .FALSE. !.TRUE.  ! 
+        ! CB: Make true for debugging
+	LOGICAL, PARAMETER :: Scaffolding =  .FALSE. 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! The Structure of the Y(1) input vecor is taken to be:		     !!
@@ -449,6 +490,7 @@ SUBROUTINE GasODEEvaluator (neq, t, y, ydot)
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! First evaluate Gas Phase Chemical Contributions, if desired !!
 	IF (IFGAS) THEN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+           !print *, 'Evaluating Gas Phase Chemical Contributions'
 
 	   !! Evaluate contributions to each term of Y
 	   DO I = 1, neq
@@ -503,6 +545,12 @@ SUBROUTINE GasJacobianEvaluator (neq, t, y, I, ia, ja, pdj)
 
 	USE GridPointFields, ONLY: GasPhaseChemicalRates
 
+        !
+        ! Modified by CMB (AER): Needs to Use the logical variables from Chemistry
+        !                        module 
+        !
+        !use chemistry, only: ifgas, ifaq, ifsolid
+
 	IMPLICIT NONE
 
 	!! External Variables
@@ -539,6 +587,7 @@ SUBROUTINE GasJacobianEvaluator (neq, t, y, I, ia, ja, pdj)
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! If Gas Phase Chemistry Occurs !!
 	IF (IFGAS) THEN !!!!!!!!!!!!!!!!!!!
+            !print *, 'ifgas is true inside of GasJacobianEvaluator'
 	   DO J = 1, neq
 
 		RunningTotal = 0
@@ -579,15 +628,18 @@ SUBROUTINE GasJacobianEvaluator (neq, t, y, I, ia, ja, pdj)
 	   END DO
 	END IF
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! If Aqueous Phase Chemistry Occurs !!
-	IF (IFAQ) THEN !!!!!!!!!!!!!!!!!!!!!!!!
-	END IF
-
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	!! If Solid Phase Chemistry Occurs !!
-	IF (IFSOLID) THEN !!!!!!!!!!!!!!!!!!!
-	END IF					  
+! CMB: The IFSOLID branch causes an error.
+!	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!	!! If Aqueous Phase Chemistry Occurs !!
+!	IF (IFAQ) THEN !!!!!!!!!!!!!!!!!!!!!!!!
+!            print *, 'ifaq = true in GasJacobianEvaluator; TODO CB'
+!	END IF
+!
+!	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!	!! If Solid Phase Chemistry Occurs !!
+!	IF (IFSOLID) THEN !!!!!!!!!!!!!!!!!!!
+!            print *, 'ifsolid = true in GasJacobianEvaluator; TODO CB'
+!	END IF					  
 
 RETURN
 END SUBROUTINE GasJacobianEvaluator
