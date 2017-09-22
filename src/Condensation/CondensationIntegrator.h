@@ -219,7 +219,7 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
            IF(.NOT. DissolutionEquilibriumOrFlux) THEN
 		   	   print *, '---> Calling StepCondensation if doing equilibrium'
               CALL StepCondensation (TimestepSize, 1)
-				call flush(6)
+				!call flush(6)
 
 				! CMB:
 				!write(*,*) 'after stepcondensation if doing equilibrium'
@@ -250,7 +250,7 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 				!write(*,*) 'GridGasChem(599) CondensationIntegrator.h line 245 = ', &
 				!	GridGasChem(599)
 				!call GasOutput(304, 305, 306, real(900), .true., .true.)
-				call flush(6)
+				!call flush(6)
               CALL SortAerosolAtGridPointForCondensation ()
 				!call spillbeans(tout_unit=1032)
 				!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
@@ -301,11 +301,14 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
                  IF(DoHydrophobicOrgDissolutionFlag) THEN
 				 !print *, 'GridGasChem(599) at CondensationIntegrator.h line 278 = ', &
 				 !						GridGasChem(599)
+                    !WRITE(*,*) "Before UpdateHydrophobicUNIFAC_all"
+                    !call flush(6)
                     CALL UpdateHydrophobicUNIFAC_all
-					
+                    !WRITE(*,*) "After UpdateHydrophobicUNIFAC_all"
+		    !call flush(6)			
 					!print *, 'GridGasChem(599) at CondensationIntegrator.h line 281 = ', &
 					!						GridGasChem(599)
-					!print *, '---> Calling StepOrgCondensation if doing flux'
+					print *, '---> Calling StepOrgCondensation if doing flux'
 					call flush(6)
 				!if (getTimestepIndex() .eq. 23 .and. getParcelIndex() .eq. 20) then
 				!write(288,*) 
@@ -313,6 +316,8 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 				!call spillbeans(tout_unit=288)
 				!endif
                     CALL StepOrgCondensation (TimestepSize, 1)
+					!print *, '---> After StepOrgCondensation if doing flux'
+					!call flush(6)
 				!print *, 'GridGasChem(599) at CondensationIntegrator.h line 286 = ', &
 				!						GridGasChem(599)
 					!write(*,*) 'after steporgcondensation'
@@ -328,7 +333,7 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 				!										GridGasChem(599)
 						!call GasOutput(313, 314, 315, real(900), .true., .true.)
                  Else
-				 	 !write(*,*) 'DoHydrophobicOrgDissolutionFlag is false'
+				 	 write(*,*) 'DoHydrophobicOrgDissolutionFlag is false'
 				 endif
 		
                  !WRITE(*,*) "StepDissolutionAll Check 2"
@@ -395,7 +400,7 @@ SUBROUTINE StepCondensationAll (TimestepSize, NumTimeSteps)
 	END IF !Empty Grid Cell
 			
 	!WRITE(*,*) "StepDissolutionAll Check 5"
-        call flush(6)   ! CMB add
+        !call flush(6)   ! CMB add
 END SUBROUTINE StepCondensationAll
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

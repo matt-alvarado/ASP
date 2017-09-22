@@ -334,8 +334,9 @@ END FUNCTION CountDigits
 
 		!! Measure the Input Line
 		lt = LEN(TRIM(InLine))
-		print *, "InLine =", InLine
-                print *, "length =", lt          
+		!print *, "InLine =", InLine
+                !print *, "length =", lt     
+     
 		!! Chercher the delimitor in the string
                 !! CB: Modify this to also blank out at newlines (windows or linux)
 		DO i = 1,lt+1-ld
@@ -356,7 +357,7 @@ END FUNCTION CountDigits
 
                         OutLine   = TRIM(StripToken(InLine))! The whole line is the token
 			InLine  = ""	! The instring is updated to be blank
-                        print *, Outline
+                        !print *, Outline
 		ELSE
 		!! If the token exists, then return that token and strip it from the 
 		!! InLine.

@@ -60,10 +60,10 @@
 !! 3.a GENERAL
 !! Specify the environmental parameters as a single homogeneous
 !! value (numerical)
-278.15  !! Temperature (K)
+290.00  !! Temperature (K)
 1000.0  !! Pressure    (mb)
-0.73   !! Initial Relative Humidity (between 0 and 1)
-0.73   !! Background Relative Humidity (between 0 and 1)
+0.7   !! Initial Relative Humidity (between 0 and 1)
+0.7   !! Background Relative Humidity (between 0 and 1)
 !! PHOTO FLAG - If 0, run from starting time below for run length
 !!                    following profile in PhotoRates.in
 !!              If 1, linearly interpolate photolysis rates
@@ -73,10 +73,10 @@
 !!***Below only used if PHOTO FLAG = 1
 5.0    !! Ending Time for Photolysis (h UTC to match PhotoRates.in)
 !!***Above only used if PHOTO FLAG = 1
-390    !! Run Length in minutes
-1.0    !! Chemistry Time Step in s
-1.0    !! Mixing Time Step in s
-20.0   !! Condensation Time Step in s
+300    !! Run Length in minutes
+60.0    !! Chemistry Time Step in s
+60.0    !! Mixing Time Step in s
+60.0   !! Condensation Time Step in s
 60.0   !! Coagulation Time Step in s
 1.0    !! Inversion height in km (for deposition calcs)
 1      !! Include aerosols? (1 for yes, 0 for no)

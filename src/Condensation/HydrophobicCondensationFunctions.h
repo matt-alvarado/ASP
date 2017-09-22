@@ -202,20 +202,30 @@ SUBROUTINE UpdateHydrophobicUNIFAC(InParticle, Temperature)
                  
                 !Normalize XPASS based only on UNIFAC compounds
                 TotalOM_unifac = 0.0
-                 !WRITE(*,*) "TotalOM_unifac: ", TotalOM_unifac
-                 DO Q = 0, N-1
+                !WRITE(*,*) "TotalOM_unifac: ", TotalOM_unifac
+                DO Q = 0, N-1
                     !WRITE(*,*) XPASS(q)
                     TotalOM_unifac = TotalOM_unifac+XPASS(Q)
                 ENDDO
                 !WRITE(*,*) "TotalOM_unifac: ", TotalOM_unifac
-                DO Q = 0, N-1
-                    XPASS(Q) = XPASS(Q)/TotalOM_unifac
-                ENDDO
 
-		!Call UNIFAC, placing activity coefficients in GAMMA(0:N-1)
-                !WRITE(*,*) "Before UNIDRIV", XPASS, TotalOM_unifac
-		CALL UNIDRIV(XPASS,GAMMA,N,Temperature)
-                !WRITE(*,*) "After UNIDRIV"
+                !!MJA, 20170922, protect against zero OM from UNIFAC compounds 
+                !!by setting activity coefficient to 1.0 in this case
+                !!Note TotalOM_unifac is in mol/particle at this point
+                IF (TotalOM_unifac .lt. 1e-40) THEN
+                    DO Q = 0, N-1
+                        GAMMA(Q) = 1.0
+                    ENDDO
+                ELSE
+                    DO Q = 0, N-1
+                        XPASS(Q) = XPASS(Q)/TotalOM_unifac
+                    ENDDO
+
+		    !Call UNIFAC, placing activity coefficients in GAMMA(0:N-1)
+                    !WRITE(*,*) "Before UNIDRIV", XPASS, TotalOM_unifac
+		    CALL UNIDRIV(XPASS,GAMMA,N,Temperature)
+                    !WRITE(*,*) "After UNIDRIV"  
+                ENDIF
 	
 		!Place UNIFAC activity coefficients into particle array
 		DO I = 2, HowManyOrgChems !Skip BC
