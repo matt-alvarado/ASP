@@ -709,13 +709,14 @@ SUBROUTINE InitializeGasEulerianBox(NumGasChems, FluxCO, Gas_ER, Flux, Chem)
                                         UpdateChemicalConcentrations
 	USE Chemistry,           ONLY : FindChem, &
                                         GasPhaseBackground, &
-                                        HowManyEvolveGasChems	
+                                        HowManyEvolveGasChems, &
+                                        HowManyGasChems	
 	implicit none
 
         !External variables
         INTEGER, INTENT(IN)   :: NumGasChems 
         REAL*8, INTENT(IN)    :: FluxCO
-        REAL*8, INTENT(INOUT) ::  Gas_ER(:), Flux(:), Chem(:)
+        REAL*8, INTENT(INOUT) :: Gas_ER(HowManyGasChems), Flux(HowManyGasChems), Chem(HowManyGasChems)
 
         !Internal variables
         INTEGER               :: q, IndCO
