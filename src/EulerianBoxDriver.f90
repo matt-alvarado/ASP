@@ -855,7 +855,7 @@ SUBROUTINE StepDiluGasEulerian(HowManyGasChems,WindSpeed,&
         REAL*8,  INTENT(IN) :: WindSpeed !m/s
         REAL*8,  INTENT(IN) :: Xlength, Height !km
         REAL*8,  INTENT(IN) :: MixTimeStep, t, spinup !s
-        REAL*8,  INTENT(IN) :: Flux(:) !molecules/km2/s  
+        REAL*8,  INTENT(IN) :: Flux(HowManyGasChems) !molecules/km2/s  
 
         !Internal Variables
         REAL*8, ALLOCATABLE :: Chem(:)
@@ -907,10 +907,10 @@ SUBROUTINE StepDiluAeroEulerian(WindSpeed,Xlength,Height,Temp,&
         REAL*8,  INTENT(IN) :: Xlength, Height !km
         REAL*8,  INTENT(IN) :: Temp !K
         REAL*8,  INTENT(IN) :: MixTimeStep, t, spinup !s
-        REAL*8,  INTENT(IN) :: Aero_Num_Flux(:) !particles/km2/s  
-        REAL*8,  INTENT(IN) :: Aero_AqMol_Flux(:,:) !mols/km2/s  
-        REAL*8,  INTENT(IN) :: Aero_OrgMol_Flux(:,:) !mols/km2/s  
-        REAL*8,  INTENT(IN) :: Aero_AqOrgMol_Flux(:,:) !mols/km2/s 
+        REAL*8,  INTENT(IN) :: Aero_Num_Flux(NumBins) !particles/km2/s  
+        REAL*8,  INTENT(IN) :: Aero_AqMol_Flux(NumBins,NumAqChems) !mols/km2/s  
+        REAL*8,  INTENT(IN) :: Aero_OrgMol_Flux(NumBins,NumAqChems) !mols/km2/s  
+        REAL*8,  INTENT(IN) :: Aero_AqOrgMol_Flux(NumBins,NumAqChems) !mols/km2/s 
         INTEGER, INTENT(IN) :: NumAqChems, NumOrgChems, NumAqOrgChems 
 
         !Internal Variables
