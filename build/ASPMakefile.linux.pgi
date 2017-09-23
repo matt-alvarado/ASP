@@ -22,7 +22,7 @@ INFDIR = ../src/InfrastructuralCode/
 PARTDIR = ../src/LagrangianParticles/
 OUTPUTDIR = ../src/OutputRoutines/
 UNIFACDIR = ../src/UNIFAC/
-OBJDIR = ./asp_linux_pgi_dbl.obj/
+OBJDIR = ./ObjectFiles/
 
 FILES	= $(SOURCEDIR)ModelParameters.f90 \
 	  $(SOURCEDIR)ReadInputDeck.f90  \

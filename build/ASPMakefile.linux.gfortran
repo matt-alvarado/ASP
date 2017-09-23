@@ -100,7 +100,7 @@ FC = gfortran44 -m64 -DGFORTRAN
 
 LDFLAGS := -Wl,-zmuldefs
 
-FFLAGS :=  -O2 -m64 -frounding-math -fsignaling-nans -gdwarf-3\
+FFLAGS :=  -O3 -m64 -frounding-math -fsignaling-nans -gdwarf-3\
            -fdefault-real-8 \
 	   -fdefault-double-8 -g -fbacktrace -I$(MODULES_OUTPUT_DIR) \
 	   -J$(MODULES_OUTPUT_DIR)
