@@ -764,10 +764,10 @@ SUBROUTINE InitializeAeroEulerianBox(NumBins, NumAqChems, NumOrgChems, &
         INTEGER, INTENT(IN)     :: NumBins, NumAqChems
         INTEGER, INTENT(IN)     :: NumOrgChems, NumAqOrgChems
         REAL*8,  INTENT(IN)     :: FluxCO
-        REAL*8,  INTENT(INOUT)  :: Aero_Num_ER(:), Aero_Num_Flux(:)
-        REAL*8,  INTENT(INOUT)  :: Aero_AqMol_ER(:,:), Aero_AqMol_Flux(:,:)
-        REAL*8,  INTENT(INOUT)  :: Aero_OrgMol_ER(:,:), Aero_OrgMol_Flux(:,:)
-        REAL*8,  INTENT(INOUT)  :: Aero_AqOrgMol_ER(:,:), Aero_AqOrgMol_Flux(:,:) 
+        REAL*8,  INTENT(INOUT)  :: Aero_Num_ER(NumBins), Aero_Num_Flux(NumBins)
+        REAL*8,  INTENT(INOUT)  :: Aero_AqMol_ER(NumBins,NumAqChems), Aero_AqMol_Flux(NumBins,NumAqChems)
+        REAL*8,  INTENT(INOUT)  :: Aero_OrgMol_ER(NumBins,NumAqChems), Aero_OrgMol_Flux(NumBins,NumAqChems)
+        REAL*8,  INTENT(INOUT)  :: Aero_AqOrgMol_ER(NumBins,NumAqChems), Aero_AqOrgMol_Flux(NumBins,NumAqChems) 
 
         !Internal variables
         INTEGER                 :: q, j, IndCO
