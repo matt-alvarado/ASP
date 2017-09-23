@@ -99,14 +99,16 @@ FILESDUMP = asp
 #FC = /usr/local/pgi/linux86-64/10.5/bin/pgf90
 FC = pgf90
 
-LDFLAGS := -Wl,-zmuldefs
+#LDFLAGS := -Wl,-zmuldefs
+LDFLAGS := 
+
 FFLAGS :=  $(LDFLAGS) -fast -r8 -Mcache_align
 F90FLAGS := $(FFLAGS) -Mfree
 
 
 OBJECTS :=
 OBJECTS := $(OBJECTS) \
-           $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
+           $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o \
            $(OBJDIR)PPND16.o \
 	   $(OBJDIR)dgaus8.o $(OBJDIR)DMiLay.o
 OBJECTS := $(OBJECTS) \
@@ -132,30 +134,30 @@ OBJECTS := $(OBJECTS) \
 EXEOBJECTS := $(OBJECTS) $(OBJDIR)DevelopmentDriver.o	
 
 # === Modules: 0 grid define; 1 essential; d type define; s all
-MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
+#MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
+#           $(OBJDIR)PPND16.o \
+MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o \
            $(OBJDIR)PPND16.o \
-	   $(OBJDIR)dgaus8.o \
-	   $(OBJDIR)ModelParameters.o \
-	   $(OBJDIR)InfrastructuralCode.o \
-	   $(OBJDIR)GridPointFields.o \
-	   $(OBJDIR)Time.o \
-	   $(OBJDIR)Chemistry.o \
-	   $(OBJDIR)Gibbs-DuhemEvaluationFunction.o \
+           $(OBJDIR)dgaus8.o \
+           $(OBJDIR)ModelParameters.o \
+           $(OBJDIR)InfrastructuralCode.o \
+           $(OBJDIR)GridPointFields.o \
+           $(OBJDIR)Time.o \
+           $(OBJDIR)Chemistry.o \
+           $(OBJDIR)Gibbs-DuhemEvaluationFunction.o \
            $(OBJDIR)LagrangianAerosols.o \
-	   $(OBJDIR)Condensation.o $(OBJDIR)soa_unidriv.o \
+           $(OBJDIR)Condensation.o $(OBJDIR)soa_unidriv.o \
            $(OBJDIR)soa_unidriva.o $(OBJDIR)unifac.o \
-	   $(OBJDIR)OutputRoutines.o \
-	   $(OBJDIR)Coagulation.o \
-	   $(OBJDIR)ReadInputDeck.o \
-	   $(OBJDIR)StepASP.o \
-           $(OBJDIR)EulerianBoxDriver.o
+           $(OBJDIR)OutputRoutines.o \
+           $(OBJDIR)Coagulation.o \
+           $(OBJDIR)ReadInputDeck.o \
+           $(OBJDIR)StepASP.o \
+           $(OBJDIR)EulerianBoxDriver.o \
+           $(OBJDIR)opkda2.o \
+           $(OBJDIR)opkda1.o \
+           $(OBJDIR)opkdmain.o
 
-MODASP := $(MODASP) \
-          $(OBJDIR)opkda2.o \
-          $(OBJDIR)opkda1.o \
-          $(OBJDIR)opkdmain.o
-
-MODASPEXEC := $(MODASP) $(OBJDIR)DevelopmentDriver.o
+MODASPEXEC := $(MODASP)
 
 MODS := $(MODASP)
 
@@ -170,7 +172,7 @@ PROG = asp_v2.1.1_linux_pgi_dbl
 ALL: $(EXEDIR)$(PROG)
 
 $(EXEDIR)$(PROG): $(EXEOBJECTS)
-	$(FC) $(FFLAGS) -o $@ $(EXEOBJECTS) $(EXECMODS) $(LDFLAGS)
+	$(FC) $(FFLAGS) -o $@ $(OBJDIR)DevelopmentDriver.o $(OBJECTS) $(LDFLAGS)
 
 OBJECTS : $(MODS) $(FILESINC)
 
