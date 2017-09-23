@@ -98,7 +98,8 @@ FILESDUMP = asp
 
 FC = gfortran44 -m64 -DGFORTRAN
 
-LDFLAGS := -Wl,-zmuldefs
+#LDFLAGS := -Wl,-zmuldefs
+LDFLAGS := 
 
 FFLAGS :=  -O3 -m64 -frounding-math -fsignaling-nans -gdwarf-3\
            -fdefault-real-8 \
@@ -111,7 +112,7 @@ FFLAGS := $(FFLAGS) -ffixed-form -ffixed-line-length-132
 
 OBJECTS :=
 OBJECTS := $(OBJECTS) \
-           $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
+           $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o \
            $(OBJDIR)PPND16.o \
 	   $(OBJDIR)dgaus8.o $(OBJDIR)DMiLay.o
 OBJECTS := $(OBJECTS) \
@@ -137,30 +138,30 @@ OBJECTS := $(OBJECTS) \
 EXEOBJECTS := $(OBJECTS) $(OBJDIR)DevelopmentDriver.o	
 
 # === Modules: 0 grid define; 1 essential; d type define; s all
-MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
+#MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
+#           $(OBJDIR)PPND16.o \
+MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o \
            $(OBJDIR)PPND16.o \
-	   $(OBJDIR)dgaus8.o \
-	   $(OBJDIR)ModelParameters.o \
-	   $(OBJDIR)InfrastructuralCode.o \
-	   $(OBJDIR)GridPointFields.o \
-	   $(OBJDIR)Time.o \
-	   $(OBJDIR)Chemistry.o \
-	   $(OBJDIR)Gibbs-DuhemEvaluationFunction.o \
+           $(OBJDIR)dgaus8.o \
+           $(OBJDIR)ModelParameters.o \
+           $(OBJDIR)InfrastructuralCode.o \
+           $(OBJDIR)GridPointFields.o \
+           $(OBJDIR)Time.o \
+           $(OBJDIR)Chemistry.o \
+           $(OBJDIR)Gibbs-DuhemEvaluationFunction.o \
            $(OBJDIR)LagrangianAerosols.o \
-	   $(OBJDIR)Condensation.o $(OBJDIR)soa_unidriv.o \
+           $(OBJDIR)Condensation.o $(OBJDIR)soa_unidriv.o \
            $(OBJDIR)soa_unidriva.o $(OBJDIR)unifac.o \
-	   $(OBJDIR)OutputRoutines.o \
-	   $(OBJDIR)Coagulation.o \
-	   $(OBJDIR)ReadInputDeck.o \
-	   $(OBJDIR)StepASP.o \
-           $(OBJDIR)EulerianBoxDriver.o
+           $(OBJDIR)OutputRoutines.o \
+           $(OBJDIR)Coagulation.o \
+           $(OBJDIR)ReadInputDeck.o \
+           $(OBJDIR)StepASP.o \
+           $(OBJDIR)EulerianBoxDriver.o \
+           $(OBJDIR)opkda2.o \
+           $(OBJDIR)opkda1.o \
+           $(OBJDIR)opkdmain.o
 
-MODASP := $(MODASP) \
-          $(OBJDIR)opkda2.o \
-          $(OBJDIR)opkda1.o \
-          $(OBJDIR)opkdmain.o
-
-MODASPEXEC := $(MODASP) $(OBJDIR)DevelopmentDriver.o
+MODASPEXEC := $(MODASP)
 
 MODS := $(MODASP)
 
@@ -175,7 +176,7 @@ PROG = asp_v2.1.1_linux_gnu_dbl
 ALL: $(EXEDIR)$(PROG)
 
 $(EXEDIR)$(PROG): $(EXEOBJECTS)
-	$(FC) $(FFLAGS) -o $@ $(EXEOBJECTS) $(EXECMODS) $(LDFLAGS)
+	$(FC) $(FFLAGS) -o $@ $(OBJDIR)DevelopmentDriver.o $(OBJECTS) $(LDFLAGS)
 
 OBJECTS : $(MODS) $(FILESINC)
 
