@@ -141,7 +141,7 @@ PROGRAM ASP
 	IMPLICIT NONE
 
 	!! Define the local variables
-	INTEGER :: i, j, q, r, seedarray(8), NumBins, HeteroBins, &
+	INTEGER :: i, j, q, r, NumBins, HeteroBins, &
 	           HNO3GasIndex, NumAqChems, NH3GasIndex, PotassiumIndex, &
                    HClGasIndex, SulfateIndex, BisulfateIndex, &
                    K2SO4Index, SOA2GasIndex, NumOrgChems, &
@@ -180,11 +180,7 @@ PROGRAM ASP
 
 	
 	!! Initialize the random number generator 
-        call DATE_AND_TIME(values=time)     ! Get the current time (for pgi compiler)
-        seedarray(1) = time(4) * (360000*time(5) + 6000*time(6) + 100*time(7) + time(8))
-        !seedarray(1) = RTC() !for ifort compiler
-	seedarray(2) = FLOOR(SQRT(REAL(seedarray(1))))
-	CALL Random_Seed(put=seedarray)
+	CALL Random_Seed()
 
 	!! Send a Welcome Message
 	CALL Transcript ("**********************************************************")

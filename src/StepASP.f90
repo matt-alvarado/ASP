@@ -450,7 +450,7 @@ MODULE StepASP
 	implicit none
 
 	!! Define the local variables
-	integer :: i, j, k, l, seedarray(8),q, r, NumBins
+	integer :: i, j, k, l,q, r, NumBins
         INTEGER :: time(8)
 	REAL*4  :: etimearray(2)
 	TYPE(Particle), POINTER :: Cur, Env
@@ -458,12 +458,7 @@ MODULE StepASP
 	CHARACTER (len = 10)    :: ErrorTime
 
 	!! Initialize the random number generator 
-        call DATE_AND_TIME(values=time)     
-        ! Get the current time (for pgi compiler)
-        seedarray(1) = time(4) * (360000*time(5) + 6000*time(6) + 100*time(7) + time(8))
-        !seedarray(1) = rtc() !for ifort compiler
-        seedarray(2) = FLOOR(SQRT(REAL(seedarray(1))))
-	CALL Random_Seed(put=seedarray)
+        CALL Random_Seed()
 
 		!!!!!!!!!!!!!!!!!!!!!!!!!
 		!! SET the DOMAIN SIZE !!
