@@ -1001,7 +1001,7 @@ SUBROUTINE SpillBeans(Env, tout_unit)
 
 	!External
 	LOGICAL, OPTIONAL :: Env !True if we want the boundary distribution
-    integer, optional :: tout_unit
+        integer, optional :: tout_unit
     
 	!Internal
 	INTEGER		:: I, NumAqChems, NumOrgChems, A
@@ -1031,8 +1031,9 @@ SUBROUTINE SpillBeans(Env, tout_unit)
 		END IF
 	END IF
 
-	Dens = GetAirDensity() !g/cm3
-	Mgas = GetM   ()
+	
+        Dens = GetAirDensity() !g/cm3
+	Mgas = GetM()
 	RH = GetRelativeHumidity()
 	WRITE(out_unit,*) "RH: ", RH
 	WRITE(out_unit,*) "Dens: ", Dens
@@ -1040,9 +1041,9 @@ SUBROUTINE SpillBeans(Env, tout_unit)
 	          GasPhaseBackground(FindChem("CO",0)))*(1e9/Mgas)*(28/28.973)
 	WRITE(out_unit,*) "ppbm CO: ", ppbmCO
 			
-	NumAqChems = size(CurrentParticle%AqChems)
+	NumAqChems = size(currentparticle%AqChems)
 	NumOrgChems = HowManyOrgChems
-	i = 1
+	I = 1
 	99 if (associated(currentparticle)) then
 		write(out_unit, *)""
 		write(out_unit, *)"Number ",trim(INT2STR(I)),",  ",currentparticle%numberofparticles,currentparticle%sectional
@@ -1062,7 +1063,7 @@ SUBROUTINE SpillBeans(Env, tout_unit)
 		write(out_unit, *)"Ionic Strength ",trim(real2str(currentparticle%IonicStr))
 		write(out_unit, *)"Water Activity ",trim(real2str(currentparticle%WaterActivity))
 		write(out_unit, *)"SolutionDensity ",trim(real2str(currentparticle%SolutionDensity))
-		!write(out_unit, *)"InsolubleDensity ",trim(real2str(currentparticle%InsolubleDensity))
+		write(out_unit, *)"InsolubleDensity ",trim(real2str(currentparticle%InsolubleDensity))
 		write(out_unit, *)"ParticleDensity ",trim(real2str(currentparticle%ParticleDensity))
 		write(out_unit, *)"Ph ", trim(real2str(AerosolPh(currentparticle)))
 		write(out_unit, *)"Curvature Correction ", trim(real2str(CurvatureCorrection(currentparticle)))

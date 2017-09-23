@@ -561,7 +561,7 @@ SUBROUTINE EquilibrateDissolutionReaction (GasPhaseBurden, WhichRxn, &
 	INTEGER, INTENT(IN) :: WhichRxn
         REAL*8, INTENT(IN)  :: Temperature, OptErrorTolerance, &
                                WaterSatBurden, GasPhaseBurden2
-	TYPE(PARTICLE),POINTER, INTENT(IN) :: InParticle
+	TYPE(PARTICLE),POINTER :: InParticle
 
         !These are both in and out
         INTEGER             :: ReturnType

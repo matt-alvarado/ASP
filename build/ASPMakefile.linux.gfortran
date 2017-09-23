@@ -10,6 +10,7 @@ SHELL = /bin/sh
 PRNTDIR = ../OUTPUT/
 INCDIR  = ../INCLUDE/
 EXEDIR  = ../
+MODULES_OUTPUT_DIR = ./ModuleFiles/
 
 SOURCEDIR = ../src/
 CHEMDIR = ../src/Chemistry/
@@ -21,7 +22,7 @@ INFDIR = ../src/InfrastructuralCode/
 PARTDIR = ../src/LagrangianParticles/
 OUTPUTDIR = ../src/OutputRoutines/
 UNIFACDIR = ../src/UNIFAC/
-OBJDIR = ./asp_linux_gnu_dbl.obj/
+OBJDIR = ./ObjectFiles/
 
 FILES	= $(SOURCEDIR)ModelParameters.f90 \
 	  $(SOURCEDIR)ReadInputDeck.f90  \
@@ -95,13 +96,13 @@ FILESDUMP = asp
 
 # Compile command -- single processor
 
-FC = gfortran -m64 -DGFORTRAN
+FC = gfortran44 -m64 -DGFORTRAN
 
 LDFLAGS := -Wl,-zmuldefs
-MODULES_OUTPUT_DIR = ../build
-FFLAGS :=  $(LDFLAGS) -O2 -m64 -frounding-math -fsignaling-nans \
+
+FFLAGS :=  -O2 -m64 -frounding-math -fsignaling-nans -gdwarf-3\
            -fdefault-real-8 \
-	   -fdefault-double-8 -g -I$(MODULES_OUTPUT_DIR) \
+	   -fdefault-double-8 -g -fbacktrace -I$(MODULES_OUTPUT_DIR) \
 	   -J$(MODULES_OUTPUT_DIR)
 
 F90FLAGS := $(FFLAGS)  -ffree-form -ffree-line-length-none
@@ -332,7 +333,7 @@ $(OBJDIR)DevelopmentDriver.o: $(SOURCEDIR)DevelopmentDriver.f90 \
 ##
 
 clean:
-	rm -f  $(OBJDIR)*.o $(OBJDIR)*.mod $(OBJDIR)*.il $(OBJDIR)*.d $(OBJDIR)*.pc*
+	rm -f  $(OBJDIR)*.o $(MODULES_OUTPUT_DIR)*.mod $(OBJDIR)*.il $(OBJDIR)*.d $(OBJDIR)*.pc* ./*.mod
 
 cleandump:
 	rm $(FILESDUMP) $(OBJECTS)

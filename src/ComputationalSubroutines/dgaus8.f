@@ -97,7 +97,7 @@ C***END PROLOGUE  DGAUS8
       DATA SQ2/1.41421356D0/
       DATA NLMN/1/,KMX/5000/,KML/6/
       G8(X,H)=H*((W1*(FUN(X-X1*H,Q,Stoich,Charge) + 
-	1				FUN(X+X1*H,Q,Stoich,Charge))
+     1				FUN(X+X1*H,Q,Stoich,Charge))
      2           +W2*(FUN(X-X2*H,Q,Stoich,Charge) + 
      3				FUN(X+X2*H,Q,Stoich,Charge)))
      4          +(W3*(FUN(X-X3*H,Q,Stoich,Charge) + 

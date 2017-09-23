@@ -10,6 +10,7 @@ SHELL = /bin/sh
 PRNTDIR = ../OUTPUT/
 INCDIR  = ../INCLUDE/
 EXEDIR  = ../
+MODULES_OUTPUT_DIR = ./ModuleFiles/
 
 SOURCEDIR = ../src/
 CHEMDIR = ../src/Chemistry/
@@ -327,7 +328,7 @@ $(OBJDIR)DevelopmentDriver.o: $(SOURCEDIR)DevelopmentDriver.f90 \
 ##
 
 clean:
-	rm -f  $(OBJDIR)*.o $(OBJDIR)*.mod $(OBJDIR)*.il $(OBJDIR)*.d $(OBJDIR)*.pc*
+	rm -f  $(OBJDIR)*.o $(MODULES_OUTPUT_DIR)*.mod $(OBJDIR)*.il $(OBJDIR)*.d $(OBJDIR)*.pc* ./*.mod
 
 cleandump:
 	rm $(FILESDUMP) $(OBJECTS)

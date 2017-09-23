@@ -141,7 +141,7 @@ PROGRAM ASP
 	IMPLICIT NONE
 
 	!! Define the local variables
-	INTEGER :: i, j, q, r, seedarray(2), NumBins, HeteroBins, &
+	INTEGER :: i, j, q, r, seedarray(8), NumBins, HeteroBins, &
 	           HNO3GasIndex, NumAqChems, NH3GasIndex, PotassiumIndex, &
                    HClGasIndex, SulfateIndex, BisulfateIndex, &
                    K2SO4Index, SOA2GasIndex, NumOrgChems, &
@@ -284,7 +284,7 @@ PROGRAM ASP
              DO I = 1, NumModes
                CALL SetInitialDens(Store_Dens)
 
-               IF (NOT(GADS)) THEN
+               IF (.NOT.(GADS)) THEN
                   AerosolModes(I,4) = Store_H2O 
                ELSE 
                   AerosolModes(I,4) = 0.0
@@ -403,7 +403,7 @@ PROGRAM ASP
            !Convert Inversion Height from km to cm
            InvHgt = InversionHeight*1.0e5
 
-           IF(NOT(IncludeAerosols)) THEN !Gas Chemistry Only
+           IF(.NOT.(IncludeAerosols)) THEN !Gas Chemistry Only
 	        CALL TRANSCRIPT("")
 	        CALL TRANSCRIPT("Gas Chemistry Only Selected.")
 		! INITIALIZE the CHEMISTRY 
@@ -1127,7 +1127,7 @@ PROGRAM ASP
            !! INITIALIZE the PARTICLES
            CALL InitializeParticlesSectional	
 
-           IF(NOT(ThermoBulkMode)) THEN
+           IF(.NOT.(ThermoBulkMode)) THEN
               CALL ERROR("Cannot call Bulk Theronamics mode unless you also selected"// &
                    "bulk aerosol in AerosolModes.in")
            ENDIF
@@ -1565,7 +1565,7 @@ PROGRAM ASP
               !WRITE(*,*) "Before output"
 					
               !Write Output to file every minute 
-              IF (MOD(t,60.0) .LT. 0.01 .OR. DissolutionEquilibriumorFlux .EQ. .FALSE.) THEN
+              IF (MOD(t,60.0) .LT. 0.01 .OR. DissolutionEquilibriumorFlux .EQV. .FALSE.) THEN
                  
                  CALL GasOutput(OutFH(1),OutFH(2),OutFH(3),t,.FALSE.,.FALSE.)
 			
@@ -1584,8 +1584,8 @@ PROGRAM ASP
 			
               !WRITE(*,*) "After output"
 			
-              IF (MOD(t,60.0)<=0.05 .OR. DissolutionEquilibriumorFlux .EQ. .FALSE.) THEN
-                 IF(DissolutionEquilibriumorFlux .EQ. .TRUE.) THEN
+              IF (MOD(t,60.0)<=0.05 .OR. .NOT.(DissolutionEquilibriumorFlux)) THEN
+                 IF(DissolutionEquilibriumorFlux) THEN
                     CALL SizeDistOutput(t,"SizeDist"//TRIM(INT2STR(INT(t/60)))//"min.txt")
                  ELSE
                     CALL SizeDistOutput(t,"SizeDist2.txt")
@@ -1598,7 +1598,7 @@ PROGRAM ASP
               WRITE(*,*) trim(real2str(t/60)), " minutes done"
               !END IF
               !If just doing equilibrium, exit here
-              IF(DissolutionEquilibriumOrFlux .EQ. .False.) EXIT
+              IF(.NOT.(DissolutionEquilibriumOrFlux)) EXIT
 		
            END DO
 

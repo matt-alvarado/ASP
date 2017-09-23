@@ -146,7 +146,7 @@ MODULE StepASP
 	END SUBROUTINE StepASPOnce
 
 	SUBROUTINE InputConcentrations(Temp, Press, Dens, GasConc, &
-				AeroNumConc, AeroMassConc, PhotoRates)
+				AeroNumConc, AeroMassConc, inPhotoRates)
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! This subroutine takes in Temperature, pressure,		!!
 	!! gas and aerosol concentrations, and photolysis rates from	!!
@@ -174,7 +174,7 @@ MODULE StepASP
 	  REAL*8 :: GasConc(HowManyEvolveGasChems)
 	  REAL*8, INTENT(IN) :: AeroNumConc(HowManyBins)
 	  REAL*8 :: AeroMassConc(HowManyBins, HowManyAqChems+HowManyAqCations+HowManyAqAnions+HowManyOrgChems+HowManyAqOrgChems)
-	  REAL*8, INTENT(IN) :: PhotoRates(12)
+	  REAL*8, INTENT(IN) :: inPhotoRates(12)
 
 	  !! Internal Variables
 	  INTEGER :: I, J, L, RxnIndex, NumAq, GG
@@ -275,29 +275,29 @@ MODULE StepASP
 
 		SELECT CASE (RxnIndex)
 		  CASE(4) !NO2 => NO + O
-		    GasPhaseChemicalRates(L) = PhotoRates(1)
+		    GasPhaseChemicalRates(L) = inPhotoRates(1)
 		  CASE(5) !NO3 => NO + O2
-		    GasPhaseChemicalRates(L) = PhotoRates(2)
+		    GasPhaseChemicalRates(L) = inPhotoRates(2)
 		  CASE(6) !NO3 => NO2 + O
-		    GasPhaseChemicalRates(L) = PhotoRates(3)		
+		    GasPhaseChemicalRates(L) = inPhotoRates(3)		
 		  CASE(3) !O3 => O + O2
-	            GasPhaseChemicalRates(L) = PhotoRates(4)
+	            GasPhaseChemicalRates(L) = inPhotoRates(4)
 		  CASE(2) !O3 => O1D + O2
-		    GasPhaseChemicalRates(L) = PhotoRates(5)
+		    GasPhaseChemicalRates(L) = inPhotoRates(5)
 		  CASE(12) !HONO => Products
-		    GasPhaseChemicalRates(L) = PhotoRates(6)
+		    GasPhaseChemicalRates(L) = inPhotoRates(6)
 		  CASE(11) !H2O2 => 2OH
-		    GasPhaseChemicalRates(L) = PhotoRates(7)
+		    GasPhaseChemicalRates(L) = inPhotoRates(7)
 		  CASE(15) !HCHO => 2HO2 + CO
-		    GasPhaseChemicalRates(L) = PhotoRates(8)
+		    GasPhaseChemicalRates(L) = inPhotoRates(8)
 		  CASE(16) !HCHO => H2 + CO
-		    GasPhaseChemicalRates(L) = PhotoRates(9)
+		    GasPhaseChemicalRates(L) = inPhotoRates(9)
                   CASE(17) !ALD2 => Products
-		    GasPhaseChemicalRates(L) = PhotoRates(10)
+		    GasPhaseChemicalRates(L) = inPhotoRates(10)
 		  CASE(23) !KETL => Products
-		    GasPhaseChemicalRates(L) = PhotoRates(11)
+		    GasPhaseChemicalRates(L) = inPhotoRates(11)
 	          CASE(22) !MGLY => Products
-		    GasPhaseChemicalRates(L) = PhotoRates(12)
+		    GasPhaseChemicalRates(L) = inPhotoRates(12)
 		END SELECT
 	     END IF
           END DO
@@ -450,7 +450,7 @@ MODULE StepASP
 	implicit none
 
 	!! Define the local variables
-	integer :: i, j, k, l, seedarray(2),q, r, NumBins
+	integer :: i, j, k, l, seedarray(8),q, r, NumBins
         INTEGER :: time(8)
 	REAL*4  :: etimearray(2)
 	TYPE(Particle), POINTER :: Cur, Env
@@ -475,10 +475,8 @@ MODULE StepASP
 	
 	!! Send a Welcome Message
 	CALL Transcript ("**********************************************************")
-	CALL Transcript ("** Welcome to the ASP Model developed by Matt Alvarado  **")
+	CALL Transcript ("** Welcome to AER's ASP Model developed by Matt Alvarado  **")
 	CALL Transcript ("** (mjalvara@mit.edu).                                  **")
-	CALL Transcript ("** ASP is an updated, expanded version of MELAM         **")
-	CALL Transcript ("** by H. D. Steele (donnan@mit.edu).                    **")
 	CALL Transcript ("**********************************************************")
 	CALL Date_and_Time(ErrorDate, ErrorTime)
 	CALL Transcript ("*********************************************")
@@ -504,7 +502,7 @@ MODULE StepASP
 	END SUBROUTINE InitializeASP
 
 	SUBROUTINE ASPInterface(Timestep, Temp, Press, Dens, GasConc, &
-				NumConc, MassConc, PhotoRates, &
+				NumConc, MassConc, outPhotoRates, &
 				ExtCoeff, SingScat, Assym, Radius)
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!! This subroutine connects ASP to an external 3D Eulerian model!! 
@@ -532,13 +530,13 @@ MODULE StepASP
 		REAL*8 :: NumConc(HowManyBins)
 		REAL*8 :: MassConc(HowManyBins, HowManyAqChems+HowManyAqCations+HowManyAqAnions+HowManyOrgChems+HowManyAqOrgChems)
 		REAL*8 :: Radius(HowManyBins)
-		REAL*8 :: PhotoRates(12)
-		REAL*8, DIMENSION(18) :: ExtCoeff, SingScat, Assym
+		REAL*8 :: outPhotoRates(12)
+		REAL*8, DIMENSION(451) :: ExtCoeff, SingScat, Assym
 		INTEGER :: I
 	
 		!WRITE(*,*) "Before Conc Input"
 		CALL InputConcentrations(Temp, Press, Dens, GasConc, &
-									NumConc, MassConc, PhotoRates)
+									NumConc, MassConc, outPhotoRates)
 		!WRITE(*,*) "After Conc Input"
 		CALL StepASPOnce (TimeStep)
 		!WRITE(*,*) "Before Conc Output"
