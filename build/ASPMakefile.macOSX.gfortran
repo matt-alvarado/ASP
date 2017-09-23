@@ -167,7 +167,7 @@ MODS := $(MODASP)
 
 EXECMODS := $(MODASPEXEC)
 
-PROG = asp_v2.1.1_linux_osx_dbl
+PROG = asp_v2.1.1_osx_gnu_dbl
 
 ##
 ## === Dependency
