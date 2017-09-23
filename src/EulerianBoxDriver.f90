@@ -512,7 +512,7 @@ SUBROUTINE EulerianBox()
                                                   Aero_OrgMol_Flux, &
                                                   Aero_AqOrgMol_Flux, &
                                                   NumAqChems, NumOrgChems, &
-                                                  NumAqOrgChems)
+                                                  NumAqOrgChems, NumBins)
 
 
 			!WRITE(*,*) "Before AOD"
@@ -766,8 +766,8 @@ SUBROUTINE InitializeAeroEulerianBox(NumBins, NumAqChems, NumOrgChems, &
         REAL*8,  INTENT(IN)     :: FluxCO
         REAL*8,  INTENT(INOUT)  :: Aero_Num_ER(NumBins), Aero_Num_Flux(NumBins)
         REAL*8,  INTENT(INOUT)  :: Aero_AqMol_ER(NumBins,NumAqChems), Aero_AqMol_Flux(NumBins,NumAqChems)
-        REAL*8,  INTENT(INOUT)  :: Aero_OrgMol_ER(NumBins,NumAqChems), Aero_OrgMol_Flux(NumBins,NumAqChems)
-        REAL*8,  INTENT(INOUT)  :: Aero_AqOrgMol_ER(NumBins,NumAqChems), Aero_AqOrgMol_Flux(NumBins,NumAqChems) 
+        REAL*8,  INTENT(INOUT)  :: Aero_OrgMol_ER(NumBins,NumOrgChems), Aero_OrgMol_Flux(NumBins,NumOrgChems)
+        REAL*8,  INTENT(INOUT)  :: Aero_AqOrgMol_ER(NumBins,NumAqOrgChems), Aero_AqOrgMol_Flux(NumBins,NumAqOrgChems) 
 
         !Internal variables
         INTEGER                 :: q, j, IndCO
@@ -891,7 +891,7 @@ SUBROUTINE StepDiluAeroEulerian(WindSpeed,Xlength,Height,Temp,&
                                                   Aero_AqMol_Flux, &
                                                   Aero_OrgMol_Flux, &
                                                   Aero_AqOrgMol_Flux, &
-                                NumAqChems, NumOrgChems, NumAqOrgChems)
+                                NumAqChems, NumOrgChems, NumAqOrgChems, NumBins)
 	!! Include modules
 
 	USE Aerosols,            ONLY : particle, particles, &
@@ -909,9 +909,9 @@ SUBROUTINE StepDiluAeroEulerian(WindSpeed,Xlength,Height,Temp,&
         REAL*8,  INTENT(IN) :: MixTimeStep, t, spinup !s
         REAL*8,  INTENT(IN) :: Aero_Num_Flux(NumBins) !particles/km2/s  
         REAL*8,  INTENT(IN) :: Aero_AqMol_Flux(NumBins,NumAqChems) !mols/km2/s  
-        REAL*8,  INTENT(IN) :: Aero_OrgMol_Flux(NumBins,NumAqChems) !mols/km2/s  
-        REAL*8,  INTENT(IN) :: Aero_AqOrgMol_Flux(NumBins,NumAqChems) !mols/km2/s 
-        INTEGER, INTENT(IN) :: NumAqChems, NumOrgChems, NumAqOrgChems 
+        REAL*8,  INTENT(IN) :: Aero_OrgMol_Flux(NumBins,NumOrgChems) !mols/km2/s  
+        REAL*8,  INTENT(IN) :: Aero_AqOrgMol_Flux(NumBins,NumAqOrgChems) !mols/km2/s 
+        INTEGER, INTENT(IN) :: NumAqChems, NumOrgChems, NumAqOrgChems, NumBins
 
         !Internal Variables
         REAL*8              :: xlen, hi !m
