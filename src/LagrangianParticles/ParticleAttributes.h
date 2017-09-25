@@ -267,12 +267,13 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
 	SolutionDensity, InsolMass, InsolVolume, InsolDensity, InorgSolnDensity
 
 	REAL*8, PARAMETER :: ResidualThreshold = 0.0025 !**3.
-	!WRITE(*,*)'Just Entering ParticleDensity' spilling beans'
-	!call spillbeans()
-        ! CB: modified to write to a file instead of "fort.1234"
-		real*8 :: sum_electrolytes
-        !open(1234, file='TempParticleAttributesForBugFix.txt', & 
-        !     access='append', form='formatted')
+
+        LOGICAL :: ForceSolnDens
+
+	real*8 :: sum_electrolytes
+
+        !Use this flag to force the aqueous solution density to be 1.0 g/cm3 and skip a lot of code
+        ForceSolnDens = .TRUE.
         
         ! CB: Modify this equality check to have a designated error 
         !     tolerance        
@@ -358,126 +359,137 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
 		RETURN
 	END IF
 
-	Mass = 0 ; Volume = 0; ionMass = 0; NumerSum = 0; DenomSum = 0
+        Mass = 0 ; Volume = 0; ionMass = 0; NumerSum = 0; DenomSum = 0
+        IF (ForceSolnDens) THEN
+            InorgSolnDensity = 1.0
+            DO I = 1, HowManyAqChems+HowManyAqAnions+HowManyAqCations
+                Mass = Mass    + AqMolecularMass(I)*InParticle%AqChems(I)
+            ENDDO
+            Volume = Mass*InorgSolnDensity
+        ELSE        
 
-	!! Get electrolyte equivalents of solution containing dissociated ions,
-	!! which assumes a two-parameter fit proscribed in Resch, 1995 
-	!! (assuming that the density of water does not change with Temperature).
-	!! This is a SOLUTION density, which includes the incorporated water.
-	!! So we scale up by the mass of the water as well!
-	TempElectrolytes = HypotheticalElectrolyteConcentrations (InParticle)
-	! cmb in: 
-	!write(*,*) 'CMB: Output from HypotheticalElectrolyteConcentrations...'
-	call flush(6)
-	! end cmb
-	do i = 1, size(TempElectrolytes)
-		!write(*,*) 'i = ', i, ', TempElectrolytes = ', TempElectrolytes(i)
-		sum_electrolytes = sum_electrolytes + TempElectrolytes(i)
-	enddo 
-	! end cmb in
+
+           !! Get electrolyte equivalents of solution containing dissociated ions,
+           !! which assumes a two-parameter fit proscribed in Resch, 1995 
+           !! (assuming that the density of water does not change with Temperature).
+           !! This is a SOLUTION density, which includes the incorporated water.
+           !! So we scale up by the mass of the water as well!
+           TempElectrolytes = HypotheticalElectrolyteConcentrations (InParticle)
+           ! cmb in: 
+           !write(*,*) 'CMB: Output from HypotheticalElectrolyteConcentrations...'
+           call flush(6)
+           ! end cmb
+           do i = 1, size(TempElectrolytes)
+              !write(*,*) 'i = ', i, ', TempElectrolytes = ', TempElectrolytes(i)
+              sum_electrolytes = sum_electrolytes + TempElectrolytes(i)
+           enddo
+           ! end cmb in
 	
-	!For some reason, This routine returns NaN if there isn't a write
-	!statement here. MJA, 070507
-	WRITE(1234,*) TempElectrolytes(1)
-	
-	!! Get the weightings for the Patwardhan and Kumar mixing rule
-	!WRITE(*,*)'Just Before PatKumWeights spilling beans'
-	!call spillbeans()
-	PatKumWeights = GetPatwardhandAndKumarWeightings (InParticle)
-	
-	!! Loop over each reaction and consider the appropriate equation
-	DO I = 1, HowManyAqEqReactions
-		!write(*,*) 'i (of HowManyAqEqReactions) = ', i
-		
-		!! Some quasi-electrolytes (such as HSO4-) are not quantifyable in this
-		!! density parameterization and should have been pushed to upper level
-		!! electrolytes anyways (such as H2SO4).  So we ignore those electrolytes!
-		! CMB (AER, Inc): floating-point inequality check again?
-		IF (AqEquilibriaList(I,1) .LE. HowManyAqChems .AND. AqEquilibriaList(I,1) .ge. 1.0e-40) THEN ! GT 0 disallows water
-		!IF (AqEquilibriaList(I,1) .LE. HowManyAqChems .AND. AqEquilibriaList(I,1) .GT. 0.) THEN ! GT 0 disallows water
+           !For some reason, This routine returns NaN if there isn't a write
+           !statement here. MJA, 070507
+           WRITE(1234,*) TempElectrolytes(1)
+	   ! cb add
+           close(1234)
 
-			!! This is the equivalent molality of the associated electrolyte
-			!write(*,*) AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))),I
-			!Write(*,*) "Temp Electrolytes: ", TempElectrolytes(AqEquilibriaList(I,1))
-			!Write(*,*) "InParticle%AqChems(1) ", InParticle%AqChems(1)
-			!Write(*,*) "moles ", moles
-			!Write(*,*) "grams ", grams
-			!Write(*,*) "AqMolecularMass(1) ", AqMolecularMass(1)			! cmb: changed int to nint?  not sure if necessary...
-                        TempMolality = TempElectrolytes(nINT(AqEquilibriaList(I,1))) / InParticle%AqChems(1) / &
-						   (moles / grams * AqMolecularMass(1)) * 1000.
+           !! Get the weightings for the Patwardhan and Kumar mixing rule
+           !WRITE(*,*)'Just Before PatKumWeights spilling beans'
+           !call spillbeans()
+           PatKumWeights = GetPatwardhandAndKumarWeightings (InParticle)
 
-			!Mass    = Mass    + AqMolecularMass(INT(AqEquilibriaList(I,1)))*TempElectrolytes(INT(AqEquilibriaList(I,1)))
-			!ionMass = ionMass + AqMolecularMass(INT(AqEquilibriaList(I,1)))*TempElectrolytes(INT(AqEquilibriaList(I,1)))
-			Mass    = Mass    + AqMolecularMass(nINT(AqEquilibriaList(I,1)))*TempElectrolytes(nINT(AqEquilibriaList(I,1)))
-			ionMass = ionMass + AqMolecularMass(nINT(AqEquilibriaList(I,1)))*TempElectrolytes(nINT(AqEquilibriaList(I,1)))
-				
-			IF(IsNaN (TempMolality)) THEN
-				WRITE(*,*) "Problem in Temp Molality"
-				WRITE(*,*) InParticle%NumberOfParticles, I, AqEquilibriaList(I,13)
-				WRITE(*,*) TempElectrolytes(INT(AqEquilibriaList(I,1))), TempMolality, InParticle%AqChems(1)
-			END IF
+           !! Loop over each reaction and consider the appropriate equation
+           DO I = 1, HowManyAqEqReactions
+              !write(*,*) 'i (of HowManyAqEqReactions) = ', i
 
-			!WRITE(*,*) TempMolality, I
-			!! Binary density is an exponential function of the two parameters input into the system
-			IF(TempMolality .LT. 100.0) THEN
-				
-				!WRITE(*,*) "Before Exp, Rxn: ", I
-				!WRITE(*,*) "TempMolality: ", TempMolality
-				BinaryDensity = AqEquilibriaList(I,12) + EXP(-1.*AqEquilibriaList(I,13)*TempMolality)*		&
-						   (1.*grams/cm/cm/cm-AqEquilibriaList(I,12))
-				
-				!This prevents the binary density of NH4OH from going below 0.9 g/cm3
-				IF(AqEquilibriaList(I,13) .LT. 0. .AND. BinaryDensity .LT. 0.9) BinaryDensity = 0.9
-						
-			ELSE IF(TempMolality .GE. 100.0 .AND. AqEquilibriaList(I,13) .GT. 0.) THEN
-				!If the molality gets very large, and exponent goes to zero
-				!(This keeps EXP from giving an overflow error)
-				BinaryDensity = AqEquilibriaList(I,12)
-			ELSE !For NH4OH at high molality, keep it above 0.9 g/cm3
-				BinaryDensity = 0.9	
-			END IF
+              !! Some quasi-electrolytes (such as HSO4-) are not quantifyable in this
+              !! density parameterization and should have been pushed to upper level
+              !! electrolytes anyways (such as H2SO4).  So we ignore those electrolytes!
+              ! CMB (AER, Inc): floating-point inequality check again?
+              IF (AqEquilibriaList(I,1) .LE. HowManyAqChems .AND. AqEquilibriaList(I,1) .ge. 1.0e-40) THEN ! GT 0 disallows water
+                 !IF (AqEquilibriaList(I,1) .LE. HowManyAqChems .AND. AqEquilibriaList(I,1) .GT. 0.) THEN ! GT 0 disallows water
 
-			!! Employ Mixing Rule of Patwardhan and Kumar (AIChE J. 39, 711-714) to Mix these ions appropriately
-			PSIij =  1000. * PatKumWeights(I,1) + AqMolecularMass(INT(AqEquilibriaList(I,1))) * TempMolality
-			!write(*,*) AqPhaseChemicalNames(INT(AqEquilibriaList(I,1)))
-			!write(*,*) 'PatKumWeights(I,1) = ', PatKumWeights(I,1)
-			!write(*,*) 'AqMolecularMass(INT(AqEquilibriaList(I,1))) = ',AqMolecularMass(INT(AqEquilibriaList(I,1)))	
-			!write(*,*) 'TempMolality = ',TempMolality
+                 !! This is the equivalent molality of the associated electrolyte
+                 !write(*,*) AqPhaseChemicalNames(INT(AqEquilibriaList(I,1))),I
+                 !Write(*,*) "Temp Electrolytes: ", TempElectrolytes(AqEquilibriaList(I,1))
+                 !Write(*,*) "InParticle%AqChems(1) ", InParticle%AqChems(1)
+                 !Write(*,*) "moles ", moles
+                 !Write(*,*) "grams ", grams
+                 !Write(*,*) "AqMolecularMass(1) ", AqMolecularMass(1)			! cmb: changed int to nint?  not sure if necessary...
+                 TempMolality = TempElectrolytes(nINT(AqEquilibriaList(I,1))) / InParticle%AqChems(1) / &
+                      (moles / grams * AqMolecularMass(1)) * 1000.
 
-			IF(IsNaN(PatKumWeights(I,1))) THEN
-				CALL WARN("Problem in PatKumWeights! Get NaN!")
-			END IF
-			!! Composite Density is the Numerator Sum divided by the Denomenator Sum, although we will track it as Volume
-			NumerSum = NumerSum + PSIij
-			DenomSum = DenomSum + PSIij / BinaryDensity
-		END IF
-	END DO
+                 !Mass    = Mass    + AqMolecularMass(INT(AqEquilibriaList(I,1)))*TempElectrolytes(INT(AqEquilibriaList(I,1)))
+                 !ionMass = ionMass + AqMolecularMass(INT(AqEquilibriaList(I,1)))*TempElectrolytes(INT(AqEquilibriaList(I,1)))
+                 Mass    = Mass    + AqMolecularMass(nINT(AqEquilibriaList(I,1)))*TempElectrolytes(nINT(AqEquilibriaList(I,1)))
+                 ionMass = ionMass + AqMolecularMass(nINT(AqEquilibriaList(I,1)))*TempElectrolytes(nINT(AqEquilibriaList(I,1)))
 
-	!WRITE(*,*) "After Ion loop"
-	!PAUSE
-	!! Now use the composite density to add volume to the system
-	Volume = Volume + (ionMass + AqMolecularMass(1)*InParticle%AqChems(1)) * DenomSum / NumerSum
-	Mass   = Mass   + AqMolecularMass(1)*InParticle%AqChems(1)
-	!write(*,*) 'Volume = ', Volume
-	!write(*,*) 'ionMass = ',ionMass	
-	!write(*,*) 'AqMolecularMass(1) = ',AqMolecularMass(1)
-	!write(*,*) 'InParticle%AqChems(1) = ',InParticle%AqChems(1)
-	!write(*,*) 'DenomSum = ',DenomSum
-	!write(*,*) 'NumerSum = ',NumerSum
+                 IF(IsNaN (TempMolality)) THEN
+                    WRITE(*,*) "Problem in Temp Molality"
+                    WRITE(*,*) InParticle%NumberOfParticles, I, AqEquilibriaList(I,13)
+                    WRITE(*,*) TempElectrolytes(INT(AqEquilibriaList(I,1))), TempMolality, InParticle%AqChems(1)
+                 END IF
 
-	!WRITE(*,*) "Ion solution Volume: ", Volume, DenomSum, NumerSum
-	
-	!If for some reason the above doesn't work, set inorganic solution density to 1.0
-	IF(ISNaN(Volume)) THEN
-		CALL WARN("Setting ion solution density to 1.0 g/cm3")
-		Volume = Mass 
-		!Volume = 1.0 
-	END IF
+                 !WRITE(*,*) TempMolality, I
+                 !! Binary density is an exponential function of the two parameters input into the system
+                 IF(TempMolality .LT. 100.0) THEN
 
-	!This only includes water and inorganic ions (needed for optical property calculation)
-	!InorgSolnDensity = Mass/Volume
-	InorgSolnDensity = 1.0
-	!WRITE(*,*) "Inorganic Solution Density: ", InorgSolnDensity
+                    !WRITE(*,*) "Before Exp, Rxn: ", I
+                    !WRITE(*,*) "TempMolality: ", TempMolality
+                    BinaryDensity = AqEquilibriaList(I,12) + EXP(-1.*AqEquilibriaList(I,13)*TempMolality)*		&
+                         (1.*grams/cm/cm/cm-AqEquilibriaList(I,12))
+
+                    !This prevents the binary density of NH4OH from going below 0.9 g/cm3
+                    IF(AqEquilibriaList(I,13) .LT. 0. .AND. BinaryDensity .LT. 0.9) BinaryDensity = 0.9
+
+                 ELSE IF(TempMolality .GE. 100.0 .AND. AqEquilibriaList(I,13) .GT. 0.) THEN
+                    !If the molality gets very large, and exponent goes to zero
+                    !(This keeps EXP from giving an overflow error)
+                    BinaryDensity = AqEquilibriaList(I,12)
+                 ELSE !For NH4OH at high molality, keep it above 0.9 g/cm3
+                    BinaryDensity = 0.9	
+                 END IF
+
+                 !! Employ Mixing Rule of Patwardhan and Kumar (AIChE J. 39, 711-714) to Mix these ions appropriately
+                 PSIij =  1000. * PatKumWeights(I,1) + AqMolecularMass(INT(AqEquilibriaList(I,1))) * TempMolality
+                 !write(*,*) AqPhaseChemicalNames(INT(AqEquilibriaList(I,1)))
+                 !write(*,*) 'PatKumWeights(I,1) = ', PatKumWeights(I,1)
+                 !write(*,*) 'AqMolecularMass(INT(AqEquilibriaList(I,1))) = ',AqMolecularMass(INT(AqEquilibriaList(I,1)))	
+                 !write(*,*) 'TempMolality = ',TempMolality
+
+                 IF(IsNaN(PatKumWeights(I,1))) THEN
+                    CALL WARN("Problem in PatKumWeights! Get NaN!")
+                 END IF
+                 !! Composite Density is the Numerator Sum divided by the Denomenator Sum, although we will track it as Volume
+                 NumerSum = NumerSum + PSIij
+                 DenomSum = DenomSum + PSIij / BinaryDensity
+              END IF
+           END DO
+
+           !WRITE(*,*) "After Ion loop"
+           !PAUSE
+           !! Now use the composite density to add volume to the system
+           Volume = Volume + (ionMass + AqMolecularMass(1)*InParticle%AqChems(1)) * DenomSum / NumerSum
+           Mass   = Mass   + AqMolecularMass(1)*InParticle%AqChems(1)
+           !write(*,*) 'Volume = ', Volume
+           !write(*,*) 'ionMass = ',ionMass	
+           !write(*,*) 'AqMolecularMass(1) = ',AqMolecularMass(1)
+           !write(*,*) 'InParticle%AqChems(1) = ',InParticle%AqChems(1)
+           !write(*,*) 'DenomSum = ',DenomSum
+           !write(*,*) 'NumerSum = ',NumerSum
+
+           !WRITE(*,*) "Ion solution Volume: ", Volume, DenomSum, NumerSum
+
+           !If for some reason the above doesn't work, set inorganic solution density to 1.0
+           IF(ISNaN(Volume)) THEN
+              CALL WARN("Setting ion solution density to 1.0 g/cm3")
+              Volume = Mass 
+              !Volume = 1.0 
+           END IF
+
+           !This only includes water and inorganic ions (needed for optical property calculation)
+           InorgSolnDensity = Mass/Volume
+           !WRITE(*,*) "Inorganic Solution Density: ", InorgSolnDensity
+        ENDIF
+
 
 	!Now add in contributions from Hydrophilic Organics (assumed constant density)
 	!! This assumes a fixed density for these aqueous phase chemicals
@@ -610,8 +622,7 @@ REAL*8 FUNCTION ParticleDensity (InParticle)
 
 	!WRITE(*,*) "End Particle Density", Volume, Mass
 	
-	! cb add
-        close(1234)
+
 
 	RETURN
 END FUNCTION ParticleDensity

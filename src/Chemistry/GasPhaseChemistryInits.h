@@ -311,13 +311,16 @@ SUBROUTINE SetGasPhaseChemistry ()
 		
 		!! ---  7. Deposition Velocity of the gas (cm/s)
                 !
-                ! 2/4/2016 CB: Hard-set this to 0 for now; a specified
-                !              deposition velocity turns off a few of
-                !              the desired deposition parameters in 
-                !              STILT-Chem
 		CALL GetToken(CurrLine, ";", Token)
-                GasPhaseDepVel(CurrIndex) = 0.0
-		!GasPhaseDepVel(CurrIndex) = STR2REAL (Token)
+                IF (STILT) THEN
+                    ! 2/4/2016 CB: Hard-set this to 0 for now; a specified
+                    !              deposition velocity turns off a few of
+                    !              the desired deposition parameters in 
+                    !              STILT-Chem
+                    GasPhaseDepVel(CurrIndex) = 0.0
+                ELSE
+		    GasPhaseDepVel(CurrIndex) = STR2REAL (Token)
+                ENDIF
 	END DO
 
         !2016-09-13 MJA: Set initial fire concentrations - for now, use a logical flag to decide between STILT-ASP (set to ~0)
