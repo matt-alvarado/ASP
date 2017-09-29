@@ -1,1 +1,1 @@
-/src/*.f90 gitlab-language=perl
+*.f90 gitlab-language=Fortran
