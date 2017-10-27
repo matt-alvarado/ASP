@@ -96,7 +96,7 @@ FILESDUMP = asp
 
 # Compile command -- single processor
 
-FC = gfortran44 -m64 -DGFORTRAN
+FC = gfortran -m64 -DGFORTRAN
 
 #LDFLAGS := -Wl,-zmuldefs
 LDFLAGS := 
