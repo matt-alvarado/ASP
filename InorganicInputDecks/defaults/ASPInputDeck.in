@@ -89,3 +89,7 @@
 50.0     !! Downwind dimensions in km
 50.0     !! Crosswind dimensions in km
 40.0     !! Fire CO emissions in kg/s (used to scale all other emissions)
+!! 3.d To turn off lights
+1    !! If we are doing a chamber on/off lamp thing (0 = normal photo, 1 = use criteria below)
+75   !! When to turn on lights in minutes
+360   !! When to turn off lights in minutes
