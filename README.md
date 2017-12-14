@@ -69,7 +69,7 @@ To update the src submodule to the current state of the master branch of the com
 
 ```
 % pwd
-/rd47/scratch/ASP/GitSTILT-ASP
+/rd47/scratch/ASP/GitASP
 % git submodule foreach git pull origin master
 ```
 
