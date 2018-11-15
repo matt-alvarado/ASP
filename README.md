@@ -85,14 +85,14 @@ To run a container, try:
 % docker run -v ${YOUR_OUTPUT_DIR}/userOutputFiles:/asp/OutputFiles -v ${YOUR_INPUT_DIR}/userInputFiles:/asp/userInputFiles pernak18/asp
 ```
 
-It is assumed that ${YOUR_INPUT_DIR} is a directory with the *.in files that ASP expects. Typically, one can just do a copy of the defaults:
+It is assumed that `${YOUR_INPUT_DIR}` is a directory with the *.in files that ASP expects. Typically, one can just do a copy of the defaults:
 
 ```
 % cp -r InorganicInputDecks/ ${YOUR_INPUT_DIR}
 % rm -rf ${YOUR_INPUT_DIR}/defaults ${YOUR_INPUT_DIR}/VBS_draft
 ```
 
-This method is recommended because then the user inputs are not symbolic links (so there is no dependence on the host paths), but it's important to execute the `rm` command because the entrypoint script does an `ls` on ${YOUR_INPUT_DIR}, removes the files in the container's InorganicInputDecks/ directory, then replaces the container's original input files with the user-provided input files. If the `rm` is not performed, an attempt at removing and copying directories is done, and the entrypoint script will crash.
+This method is recommended because then the user inputs are not symbolic links (so there is no dependence on the host paths), but it's important to execute the `rm` command because the entrypoint script does an `ls` on `${YOUR_INPUT_DIR}`, removes the files in the container's `InorganicInputDecks/` directory, then replaces the container's original input files with the user-provided input files. If the `rm` is not performed, an attempt at removing and copying directories is done, and the entrypoint script will crash.
 
 This command should work as well but has not been tested:
 
