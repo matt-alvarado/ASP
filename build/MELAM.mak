@@ -17,6 +17,8 @@ OBJS = \
 	Condensation.o \
 	dgaus8.o \
 	DMiLay.o \
+	MIEV0.o \
+	MieSupport.o \
 	EulerianBoxDriver.o \
 	Gibbs-DuhemEvaluationFunction.o \
 	GridPointFields.o \
@@ -113,6 +115,16 @@ F90_MODOUT=\
 SOURCE=.\SourceCode\LagrangianParticles\DMiLay.f
 
 "$(INTDIR)\DMiLay.obj" : $(SOURCE) "$(INTDIR)"
+	$(F90) $(F90_PROJ) $(SOURCE)
+
+SOURCE=.\SourceCode\LagrangianParticles\MIEV0.f
+
+"$(INTDIR)\MIEV0.obj" : $(SOURCE) "$(INTDIR)"
+	$(F90) $(F90_PROJ) $(SOURCE)
+
+SOURCE=.\SourceCode\LagrangianParticles\MieSupport.f
+
+"$(INTDIR)\MieSupport.obj" : $(SOURCE) "$(INTDIR)"
 	$(F90) $(F90_PROJ) $(SOURCE)
 
 
@@ -304,6 +316,8 @@ Chemistry.o 		: Chemistry.f90
 	Condensation.o \
 	dgaus8.o \
 	DMiLay.o \
+	MIEV0.o \
+	MieSupport.o \
 	EulerianBoxDriver.o \
 	Gibbs-DuhemEvaluationFunction.o \
 	GridPointFields.o \
@@ -410,6 +424,8 @@ LINK32_OBJS= \
 	"$(INTDIR)\InfrastructuralCode.obj" \
 	"$(INTDIR)\Chemistry.obj" \
 	"$(INTDIR)\DMiLay.obj" \
+	"$(INTDIR)\MIEV0.obj" \
+	"$(INTDIR)\MieSupport.obj" \
 	"$(INTDIR)\Gibbs-DuhemEvaluationFunction.obj" \
 	"$(INTDIR)\LagrangianAerosols.obj" \
 	"$(INTDIR)\Condensation.obj" \
