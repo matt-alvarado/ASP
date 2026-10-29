@@ -26,6 +26,7 @@ class Rxn:
     terms: list = field(default_factory=list)   # parsed & terms [(A, n, E)]
     scale: float = 1.0
     target: str = ''         # photolysis label / referenced reaction / hetero label
+    typo: tuple = None       # (original, corrected) rate text when the CMAQ file has a typo
 
 
 def _parse_side(s):
@@ -33,6 +34,8 @@ def _parse_side(s):
     s = s.strip()
     if not s:
         return []
+    # SAPRC07 writes bare negative species ('- XC', '+ -XC'): give them an explicit coefficient
+    s = re.sub(r'(^|[\s+])-\s*(?=[A-Za-z])', r'\g<1>-1.0*', s)
     # make every sign explicit:  ' -2.5*PAR' -> ' + -2.5*PAR'
     s = re.sub(r'(?<=[\w\s*])\s-(?=\s*[\d.]*\*?\s*[A-Za-z])', ' + -', s)
     s = re.sub(r'\+\s*-\s*', '+ -', s)           # '+ - 1.0*X' -> '+ -1.0*X'
@@ -71,7 +74,7 @@ def read_def(path):
         if ln.strip().startswith('REACTIONS'):
             inside = True
             continue
-        if ln.strip().startswith('END MECH'):
+        if ln.strip().upper().replace(' ', '').startswith('ENDMECH'):
             break
         if inside:
             body.append(ln)
@@ -106,6 +109,11 @@ _TERM = re.compile(r'^\s*(' + NUM + r')\s*(?:\^\s*(' + NUM + r'))?\s*(?:@\s*(' +
 def classify_rate(r):
     """Fill r.kind / r.terms / r.scale / r.target from r.rate_raw."""
     s = r.rate_raw
+    # typo in the CMAQ files ('3.94-15@1520' for 3.94e-15@1520): exponent letter missing
+    s2 = re.sub(r'(?<![\w.+-])(\d+\.\d+|\d+)-(\d+)(?=\s*(?:@|&|\^|$))', r'\1e-\2', s)
+    if s2 != s:
+        r.typo = (s, s2)
+        s = s2
     m = re.match(r'^(' + NUM + r')\s*/\s*<\s*([^>]+?)\s*>$', s)
     if m:
         r.kind, r.scale, r.target = 'photo', float(m.group(1)), m.group(2)
@@ -122,6 +130,11 @@ def classify_rate(r):
     if m:
         r.kind, r.scale, r.target = 'op', float(m.group(1)), m.group(2)
         return r
+    # equilibrium form  'A^n@E *E<ref>': k = k(ref) / (A (T/300)^n exp(-E/T))   (CRACMM)
+    m = re.match(r'^(.*?)\*\s*E\s*<\s*([^>]+?)\s*>$', s)
+    eq_target = None
+    if m:
+        s, eq_target = m.group(1).strip(), m.group(2)
     parts = [p for p in s.split('&')]
     terms = []
     for p in parts:
@@ -134,8 +147,17 @@ def classify_rate(r):
         E = float(mt.group(3)) if mt.group(3) else 0.0
         terms.append((A, n, E))
     r.terms = terms
-    if r.ptype:
+    if eq_target:
+        if len(terms) != 1:
+            r.kind = 'unknown'
+            return r
+        r.kind, r.target = 'eref', eq_target
+    elif r.ptype:
         r.kind = 'pct'
+    elif len(terms) == 2:
+        # two-term fall-off without F and N: JPL defaults F = 0.6, N = 1 (CMAQ FALLOFF_T10 defaults)
+        r.terms = terms + [(0.6, 0.0, 0.0), (1.0, 0.0, 0.0)]
+        r.kind = 'falloff'
     elif len(terms) == 1:
         r.kind = 'arr'
     elif len(terms) == 4:
