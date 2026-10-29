@@ -1,0 +1,214 @@
+--- a/TUV.f
++++ b/TUV.f
+@@ -169,6 +169,10 @@
+       INTEGER ipbl
+       REAL zpbl
+       REAL o3pbl, so2pbl, no2pbl, aod330
++c ASP patch: PBL inputs read from pbl.inp
++      INTEGER imo3, imno2, imso2
++      REAL wlo3, wlno2, wlso2, ssauv, ssavis, airpbl, xsref
++      REAL ztoppbl
+ 
+ * WRF-Chem output control
+ 
+@@ -234,8 +238,9 @@
+ * can read interactively (intrct = .TRUE.) 
+ * or in batch mode (intrct = .FALSE.)
+ 
+-      intrct = .TRUE.
+-c      intrct = .FALSE.
++c ASP patch: batch mode
++c      intrct = .TRUE.
++      intrct = .FALSE.
+       IF ( .NOT. intrct) inpfil = 'usrinp'
+ 
+       CALL rdinp(intrct, 
+@@ -468,8 +473,31 @@
+ * Turning on pbl will affect subroutines:
+ * vpo3, setno2, setso2, and setaer. See there for details
+ 
++c ASP patch: PBL settings are read from file pbl.inp (if present).
++c   line 1: zpbl   PBL depth above ground, km (<=0 : no PBL)
++c   line 2: o3pbl  mode  wlref   mode 0: o3pbl is mixing ratio, ppb
++c   line 3: no2pbl mode  wlref   mode 1: o3pbl is vertical optical depth
++c   line 4: so2pbl mode  wlref            of the PBL at wlref (nm)
++c   line 5: aod330 ssauv ssavis  aerosol optical depth at 330 nm and
++c                                single scattering albedo (<400, >=400 nm)
+       zpbl = -999.
+-C      zpbl = 3.
++      o3pbl = 0.
++      no2pbl = 0.
++      so2pbl = 0.
++      aod330 = 0.
++      imo3 = 0
++      imno2 = 0
++      imso2 = 0
++      ssauv = 0.6
++      ssavis = 0.9
++      OPEN(UNIT=61,FILE='pbl.inp',STATUS='OLD',ERR=18)
++      READ(61,*) zpbl
++      READ(61,*) o3pbl, imo3, wlo3
++      READ(61,*) no2pbl, imno2, wlno2
++      READ(61,*) so2pbl, imso2, wlso2
++      READ(61,*) aod330, ssauv, ssavis
++      CLOSE(61)
++ 18   CONTINUE
+ 
+ * locate z-index for top of pbl
+ 
+@@ -480,25 +508,18 @@
+          ENDDO
+  19      CONTINUE
+          ipbl = iz - 1
+-         write(*,*) 'top of PBL index, height (km) ', ipbl, z(ipbl)
+-
+-* specify pbl concetrations, in parts per billion
+-
+-         o3pbl = 100.
+-         so2pbl = 10.
+-         no2pbl = 50.
+-
+-* PBL aerosol optical depth at 330 nm
+-* (to change ssa and g of pbl aerosols, go to subroutine setair.f)
+-
+-         aod330 = 0.8
+-
++         IF (ipbl .LT. 1) THEN
++            WRITE(*,*) 'PBL shallower than first layer: PBL off'
++            ipbl = 0
++         ELSE
++c ASP patch: use the depth actually resolved by the grid
++            zpbl = z(ipbl+1) - z(1)
++            write(*,*) 'top of PBL index, height agl (km) ', ipbl, zpbl
++         ENDIF
+       ENDIF
+ 
+ ***** Ozone vertical profile
+-
+-      CALL vpo3(ipbl, zpbl, o3pbl, 
+-     $       o3_tc, nz, z, aircol, co3)
++c ASP patch: vpo3 is called after the cross sections are read (below)
+ 
+ * ___ SECTION 4: READ SPECTRAL DATA ____________________________
+ 
+@@ -520,6 +541,39 @@
+       CALL rdso2xs(nw,wl, so2xs)
+       CALL rdno2xs(nz,tlay,nw,wl, no2xs)
+ 
++c ASP patch: PBL gases given as optical depths -> mixing ratios (ppb)
++c using the surface-layer cross section in the bin containing wlref
++      IF (ipbl .GT. 0) THEN
++         airpbl = 0.
++         DO iz = 1, ipbl
++            airpbl = airpbl + aircol(iz)
++         ENDDO
++         IF (imo3 .EQ. 1) THEN
++            CALL fndbin(nw, wl, wlo3, iw)
++            xsref = o3xs(1,iw)
++            o3pbl = o3pbl / (xsref * airpbl * 1.E-9)
++            write(*,*) 'PBL O3  tau->ppb, xs, bin: ', o3pbl, xsref,
++     $           wl(iw), wl(iw+1)
++         ENDIF
++         IF (imno2 .EQ. 1) THEN
++            CALL fndbin(nw, wl, wlno2, iw)
++            xsref = no2xs(1,iw)
++            no2pbl = no2pbl / (xsref * airpbl * 1.E-9)
++            write(*,*) 'PBL NO2 tau->ppb, xs, bin: ', no2pbl, xsref,
++     $           wl(iw), wl(iw+1)
++         ENDIF
++         IF (imso2 .EQ. 1) THEN
++            CALL fndbin(nw, wl, wlso2, iw)
++            xsref = so2xs(iw)
++            so2pbl = so2pbl / (xsref * airpbl * 1.E-9)
++            write(*,*) 'PBL SO2 tau->ppb, xs, bin: ', so2pbl, xsref,
++     $           wl(iw), wl(iw+1)
++         ENDIF
++      ENDIF
++
++      CALL vpo3(ipbl, zpbl, o3pbl, 
++     $       o3_tc, nz, z, aircol, co3)
++
+ ****** Spectral weighting functions 
+ * (Some of these depend on temperature T and pressure P, and therefore
+ *  on altitude z.  Therefore they are computed only after the T and P profiles
+@@ -628,7 +682,7 @@
+ 
+ * Aerosol vertical profile, optical depths, single scattering albedo, asymmetry factor
+ 
+-      CALL setaer(ipbl, zpbl, aod330,
++      CALL setaer(ipbl, zpbl, aod330, ssauv, ssavis,
+      $     tauaer, ssaaer, alpha,
+      $     nz, z, nw, wl,
+      $     dtaer, omaer, gaer)
+@@ -892,5 +946,15 @@
+       CLOSE(kout)
+       END
+ 
+-
+-
++      SUBROUTINE fndbin(nw, wl, wref, iw)
++c ASP patch: index of the wavelength bin containing wref (nm)
++      IMPLICIT NONE
++      INCLUDE 'params'
++      INTEGER nw, iw, i
++      REAL wl(kw), wref
++      iw = 1
++      DO i = 1, nw-1
++         IF (wref .GE. wl(i)) iw = i
++      ENDDO
++      RETURN
++      END
+--- a/setaer.f
++++ b/setaer.f
+@@ -4,7 +4,7 @@
+ 
+ *=============================================================================*
+ 
+-      SUBROUTINE setaer(ipbl, zpbl, aod330,
++      SUBROUTINE setaer(ipbl, zpbl, aod330, ssauv, ssavis,
+      $     tau550, ssaaer, alpha,
+      $     nz, z, nw, wl, 
+      $     dtaer, omaer, gaer)
+@@ -72,7 +72,7 @@
+       REAL zpbl
+       INTEGER ipbl
+ 
+-      REAL aod330
++      REAL aod330, ssauv, ssavis
+ 
+       REAL aodw(kw), ssaw(kw)
+       REAL fract(kz)
+@@ -171,7 +171,8 @@
+ 
+ *! overwrite for pbl:
+ 
+-      IF(ipbl .GT. 0) THEN	
++c ASP patch: aod330 < 0 keeps the Elterman profile in the PBL
++      IF(ipbl .GT. 0 .AND. aod330 .GE. 0.) THEN
+          write (*,*) 'pbl aerosols, aod330 = ', aod330
+ 
+ * create wavelength-dependent optical depth and single scattering albedo:
+@@ -180,9 +181,9 @@
+             wc = (wl(iw)+wl(iw+1))/2.
+             aodw(iw) = aod330*(wc/330.)**(-1.0)
+             IF(wc .LT. 400.) THEN
+-               ssaw(iw) = 0.6
++               ssaw(iw) = ssauv
+             ELSE
+-               ssaw(iw) = 0.9
++               ssaw(iw) = ssavis
+             ENDIF	
+          ENDDO
+ 
+--- a/vpo3.f
++++ b/vpo3.f
+@@ -163,7 +163,8 @@
+ *! overwrite column increments for specified pbl height
+ * use mixing ratio in pbl
+ 
+-      IF(ipbl .GT. 0) THEN
++c ASP patch: only overwrite background O3 when a PBL O3 is requested
++      IF(ipbl .GT. 0 .AND. mr_pbl .GT. 0.) THEN
+          write(*,*) 'pbl O3 = ', mr_pbl, ' ppb'
+ 
+          DO i = 1, nz-1
