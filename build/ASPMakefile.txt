@@ -107,7 +107,7 @@ OBJECTS :=
 OBJECTS := $(OBJECTS) \
            CDFNor.o indexx.o lsodes.o \
            PPND16.o \
-	   dgaus8.o DMiLay.o
+	   dgaus8.o DMiLay.o MIEV0.o MieSupport.o
 OBJECTS := $(OBJECTS) \
 	   ModelParameters.o \
 	   InfrastructuralCode.o \
@@ -124,7 +124,7 @@ OBJECTS := $(OBJECTS) \
 	   StepASP.o DevelopmentDriver.o
 	
 # === Modules: 0 grid define; 1 essential; d type define; s all
-MODASP := DMiLay.o CDFNor.o indexx.o lsodes.o \
+MODASP := DMiLay.o MIEV0.o MieSupport.o CDFNor.o indexx.o lsodes.o \
            PPND16.o \
 	   dgaus8.o \
 	   ModelParameters.o \
@@ -167,6 +167,10 @@ PPND16.o: $(COMPDIR)PPND16.f
 dgaus8.o: $(COMPDIR)dgaus8.f
 	  $(FC) -c $(FFLAGS) $<
 DMiLay.o: $(SOURCEDIR)DMiLay.f
+	  $(FC) -c $(FFLAGS) $<
+MIEV0.o: $(SOURCEDIR)MIEV0.f
+	  $(FC) -c $(FFLAGS) $<
+MieSupport.o: $(SOURCEDIR)MieSupport.f
 	  $(FC) -c $(FFLAGS) $<
 unifac.o: $(UNIFACDIR)unifac.f
 	  $(FC) -c $(FFLAGS) $<

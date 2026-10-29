@@ -107,7 +107,7 @@ OBJECTS :=
 OBJECTS := $(OBJECTS) \
            $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
            $(OBJDIR)PPND16.o \
-	   $(OBJDIR)dgaus8.o $(OBJDIR)DMiLay.o
+	   $(OBJDIR)dgaus8.o $(OBJDIR)DMiLay.o $(OBJDIR)MIEV0.o $(OBJDIR)MieSupport.o
 OBJECTS := $(OBJECTS) \
 	   $(OBJDIR)ModelParameters.o \
 	   $(OBJDIR)InfrastructuralCode.o \
@@ -131,7 +131,7 @@ OBJECTS := $(OBJECTS) \
 EXEOBJECTS := $(OBJECTS) $(OBJDIR)DevelopmentDriver.o	
 
 # === Modules: 0 grid define; 1 essential; d type define; s all
-MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
+MODASP := $(OBJDIR)DMiLay.o $(OBJDIR)MIEV0.o $(OBJDIR)MieSupport.o $(OBJDIR)CDFNor.o $(OBJDIR)indexx.o $(OBJDIR)lsodes.o \
            $(OBJDIR)PPND16.o \
 	   $(OBJDIR)dgaus8.o \
 	   $(OBJDIR)ModelParameters.o \
@@ -201,6 +201,12 @@ $(OBJDIR)dgaus8.o: $(COMPDIR)dgaus8.f
 $(OBJDIR)DMiLay.o: $(SOURCEDIR)DMiLay.f
 	  $(FC) -c $(FFLAGS) $<
 	  \mv DMiLay.o $(OBJDIR)
+$(OBJDIR)MIEV0.o: $(SOURCEDIR)MIEV0.f
+	  $(FC) -c $(FFLAGS) $<
+	  \mv MIEV0.o $(OBJDIR)
+$(OBJDIR)MieSupport.o: $(SOURCEDIR)MieSupport.f
+	  $(FC) -c $(FFLAGS) $<
+	  \mv MieSupport.o $(OBJDIR)
 $(OBJDIR)unifac.o: $(UNIFACDIR)unifac.f
 	  $(FC) -c $(FFLAGS) $<
 	  \mv unifac.o $(OBJDIR)
