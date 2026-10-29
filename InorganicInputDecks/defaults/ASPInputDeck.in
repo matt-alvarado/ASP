@@ -93,3 +93,6 @@
 1    !! If we are doing a chamber on/off lamp thing (0 = normal photo, 1 = use criteria below)
 75   !! When to turn on lights in minutes
 360   !! When to turn off lights in minutes
+!! 3.e Gibbs-Duhem integral for water activity (optional; if these two lines are omitted the defaults 1 and 256 are used)
+1      !! Use tabulated Gibbs-Duhem integral (1) or full adaptive integral on every call (0)? Full integral is slower but matches pre-N11 output
+256    !! Table cells per reaction (16 to 65536); only used if the line above is 1. 256 is already converged: 1024 and 4096 give identical output
