@@ -73,7 +73,7 @@
 !!***Below only used if PHOTO FLAG = 1
 5.0    !! Ending Time for Photolysis (h UTC to match PhotoRates.in)
 !!***Above only used if PHOTO FLAG = 1
-60   !! Run Length in minutes
+300   !! Run Length in minutes
 60.0    !! Chemistry Time Step in s
 60.0    !! Mixing Time Step in s
 60.0   !! Condensation Time Step in s
