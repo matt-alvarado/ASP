@@ -1,0 +1,66 @@
+paper_species,mapping_key,initial_ppb,background_ppb,CB6r5_representation,carbon_in_compound,carbon_in_CB6r5,basis,note
+CO,CO,10000.0,129.213,CO,,1.0,direct,
+CO2,CO2,528440.21,390000.0,CO2,,1.0,direct,inert tracer (not in CB6r5)
+NO,NO,113.674,0.015,NO,,,direct,
+NO2,NO2,227.081,0.039,NO2,,,direct,
+O3,O3,0.0,50.0,O3,,,direct,
+H2O2,H2O2,0.755,0.755,H2O2,,,direct,
+HONO,HONO,39.483,0.0,HONO,,,direct,
+SO2,SO2,37.914,0.12,SO2,,,direct,
+HNO3,HNO3,0.41,0.41,HNO3,,,direct,
+HCl,HCl,19.544,0.0,HCl,,,direct,
+NH3,NH3,379.039,0.001,NH3,,,direct,
+H2,H2,3741.028,0.0,H2,,,direct,
+CH4,CH4,2760.733,1900.0,CH4,,1.0,direct,
+HCHO,HCHO,163.198,0.33,FORM,1,1.0,direct,
+MEOH,MEOH,164.842,0.0,MEOH,1,1.0,direct,
+Formic_Acid,FACD,6.505,0.0,FACD,1,1.0,direct,
+HCN,HCN,128.32,0.0,HCN,,1.0,direct,inert tracer (not in CB6r5)
+ETHE,ETH,126.346,0.0,ETH,2,2.0,direct,
+Ethane,ETHA,52.809,0.0,ETHA,2,2.0,direct,
+Acetaldehyde,ALD2,56.954,0.0,ALD2,2,2.0,direct,
+ETOH,ETOH,0.987,0.0,ETOH,2,2.0,direct,
+Acetic_Acid,AACD,139.178,0.0,AACD,2,2.0,direct,
+GLY,GLY,85.185,0.0,GLY,2,2.0,direct,
+Acetylene,ETHY,26.849,0.0,ETHY,2,2.0,direct,
+Propene,Propene,47.38,0.0,OLE + PAR,3,3.0,doc,propene = OLE + PAR
+Propane,PRPA,17.767,0.0,PRPA,3,3.0,direct,
+ACR,Acrolein,5.922,0.0,0.75 ISPD,3,3.0,assump,"CMAQ BUTADIENE13/ACROLEIN are no-feedback toxics tracers, so acrolein is represented by ISPD (the CB6 unsaturated carbonyl lump, whose photolysis already uses acrolein cross sections), scaled to conserve carbon (3/4)"
+Propanal,Propanal,0.642,0.0,ALDX + PAR,3,3.0,doc,propionaldehyde = ALDX + PAR
+Acetone,Acetone,12.141,0.0,ACET,3,3.0,direct,
+NPROPOL,nPropanol,1.836,0.0,3 PAR,3,3.0,assump,C3+ alcohols other than methanol/ethanol: one PAR per carbon
+MGLY,MGLY,44.715,0.0,MGLY,3,3.0,direct,
+Butadiene,Butadiene,4.235,0.0,2 OLE,4,4.0,assump,two terminal C=C bonds -> 2 OLE (CB treats each double bond separately; 4 C conserved)
+1-Butene,1-Butene,3.336,0.0,OLE + 2 PAR,4,4.0,rule,
+cis-2-Butene,2-Butene,0.68,0.0,IOLE,4,4.0,doc,cis/trans-2-butene = IOLE
+trans-2-Butene,2-Butene,0.855,0.0,IOLE,4,4.0,doc,cis/trans-2-butene = IOLE
+i-Butene,iButene,1.885,0.0,OLE + 2 PAR,4,4.0,rule,isobutene: terminal olefin + 2 PAR (branching ignored)
+n-Butane,Butane,9.871,0.0,4 PAR,4,4.0,doc,butane = 4 PAR (n- and iso-)
+i-Butane,Butane,0.323,0.0,4 PAR,4,4.0,doc,butane = 4 PAR (n- and iso-)
+Butanal,Butanal,3.336,0.0,ALDX + 2 PAR,4,4.0,rule,
+MEK,MEK,15.3,0.0,KET + 3 PAR,4,4.0,doc,butanone = KET + 3 PAR
+NBUTOL,nButanol,0.5,0.0,4 PAR,4,4.0,assump,C3+ alcohols: one PAR per carbon
+ISOP,ISOP,2.527,0.0,ISOP,5,5.0,direct,
+FURAN,Furan,20.184,0.0,2 OLE,4,4.0,rule,"furan ring = 2 C=C -> 2 OLE (cf. 2-butylfuran = 2 OLE + 4 PAR, pyrrole = 2 OLE in the Ramboll memo)"
+ALD,RACM_ALD,0.722,0.02,ALDX + 3 PAR,5,5.0,assump,"Williams ""ALD"" (acetaldehyde is listed separately, so C3+): same as C3-C7 aldehydes"
+API,APIN,32.574,0.0,APIN,10,10.0,direct,alpha-pinene (CMAQ explicit species)
+BALD,Benzaldehyde,1.254,0.0,TOL,7,7.0,assump,aromatic ring + one carbon: TOL (7 C); no explicit mapping found
+BEN,Benzene,11.086,0.0,BENZENE,6,6.0,direct,
+DIEN,Butadiene,1.203,0.0,2 OLE,4,4.0,assump,two terminal C=C bonds -> 2 OLE (CB treats each double bond separately; 4 C conserved)
+HC5,RACM_HC5,2.378,1.075,5 PAR,5,5.0,assump,RACM2 HC5 (pentanes/hexanes) as 5 PAR
+KET,RACM_KET,1.579,0.0,KET + 3 PAR,4,4.0,assump,RACM2 KET (MEK and larger) as MEK
+LIM,TERP,32.574,0.0,TERP,10,10.0,direct,limonene and other monoterpenes; CB6 TERP = all monoterpenes
+OLI,RACM_OLI,2.142,0.0,IOLE,4,4.0,assump,RACM2 OLI (internal olefins) as 2-butene
+OLT,RACM_OLT,0.875,0.0,OLE + PAR,3,3.0,assump,RACM2 OLT (terminal olefins) as propene
+PHEN,Phenol,14.609,0.0,CRES,6,7.0,assump,"phenol -> CRES (cresol and higher phenols); per-mole, carbon not conserved"
+ROH,RACM_ROH,1.702,0.0,3 PAR,3,3.0,assump,RACM2 ROH (C3+ alcohols) as propanol
+TOL,TOL,4.07,0.0,TOL,7,7.0,direct,
+XYM,Xylene,0.315,0.0,XYLMN,8,8.0,direct,xylene isomers
+XYP,Xylene,0.086,0.0,XYLMN,8,8.0,direct,xylene isomers
+XYO,Xylene,0.162,0.0,XYLMN,8,8.0,direct,xylene isomers
+HOCH2CHO,GLYD,0.185,0.0,GLYD,2,2.0,direct,"hydroxyacetaldehyde / glycolaldehyde (OHCH2CHO, HOCH2CHO)"
+ACETOL,Hydroxyacetone,26.849,0.0,KET + 2 PAR,3,3.0,assump,"CH3C(O)CH2OH (ACETOL, C3H6O2): ketone group + 2 PAR; no explicit mapping found"
+BIACET,Biacetyl,27.916,0.0,1.5 MGLY,4,4.5,doc,"2,3-butanedione = 1.5 MGLY (CB6 documentation)"
+PAN,PAN,6.606,0.03,PAN,,2.0,direct,
+PPN,PPN,0.003,0.003,PANX,3,3.0,direct,peroxypropionyl nitrate -> PANX (higher PANs)
+CH3NO3,CH3NO3,0.029,0.0,NTR1,1,1.0,direct,methyl nitrate -> NTR1 (monofunctional organic nitrates)

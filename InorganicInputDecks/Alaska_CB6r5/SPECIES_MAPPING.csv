@@ -1,0 +1,32 @@
+paper_species,mapping_key,initial_ppb,background_ppb,CB6r5_representation,carbon_in_compound,carbon_in_CB6r5,basis,note
+CO2,CO2,414800.0,365000.0,CO2,,1.0,direct,inert tracer (not in CB6r5)
+CO,CO,4502.0,100.0,CO,,1.0,direct,
+CH4,CH4,1819.909,1580.0,CH4,,1.0,direct,
+C2H6,ETHA,42.619,0.8,ETHA,2,2.0,direct,
+C2H4,ETH,77.055,0.02,ETH,2,2.0,direct,
+C2H2,ETHY,11.015,0.01,ETHY,2,2.0,direct,
+C3H8,PRPA,17.619,0.011,PRPA,3,3.0,direct,
+C3H6,Propene,26.422,0.01,OLE + PAR,3,3.0,doc,propene = OLE + PAR
+CH3OH,MEOH,41.2686,0.33,MEOH,1,1.0,direct,
+CH2O,HCHO,72.3928,0.2,FORM,1,1.0,direct,
+OHCH2CHO,GLYD,14.9848,0.018,GLYD,2,2.0,direct,"hydroxyacetaldehyde / glycolaldehyde (OHCH2CHO, HOCH2CHO)"
+CH3CHO,ALD2,33.033,0.018,ALD2,2,2.0,direct,
+CH3C(O)CH3,Acetone,9.9844,0.3,ACET,3,3.0,direct,
+HCOOH,FACD,30.8174,0.0034,FACD,1,1.0,direct,
+CH3COOH,AACD,48.0787,0.0969,AACD,2,2.0,direct,
+CH2=C(CH3)CH=CH2,ISOP,7.0647,0.0215,ISOP,5,5.0,direct,
+C6H5CH3,TOL,4.9222,0.08,TOL,7,7.0,direct,
+CH3C(O)C2H5,MEK,57.226,0.0,KET + 3 PAR,4,4.0,doc,butanone = KET + 3 PAR
+C6H5OH,Phenol,14.5266,0.0,CRES,6,7.0,assump,"phenol -> CRES (cresol and higher phenols); per-mole, carbon not conserved"
+CH3C(O)CH2OH,Hydroxyacetone,48.422,0.0,KET + 2 PAR,3,3.0,assump,"CH3C(O)CH2OH (ACETOL, C3H6O2): ketone group + 2 PAR; no explicit mapping found"
+H2O2,H2O2,0.8,0.8,H2O2,,,direct,
+H2,H2,2120.7,580.0,H2,,,direct,
+O3,O3,17.1,32.5,O3,,,direct,
+NO2,NO2,86.2958,0.0166,NO2,,,direct,
+NO,NO,91.1266,0.0052,NO,,,direct,
+HNO3,HNO3,0.021,0.021,HNO3,,,direct,
+HONO,HONO,34.4356,0.1,HONO,,,direct,
+CH3C(O)O2NO2,PAN,0.0989,0.0989,PAN,,2.0,direct,
+N2O5,N2O5,5e-05,5e-05,N2O5,,,direct,
+N2O,N2O,327.0432,320.0,N2O,,,direct,inert tracer (not in CB6r5)
+NH3,NH3,43.1396,0.0,NH3,,,direct,

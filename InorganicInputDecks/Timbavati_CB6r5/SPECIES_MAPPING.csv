@@ -1,0 +1,68 @@
+paper_species,mapping_key,initial_ppb,background_ppb,CB6r5_representation,carbon_in_compound,carbon_in_CB6r5,basis,note
+CO,CO,4900.0,182.0,CO,,1.0,direct,
+CH4,CH4,2049.1,1774.0,CH4,,1.0,direct,
+C2H6,ETHA,15.0,0.86,ETHA,2,2.0,direct,
+C2H4,ETH,75.8,0.32,ETH,2,2.0,direct,
+C3H8,PRPA,2.6,0.11,PRPA,3,3.0,direct,
+C3H6,Propene,11.1,0.031,OLE + PAR,3,3.0,doc,propene = OLE + PAR
+C4H8,C4H8,1.6,0.0,OLE + 2 PAR,4,4.0,assump,"Timbavati ""C4H8"" (unspeciated butenes): treated as 1-butene (as the baseline deck did)"
+HCHO,HCHO,89.1,0.855,FORM,1,1.0,direct,
+OHCH2CHO,GLYD,15.2,0.304,GLYD,2,2.0,direct,"hydroxyacetaldehyde / glycolaldehyde (OHCH2CHO, HOCH2CHO)"
+CH3CHO,ALD2,32.3,0.304,ALD2,2,2.0,direct,
+CH3OH,MEOH,70.9,2.5,MEOH,1,1.0,direct,
+HC(O)OH,FACD,30.4,0.225,FACD,1,1.0,direct,
+CH3C(O)OH,AACD,69.5,0.6,AACD,2,2.0,direct,
+CH3C(O)CH3,Acetone,9.6,3.6,ACET,3,3.0,direct,
+C3H6O2,Hydroxyacetone,15.6,0.0,KET + 2 PAR,3,3.0,assump,"CH3C(O)CH2OH (ACETOL, C3H6O2): ketone group + 2 PAR; no explicit mapping found"
+C6H5OH,Phenol,16.3,0.0,CRES,6,7.0,assump,"phenol -> CRES (cresol and higher phenols); per-mole, carbon not conserved"
+C6H5CH3,TOL,3.7,0.0,TOL,7,7.0,direct,
+C5H8,ISOP,0.9,0.0,ISOP,5,5.0,direct,
+C3H6O,C3H6O,7.8,0.0,OLE + PAR,3,3.0,assump,"Timbavati Table S3 ""C3H6O"" is classified OLEL (lumped alkene) by the paper; mapped as propene"
+CH3COC2H5,MEK,13.5,0.0,KET + 3 PAR,4,4.0,doc,butanone = KET + 3 PAR
+NO,NO,55.0,0.296,NO,,,direct,
+NO2,NO2,123.1,0.46,NO2,,,direct,
+HONO,HONO,5.8,0.0,HONO,,,direct,
+SO2,SO2,70.4,10.0,SO2,,,direct,
+NH3,NH3,8.0,0.478,NH3,,,direct,
+i-butane,Butane,0.18,0.009,4 PAR,4,4.0,doc,butane = 4 PAR (n- and iso-)
+n-butane,Butane,0.47,0.023,4 PAR,4,4.0,doc,butane = 4 PAR (n- and iso-)
+trans-2-butene,2-Butene,0.42,0.0,IOLE,4,4.0,doc,cis/trans-2-butene = IOLE
+cis-2-butene,2-Butene,0.31,0.0,IOLE,4,4.0,doc,cis/trans-2-butene = IOLE
+i-pentane,Pentane,0.053,0.006,5 PAR,5,5.0,rule,"n-, i-pentane, 2-methylbutane"
+n-pentane,Pentane,0.11,0.009,5 PAR,5,5.0,rule,"n-, i-pentane, 2-methylbutane"
+butadiene,Butadiene,1.4,0.0,2 OLE,4,4.0,assump,two terminal C=C bonds -> 2 OLE (CB treats each double bond separately; 4 C conserved)
+3-methyl-1-butene,1-Pentene,0.13,0.0,OLE + 3 PAR,5,5.0,rule,"1-pentene, 3-methyl-1-butene, 2-methyl-1-butene"
+trans-2-pentene,2-Pentene,0.11,0.0,IOLE + PAR,5,5.0,doc,"2-pentene isomers = IOLE + PAR; also 2-methyl-2-butene, cyclopentene"
+2-methyl-2-butene,2-Pentene,0.12,0.0,IOLE + PAR,5,5.0,doc,"2-pentene isomers = IOLE + PAR; also 2-methyl-2-butene, cyclopentene"
+2-methyl-1-butene,1-Pentene,0.13,0.0,OLE + 3 PAR,5,5.0,rule,"1-pentene, 3-methyl-1-butene, 2-methyl-1-butene"
+c-2-pentene,2-Pentene,0.067,0.0,IOLE + PAR,5,5.0,doc,"2-pentene isomers = IOLE + PAR; also 2-methyl-2-butene, cyclopentene"
+n-hexane,Hexane,0.22,0.007,6 PAR,6,6.0,rule,"n-hexane, isohexanes"
+2-methyl-1-pentene,1-Hexene,0.078,0.0,OLE + 4 PAR,6,6.0,rule,"1-hexene, 2-methyl-1-pentene, 4-methyl-1-pentene"
+heptane,Heptane,0.12,0.014,7 PAR,7,7.0,rule,
+1-butene,1-Butene,3.26,0.0,OLE + 2 PAR,4,4.0,rule,
+i-butene,iButene,1.09,0.0,OLE + 2 PAR,4,4.0,rule,isobutene: terminal olefin + 2 PAR (branching ignored)
+1-pentene,1-Pentene,0.64,0.0,OLE + 3 PAR,5,5.0,rule,"1-pentene, 3-methyl-1-butene, 2-methyl-1-butene"
+2-methyl-butane,Pentane,0.31,0.0,5 PAR,5,5.0,rule,"n-, i-pentane, 2-methylbutane"
+cyclopentene,2-Pentene,0.36,0.0,IOLE + PAR,5,5.0,doc,"2-pentene isomers = IOLE + PAR; also 2-methyl-2-butene, cyclopentene"
+4-methyl-1-pentene,1-Hexene,1.16,0.0,OLE + 4 PAR,6,6.0,rule,"1-hexene, 2-methyl-1-pentene, 4-methyl-1-pentene"
+1-hexene,1-Hexene,0.89,0.0,OLE + 4 PAR,6,6.0,rule,"1-hexene, 2-methyl-1-pentene, 4-methyl-1-pentene"
+isohexanes,Hexane,1.18,0.0,6 PAR,6,6.0,rule,"n-hexane, isohexanes"
+octenes,Octene,0.1,0.0,OLE + 6 PAR,8,8.0,assump,octenes assumed terminal (1-octene)
+terpenes,TERP,0.23,0.0,TERP,10,10.0,direct,limonene and other monoterpenes; CB6 TERP = all monoterpenes
+xylenes,Xylene,0.86,0.0,XYLMN,8,8.0,direct,xylene isomers
+ethylbenzene,Ethylbenzene,0.25,0.0,TOL + PAR,8,8.0,doc,ethylbenzene = TOL + PAR
+styrene,Styrene,0.47,0.0,TOL + OLE + -1 PAR,8,8.0,assump,"Ramboll memo: styrenes = TOL, OLE and PAR (coefficients not given); TOL + OLE - PAR conserves 8 C"
+PAHs,PAH,0.03,0.0,NAPH,,10.0,assump,PAHs represented as naphthalene (the only PAH in CB6r5)
+ethanol,ETOH,0.49,0.0,ETOH,2,2.0,direct,
+1-propanol,nPropanol,0.85,0.0,3 PAR,3,3.0,assump,C3+ alcohols other than methanol/ethanol: one PAR per carbon
+butanols,nButanol,0.22,0.0,4 PAR,4,4.0,assump,C3+ alcohols: one PAR per carbon
+cyclopentanol,Cyclopentanol,0.76,0.0,5 PAR,5,5.0,assump,alcohol: one PAR per carbon
+acrolein,Acrolein,2.9,0.0,0.75 ISPD,3,3.0,assump,"CMAQ BUTADIENE13/ACROLEIN are no-feedback toxics tracers, so acrolein is represented by ISPD (the CB6 unsaturated carbonyl lump, whose photolysis already uses acrolein cross sections), scaled to conserve carbon (3/4)"
+C3-C7_aldehydes,ALD_hi,2.12,0.0,ALDX + 3 PAR,5,5.0,assump,higher aldehydes (C3-C7): average C5 = ALDX + 3 PAR
+"2,3-butanedione",Biacetyl,13.45,0.0,1.5 MGLY,4,4.5,doc,"2,3-butanedione = 1.5 MGLY (CB6 documentation)"
+pentanones,Pentanone,0.35,0.0,KET + 4 PAR,5,5.0,rule,
+heptanones,Heptanone,0.11,0.0,KET + 6 PAR,7,7.0,rule,
+octanones,Octanone,0.24,0.0,KET + 7 PAR,8,8.0,rule,
+benzaldehyde,Benzaldehyde,0.56,0.0,TOL,7,7.0,assump,aromatic ring + one carbon: TOL (7 C); no explicit mapping found
+methyl_formate,MeFormate,0.51,0.0,PAR,2,1.0,rule,"methyl formate: ester carbon is unreactive (UNR, not a CB6r5 model species) -> 1 PAR; cf. methyl acetate = 2 PAR + UNR"
+methyl_acetate,MeAcetate,1.51,0.0,2 PAR,3,2.0,doc,methyl acetate = 2 PAR + UNR
