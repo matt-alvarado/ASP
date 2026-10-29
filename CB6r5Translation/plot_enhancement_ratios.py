@@ -43,18 +43,19 @@ def oa_series(run):
 
 fig, ax = plt.subplots(2, 4, figsize=(16, 7.2), sharex='col', sharey='row')
 # tag -> deck-name suffix, style
-MECHS = [('base', '', dict(color='#1f4e79', ls='-', lw=1.8, label='Baseline (RACM2-based)')),
-         ('cb6', '_CB6r5', dict(color='#c4511a', ls='--', lw=1.5, label='CB6r5')),
-         ('cr2', '_CRACMM2', dict(color='#2a9d8f', ls='-.', lw=1.5, label='CRACMM2')),
-         ('cr3', '_CRACMM3', dict(color='#1b6b60', ls=(0, (5, 1, 1, 1, 1, 1)), lw=1.5, label='CRACMM3')),
-         ('stc', '_SAPRC07TC', dict(color='#8e44ad', ls=':', lw=2.0, label='SAPRC07TC')),
-         ('sti', '_SAPRC07TIC', dict(color='#d4a017', ls=(0, (3, 1, 1, 1)), lw=1.8, label='SAPRC07TIC'))]
-sty = {t: st for t, _, st in MECHS}
+MECHS = [('base', '', dict(color='#0072B2', ls='-', lw=1.8, label='Baseline (RACM2-based)'), 'o'),
+         ('cb6', '_CB6r5', dict(color='#D55E00', ls='--', lw=1.6, label='CB6r5'), 's'),
+         ('cr2', '_CRACMM2', dict(color='#009E73', ls='-.', lw=1.6, label='CRACMM2'), '^'),
+         ('cr3', '_CRACMM3', dict(color='#CC79A7', ls=(0, (5, 1, 1, 1, 1, 1)), lw=1.6, label='CRACMM3'), 'D'),
+         ('stc', '_SAPRC07TC', dict(color='#222222', ls=':', lw=2.0, label='SAPRC07TC'), 'v'),
+         ('sti', '_SAPRC07TIC', dict(color='#E0B000', ls=(0, (3, 1, 1, 1)), lw=1.8, label='SAPRC07TIC'), 'P')]
+MARK = {t: mk for t, _, _, mk in MECHS}
+sty = {t: st for t, _, st, _ in MECHS}
 summary = []
 for j, case in enumerate(CASES):
     T, P = TP[case]
     bg = co_bg(case)
-    for tag, suf, _ in MECHS:
+    for tag, suf, _, _ in MECHS:
         run = f'{root}/{case}{suf}'
         if not os.path.isdir(run + '/OutputFiles'):
             continue
@@ -65,12 +66,15 @@ for j, case in enumerate(CASES):
         keep = np.r_[True, np.diff(te) > 0]
         te, o3r = te[keep], o3r[keep]
         ax[0, j].plot(te / 3600, o3r, **sty[tag])
+        xm = 5.0 - 0.14 * [t for t, _, _, _ in MECHS].index(tag)     # staggered so overlapping lines keep visible markers
+        ax[0, j].plot(xm, np.interp(xm, te / 3600, o3r), MARK[tag], color=sty[tag]['color'], ms=9, mec='white', mew=0.8, zorder=6)
         ta, oa = oa_series(run)
         dco = np.interp(ta, tg, co) - bg                      # ppb
         oa_stp = oa * (1013.25 / P) * (T / 273.15)            # ug/m3 STP
         ratio = oa_stp / (dco / 1000.0)                       # ug/m3 STP per ppmv
         m = ta >= 600                                         # skip the first 10 min (dCO ~ 0 or OA ~ 0)
         ax[1, j].plot(ta[m] / 3600, ratio[m], **sty[tag])
+        ax[1, j].plot(xm, np.interp(xm, ta / 3600, ratio), MARK[tag], color=sty[tag]['color'], ms=9, mec='white', mew=0.8, zorder=6)
         summary.append((case, tag, o3r[-1], ratio[-1], ta[-1] / 3600))
     def obs_plot(a, pts, first):
         for p in pts:
@@ -84,12 +88,15 @@ for j, case in enumerate(CASES):
     obs_plot(ax[0, j], OBS[case]['O3'], j == 0)
     obs_plot(ax[1, j], OBS[case]['OA'], False)
     ax[0, j].set_title(case)
+    ax[0, j].set_xlim(-0.15, 5.3)
     ax[1, j].set_xlabel('Time (h)')
     for r in (0, 1):
         ax[r, j].grid(alpha=0.3)
 ax[0, 0].set_ylabel(r'$\Delta$O$_3$/$\Delta$CO (ppb/ppb)')
 ax[1, 0].set_ylabel(r'$\Delta$OA/$\Delta$CO ($\mu$g m$^{-3}$ STP / ppmv)')
-h_, l_ = ax[0, 0].get_legend_handles_labels()
+from matplotlib.lines import Line2D
+h_ = [Line2D([], [], marker=MARK[t], mec='white', ms=8, **st) for t, _, st, _ in MECHS] + ax[0, 0].get_legend_handles_labels()[0][-1:]
+l_ = [st['label'] for _, _, st, _ in MECHS] + ax[0, 0].get_legend_handles_labels()[1][-1:]
 fig.legend(h_, l_, loc='lower center', ncol=7, frameon=False, fontsize=9)
 fig.suptitle('Enhancement ratios, 5 h runs: six gas-phase mechanisms (common_asp 40c1760) with observations', y=0.995)
 fig.tight_layout(rect=(0, 0.05, 1, 1))
