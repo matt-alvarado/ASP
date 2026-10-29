@@ -24,13 +24,13 @@ Of the 224 core `R<n>` reactions, 224 are translated to within 0.12% of the CMAQ
 
 ### 2.1 Cannot be represented
 
-* None remain. R46 (OH + HNO3, CMAQ `%2` form `k0 + k3[M]/(1 + k3[M]/k2)`) maps onto ASP 2-body rate flag 5, **which was mis-coded until common_asp commit 508ba8d** (section 2.4). The CB6r5 decks therefore **require common_asp >= 508ba8d**; with an older build R46 is ~240x too fast.
+* None remain. R46 (OH + HNO3, CMAQ `%2` form `k0 + k3[M]/(1 + k3[M]/k2)`) maps onto ASP 2-body rate flag 5, **which was mis-coded until common_asp commit 508ba8d** (section 2.4). The CB6r5 decks therefore **require common_asp >= f3f1107** (508ba8d for R46 and f3f1107 for R24); with an older build R46 is ~240x too fast.
 
 ### 2.2 Approximated using ASP's hard-wired forms
 
 * **R2, O + O2 + M** - ASP flag 9 (5.6e-34 for N2, 6.0e-34 for O2) vs CB6r5 6.0e-34 (T/300)^-2.6 for all M (<=5% difference).
 * **R10, O(1D) + M** - ASP flag 8 (IUPAC N2/O2 form) vs CB6r5 2.23e-11 exp(115/T) (<=0.2%).
-* **R24, NO + NO + O2** (termolecular, O2 as reactant) - ASP has no working 3-body Arrhenius form (see 2.4), so k[O2] is fitted as k300 (T/300)^-n x M (flag 1) with value and slope matched at the case temperature (<=1.3% over 260-310 K). Negligible at ambient NO.
+* **R24, NO + NO + O2** (termolecular, O2 as reactant) - ASP 3-body rate flag 2 with [O2] = 0.2095 [M]; exact (after the flag-2 fix, section 2.4).
 * **R37, N2O5 decomposition** - exact: ASP flag 7 is the same IUPAC expression as CB6r5.
 * Fall-off reactions in IUPAC form use ASP's built-in N(F) = 0.75 - 1.27 log10(Fc); CMAQ rounds n to two decimals, so rates differ by ~0.1%.
 
@@ -43,7 +43,7 @@ Of the 224 core `R<n>` reactions, 224 are translated to within 0.12% of the CMAQ
 ### 2.4 Bugs found in the ASP source
 
 1. **2-body rate flag 5 was wrong - FIXED in common_asp 508ba8d (approved).** It evaluated `k1 + k3*M*(1 + k3*M/k2)`; the JPL/IUPAC form is `k1 + k3*M/(1 + k3*M/k2)`. It is used by the OH + HNO3 line of the **existing baseline decks**, where the old code gave 4.1e-11 instead of 1.7e-13 cm3/molec/s at 288 K / 880 hPa (**~240x too fast**), recycling HNO3 to NO3. Effect of the fix on the baseline decks (end of run): Williams O3 114.2 -> 120.3 ppb (+5%), HNO3 3.1 -> 6.8 ppb; Timbavati O3 60.3 -> 61.5 ppb (+2%), HNO3 1.46 -> 1.69 ppb. Baseline results produced with earlier builds (including all earlier comparisons with the papers) are affected.
-2. **3-body rate flag 2 ("thermal third order") is unusable** (not fixed): it reads its parameters from the wrong positions of the rate array, so the flag value itself is taken as the first rate coefficient. No existing deck uses it; the CB6r5 decks do not.
+2. **3-body rate flag 2 ("thermal third order") was mis-indexed - FIXED in common_asp f3f1107 (approved).** The rate branch read its parameters from `ReactionRates(L,3:6)` instead of `(L,4:7)`, so the flag value 2 was used as the pre-factor and A, B, C were shifted down one position. No baseline deck uses flag 2, so baseline results are unaffected. The CB6r5 decks use it for R24 and therefore require common_asp >= f3f1107. Test: the Timbavati CB6r5 deck with the fixed build gives results identical to the previous fitted flag-1 form (same rate at the case T); the same deck on the previous build makes the ODE integrator fail.
 
 ### 2.5 CB6r5 content not translated (outside the gas-chemistry-only scope or without ASP equivalent)
 
@@ -61,7 +61,6 @@ Every translated reaction was evaluated with a port of ASP's rate code and compa
 | Reaction | max rel. deviation | note |
 |---|---|---|
 | R2 | 0.05 | ASP hard-wires O + O2 + M (flag 9): 5.6e-34 N2 / 6.0e-34 O2 instead of CB6r5 6.0 |
-| R24 | 0.013 | termolecular NO+NO+O2: ASP lacks a working 3-body Arrhenius form; k*[O2] fitted  |
 | R10 | 0.0018 | ASP hard-wires O1D + M (flag 8, IUPAC N2/O2 form) instead of CB6r5 2.23e-11 exp( |
 | R63 | 0.0011 |  |
 | R209 | 0.0011 |  |
@@ -70,7 +69,7 @@ Every translated reaction was evaluated with a port of ASP's rate code and compa
 | R208 | 0.0011 |  |
 | R54 | 0.0011 |  |
 
-All other 186 reactions agree to < 0.1% (n rounding of IUPAC fall-off forms). Photolysis reactions are checked through the column map in section 5.
+All other 187 reactions agree to < 0.1% (n rounding of IUPAC fall-off forms). Photolysis reactions are checked through the column map in section 5.
 
 ## 4. Species lumping and conversion
 
@@ -237,20 +236,20 @@ The baseline mechanism counts every VOC oxidation event with a dummy species (TO
 
 **Open decisions**: the HC5SOA/HC8SOA (alkane) and OLTSOA/OLISOA (olefin) chains are not re-attached (their old inventories were negligible or uncounted); ISOP + O3 is not counted as an SOA event in CB6r5 (the baseline counted it); explicit propene and the butenes carry no counter (as before).
 
-## 7. Test runs (common_asp 508ba8d, i.e. with the flag-5 fix; baseline = the original case deck, same binary)
+## 7. Test runs (common_asp f3f1107, i.e. with the flag-5 and flag-2 fixes; baseline = the original case deck, same binary)
 
 | Case | O3 end, baseline (ppb) | O3 end, CB6r5 (ppb) | NO2 end base / CB6r5 | SOA base / CB6r5 | run time (s) |
 |---|---|---|---|---|---|
-| Williams | 120.3 | 125.4 | 2.3 / 2.4 | 38.8 / 39.8 | 10.124 |
-| Otavi | 98.2 | 98.2 | 0.9 / 1.0 | 11.0 / 11.0 | 4.787 |
-| Alaska | 78.0 | 86.9 | 24.2 / 23.8 | 26.3 / 26.4 | 20.047 |
-| Timbavati | 61.5 | 66.6 | 11.7 / 11.9 | 17.4 / 17.3 | 8.367 |
+| Williams | 120.3 | 125.4 | 2.3 / 2.4 | 38.8 / 39.8 | 9.963 |
+| Otavi | 98.2 | 98.2 | 0.9 / 1.0 | 11.0 / 11.0 | 4.738 |
+| Alaska | 78.0 | 86.9 | 24.2 / 23.8 | 26.3 / 26.4 | 20.322 |
+| Timbavati | 61.5 | 66.6 | 11.7 / 11.9 | 17.4 / 17.3 | 8.352 |
 
 CB6r5 end-of-run O3 is 0-11% above the baseline mechanism (Williams +4%, Otavi 0%, Alaska +11%, Timbavati +8%) and SOA within 3%; all four decks load, integrate stably and finish.
 
 ## 8. Open items
 
-1. Decide whether to fix 3-body rate flag 2 (section 2.4); re-run baseline comparisons with the flag-5 fix.
+1. Re-run earlier baseline comparisons with the flag-5 fix (section 2.4).
 2. Review the **assump** rows of section 4.2 (alcohols, hydroxyacetone, benzaldehyde, phenol, styrene, octenes, Williams ALD/KET/OLI/OLT lumps).
 3. Alkane/olefin SOA chains and ISOP+O3 counter (section 6).
 4. Heterogeneous chemistry (HET_*) and the NTR2 hydrolysis sink are not translated.

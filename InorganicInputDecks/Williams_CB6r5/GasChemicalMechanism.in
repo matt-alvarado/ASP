@@ -5,10 +5,9 @@
 !! Gas-phase core only (the 225 R<n> reactions of the .def file, minus R216 ECH4+OH, which is the CH4 tracer
 !! reaction; CH4 + OH is R<n> above).  Chlorine, DMS, mercury, toxics-diagnostic, SA, BL/BP, POA and
 !! aerosol heterogeneous groups are NOT included (gas chemistry only, per project scope).
-!! Rates are evaluated for ASP at the case conditions only where a rate form cannot be represented
-!! (R24) - T = 288.4 K, P = 880.0 mb for this case.
+!! Case conditions: T = 288.4 K, P = 880.0 mb (used only to choose the IUPAC/JPL fall-off forms).
 !! Rate-flag conventions are those of the original ASP deck (see the file header of the old decks).
-!! REQUIRES common_asp >= 508ba8d: R46 uses 2-body rate flag 5, which was mis-coded before that commit.
+!! REQUIRES common_asp >= f3f1107: R46 uses 2-body rate flag 5 and R24 3-body flag 2, both mis-coded in earlier versions.
 !!
 !! Format: "!! <label>: <CMAQ statement>" precedes each translated reaction.
 !! WARNING lines name rate forms ASP cannot reproduce exactly.
@@ -62,8 +61,7 @@ H2O2 + OH => HO2 ; 1.8e-12; 0; -0; 1;
 !! R23: <R23> H2O2 + O = OH + HO2 # 1.40E-12@2000;
 H2O2 + O => OH + HO2 ; 1.4e-12; 0; -2000; 1;
 !! R24: <R24> NO + NO + O2 = 2.0*NO2 # 4.25E-39@-664;
-!!   APPROXIMATION: termolecular NO+NO+O2: ASP lacks a working 3-body Arrhenius form; k*[O2] fitted as k300(T/300)^-n x M, exact at T=288.4 K
-NO + NO + M => 2 NO2 + M ; 1; 8.129130281e-39; 2.302357836;
+NO + NO + M => 2 NO2 + M ; 2; 8.90375e-40; 0; 664; 1;
 !! R25: <R25> HO2 + NO = OH + NO2 # 3.45E-12@-270;
 HO2 + NO => OH + NO2 ; 3.45e-12; 0; 270; 1;
 !! R26: <R26> NO2 + O3 = NO3 # 1.40E-13@2470;

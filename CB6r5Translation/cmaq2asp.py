@@ -145,6 +145,8 @@ def asp_rate(nbodies, params, T, M, C_H2O, P_mbar):
     if nbodies == 3:
         if f == 1:
             return g(4) * (T / 300.) ** (-g(5)) * M
+        if f == 2:   # thermal third order, after common_asp 3-body flag-2 fix: M*A*T^B*exp(C/T)^D
+            return M * g(4) * T ** g(5) * math.exp(g(6) / T) ** g(7)
         if f == 3:   # IUPAC
             k0 = g(4) * (T / 300.) ** (-g(5)) * M
             ki = g(6) * (T / 300.) ** (-g(7))
@@ -347,14 +349,10 @@ class Translation:
             return
         if lab == 'R24':                                   # NO + NO + O2 = 2 NO2  (termolecular, O2 reactant)
             A, n, E = base.terms[0]
-            # rate = k [NO]^2 [O2],  [O2] = O2_FRAC*M.  ASP has no working 3-body Arrhenius form (see README),
-            # so use the 'k300 (T/300)^-n  x M' form (flag 1), matched in value and slope at T0.
-            kT0 = A * math.exp(-E / T0) * fac * O2_FRAC
-            nn = -E / T0                                   # d ln k / d ln T  = E/T  -> exponent of (T/300)^-n
-            k300 = kT0 * (T0 / 300.0) ** nn
-            self._emit(r, ['NO', 'NO'], prods, 3, [1.0, k300, nn], add_M=True)
-            self.note(r, 'approx', 'termolecular NO+NO+O2: ASP lacks a working 3-body Arrhenius form; '
-                      'k*[O2] fitted as k300(T/300)^-n x M, exact at T=%.1f K' % T0)
+            # rate = k [NO]^2 [O2],  [O2] = O2_FRAC*M  ->  3-body flag 2:  M * A' * T^n * exp(C/T)
+            self._emit(r, ['NO', 'NO'], prods, 3, [2.0, A * fac * O2_FRAC * 300.0 ** (-n), n, -E, 1.0], add_M=True)
+            self.note(r, 'info', 'termolecular NO+NO+O2 -> 3-body rate flag 2 with [O2] = %.4f [M]; flag 2 is correct only '
+                      'in common_asp >= the flag-2 fix commit (earlier versions mis-indexed its parameters)' % O2_FRAC)
             return
         if lab == 'R46':                                   # HNO3 + OH, %2 pressure form -> ASP flag 5
             (A0, n0, E0), (A2, n2, E2), (A3, n3, E3) = base.terms
