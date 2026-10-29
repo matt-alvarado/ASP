@@ -196,7 +196,7 @@ w('The baseline mechanism counts every VOC oxidation event with a dummy species 
   'which then decays into the IVOC1-9 volatility bins (the SOA yields). The CB6r5 translation keeps this coupling:')
 w('')
 w('* The CMAQ counters `TOLRO2, XYLRO2, ISOPRXN, TRPRXN, TERPNRO2` are re-keyed to `TOLSOA, XYLSOA, ISOSOA, TERPSOA, TERPSOA`; `BENZRO2, PAHRO2, SULRXN` are dropped (no ASP analogue).')
-w('* The yield chains for these four counters and the IVOC aging block (Grieshop for Otavi/Alaska/Timbavati; the ACP 2015 half-Ahmadov scheme for Williams, with `Acetic_Acid` renamed `AACD`) are copied verbatim from each case\'s old deck.')
+w('* The yield chains for these four counters and the IVOC aging block (the ACP 2015 half-fragmentation / half-functionalization scheme with NOx/HOx chemistry, now used for **all four cases**; `Acetic_Acid` renamed `AACD`) are copied verbatim from each case\'s old deck.')
 w('')
 w('**Open decisions**: the HC5SOA/HC8SOA (alkane) and OLTSOA/OLISOA (olefin) chains are not re-attached (their old inventories were negligible or uncounted); '
   'ISOP + O3 is not counted as an SOA event in CB6r5 (the baseline counted it); explicit propene and the butenes carry no counter (as before).')
@@ -214,7 +214,7 @@ if RUN:
             w('| %s | %s | %s | %s / %s | %s / %s | %s |' % (case, r['o3_base'], r['o3_cb6'], r['no2_base'], r['no2_cb6'],
                                                      r['soa_base'], r['soa_cb6'], r['time']))
 w('')
-w('CB6r5 end-of-run O3 is 0-11% above the baseline mechanism (Williams +4%, Otavi 0%, Alaska +11%, Timbavati +8%) and SOA within 3%; all four decks load, integrate stably and finish.')
+w('CB6r5 end-of-run O3 is 0-12% above the baseline mechanism (Williams +4%, Otavi 0%, Alaska +12%, Timbavati +8%) and SOA within 3%; all four decks load, integrate stably and finish.')
 w('')
 w('## 8. Open items')
 w('')

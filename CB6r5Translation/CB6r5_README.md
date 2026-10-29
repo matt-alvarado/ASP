@@ -232,7 +232,7 @@ Columns 27-51 are zero. Approximations: the CB6r5 `ISPD` label uses acrolein cro
 The baseline mechanism counts every VOC oxidation event with a dummy species (TOLSOA, XYLSOA, ISOSOA, TERPSOA, ...), which then decays into the IVOC1-9 volatility bins (the SOA yields). The CB6r5 translation keeps this coupling:
 
 * The CMAQ counters `TOLRO2, XYLRO2, ISOPRXN, TRPRXN, TERPNRO2` are re-keyed to `TOLSOA, XYLSOA, ISOSOA, TERPSOA, TERPSOA`; `BENZRO2, PAHRO2, SULRXN` are dropped (no ASP analogue).
-* The yield chains for these four counters and the IVOC aging block (Grieshop for Otavi/Alaska/Timbavati; the ACP 2015 half-Ahmadov scheme for Williams, with `Acetic_Acid` renamed `AACD`) are copied verbatim from each case's old deck.
+* The yield chains for these four counters and the IVOC aging block (the ACP 2015 half-fragmentation / half-functionalization scheme with NOx/HOx chemistry, now used for **all four cases**; `Acetic_Acid` renamed `AACD`) are copied verbatim from each case's old deck.
 
 **Open decisions**: the HC5SOA/HC8SOA (alkane) and OLTSOA/OLISOA (olefin) chains are not re-attached (their old inventories were negligible or uncounted); ISOP + O3 is not counted as an SOA event in CB6r5 (the baseline counted it); explicit propene and the butenes carry no counter (as before).
 
@@ -241,11 +241,11 @@ The baseline mechanism counts every VOC oxidation event with a dummy species (TO
 | Case | O3 end, baseline (ppb) | O3 end, CB6r5 (ppb) | NO2 end base / CB6r5 | SOA base / CB6r5 | run time (s) |
 |---|---|---|---|---|---|
 | Williams | 120.3 | 125.4 | 2.3 / 2.4 | 38.8 / 39.8 | 9.963 |
-| Otavi | 98.2 | 98.2 | 0.9 / 1.0 | 11.0 / 11.0 | 4.738 |
-| Alaska | 78.0 | 86.9 | 24.2 / 23.8 | 26.3 / 26.4 | 20.322 |
-| Timbavati | 61.5 | 66.6 | 11.7 / 11.9 | 17.4 / 17.3 | 8.352 |
+| Otavi | 98.2 | 98.2 | 0.9 / 1.0 | 11.0 / 11.0 | 4.859 |
+| Alaska | 78.0 | 87.0 | 24.2 / 23.8 | 25.9 / 25.9 | 22.222 |
+| Timbavati | 61.6 | 66.6 | 11.7 / 11.9 | 17.1 / 17.0 | 8.860 |
 
-CB6r5 end-of-run O3 is 0-11% above the baseline mechanism (Williams +4%, Otavi 0%, Alaska +11%, Timbavati +8%) and SOA within 3%; all four decks load, integrate stably and finish.
+CB6r5 end-of-run O3 is 0-12% above the baseline mechanism (Williams +4%, Otavi 0%, Alaska +12%, Timbavati +8%) and SOA within 3%; all four decks load, integrate stably and finish.
 
 ## 8. Open items
 

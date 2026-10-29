@@ -547,13 +547,23 @@ TERPSOA             => 0.0586 IVOC3 + 0.0501 IVOC4 + 0.1959 IVOC5 + 0.3318 IVOC6
 !IVOC8 + OH => 1.075 IVOC7 						; 4.0e-11; 0.;  0.;         1.;
 !IVOC9 + OH => 1.075 IVOC8 						; 4.0e-11; 0.;  0.;         1.;
 !Grieshop Reactions (Grieshop et al., ACP, 2009)
-IVOC2 + OH => 1.4 IVOC1 						; 2.0e-11; 0.;  0.;         1.;
-IVOC3 + OH => 1.4 IVOC1 						; 2.0e-11; 0.;  0.;         1.;
-IVOC4 + OH => 1.4 IVOC2 						; 2.0e-11; 0.;  0.;         1.;
-IVOC5 + OH => 1.4 IVOC3 						; 2.0e-11; 0.;  0.;         1.;
-IVOC6 + OH => 1.4 IVOC4 						; 2.0e-11; 0.;  0.;         1.;
-IVOC7 + OH => 1.4 IVOC5 						; 2.0e-11; 0.;  0.;         1.;
-IVOC8 + OH => 1.4 IVOC6 						; 2.0e-11; 0.;  0.;         1.;
-IVOC9 + OH => 1.4 IVOC7 						; 2.0e-11; 0.;  0.;         1.;
+!IVOC2 + OH => 1.4 IVOC1 						; 2.0e-11; 0.;  0.;         1.;
+!! Paper (Alvarado et al. 2015) SVOC chemistry: half Ahmadov, half fragmentation, with NOx/HOx chemistry (from the ACP supplement)
+IVOC2 + OH  => 0.5375 IVOC1 + 0.5375 IVOC3 + 0.600 HO2 + IVOC1_R1O2 + 0.5 AACD	; 1.0e-11; 0.;  0.;         1.;
+IVOC3 + OH  => 0.5375 IVOC2 + 0.5375 IVOC4 + 0.600 HO2 + IVOC1_R1O2 + 0.5 AACD	; 1.0e-11; 0.;  0.;         1.;
+IVOC4 + OH  => 0.5375 IVOC3 + 0.5375 IVOC5 + 0.600 HO2 + IVOC1_R1O2 + 0.5 AACD	; 1.0e-11; 0.;  0.;         1.;
+IVOC5 + OH  => 0.5375 IVOC4 + 0.5375 IVOC6 + 0.600 HO2 + IVOC1_R1O2 + 0.5 AACD	; 1.0e-11; 0.;  0.;         1.;
+IVOC6 + OH  => 0.5375 IVOC5 + 0.5375 IVOC7 + 0.600 HO2 + IVOC1_R1O2 + 0.5 AACD	; 1.0e-11; 0.;  0.;         1.;
+IVOC7 + OH  => 0.5375 IVOC6 + 0.5375 IVOC8 + 0.600 HO2 + IVOC1_R1O2 + 0.5 AACD	; 1.0e-11; 0.;  0.;         1.;
+IVOC8 + OH  => 0.5375 IVOC7 + 0.5375 IVOC9 + 0.600 HO2 + IVOC1_R1O2 + 0.5 AACD	; 1.0e-11; 0.;  0.;         1.;
+IVOC9 + OH  => 0.5375 IVOC8 + 0.600 HO2 + IVOC1_R1O2 + 0.5 AACD			; 1.0e-11; 0.;  0.;         1.;
+IVOC1_R1O2 + NO => 0.75 NO2						; 4.0e-12; 0.;	0.; 	    1.;
+!IVOC3 + OH => 1.4 IVOC1 						; 2.0e-11; 0.;  0.;         1.;
+!IVOC4 + OH => 1.4 IVOC2 						; 2.0e-11; 0.;  0.;         1.;
+!IVOC5 + OH => 1.4 IVOC3 						; 2.0e-11; 0.;  0.;         1.;
+!IVOC6 + OH => 1.4 IVOC4 						; 2.0e-11; 0.;  0.;         1.;
+!IVOC7 + OH => 1.4 IVOC5 						; 2.0e-11; 0.;  0.;         1.;
+!IVOC8 + OH => 1.4 IVOC6 						; 2.0e-11; 0.;  0.;         1.;
+!IVOC9 + OH => 1.4 IVOC7 						; 2.0e-11; 0.;  0.;         1.;
 !
 !
