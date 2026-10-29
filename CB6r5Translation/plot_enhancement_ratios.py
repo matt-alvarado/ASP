@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Time plot of dO3/dCO (ASP EnhanceRatios.txt) and dOA/dCO (from Aerosol*.txt) for baseline vs CB6r5 runs.
-usage: plot_enhancement_ratios.py <runs_root> <out.png>   (runs_root has base/<Case> and cb6/<Case>)"""
+"""Time plot of dO3/dCO (ASP EnhanceRatios.txt) and dOA/dCO (from Aerosol*.txt) for all gas mechanisms, with observations.
+usage: plot_enhancement_ratios.py <runs_root> <out.png>
+runs_root holds one run directory per deck, named like the deck: <Case>, <Case>_CB6r5, <Case>_CRACMM2, <Case>_CRACMM3,
+<Case>_SAPRC07TC, <Case>_SAPRC07TIC  (each with OutputFiles/)."""
 import glob, json, re, sys, os
 import numpy as np
 import matplotlib
@@ -39,15 +41,23 @@ def oa_series(run):
     return t, np.array([tot[x] for x in t])
 
 
-fig, ax = plt.subplots(2, 4, figsize=(15, 6.6), sharex='col', sharey='row')
-sty = {'base': dict(color='#1f4e79', ls='-', label='Baseline mechanism'),
-       'cb6': dict(color='#c4511a', ls='--', label='CB6r5')}
+fig, ax = plt.subplots(2, 4, figsize=(16, 7.2), sharex='col', sharey='row')
+# tag -> deck-name suffix, style
+MECHS = [('base', '', dict(color='#1f4e79', ls='-', lw=1.8, label='Baseline (RACM2-based)')),
+         ('cb6', '_CB6r5', dict(color='#c4511a', ls='--', lw=1.5, label='CB6r5')),
+         ('cr2', '_CRACMM2', dict(color='#2a9d8f', ls='-.', lw=1.5, label='CRACMM2')),
+         ('cr3', '_CRACMM3', dict(color='#1b6b60', ls=(0, (5, 1, 1, 1, 1, 1)), lw=1.5, label='CRACMM3')),
+         ('stc', '_SAPRC07TC', dict(color='#8e44ad', ls=':', lw=2.0, label='SAPRC07TC')),
+         ('sti', '_SAPRC07TIC', dict(color='#d4a017', ls=(0, (3, 1, 1, 1)), lw=1.8, label='SAPRC07TIC'))]
+sty = {t: st for t, _, st in MECHS}
 summary = []
 for j, case in enumerate(CASES):
     T, P = TP[case]
     bg = co_bg(case)
-    for tag in ('base', 'cb6'):
-        run = f'{root}/{tag}/{case}'
+    for tag, suf, _ in MECHS:
+        run = f'{root}/{case}{suf}'
+        if not os.path.isdir(run + '/OutputFiles'):
+            continue
         h, g = table(f'{run}/OutputFiles/GasOut1.txt')
         tg, co = g[:, 0], g[:, h.index('CO')]
         he, e = table(f'{run}/OutputFiles/EnhanceRatios.txt')
@@ -79,9 +89,10 @@ for j, case in enumerate(CASES):
         ax[r, j].grid(alpha=0.3)
 ax[0, 0].set_ylabel(r'$\Delta$O$_3$/$\Delta$CO (ppb/ppb)')
 ax[1, 0].set_ylabel(r'$\Delta$OA/$\Delta$CO ($\mu$g m$^{-3}$ STP / ppmv)')
-ax[0, 0].legend(frameon=False, fontsize=9)
-fig.suptitle('Enhancement ratios: baseline vs CB6r5 gas mechanism (common_asp f3f1107) with observations', y=0.995)
-fig.tight_layout()
+h_, l_ = ax[0, 0].get_legend_handles_labels()
+fig.legend(h_, l_, loc='lower center', ncol=7, frameon=False, fontsize=9)
+fig.suptitle('Enhancement ratios, 5 h runs: six gas-phase mechanisms (common_asp 40c1760) with observations', y=0.995)
+fig.tight_layout(rect=(0, 0.05, 1, 1))
 fig.savefig(out, dpi=150)
 for s in summary:
     print('%-10s %-5s dO3/dCO %.3f  dOA/dCO %.1f ug/m3 STP/ppmv at %.1f h' % s)
