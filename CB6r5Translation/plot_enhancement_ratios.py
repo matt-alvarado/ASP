@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Time plot of dO3/dCO (ASP EnhanceRatios.txt) and dOA/dCO (from Aerosol*.txt) for baseline vs CB6r5 runs.
 usage: plot_enhancement_ratios.py <runs_root> <out.png>   (runs_root has base/<Case> and cb6/<Case>)"""
-import glob, re, sys, os
+import glob, json, re, sys, os
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 root, out = sys.argv[1], sys.argv[2]
+OBS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'observations', 'observed_raw.json')))
 DECKS = '/home/claude/asp/InorganicInputDecks'
 CASES = ['Williams', 'Otavi', 'Alaska', 'Timbavati']
 TP = {'Williams': (288.4, 880.0), 'Otavi': (290.0, 730.0), 'Alaska': (280.6, 846.5), 'Timbavati': (288.0, 900.0)}
@@ -61,6 +62,17 @@ for j, case in enumerate(CASES):
         m = ta >= 600                                         # skip the first 10 min (dCO ~ 0 or OA ~ 0)
         ax[1, j].plot(ta[m] / 3600, ratio[m], **sty[tag])
         summary.append((case, tag, o3r[-1], ratio[-1], ta[-1] / 3600))
+    def obs_plot(a, pts, first):
+        for p in pts:
+            xe = [[max(p['t_h'] - p['tlo_h'], 0)], [max(p['thi_h'] - p['t_h'], 0)]]
+            ye = None
+            if p.get('ylo') is not None:
+                ye = [[max(p['y'] - p['ylo'], 0)], [max(p['yhi'] - p['y'], 0)]]
+            a.errorbar([p['t_h']], [p['y']], xerr=xe, yerr=ye, fmt='o', ms=4, color='k', mfc='white', ecolor='0.35',
+                       elinewidth=0.9, capsize=1.5, zorder=5, label='Observed (digitized from paper)' if first else None)
+            first = False
+    obs_plot(ax[0, j], OBS[case]['O3'], j == 0)
+    obs_plot(ax[1, j], OBS[case]['OA'], False)
     ax[0, j].set_title(case)
     ax[1, j].set_xlabel('Time (h)')
     for r in (0, 1):
@@ -68,7 +80,7 @@ for j, case in enumerate(CASES):
 ax[0, 0].set_ylabel(r'$\Delta$O$_3$/$\Delta$CO (ppb/ppb)')
 ax[1, 0].set_ylabel(r'$\Delta$OA/$\Delta$CO ($\mu$g m$^{-3}$ STP / ppmv)')
 ax[0, 0].legend(frameon=False, fontsize=9)
-fig.suptitle('Enhancement ratios: baseline vs CB6r5 gas mechanism (common_asp f3f1107)', y=0.995)
+fig.suptitle('Enhancement ratios: baseline vs CB6r5 gas mechanism (common_asp f3f1107) with observations', y=0.995)
 fig.tight_layout()
 fig.savefig(out, dpi=150)
 for s in summary:
