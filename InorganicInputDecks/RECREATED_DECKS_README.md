@@ -50,3 +50,11 @@ which made Williams OA grow to dOA/dCO2 = 1.9e-2 g/g at 4.5 h (observed 2.83e-3)
 paper's scheme from the ACP supplement (half Ahmadov / half fragmentation with NOx/HOx chemistry, k = 1e-11, IVOC1_R1O2 + NO).
 Result at 4.5 h: dOA/dCO2 = 3.6e-3 g/g (paper 2.75e-3, observed 2.83 +/- 1.08e-3), dO3/dCO = 0.115 (paper 0.116, observed 0.095 +/- 0.022).
 Only the Williams deck was changed; Otavi/Alaska/Timbavati keep the template mechanism.
+
+## IVOC aging chemistry now identical in all four cases
+
+Otavi, Alaska and Timbavati originally used the Grieshop et al. (2009) functionalization-only aging
+(`IVOC(i) + OH => 1.4 IVOC(i-1)`, k = 2e-11).  They now use the same ACP 2015 (Alvarado et al.) scheme as Williams:
+half fragmentation / half functionalization with HOx/NOx chemistry (`IVOC(i) + OH => 0.5375 IVOC(i-1) + 0.5375 IVOC(i+1) + 0.6 HO2 + IVOC1_R1O2 + 0.5 Acetic_Acid`, k = 1e-11; `IVOC1_R1O2 + NO => 0.75 NO2`).
+The CB6r5 decks inherit the same block (with `Acetic_Acid` renamed `AACD`).
+Effect (end of run, baseline mechanism): OA changes by 0 to -3% (Otavi 0, Alaska 26.3 -> 25.9, Timbavati 17.4 -> 17.1 ug/m3 of SOA); O3 is unchanged to within 0.1 ppb.
