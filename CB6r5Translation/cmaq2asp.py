@@ -136,9 +136,9 @@ def asp_rate(nbodies, params, T, M, C_H2O, P_mbar):
         k2 = g(6) * math.exp(g(7) / T)
         if f == 4:
             return k1 + k2 * M
-        if f == 5:   # as coded in GasPhaseChemistry.h:  k1 + k3*M*(1 + k3*M/k2)
+        if f == 5:   # GasPhaseChemistry.h after common_asp 508ba8d:  k1 + k3*M/(1 + k3*M/k2)
             k3 = g(8) * math.exp(g(9) / T)
-            return k1 + k3 * M * (1 + k3 * M / k2)
+            return k1 + k3 * M / (1.0 + k3 * M / k2)
         if f == 10:
             return C_H2O * (k1 + M * k2)
         raise ValueError('2-body flag %d not ported' % f)
@@ -356,14 +356,13 @@ class Translation:
             self.note(r, 'approx', 'termolecular NO+NO+O2: ASP lacks a working 3-body Arrhenius form; '
                       'k*[O2] fitted as k300(T/300)^-n x M, exact at T=%.1f K' % T0)
             return
-        if lab == 'R46':                                   # HNO3 + OH, %2 pressure form
-            M0 = Mair(T0, P0)
-            k = cmaq_rate(base, T0, M0, self.by_label) * fac
-            self._emit(r, body, prods, 2, [k, 0.0, 0.0, 1.0])
-            self.note(r, 'unsupported',
-                      'CB6r5 form k0 + k3[M]/(1+k3[M]/k2) cannot be represented: ASP rate flag 5 evaluates '
-                      'k1 + k3*M*(1 + k3*M/k2), ~240x too fast at 1 atm.  Fixed value %.4g cm3/molec/s at '
-                      'T=%.1f K, P=%.1f mb inserted (exact only at these conditions)' % (k, T0, P0))
+        if lab == 'R46':                                   # HNO3 + OH, %2 pressure form -> ASP flag 5
+            (A0, n0, E0), (A2, n2, E2), (A3, n3, E3) = base.terms
+            assert n0 == n2 == n3 == 0.0
+            self._emit(r, body, prods, 2, [5.0, A0 * fac, -E0, A2 * fac, -E2, A3 * fac, -E3])
+            self.note(r, 'info',
+                      'CB6r5 %2 form k0 + k3[M]/(1+k3[M]/k2) = ASP 2-body rate flag 5, which is correct only in '
+                      'common_asp >= 508ba8d (earlier versions evaluated k1 + k3*M*(1 + k3*M/k2), ~240x too fast)')
             return
         if has_H2O_third(body):                            # R41, R221 (and R20): pseudo-2nd order with [H2O]
             nonw = [x for x in body if x != 'H2O']
@@ -460,11 +459,7 @@ def compare(tr):
         worst, wp = 0.0, None
         for T, P in TEST_POINTS:
             M = Mair(T, P)
-            if lab == 'R46':
-                M0 = Mair(tr.T0, tr.P0)
-                ref = cmaq_rate(base, T, M, tr.by_label)
-            else:
-                ref = cmaq_rate(base, T, M, tr.by_label) * fac
+            ref = cmaq_rate(base, T, M, tr.by_label) * fac
             # concentration factors of CMAQ pseudo-reactants
             if lab == 'R2':
                 ref = ref * M * (O2_FRAC * M)

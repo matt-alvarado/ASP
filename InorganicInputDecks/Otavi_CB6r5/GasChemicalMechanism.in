@@ -6,8 +6,9 @@
 !! reaction; CH4 + OH is R<n> above).  Chlorine, DMS, mercury, toxics-diagnostic, SA, BL/BP, POA and
 !! aerosol heterogeneous groups are NOT included (gas chemistry only, per project scope).
 !! Rates are evaluated for ASP at the case conditions only where a rate form cannot be represented
-!! (R46, R24) - T = 290.0 K, P = 730.0 mb for this case.
+!! (R24) - T = 290.0 K, P = 730.0 mb for this case.
 !! Rate-flag conventions are those of the original ASP deck (see the file header of the old decks).
+!! REQUIRES common_asp >= 508ba8d: R46 uses 2-body rate flag 5, which was mis-coded before that commit.
 !!
 !! Format: "!! <label>: <CMAQ statement>" precedes each translated reaction.
 !! WARNING lines name rate forms ASP cannot reproduce exactly.
@@ -106,8 +107,7 @@ HONO + OH => NO2 ; 2.5e-12; 0; 260; 1;
 !! R45: <R45> NO2 + OH = HNO3 # 1.80E-30^-3 & 2.80E-11 &0.6 &1;
 NO2 + OH + M => HNO3 + M ; 1.8e-30; 3; 2.8e-11; -0; 0.6;
 !! R46: <R46> HNO3 + OH = NO3 %2 # 2.40E-14@-460 & 2.70E-17@-2199 & 6.50E-34@-1335;
-!!   WARNING: CB6r5 form k0 + k3[M]/(1+k3[M]/k2) cannot be represented: ASP rate flag 5 evaluates k1 + k3*M*(1 + k3*M/k2), ~240x too fast at 1 atm.  Fixed value 1.68e-13 cm3/molec/s at T=290.0 K, P=730.0 mb inserted (exact only at these conditions)
-HNO3 + OH => NO3 ; 1.679984956e-13; 0; 0; 1;
+HNO3 + OH => NO3 ; 5; 2.4e-14; 460; 2.7e-17; 2199; 6.5e-34; 1335;
 !! R47: <R47> HNO3 = OH + NO2 # 1.0/<HNO3_IUPAC10>;
 HNO3 => OH + NO2 ; 0; 9;
 !! R48: <R48> HO2 + NO2 = PNA # 1.40E-31^-3.1 & 4.00E-12 &0.4 &1.26;

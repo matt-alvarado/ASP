@@ -54,12 +54,10 @@ w('')
 w('Of the %d core `R<n>` reactions, %d are translated to within 0.12%% of the CMAQ rate over '
   '260-310 K, 600-1013 hPa (most to <0.01%%) except for those listed below.' % (len(tr.core), len(tr.lines)))
 w('')
-w('### 2.1 Cannot be represented - a fixed value is used instead')
+w('### 2.1 Cannot be represented')
 w('')
-w('* **R46, OH + HNO3** - CB6r5 uses the form `k0 + k3[M]/(1 + k3[M]/k2)` (CMAQ `%2`). ASP\'s 2-body rate flag 5 is meant '
-  'for this form but is **coded wrongly** (see 2.4), so it cannot be used. R46 is therefore a fixed 2-body rate evaluated at the '
-  'case T and P (Williams 1.72e-13, Timbavati 1.73e-13 cm3/molec/s). It is exact only at those conditions (34% off at 20 K / 300 hPa away). '
-  'All four decks use constant T and P, so this is harmless for these cases.')
+w('* None remain. R46 (OH + HNO3, CMAQ `%2` form `k0 + k3[M]/(1 + k3[M]/k2)`) maps onto ASP 2-body rate flag 5, **which was mis-coded '
+  'until common_asp commit 508ba8d** (section 2.4). The CB6r5 decks therefore **require common_asp >= 508ba8d**; with an older build R46 is ~240x too fast.')
 w('')
 w('### 2.2 Approximated using ASP\'s hard-wired forms')
 w('')
@@ -80,14 +78,14 @@ w('* **Pseudo-reactants.** `O2`, `M`, `N2`, `H2O` as CMAQ reactants (R2, R10, R2
   '(`M`, flag 10 for water, etc.); R20, R41 and R221 use ASP\'s C_H2O flag 10.')
 w('* **Reactions with no products** (e.g. R7 `O + O3 =`) get the sink product `M`, which ASP\'s parser ignores as a species.')
 w('')
-w('### 2.4 Bugs found in the ASP source (not patched - awaiting your decision)')
+w('### 2.4 Bugs found in the ASP source')
 w('')
-w('1. **2-body rate flag 5 is wrong.** It evaluates `k1 + k3*M*(1 + k3*M/k2)`, while the documented/IUPAC '
-  'form is `k1 + k3*M/(1 + k3*M/k2)`. It is used by the OH + HNO3 line of the **existing baseline decks** (`HNO3 + OH => NO3 + H2O ; 5.; ...`), '
-  'where it gives 4.1e-11 instead of 1.7e-13 cm3/molec/s at 288 K / 880 hPa (**~240x too fast**), recycling HNO3 to NO3. A/B test '
-  '(baseline deck with the correct constant rate, otherwise identical): Williams end-of-run O3 114.2 -> 120.3 ppb (+5%), HNO3 3.1 -> 6.8 ppb; '
-  'Timbavati O3 60.3 -> 61.5 ppb (+2%), HNO3 1.46 -> 1.69 ppb. Not fixed in the source, because it changes all baseline results.')
-w('2. **3-body rate flag 2 ("thermal third order") is unusable**: it reads its parameters from the wrong positions of the rate array, '
+w('1. **2-body rate flag 5 was wrong - FIXED in common_asp 508ba8d (approved).** It evaluated `k1 + k3*M*(1 + k3*M/k2)`; the JPL/IUPAC '
+  'form is `k1 + k3*M/(1 + k3*M/k2)`. It is used by the OH + HNO3 line of the **existing baseline decks**, where the old code gave 4.1e-11 instead of '
+  '1.7e-13 cm3/molec/s at 288 K / 880 hPa (**~240x too fast**), recycling HNO3 to NO3. Effect of the fix on the baseline decks (end of run): '
+  'Williams O3 114.2 -> 120.3 ppb (+5%), HNO3 3.1 -> 6.8 ppb; Timbavati O3 60.3 -> 61.5 ppb (+2%), HNO3 1.46 -> 1.69 ppb. '
+  'Baseline results produced with earlier builds (including all earlier comparisons with the papers) are affected.')
+w('2. **3-body rate flag 2 ("thermal third order") is unusable** (not fixed): it reads its parameters from the wrong positions of the rate array, '
   'so the flag value itself is taken as the first rate coefficient. No existing deck uses it; the CB6r5 decks do not.')
 w('')
 w('### 2.5 CB6r5 content not translated (outside the gas-chemistry-only scope or without ASP equivalent)')
@@ -203,7 +201,7 @@ w('**Open decisions**: the HC5SOA/HC8SOA (alkane) and OLTSOA/OLISOA (olefin) cha
 w('')
 
 # ------------------------------------------------------------------------------------------
-w('## 7. Test runs (same ASP binary, same input decks except the three replaced files)')
+w('## 7. Test runs (common_asp 508ba8d, i.e. with the flag-5 fix; baseline = the original case deck, same binary)')
 w('')
 if RUN:
     w('| Case | O3 end, baseline (ppb) | O3 end, CB6r5 (ppb) | NO2 end base / CB6r5 | SOA base / CB6r5 | run time (s) |')
@@ -214,11 +212,11 @@ if RUN:
             w('| %s | %s | %s | %s / %s | %s / %s | %s |' % (case, r['o3_base'], r['o3_cb6'], r['no2_base'], r['no2_cb6'],
                                                      r['soa_base'], r['soa_cb6'], r['time']))
 w('')
-w('CB6r5 end-of-run O3 is 2-13% above the baseline mechanism and SOA within 1% (Williams +14%); all four decks load, integrate stably and finish.')
+w('CB6r5 end-of-run O3 is 0-11% above the baseline mechanism (Williams +4%, Otavi 0%, Alaska +11%, Timbavati +8%) and SOA within 3%; all four decks load, integrate stably and finish.')
 w('')
 w('## 8. Open items')
 w('')
-w('1. Decide whether to fix ASP rate flag 5 (and flag 2 3-body) in `common_asp`; this changes all baseline results (section 2.4).')
+w('1. Decide whether to fix 3-body rate flag 2 (section 2.4); re-run baseline comparisons with the flag-5 fix.')
 w('2. Review the **assump** rows of section 4.2 (alcohols, hydroxyacetone, benzaldehyde, phenol, styrene, octenes, Williams ALD/KET/OLI/OLT lumps).')
 w('3. Alkane/olefin SOA chains and ISOP+O3 counter (section 6).')
 w('4. Heterogeneous chemistry (HET_*) and the NTR2 hydrolysis sink are not translated.')
