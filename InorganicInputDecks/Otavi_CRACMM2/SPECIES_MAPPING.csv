@@ -1,0 +1,19 @@
+paper_species,mapping_key,initial_ppb,background_ppb,CRACMM2_representation,basis_note
+CO,CO,1700.0,250.0,CO,direct
+CH3C(O)CH3,Acetone,11.5,2.8,ACT,explicit
+O3,O3,75.0,85.0,O3,direct
+NO2,NO2,10.0,1.3,NO2,direct
+NO,NO,2.0,0.7,NO,direct
+HNO3,HNO3,1.3,1.3,HNO3,direct
+H2O2,H2O2,4.5,4.5,H2O2,direct
+CH4,CH4,1799.9,1710.0,CH4,direct
+C2H6,ETHA,7.3,0.946,ETH,explicit (ethane)
+C2H4,ETH,4.8,0.03,ETE,explicit
+C3H8,PRPA,1.2,0.056,HC3,HC3: kOH < 3.4e-12 alkanes (propane...)
+C3H6,Propene,3.9,0.38,OLT,terminal olefins
+CH3OH,MEOH,19.3,2.5,MOH,explicit
+OHCH2CHO,GLYD,11.8,0.2,HKET,RACM2/CRACMM HKET = hydroxy ketones incl. glycolaldehyde
+HCHO,HCHO,31.8,1.3,HCHO,explicit
+CH3CHO,ALD2,11.8,0.2,ACD,explicit
+HC(O)OH,FACD,8.3,0.2,ORA1,explicit
+CH3C(O)OH,AACD,22.0,1.0,ORA2,explicit

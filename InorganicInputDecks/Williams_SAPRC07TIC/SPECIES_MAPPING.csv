@@ -1,0 +1,66 @@
+paper_species,mapping_key,initial_ppb,background_ppb,SAPRC07TIC_representation,basis_note
+CO,CO,10000.0,129.213,CO,direct
+CO2,CO2,528440.21,390000.0,CO2,direct
+NO,NO,113.674,0.015,NO,direct
+NO2,NO2,227.081,0.039,NO2,direct
+O3,O3,0.0,50.0,O3,direct
+H2O2,H2O2,0.755,0.755,H2O2,direct
+HONO,HONO,39.483,0.0,HONO,direct
+SO2,SO2,37.914,0.12,SO2,direct
+HNO3,HNO3,0.41,0.41,HNO3,direct
+HCl,HCl,19.544,0.0,HCl,direct
+NH3,NH3,379.039,0.001,NH3,direct
+H2,H2,3741.028,0.0,H2,direct
+CH4,CH4,2760.733,1900.0,CH4,direct
+HCHO,HCHO,163.198,0.33,HCHO,explicit
+MEOH,MEOH,164.842,0.0,MEOH,explicit
+Formic_Acid,FACD,6.505,0.0,HCOOH,explicit
+HCN,HCN,128.32,0.0,HCN,direct
+ETHE,ETH,126.346,0.0,ETHENE,explicit
+Ethane,ETHA,52.809,0.0,ALK1,kOH 2.4e-13 cm3/molec/s = 3.6e2 ppm-1 min-1 (ALK1: 2-5e2)
+Acetaldehyde,ALD2,56.954,0.0,CCHO,explicit
+ETOH,ETOH,0.987,0.0,ETOH,explicit
+Acetic_Acid,AACD,139.178,0.0,CCOOH,explicit
+GLY,GLY,85.185,0.0,GLY,explicit
+Acetylene,ETHY,26.849,0.0,ACETYLENE,explicit
+Propene,Propene,47.38,0.0,PROPENE,explicit
+Propane,PRPA,17.767,0.0,ALK2,kOH 1.1e-12 (1.6e3): ALK2
+ACR,Acrolein,5.922,0.0,ACROLEIN,explicit
+Propanal,Propanal,0.642,0.0,RCHO,SAPRC RCHO = propionaldehyde and higher aldehydes
+Acetone,Acetone,12.141,0.0,ACETONE,explicit
+NPROPOL,nPropanol,1.836,0.0,ALK4,kOH 5.3e-12 (7.8e3 ppm-1 min-1): ALK4
+MGLY,MGLY,44.715,0.0,MGLY,explicit
+Butadiene,Butadiene,4.235,0.0,BUTADIENE13,explicit
+1-Butene,1-Butene,3.336,0.0,OLE1,kOH 3.1e-11 (4.6e4 ppm-1 min-1 < 7e4): OLE1
+cis-2-Butene,2-Butene,0.68,0.0,OLE2,kOH 5.6e-11 (8.3e4): OLE2
+trans-2-Butene,2-Butene,0.855,0.0,OLE2,kOH 5.6e-11 (8.3e4): OLE2
+i-Butene,iButene,1.885,0.0,OLE2,kOH 5.1e-11 (7.5e4 > 7e4): OLE2
+n-Butane,Butane,9.871,0.0,ALK3,kOH 2.1-2.4e-12 (3.1-3.5e3): ALK3
+i-Butane,Butane,0.323,0.0,ALK3,kOH 2.1-2.4e-12 (3.1-3.5e3): ALK3
+Butanal,Butanal,3.336,0.0,RCHO,higher aldehyde
+MEK,MEK,15.3,0.0,MEK,explicit
+NBUTOL,nButanol,0.5,0.0,ALK5,kOH 8.5e-12 (1.3e4 > 1e4): ALK5
+ISOP,ISOP,2.527,0.0,ISOPRENE,explicit
+FURAN,Furan,20.184,0.0,OLE1,kOH 4.0e-11 (5.9e4): OLE1 (no explicit furan in SAPRC07)
+ALD,RACM_ALD,0.722,0.02,RCHO,higher aldehydes
+API,APIN,32.574,0.0,APIN,explicit
+BALD,Benzaldehyde,1.254,0.0,BALD,explicit
+BEN,Benzene,11.086,0.0,BENZENE,explicit
+DIEN,Butadiene,1.203,0.0,BUTADIENE13,explicit
+HC5,RACM_HC5,2.378,1.075,ALK4,RACM2 HC5 -> ALK4 (kOH 3.4-6.8e-12)
+KET,RACM_KET,1.579,0.0,PRD2,RACM2 KET (kOH 1.2e-11) -> PRD2
+LIM,TERP,32.574,0.0,TERP,SAPRC TERP = other monoterpenes
+OLI,RACM_OLI,2.142,0.0,OLE2,internal olefins -> OLE2
+OLT,RACM_OLT,0.875,0.0,OLE1,terminal olefins -> OLE1
+PHEN,Phenol,14.609,0.0,CRES,CRES = phenols and cresols
+ROH,RACM_ROH,1.702,0.0,ALK4,C3+ alcohols -> ALK4
+TOL,TOL,4.07,0.0,TOLUENE,explicit
+XYM,Xylene,0.315,0.0,0.3333 MXYL + 0.3333 OXYL + 0.3333 PXYL,xylene isomers split equally
+XYP,Xylene,0.086,0.0,0.3333 MXYL + 0.3333 OXYL + 0.3333 PXYL,xylene isomers split equally
+XYO,Xylene,0.162,0.0,0.3333 MXYL + 0.3333 OXYL + 0.3333 PXYL,xylene isomers split equally
+HOCH2CHO,GLYD,0.185,0.0,HOCCHO,explicit (glycolaldehyde)
+ACETOL,Hydroxyacetone,26.849,0.0,HACET,explicit
+BIACET,Biacetyl,27.916,0.0,BACL,explicit
+PAN,PAN,6.606,0.03,PAN,direct
+PPN,PPN,0.003,0.003,PAN2,PAN2 = PPN and higher PANs
+CH3NO3,CH3NO3,0.029,0.0,RNO3,alkyl nitrates

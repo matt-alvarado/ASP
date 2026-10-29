@@ -1,0 +1,32 @@
+paper_species,mapping_key,initial_ppb,background_ppb,SAPRC07TC_representation,basis_note
+CO2,CO2,414800.0,365000.0,CO2,direct
+CO,CO,4502.0,100.0,CO,direct
+CH4,CH4,1819.909,1580.0,CH4,direct
+C2H6,ETHA,42.619,0.8,ALK1,kOH 2.4e-13 cm3/molec/s = 3.6e2 ppm-1 min-1 (ALK1: 2-5e2)
+C2H4,ETH,77.055,0.02,ETHENE,explicit
+C2H2,ETHY,11.015,0.01,ACETYLENE,explicit
+C3H8,PRPA,17.619,0.011,ALK2,kOH 1.1e-12 (1.6e3): ALK2
+C3H6,Propene,26.422,0.01,PROPENE,explicit
+CH3OH,MEOH,41.2686,0.33,MEOH,explicit
+CH2O,HCHO,72.3928,0.2,HCHO,explicit
+OHCH2CHO,GLYD,14.9848,0.018,HOCCHO,explicit (glycolaldehyde)
+CH3CHO,ALD2,33.033,0.018,CCHO,explicit
+CH3C(O)CH3,Acetone,9.9844,0.3,ACETONE,explicit
+HCOOH,FACD,30.8174,0.0034,HCOOH,explicit
+CH3COOH,AACD,48.0787,0.0969,CCOOH,explicit
+CH2=C(CH3)CH=CH2,ISOP,7.0647,0.0215,ISOPRENE,explicit
+C6H5CH3,TOL,4.9222,0.08,TOLUENE,explicit
+CH3C(O)C2H5,MEK,57.226,0.0,MEK,explicit
+C6H5OH,Phenol,14.5266,0.0,CRES,CRES = phenols and cresols
+CH3C(O)CH2OH,Hydroxyacetone,48.422,0.0,MEK,no HACET in SAPRC07TC: hydroxyacetone (kOH 3e-12) -> MEK
+H2O2,H2O2,0.8,0.8,H2O2,direct
+H2,H2,2120.7,580.0,H2,direct
+O3,O3,17.1,32.5,O3,direct
+NO2,NO2,86.2958,0.0166,NO2,direct
+NO,NO,91.1266,0.0052,NO,direct
+HNO3,HNO3,0.021,0.021,HNO3,direct
+HONO,HONO,34.4356,0.1,HONO,direct
+CH3C(O)O2NO2,PAN,0.0989,0.0989,PAN,direct
+N2O5,N2O5,5e-05,5e-05,N2O5,direct
+N2O,N2O,327.0432,320.0,N2O,direct
+NH3,NH3,43.1396,0.0,NH3,direct

@@ -1,0 +1,66 @@
+paper_species,mapping_key,initial_ppb,background_ppb,CRACMM2_representation,basis_note
+CO,CO,10000.0,129.213,CO,direct
+CO2,CO2,528440.21,390000.0,CO2,direct
+NO,NO,113.674,0.015,NO,direct
+NO2,NO2,227.081,0.039,NO2,direct
+O3,O3,0.0,50.0,O3,direct
+H2O2,H2O2,0.755,0.755,H2O2,direct
+HONO,HONO,39.483,0.0,HONO,direct
+SO2,SO2,37.914,0.12,SO2,direct
+HNO3,HNO3,0.41,0.41,HNO3,direct
+HCl,HCl,19.544,0.0,HCl,direct
+NH3,NH3,379.039,0.001,NH3,direct
+H2,H2,3741.028,0.0,H2,direct
+CH4,CH4,2760.733,1900.0,CH4,direct
+HCHO,HCHO,163.198,0.33,HCHO,explicit
+MEOH,MEOH,164.842,0.0,MOH,explicit
+Formic_Acid,FACD,6.505,0.0,ORA1,explicit
+HCN,HCN,128.32,0.0,HCN,direct
+ETHE,ETH,126.346,0.0,ETE,explicit
+Ethane,ETHA,52.809,0.0,ETH,explicit (ethane)
+Acetaldehyde,ALD2,56.954,0.0,ACD,explicit
+ETOH,ETOH,0.987,0.0,EOH,explicit
+Acetic_Acid,AACD,139.178,0.0,ORA2,explicit
+GLY,GLY,85.185,0.0,GLY,explicit
+Acetylene,ETHY,26.849,0.0,ACE,explicit
+Propene,Propene,47.38,0.0,OLT,terminal olefins
+Propane,PRPA,17.767,0.0,HC3,HC3: kOH < 3.4e-12 alkanes (propane...)
+ACR,Acrolein,5.922,0.0,ACRO,explicit
+Propanal,Propanal,0.642,0.0,ALD,C3+ aldehydes
+Acetone,Acetone,12.141,0.0,ACT,explicit
+NPROPOL,nPropanol,1.836,0.0,ROH,C3+ alcohols
+MGLY,MGLY,44.715,0.0,MGLY,explicit
+Butadiene,Butadiene,4.235,0.0,BDE13,explicit
+1-Butene,1-Butene,3.336,0.0,OLT,terminal olefin
+cis-2-Butene,2-Butene,0.68,0.0,OLI,internal olefin
+trans-2-Butene,2-Butene,0.855,0.0,OLI,internal olefin
+i-Butene,iButene,1.885,0.0,OLT,terminal olefin (isobutene)
+n-Butane,Butane,9.871,0.0,HC3,kOH 2.4e-12 < 3.4e-12: HC3
+i-Butane,Butane,0.323,0.0,HC3,kOH 2.4e-12 < 3.4e-12: HC3
+Butanal,Butanal,3.336,0.0,ALD,C3+ aldehydes
+MEK,MEK,15.3,0.0,MEK,explicit
+NBUTOL,nButanol,0.5,0.0,ROH,C3+ alcohols
+ISOP,ISOP,2.527,0.0,ISO,explicit
+FURAN,Furan,20.184,0.0,FURAN,explicit
+ALD,RACM_ALD,0.722,0.02,ALD,identical lump
+API,APIN,32.574,0.0,API,alpha-pinene and other cyclic terpenes
+BALD,Benzaldehyde,1.254,0.0,BALD,explicit
+BEN,Benzene,11.086,0.0,BEN,explicit
+DIEN,Butadiene,1.203,0.0,BDE13,explicit
+HC5,RACM_HC5,2.378,1.075,HC5,identical lump
+KET,RACM_KET,1.579,0.0,KET,identical lump
+LIM,TERP,32.574,0.0,0.5 API + 0.5 LIM,"monoterpenes split 50/50 between API (cyclic, one C=C) and LIM (limonene-like)"
+OLI,RACM_OLI,2.142,0.0,OLI,identical lump
+OLT,RACM_OLT,0.875,0.0,OLT,identical lump
+PHEN,Phenol,14.609,0.0,PHEN,explicit
+ROH,RACM_ROH,1.702,0.0,ROH,identical lump
+TOL,TOL,4.07,0.0,TOL,explicit
+XYM,Xylene,0.315,0.0,XYL,explicit lump
+XYP,Xylene,0.086,0.0,XYL,explicit lump
+XYO,Xylene,0.162,0.0,XYL,explicit lump
+HOCH2CHO,GLYD,0.185,0.0,HKET,RACM2/CRACMM HKET = hydroxy ketones incl. glycolaldehyde
+ACETOL,Hydroxyacetone,26.849,0.0,HKET,explicit lump
+BIACET,Biacetyl,27.916,0.0,1.33 MGLY,biacetyl: 1.33 MGLY (kOH-weighted)
+PAN,PAN,6.606,0.03,PAN,direct
+PPN,PPN,0.003,0.003,PPN,explicit
+CH3NO3,CH3NO3,0.029,0.0,ONIT,organic nitrates
