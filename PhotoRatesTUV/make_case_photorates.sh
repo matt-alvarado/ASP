@@ -14,4 +14,4 @@ run() { c=$1; shift; python3 "$D/make_photorates.py" --tuv "$T" --pbl-height 1.0
 run Williams   --lat 34.6958 --lon -120.2064 --date 2009-11-17 --alt 1.1 --albedo 0.035 --o3-column 278 --o3-ppb 50   --no2-ppb 0.039  --so2-ppb 0.120
 run Otavi      --lat -19.7   --lon 17.6      --date 2000-09-13 --alt 2.5 --albedo 0.15  --o3-column 349.13 --o3-ppb 85 --no2-ppb 1.3    --so2-ppb 0
 run Alaska     --lat 63.46   --lon -158.65   --date 1997-06-27 --alt 1.5 --albedo 0.10  --o3-column 320    --o3-ppb 32.5 --no2-ppb 0.0166 --so2-ppb 0
-run Timbavati  --lat -24.38  --lon 31.25     --date 2000-09-07 --alt 0.5 --albedo 0.15  --o3-column 288    --o3-ppb 0    --no2-ppb 0.46   --so2-ppb 10
+run Timbavati  --lat -24.38  --lon 31.25     --date 2000-09-07 --alt 0.5 --albedo 0.15  --o3-column 288    --o3-ppb 35.7 --no2-ppb 0.46   --so2-ppb 10
