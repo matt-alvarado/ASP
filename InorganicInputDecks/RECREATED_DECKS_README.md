@@ -43,3 +43,10 @@ inside a 1 km PBL with AOD(330 nm) = 0.5, SSA 0.9, and PBL O3/NO2/SO2 equal to e
 Table S3 of Alvarado and Prinn (2009) has no O3 row.  The background is set to 35.7 ppb, the mean upwind O3 below 1 km used
 for the Timbavati box model in Alvarado's thesis (Sect. 5.2, from the Hobbs et al. 2003 profile); the initial plume O3 stays 0.
 The deck background SO2 (10 ppb, Table S3) differs from the thesis box-model value (1.45 ppb); Table S3 was kept.
+
+## Williams: SVOC aging chemistry
+The template mechanism had the Grieshop-style SVOC aging active (IVOC + OH => 1.4 IVOC(lower), k = 2e-11, mass grows without limit),
+which made Williams OA grow to dOA/dCO2 = 1.9e-2 g/g at 4.5 h (observed 2.83e-3).  `Williams/GasChemicalMechanism.in` now has the
+paper's scheme from the ACP supplement (half Ahmadov / half fragmentation with NOx/HOx chemistry, k = 1e-11, IVOC1_R1O2 + NO).
+Result at 4.5 h: dOA/dCO2 = 3.6e-3 g/g (paper 2.75e-3, observed 2.83 +/- 1.08e-3), dO3/dCO = 0.115 (paper 0.116, observed 0.095 +/- 0.022).
+Only the Williams deck was changed; Otavi/Alaska/Timbavati keep the template mechanism.
