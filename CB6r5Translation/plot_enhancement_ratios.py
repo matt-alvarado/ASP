@@ -38,7 +38,7 @@ def oa_series(run):
     return t, np.array([tot[x] for x in t])
 
 
-fig, ax = plt.subplots(2, 4, figsize=(15, 6.6), sharex='col')
+fig, ax = plt.subplots(2, 4, figsize=(15, 6.6), sharex='col', sharey='row')
 sty = {'base': dict(color='#1f4e79', ls='-', label='Baseline mechanism'),
        'cb6': dict(color='#c4511a', ls='--', label='CB6r5')}
 summary = []
