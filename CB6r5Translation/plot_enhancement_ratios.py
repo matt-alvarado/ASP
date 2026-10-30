@@ -48,7 +48,8 @@ MECHS = [('base', '', dict(color='#0072B2', ls='-', lw=1.8, label='Baseline (RAC
          ('cr2', '_CRACMM2', dict(color='#009E73', ls='-.', lw=1.6, label='CRACMM2'), '^'),
          ('cr3', '_CRACMM3', dict(color='#CC79A7', ls=(0, (5, 1, 1, 1, 1, 1)), lw=1.6, label='CRACMM3'), 'D'),
          ('stc', '_SAPRC07TC', dict(color='#222222', ls=':', lw=2.0, label='SAPRC07TC'), 'v'),
-         ('sti', '_SAPRC07TIC', dict(color='#E0B000', ls=(0, (3, 1, 1, 1)), lw=1.8, label='SAPRC07TIC'), 'P')]
+         ('sti', '_SAPRC07TIC', dict(color='#E0B000', ls=(0, (3, 1, 1, 1)), lw=1.8, label='SAPRC07TIC'), 'P'),
+         ('mcm', '_MCM331', dict(color='#56B4E9', ls=(0, (1, 1)), lw=2.2, label='MCM v3.3.1 + lumped'), 'X')]
 MARK = {t: mk for t, _, _, mk in MECHS}
 sty = {t: st for t, _, st, _ in MECHS}
 summary = []
@@ -98,7 +99,7 @@ from matplotlib.lines import Line2D
 h_ = [Line2D([], [], marker=MARK[t], mec='white', ms=8, **st) for t, _, st, _ in MECHS] + ax[0, 0].get_legend_handles_labels()[0][-1:]
 l_ = [st['label'] for _, _, st, _ in MECHS] + ax[0, 0].get_legend_handles_labels()[1][-1:]
 fig.legend(h_, l_, loc='lower center', ncol=7, frameon=False, fontsize=9)
-fig.suptitle('Enhancement ratios, 5 h runs: six gas-phase mechanisms (common_asp 40c1760) with observations', y=0.995)
+fig.suptitle('Enhancement ratios, 5 h runs: seven gas-phase mechanisms (common_asp 710a126) with observations', y=0.995)
 fig.tight_layout(rect=(0, 0.05, 1, 1))
 fig.savefig(out, dpi=150)
 for s in summary:
