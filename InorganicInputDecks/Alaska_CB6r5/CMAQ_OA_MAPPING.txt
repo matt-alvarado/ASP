@@ -1,0 +1,39 @@
+CMAQ AERO6/7 organic-aerosol emissions mapping for Alaska (CB6r5)
+POA profile VSVPO1: gas 0.045 + particle 0.045 of the 46.73 ug/m3 PM emission
+POA profile VSVPO2: gas 0.140 + particle 0.000 of the 46.73 ug/m3 PM emission
+POA profile VSVPO3: gas 0.180 + particle 0.000 of the 46.73 ug/m3 PM emission
+POA profile VIVPO1: gas 0.500 + particle 0.000 of the 46.73 ug/m3 PM emission
+POA profile VLVPO1: gas 0.000 + particle 0.090 of the 46.73 ug/m3 PM emission
+
+Partitioning species (name, MW, C*298 ug/m3, dHvap J/mol, nonvolatile):
+SVMT1 300.00 0.01 102000 False
+SVMT2 200.00 0.1 91000 False
+SVMT3 186.00 1 80000 False
+SVMT4 184.00 10 69000 False
+SVMT5 170.00 100 58000 False
+SVMT6 168.00 1000 47000 False
+MTNO3 231.00 12 40000 False
+SVISO1 132.00 116 40000 False
+SVISO2 133.00 0.617 40000 False
+SVSQT 273.00 24.98 40000 False
+LVPCSOG 170.00 1e-05 40000 False
+VLVPO1 218.00 0.1 96000 False
+VSVPO1 230.00 1 85000 False
+VSVPO2 241.00 10 74000 False
+VSVPO3 253.00 100 63000 False
+VIVPO1 266.00 1000 52000 False
+VLVOO1 136.00 0.01 107000 False
+VLVOO2 136.00 0.1 96000 False
+VSVOO1 135.00 1 85000 False
+VSVOO2 135.00 10 74000 False
+VSVOO3 134.00 100 63000 False
+SVAVB1 198.00 0.01 18000 False
+SVAVB2 179.00 1 18000 False
+SVAVB3 169.00 10 18000 False
+SVAVB4 158.00 100 18000 False
+
+SOA counters replaced by mass-yield products (counter -> species: coefficient per counter mole):
+ISOPRXN -> 0.1197 SVISO1 + 0.01475 SVISO2
+PCSOARXN -> 1 LVPCSOG
+SESQRXN -> 1.149 SVSQT
+TRPRXN -> 0.01816 SVMT1 + 0.02179 SVMT2 + 0.02343 SVMT3 + 0.07624 SVMT4 + 0.1146 SVMT5 + 0.2311 SVMT6
