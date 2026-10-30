@@ -79,3 +79,9 @@ restores the old behaviour for CB6r5.
   (9.26e-5 /s), CRACMM3 AHOM -> 0.8 AMTN1 + 0.2 ORA1 at 0.01 x jNO2 (`PHOTO <gas rxn #> <scale>`).  Format is in `Condensation/OrgPhaseReactions.h`.
 * Not represented: NTR2 hydrolysis, NO3/HO2/N2O5 uptake, IEPOXP/sulfate consumption (epoxide goes directly to product), AERO7i dimers (folded into the
   tetrol / organosulfate channels).  Gas and particle mass of a species are one ASP species, so converted mass re-equilibrates with the gas phase.
+
+### Effect of tiers 1 + 2 on OA (sum of SizeDist TotOA at 290 min, with vs without the `CMAQ_HET` block and OrgPhaseReactions.in)
+Williams: CRACMM2 184.5 -> 206.2, CRACMM3 136.1 -> 136.6, CB6r5 62.7 -> 77.7, SAPRC07TC 24.5 -> 25.2, SAPRC07TIC 28.9 -> 52.9.
+Otavi: changes 0-1.2 %.  Alaska: CRACMM2/3 +11 %, CB6r5 +15 %, SAPRC07TC +0.2 %, SAPRC07TIC +30 %.  Timbavati: CRACMM +7-8 %, CB6r5 +11 %, SAPRC07TC +0.1 %, SAPRC07TIC +7 %.
+SAPRC07TC barely changes: it has only IEPOX uptake and oligomerisation of already-nonvolatile-ish species.  The runs were not split into uptake-only
+and reactions-only, so the share of each tier is not separated.
