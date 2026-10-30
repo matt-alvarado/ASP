@@ -572,7 +572,11 @@ VSVOO3 + OH => OH + 0.3886 VLVOO1 + 0.2421 VLVOO2 + 0.064 VSVOO1 + 0.0385 VSVOO2
 !! GLY -> AGLY: constant gamma 0.0029 (CMAQ GAMMA_GLY)
 !! MGLY -> AGLY: constant gamma 0.000261 (CMAQ GAMMA_GLY x 0.09)
 !! EPOX -> AISO3: acidity-dependent (flag 18, kind 1, channel 0, scale 1)
+!! NTR2 -> HNO3: flag 19
+!! N2O5 -> 2 HNO3: flag 20
 GLY => AGLY ; 3 ; 0.0029 ; 58 ; 0 ;
 MGLY => AGLY ; 3 ; 0.000261 ; 72 ; 0 ;
 EPOX => AISO3 ; 18 ; 1 ; 118.1 ; 1 ; 0 ;
+NTR2 => HNO3 ; 19 ; 1.4 ;
+N2O5 => 2 HNO3 ; 20 ; 1 ; 108.01 ;
 !! CMAQ_HET_END

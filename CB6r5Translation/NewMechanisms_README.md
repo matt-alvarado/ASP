@@ -85,3 +85,13 @@ Williams: CRACMM2 184.5 -> 206.2, CRACMM3 136.1 -> 136.6, CB6r5 62.7 -> 77.7, SA
 Otavi: changes 0-1.2 %.  Alaska: CRACMM2/3 +11 %, CB6r5 +15 %, SAPRC07TC +0.2 %, SAPRC07TIC +30 %.  Timbavati: CRACMM +7-8 %, CB6r5 +11 %, SAPRC07TC +0.1 %, SAPRC07TIC +7 %.
 SAPRC07TC barely changes: it has only IEPOX uptake and oligomerisation of already-nonvolatile-ish species.  The runs were not split into uptake-only
 and reactions-only, so the share of each tier is not separated.
+
+### Update: CMAQ volume basis for flag 18, NTR2 hydrolysis, N2O5 / NO3 / HO2 uptake (common_asp >= asp_v2.2.2 head)
+* Flag 18 now divides by the total wet-particle volume, as CMAQ.  Flag 19 (`NTR2 => HNO3 ; 19 ; 1.4 ;`, CB6r5) is CMAQ HETERO_NTR2 (4/day x particle
+  fraction from OA x RH ramp 0.2-0.4).  Flag 20 (`N2O5 => 2 HNO3 ; 20 ; 1 ; 108.01 ;`) uses CMAQ's default N2O5 gamma (Davis et al. 2008).
+  NO3 (gamma 1e-3 -> HNO3; SAPRC07TIC, CRACMM) and HO2 (gamma 0.2, no products; CRACMM) use flag 3.  N2O5 goes to 2 HNO3 in every mechanism (CMAQ's
+  H2NO3P / NO2P tracer products are not represented).  N2O5 gamma is applied to all bins (CMAQ: I+J modes; coarse mode has its own value).
+* OA at 290 min (none / previous uptake+reactions / now): Williams CRACMM2 184.5 / 206.2 / 193.1, CRACMM3 136.1 / 136.6 / 129.2, CB6r5 62.7 / 77.7 / 77.7,
+  SAPRC07TC 24.5 / 25.2 / 25.2, SAPRC07TIC 28.9 / 52.9 / 52.9.  CB6r5 and SAPRC decks are unchanged by the new pathways and the volume basis (to
+  0.01 ug/m3 in Williams), so their OA gain comes from oligomerisation, hydrolysis and glyoxal uptake, not the epoxide uptake.  Only CRACMM changes
+  (HO2 / NO3 / N2O5 uptake, volume basis); the split among them was not run.  Alaska and Timbavati CRACMM change by 0.1-0.2 ug/m3.

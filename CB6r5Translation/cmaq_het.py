@@ -9,7 +9,8 @@ lines sit between the markers `CMAQ_HET_BEGIN` / `CMAQ_HET_END` in GasChemicalMe
   tier 2  OrgPhaseReactions.in      oligomerisation (9.48816e-6 /s), organic-nitrate hydrolysis (9.259e-5 /s), CRACMM ATRPN / AHONIT
                                     -> AHOM + HNO3 (9.26e-5 /s) and, for CRACMM3, AHOM photolysis (0.01 x jNO2)
 
-Not represented: NTR2 hydrolysis (needs an organic-nitrate gas/particle split), NO3 / HO2 / N2O5 uptake, SO2 chemistry.
+Also (where the CMAQ mech has them): NTR2 hydrolysis (flag 19), N2O5 uptake (flag 20, Davis et al. gamma), NO3 (gamma 1e-3) and HO2
+(gamma 0.2, no products as in CMAQ) uptake.  Not represented: NO2 uptake (HONO), chlorine / bromine / iodine and SO2 heterogeneous chemistry.
 CMAQ's CB6r5 / AERO6 IEPOX goes through the intermediates IEPOXP (+ ASO4J); here the epoxide goes directly to the product
 (sulfate is not consumed), and the AERO7i dimers are folded into the tetrol / organosulfate channels.
 """
@@ -40,6 +41,14 @@ UPTAKE = {
                                         ('INALD', [('AISO5', 0)], 1, 0.5, 'HNO3')]),
 }
 UPTAKE['CRACMM3'] = dict(const=GLY3, acid=UPTAKE['CRACMM2']['acid'])
+# inorganic / NTR2 pathways: (reactant, product text, flag line), where used in the CMAQ mech definition
+EXTRA = {
+    'CB6R5':      [('NTR2', 'HNO3', '19 ; 1.4 ;'), ('N2O5', '2 HNO3', '20 ; 1 ; 108.01 ;')],
+    'SAPRC07TC':  [('N2O5', '2 HNO3', '20 ; 1 ; 108.01 ;')],
+    'SAPRC07TIC': [('N2O5', '2 HNO3', '20 ; 1 ; 108.01 ;'), ('NO3', 'HNO3', '3 ; 1e-3 ; 62.0 ; 0 ;')],
+    'CRACMM2':    [('N2O5', '2 HNO3', '20 ; 1 ; 108.01 ;'), ('NO3', 'HNO3', '3 ; 1e-3 ; 62.0 ; 0 ;'), ('HO2', 'OffGas', '3 ; 0.2 ; 33.0 ; 0 ;')],
+}
+EXTRA['CRACMM3'] = EXTRA['CRACMM2']
 GAS_MW = {'GLY': 58.0, 'MGLY': 72.0, 'EPOX': 118.1, 'IEPOX': 118.1, 'IMAE': 102.0, 'IHMML': 102.0, 'IPX': 150.1, 'INALD': 195.1}
 
 # CMAQ particle species -> ASP species (semivolatile V/A pairs are one species named like the vapor)
@@ -131,6 +140,10 @@ def _strip_block(path):
     return L
 
 
+def spec_extra(mech):
+    return EXTRA.get(mech, [])
+
+
 def apply(case_dir, mech, acid=True, iepox_gamma=0.01):
     """acid=True: flag 18 (particle-acidity-dependent) for the epoxides; False: constant gamma `iepox_gamma` (flag 3)"""
     mech = mech.upper()
@@ -172,6 +185,12 @@ def apply(case_dir, mech, acid=True, iepox_gamma=0.01):
                 rxn.append('%s => %s%s ; 3 ; %.5g ; %g ; 0 ;' % (r, p, ex, iepox_gamma * scale, GAS_MW[r]))
                 notes.append('%s -> %s%s: constant gamma %.3g' % (r, p, ex, iepox_gamma * scale))
             new.append(p)
+    for r, prod, tail in spec_extra(mech):
+        if r not in gas:
+            skipped.append(r)
+            continue
+        rxn.append('%s => %s ; %s' % (r, prod, tail))
+        notes.append('%s -> %s: %s' % (r, prod, 'flag ' + tail.split(';')[0].strip()))
     # tier 2
     org = []
     pm2asp = CB_MAP
