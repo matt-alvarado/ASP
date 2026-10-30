@@ -95,3 +95,19 @@ and reactions-only, so the share of each tier is not separated.
   SAPRC07TC 24.5 / 25.2 / 25.2, SAPRC07TIC 28.9 / 52.9 / 52.9.  CB6r5 and SAPRC decks are unchanged by the new pathways and the volume basis (to
   0.01 ug/m3 in Williams), so their OA gain comes from oligomerisation, hydrolysis and glyoxal uptake, not the epoxide uptake.  Only CRACMM changes
   (HO2 / NO3 / N2O5 uptake, volume basis); the split among them was not run.  Alaska and Timbavati CRACMM change by 0.1-0.2 ug/m3.
+
+### Update: NO2 uptake to HONO (flag 21; common_asp asp_v2.2.2 head)
+* `NO2 => 0.5 HONO + 0.5 HNO3 ; 1 ; 21 ; 1e-4 ;` (CMAQ HETERO_NO2, Vogel et al. 2003): k = v x wet surface area per volume of air, v = 1e-4 m/s, summed over bins
+  with r < 1.25 um (CMAQ I+J modes).  It is in all five mechanism decks (CMAQ has it in CRACMM2/3 and CB6r5; AERO7i/SAPRC decks get it as well, as a switchable
+  `CMAQ_HET` line: delete it to remove it).  Logged k is about 1.7e-6 /s in Williams at t=0.
+* OA at 290 min is unchanged to <= 0.2 ug/m3 in every case (Williams CRACMM2 193.0 -> 193.0, CRACMM3 129.2 -> 129.4, CB6r5 77.7, SAPRC07TC 25.2, SAPRC07TIC 52.9),
+  as expected for a gas-phase NOx/HONO pathway.  Comparison plots regenerated.
+
+### Open items carried over from earlier steps
+* Timbavati OA about half of observed; SO2 background mismatch; Williams IVOC3-7 initial values.
+* NTR2 hydrolysis rate was only seen in the log at t=0 (0); not verified later in the run.
+* Not represented: IEPOXP/sulfate consumption (epoxide goes directly to product), AERO7i dimers (folded into tetrol / organosulfate channels), CMAQ's
+  H2NO3P / NO2P tracer products of N2O5 uptake; coarse-mode N2O5 gamma.
+* SAPRC07TIC OA gain (+83 % Williams) is not from epoxide uptake or the volume basis; its cause is not isolated.  Share of uptake vs particle-phase reactions not split.
+* Held by request: SurfaceTension simplification; thermodynamics NaN warnings stay uncommented.
+* `src` submodule stays pinned to ba61060; master untouched (Matt merges).

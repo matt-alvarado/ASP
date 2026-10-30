@@ -10,7 +10,7 @@ lines sit between the markers `CMAQ_HET_BEGIN` / `CMAQ_HET_END` in GasChemicalMe
                                     -> AHOM + HNO3 (9.26e-5 /s) and, for CRACMM3, AHOM photolysis (0.01 x jNO2)
 
 Also (where the CMAQ mech has them): NTR2 hydrolysis (flag 19), N2O5 uptake (flag 20, Davis et al. gamma), NO3 (gamma 1e-3) and HO2
-(gamma 0.2, no products as in CMAQ) uptake.  Not represented: NO2 uptake (HONO), chlorine / bromine / iodine and SO2 heterogeneous chemistry.
+(gamma 0.2, no products as in CMAQ) uptake.  NO2 uptake (flag 21, 1e-4 m/s x fine surface area, 0.5 HONO + 0.5 HNO3).  Not represented: chlorine / bromine / iodine and SO2 heterogeneous chemistry.
 CMAQ's CB6r5 / AERO6 IEPOX goes through the intermediates IEPOXP (+ ASO4J); here the epoxide goes directly to the product
 (sulfate is not consumed), and the AERO7i dimers are folded into the tetrol / organosulfate channels.
 """
@@ -48,6 +48,8 @@ EXTRA = {
     'SAPRC07TIC': [('N2O5', '2 HNO3', '20 ; 1 ; 108.01 ;'), ('NO3', 'HNO3', '3 ; 1e-3 ; 62.0 ; 0 ;')],
     'CRACMM2':    [('N2O5', '2 HNO3', '20 ; 1 ; 108.01 ;'), ('NO3', 'HNO3', '3 ; 1e-3 ; 62.0 ; 0 ;'), ('HO2', 'OffGas', '3 ; 0.2 ; 33.0 ; 0 ;')],
 }
+for _m in list(EXTRA):
+    EXTRA[_m].append(('NO2', '0.5 HONO + 0.5 HNO3', '21 ; 1e-4 ;'))
 EXTRA['CRACMM3'] = EXTRA['CRACMM2']
 GAS_MW = {'GLY': 58.0, 'MGLY': 72.0, 'EPOX': 118.1, 'IEPOX': 118.1, 'IMAE': 102.0, 'IHMML': 102.0, 'IPX': 150.1, 'INALD': 195.1}
 
