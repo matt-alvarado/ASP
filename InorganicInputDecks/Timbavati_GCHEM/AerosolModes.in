@@ -1,0 +1,110 @@
+!! AerosolModel.in
+!! ASP
+!! Matt Alvarado, 2004-2013 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 (c)
+!!
+!! This input deck specifies the traits of aerosol distributions
+!! from which the particles are to be sampled.
+!! 
+!! These should be dry particle values, since the resulting particles
+!! will be allowed to reach equilibrium with the ambient water as an
+!! initializing first step of the model.
+!!
+!! With the first flag entry, you may either specify the ratio of species 
+!! to eachother on a molecular abundance basis (zero) or the total
+!! mass of the particular species in micrograms per meter cube m3 that 
+!! is distributed over the mode (one).
+!!
+!! The modes are considered to be log normal:
+!!
+!!
+!!   Nt is the total number of particles (particles per cc)
+!!   Dbar_g_N geometric mean diameter (number median diameter) (microns)
+!!   Rho_g Standard Deviation (microns)
+!!
+!!You must also specify the format of the sectional  lagrangian representation.
+!! You will be allowed to specify a size cutoff separating the two and allowed 
+!! to write the number of bins (which will require a lower cutoff)
+!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! _BULK_MODE_ : You may also set this to BULK mode by setting Nt = 0, 
+!! which means the system will be treated as a single particle and curvature !
+!! effects are 
+!! neglected. You may then only specify one mode and only use the microgram per
+!! meter cube specification.  This mode is not appropriate 
+!! (and will be rejected) for model runs that seek to explicitly condense 
+!! using kinetic formulations, include aerosol dynamics, etc.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!First, specify WHETHER OR NOT WE WILL ALLOW LAGRANGIAN PARTICLES in this model.
+!! (F) No Lagrangian particles (behaves like a moving center sectional model)
+!! (T) Yes Lagrangian particles
+F !!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Second, specify HOW MASS AND NUMBER are interpreted
+!! (0) mass fraction (Sectional Distribution) or
+!! (1) total mass abundance in ug/m3 (Bulk or Monodisperse Distribution)
+!!
+0 !!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Next, specify the CHARACTERISTICS of the SECTIONAL DISTRIBUTION
+!!
+!! ALL OF THIS IS IGNORED IF YOU RUN THE MODEL IN BULK MODE (but you still must
+!! include all of the terms or the lexor will not get this right).
+!!
+1.0 !! Section Lagrangian Radius cutoff (in microns) (of the lower extent of the 
+!      !! largest bin if no lagrangian particles.  Or irrelevent if only 1 bin and 
+!      !! no lagrangian particles allowed.)
+40  !! Number of Bins with which to represent the aerosol sized below the cutoff
+!! (If the cutoff is zero this must be zero, but the opposite means we do 
+!!  not track the small particles.)
+0.015 !! The cutoff below which particles are all grouped into one section (the bottom 
+!      !! extent of which will be zero.  For a one section model, this must equal the
+!      !! upper cutoff.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Each mode is to be specified individually and has the following
+!! format (note: a numerical first token signals a new distribution):
+!! 
+!! Nt ; Dbar_g_N ; Rho_g  
+!! Distribution Name
+!!
+!! And then, depending on the flag value, either:
+!!
+!!(if __Flag = 0__): For Sectional Distribution
+!! First Chemical Name  ; Initial Mass Volume Percentage
+!!                  (^^^^^^^ will be normalized, so it doesn't have to add to 100)=
+!! Second Chemical Name ; Initial Mass Volume Percentage
+!! ...
+!!
+!!(or if __Flag = 1__): For Monodisperse or Bulk Distribution
+!! First Chemical Name  ; ug per meter cube of species in distribution
+!! Second Chemical Name ; ug per meter cube of species in distribution
+!! ...
+!!
+!! TO DECLARE BULK MODE, INPUT Nt = 0 AND SPECIFY MASS ABUNDANCE MODE ABOVE
+!! Please remember, composition must be in ug/m3, or in total dry mass % (no water)
+!
+!
+!! Timbavati initial smoke aerosol, rescaled case of Alvarado and Prinn (2009) (Table S4, columns 3 and 4).  Composition is mass %.
+34000 ; 0.11 ; 1.91
+Timbavati rescaled mode 1;
+KCl; 16.93
+NH4Cl; 25.5
+NH4NO3; 2.19
+(NH4)2SO4; 4.28
+BC; 4.36
+POA1; 12.04
+CBIO; 34.69
+66000 ; 0.02 ; 1.175
+Timbavati rescaled mode 2;
+KCl; 16.93
+NH4Cl; 25.5
+NH4NO3; 2.19
+(NH4)2SO4; 4.28
+BC; 4.36
+POA1; 12.04
+CBIO; 34.69

@@ -54,8 +54,8 @@ def build_case(case, cfg, mech_lines, header):
             rows0[rn] = [v[0], v[1], v[2], v[3] * f, v[4] * f, v[5]]
     for n, v in rows0.items():
         if n in NEUTRAL or n in used: continue
-        if v[3] != 0 or v[4] != 0 or n in SPECIAL_KEEP or re.match(r'^(IVOC|POA|LEVO|CBIO|CPD)', n): used.setdefault(n, 1)
-    for n in SPECIAL_KEEP: used.setdefault(n, 1)
+        if v[3] != 0 or v[4] != 0 or n in [ren(x) for x in SPECIAL_KEEP] or re.match(r'^(IVOC|POA|LEVO|CBIO|CPD)', n): used.setdefault(n, 1)
+    for n in SPECIAL_KEEP: used.setdefault(ren(n), 1)
     info = cfg['species_info']
     rows = collections.OrderedDict()
     for n in used:
