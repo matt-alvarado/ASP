@@ -1,0 +1,7 @@
+!! OrgPhaseReactions.in - MOZART-T1 VBS-SOA: particulate SOA photolysis J = 0.04 x J(NO2), no products (Tilmes et al. 2019)
+!! Reactant ; rate (PHOTO <gas reaction #> <scale>) ; products.  Needs common_asp with OrgPhaseReactions.h.
+SOAG0    ; PHOTO 9 0.04 ;   ! SOA photolysis
+SOAG1    ; PHOTO 9 0.04 ;   ! SOA photolysis
+SOAG2    ; PHOTO 9 0.04 ;   ! SOA photolysis
+SOAG3    ; PHOTO 9 0.04 ;   ! SOA photolysis
+SOAG4    ; PHOTO 9 0.04 ;   ! SOA photolysis

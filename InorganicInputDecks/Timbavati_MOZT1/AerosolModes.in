@@ -97,8 +97,7 @@ NH4Cl; 25.5
 NH4NO3; 2.19
 (NH4)2SO4; 4.28
 BC; 4.36
-POA1; 12.04
-CBIO; 34.69
+POM; 23.365;
 66000 ; 0.02 ; 1.175
 Timbavati rescaled mode 2;
 KCl; 16.93
@@ -106,5 +105,5 @@ NH4Cl; 25.5
 NH4NO3; 2.19
 (NH4)2SO4; 4.28
 BC; 4.36
-POA1; 12.04
-CBIO; 34.69
+POM; 23.365;
+

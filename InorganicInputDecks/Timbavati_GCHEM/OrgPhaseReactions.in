@@ -1,0 +1,4 @@
+!! OrgPhaseReactions.in - GEOS-Chem 14.8.0 particle-phase reactions
+!! Reactant ; rate [1/s] ; products (mole coefficients).  Needs common_asp with OrgPhaseReactions.h.
+IONITA   ; 0.000278 ; 1 INDIOL + 1 HNO3   ! organic nitrate hydrolysis (fullchem.eqn)
+MONITA   ; 0.000278 ; 1 INDIOL + 1 HNO3   ! organic nitrate hydrolysis (fullchem.eqn)

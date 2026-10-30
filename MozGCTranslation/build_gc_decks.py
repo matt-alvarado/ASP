@@ -2,7 +2,7 @@
 """Build InorganicInputDecks/<Case>_GCHEM/ : hybrid GEOS-Chem fullchem v14.8.0 (non-halogen gas chemistry) + baseline lumped chemistry."""
 import os, sys, collections
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
-import hybrid, pure, lump_maps, gc_rates as g
+import moz_oa, hybrid, pure, lump_maps, gc_rates as g
 from gc_kpp import read_eqn
 from gc_rates import GCTranslator, SP, peroxy_flag, RENAME
 
@@ -13,7 +13,7 @@ def counter_for(react):
     return None
 
 def header(n_gc):
-    return """!! GasChemicalMechanism.in - GEOS-Chem fullchem (non-halogen gas chemistry) + SOA-precursor / IVOC chains
+    return """!! GasChemicalMechanism.in - GEOS-Chem fullchem (non-halogen gas chemistry) (organic aerosol added by moz_oa.py)
 !! ASP
 !! Translated by MozGCTranslation/gc_rates.py from the GEOS-Chem 'fullchem' KPP mechanism, version 14.8.0
 !! (KPP/fullchem/fullchem.eqn, fullchem_RateLawFuncs.F90, rateLawUtilFuncs.F90; 1067 reactions, 356 species).
@@ -21,10 +21,8 @@ def header(n_gc):
 !! Contents
 !!   1. GEOS-Chem gas-phase reactions (%d ASP reactions).  A GEOS-Chem rate that is a sum of terms (CO + OH, HNO3 + OH, HO2 + HO2),
 !!      or a photolysis with several channels, is split into one ASP reaction per term.
-!!   2. SOA-precursor counters (ISOSOA, TOLSOA, XYLSOA, TERPSOA) appended to the GEOS-Chem OH / O3 / NO3 reactions of isoprene,
-!!      toluene, xylene, and the monoterpenes (MTPA, MTPO, LIMO, PIN), as in the baseline deck; their counter -> IVOC chains and the
-!!      IVOC aging block are copied unchanged from the baseline deck (only Acetic_Acid -> ACTA).  GEOS-Chem's own SOA schemes
-!!      (aerosol-phase tracers SOAIE, SOAGX, LVOCOA, IONITA, ...) are not used.
+!!   2. Organic aerosol (GEOS-Chem complex SOA + semivolatile POA, SOAGX / SOAIE / LVOCOA / IONITA / MONITA / AONITA uptake products and
+!!      nitrate hydrolysis) is added by moz_oa.apply_gc between MOZ_OA_BEGIN / MOZ_OA_END; the baseline counters / IVOC chains are removed.
 !!   NO baseline RACM2-derived lumped gas reactions are kept: the baseline initial / background compounds are lumped onto GEOS-Chem
 !!   species in GCHEM_SPECIES_MAPPING.csv (GC_species_map.py).
 !!
@@ -38,7 +36,7 @@ def header(n_gc):
 !! Heterogeneous reactions: GEOS-Chem computes uptake coefficients from aerosol composition, RH and T (HO2, NO2, NO3, N2O5, GLYX, MGLY,
 !!   IEPOX, nitrates ...).  Here they are ASP first-order heterogeneous reactions (flag 3: fixed gamma, molecular weight; ASP's own
 !!   surface area and gas diffusion): HO2 gamma 0.2, N2O5 0.02, NO2 5e-6, NO3 5e-3, GLYX 2.2e-3 (GEOS-Chem day 4.4e-3 / night 8e-6, mean),
-!!   MGLY and PYAC 3.6e-7, IEPOX 0.01, HMML 3e-4, VOC nitrates as given in fullchem.eqn.  Aerosol-phase products are dropped.
+!!   MGLY and PYAC 3.6e-7, IEPOX 0.01, HMML 3e-4, VOC nitrates as given in fullchem.eqn. 
 !!
 !! TEMPERATURE / PRESSURE: nothing is evaluated at a fixed T or P.  Every GEOS-Chem rate function (GCARR, GCJPL*, GC_NIT / GC_ALK, GC_RO2NO,
 !!   GC_PAN, GC_ISO1/2, GC_EPO, ARRPLUS, TUNPLUS ...) is expressed through ASP rate flags; verify_gc.py compares every translated rate
@@ -84,5 +82,7 @@ def main():
           (len(R), len(lines), len(species), sum(1 for v in info.values() if v[1]), dict(why)))
     for cs in [a for a in sys.argv[1:] if a in hybrid.CASES] or hybrid.CASES:
         res = pure.build_case(cs, cfg, lines, header)
+        notes = moz_oa.apply_gc(os.path.join(pure.DECKS, cs + cfg['suffix']), cs)
+        print('   OA / het: ' + '; '.join(notes[:3]) + ' ... (%d notes)' % len(notes))
         print('%-10s %d reactions + IVOC chains; %d species (%d peroxy)' % (cs, len(lines), res['n_species'], res['n_perox']))
 if __name__ == '__main__': main()

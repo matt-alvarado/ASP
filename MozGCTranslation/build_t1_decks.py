@@ -2,7 +2,7 @@
 """Build InorganicInputDecks/<Case>_MOZT1/ : hybrid MOZART-T1 (WRF-Chem KPP T1_MOZCART) + baseline lumped chemistry."""
 import os, sys, collections
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
-import hybrid, pure, lump_maps
+import moz_oa, hybrid, pure, lump_maps
 from t1_kpp import read_eqn
 from mozt1 import T1Translator, HET
 from aspfmt import fmt
@@ -31,7 +31,7 @@ def counter_for(react):
     return None
 
 def header(n_t1):
-    return """!! GasChemicalMechanism.in - MOZART-T1 + SOA-precursor / IVOC chains
+    return """!! GasChemicalMechanism.in - MOZART-T1 (organic aerosol added by moz_oa.py)
 !! ASP
 !! Translated by MozGCTranslation/mozt1.py from the WRF-Chem KPP mechanism T1_MOZCART (tag MZ148_T1mozcart_20170323; 142 species,
 !! 344 reactions; the MOZART-4 / CAM-chem 'T1' tropospheric chemistry with the Emmons et al. (2010) and Knote et al. (2014) extensions).
@@ -40,9 +40,8 @@ def header(n_t1):
 !! Contents
 !!   1. T1 gas-phase reactions (%d ASP reactions; a T1 rate that is a sum of terms or of photolysis channels is split into one ASP
 !!      reaction per term / TUV column).  T1 reaction numbers are in T1_reaction_index.csv.
-!!   2. SOA-precursor counters (ISOSOA, TOLSOA, XYLSOA, TERPSOA) appended to the T1 OH / O3 / NO3 reactions of isoprene, toluene,
-!!      xylenes and the terpenes, as in the baseline deck; their counter -> IVOC chains and the IVOC aging block are copied unchanged
-!!      from the baseline deck (only Acetic_Acid -> CH3COOH).  T1's own VBS SOA yield function (vbs_yield) is not used.
+!!   2. Organic aerosol (CESM2 / CAM-chem VBS-SOA: SOAG0-4, SVOC / IVOC / POM) is added by moz_oa.apply_t1 between MOZ_OA_BEGIN / MOZ_OA_END;
+!!      the baseline counters / IVOC chains are removed.
 !!   NO baseline RACM2-derived lumped gas reactions are kept: the baseline initial / background compounds are lumped onto T1 species
 !!   (MOZT1_SPECIES_MAPPING.csv).
 !!   Heterogeneous reactions: the T1 aerosol-uptake reactions (usr_*_aer: HO2, N2O5, NO2, NO3, HONITR, ISOPNITA/B, ONITR, TERPNIT,
@@ -85,6 +84,8 @@ def main():
     print('T1: %d reactions -> %d ASP lines, %d species' % (len(R), len(lines), len(species)))
     for cs in [a for a in sys.argv[1:] if a in hybrid.CASES] or hybrid.CASES:
         res = pure.build_case(cs, cfg, lines, header)
+        notes = moz_oa.apply_t1(os.path.join(pure.DECKS, cs + cfg['suffix']), cs)
+        print('   OA / het: ' + '; '.join(notes[:3]) + ' ... (%d notes)' % len(notes))
         print('%-10s %d reactions + IVOC chains; %d species (%d peroxy)' % (cs, len(lines), res['n_species'], res['n_perox']))
 
 if __name__ == '__main__': main()
