@@ -22,6 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import cmaq2asp as c2a                      # noqa: E402
 import species_map as sm                    # noqa: E402
+import cmaq_oa                              # noqa: E402
 
 DECKS = os.path.join(HERE, '..', 'InorganicInputDecks')
 DEF = '/home/claude/usepa/cmaq/CCTM/src/MECHS/cb6r5_ae7_aq/mech_cb6r5_ae7_aq.def'
@@ -163,21 +164,30 @@ def photo_table(case_dir, tr, out_path):
 def mech_file(case, case_dir, tr, T, P, out_path):
     old = open(os.path.join(case_dir, 'GasChemicalMechanism.in'), errors='ignore').read().replace('\r', '').split('\n')
     # SOA -> IVOC chains (only the four counters that CB6r5 still produces) + IVOC aging block
-    a = next(i for i, l in enumerate(old) if re.match(r'^TOLSOA\s*\+\s*NO\s', l))
-    b = next(i for i, l in enumerate(old) if re.match(r'^TERPSOA\s*=>', l))
-    chain = [l for l in old[a:b + 1] if l.strip() and not l.startswith('HC') and not l.startswith('OL')]
-    aging = old[b + 1:]
-    aging = [l.replace('Acetic_Acid', 'AACD') for l in aging]
-    while aging and not aging[-1].strip():
-        aging.pop()
+    ae = tr.ae is not None
+    chain, aging = [], []
+    if not ae:
+        a = next(i for i, l in enumerate(old) if re.match(r'^TOLSOA\s*\+\s*NO\s', l))
+        b = next(i for i, l in enumerate(old) if re.match(r'^TERPSOA\s*=>', l))
+        chain = [l for l in old[a:b + 1] if l.strip() and not l.startswith('HC') and not l.startswith('OL')]
+        aging = old[b + 1:]
+        aging = [l.replace('Acetic_Acid', 'AACD') for l in aging]
+        while aging and not aging[-1].strip():
+            aging.pop()
     L = []
     L.append('!! GasChemicalMechanism.in - Carbon Bond 6 revision 5 (CB6r5), %s case' % case)
     L.append('!! ASP')
     L.append('!! Translated from the CMAQ v5.4+ mechanism definition CB6r5-AE7-AQ (mech_cb6r5_ae7_aq.def) by')
     L.append('!! CB6r5Translation/cmaq2asp.py - see CB6r5Translation/CB6r5_README.md for every choice and warning.')
-    L.append('!! Gas-phase core only (the %d R<n> reactions of the .def file, minus R216 ECH4+OH, which is the CH4 tracer' % len(tr.all and [r for r in tr.all if c2a.CORE.match(r.label)]))
-    L.append('!! reaction; CH4 + OH is R<n> above).  Chlorine, DMS, mercury, toxics-diagnostic, SA, BL/BP, POA and')
-    L.append('!! aerosol heterogeneous groups are NOT included (gas chemistry only, per project scope).')
+    if ae:
+        L.append('!! Gas-phase core (R<n>, minus R216 ECH4+OH, the CH4 tracer) plus CMAQ AERO7 organic-aerosol chemistry: SA* SOA yields (SVAVB1-4,')
+        L.append('!! SVSQT), BL18* / BP70mtp terpene nitrate (MTNO3), PCSOA and POA_AGE* ageing.  SOA counters (ISOPRXN, TRPRXN, ...) are replaced by')
+        L.append('!! their CMAQ mass-yield products (see cmaq_ae.py, OrgPhaseChems.in, OrganicDissolution.in).  NOT translated: chlorine, DMS, mercury,')
+        L.append('!! toxics, heterogeneous (IEPOX, glyoxal) uptake, particle-phase hydrolysis / oligomerisation, BP71mtp (MTNO3 photolysis).')
+    else:
+        L.append('!! Gas-phase core only (the %d R<n> reactions of the .def file, minus R216 ECH4+OH, which is the CH4 tracer' % len(tr.all and [r for r in tr.all if c2a.CORE.match(r.label)]))
+        L.append('!! reaction; CH4 + OH is R<n> above).  Chlorine, DMS, mercury, toxics-diagnostic, SA, BL/BP, POA and')
+        L.append('!! aerosol heterogeneous groups are NOT included (gas chemistry only, per project scope).')
     L.append('!! Case conditions: T = %.1f K, P = %.1f mb (used only to choose the IUPAC/JPL fall-off forms).' % (T, P))
     L.append('!! Rate-flag conventions are those of the original ASP deck (see the file header of the old decks).')
     L.append('!! REQUIRES common_asp >= f3f1107: R46 uses 2-body rate flag 5 and R24 3-body flag 2, both mis-coded in earlier versions.')
@@ -200,17 +210,35 @@ def mech_file(case, case_dir, tr, T, P, out_path):
             for n in ns:
                 L.append('!! NOT TRANSLATED %s: %s  [%s]' % (lab, n['text'], n['cmaq']))
     L.append('')
-    L.append('!! ------------------------------------------------------------------------------------')
-    L.append('!! SOA precursor counters -> IVOC volatility bins (unchanged from the %s deck of the' % case)
-    L.append('!! baseline mechanism; the counters TOLSOA, XYLSOA, ISOSOA, TERPSOA are produced by the')
-    L.append('!! CB6r5 aromatic / isoprene / terpene oxidation reactions above).  HC5SOA, HC8SOA, OLTSOA and')
-    L.append('!! OLISOA chains of the baseline are not re-attached (see README, open decisions).')
-    L.append('!! ------------------------------------------------------------------------------------')
-    L.extend(chain)
-    L.append('!')
-    L.extend(aging)
-    L.append('!')
+    if not ae:
+        L.append('!! ------------------------------------------------------------------------------------')
+        L.append('!! SOA precursor counters -> IVOC volatility bins (unchanged from the %s deck of the' % case)
+        L.append('!! baseline mechanism; the counters TOLSOA, XYLSOA, ISOSOA, TERPSOA are produced by the')
+        L.append('!! CB6r5 aromatic / isoprene / terpene oxidation reactions above).  HC5SOA, HC8SOA, OLTSOA and')
+        L.append('!! OLISOA chains of the baseline are not re-attached (see README, open decisions).')
+        L.append('!! ------------------------------------------------------------------------------------')
+        L.extend(chain)
+        L.append('!')
+        L.extend(aging)
+        L.append('!')
     open(out_path, 'w').write('\n'.join(L) + '\n')
+
+
+OA_MODE = 'ae'          # 'ae': CMAQ AERO7 organic-aerosol chemistry (cmaq_ae.py); 'asp': baseline IVOC ladder + re-keyed counters
+
+
+def write_ae_files(ae, case, new_dir, all_sp, p_new, replaced, oa_notes, label):
+    """OrgPhaseChems / OrganicDissolution / Hydrophilic* / AerosolModes for the CMAQ AERO organic species + mapping notes"""
+    part = ae.partition(list(all_sp))
+    cmaq_oa.write_org_files(new_dir, part)
+    cmaq_oa.rewrite_modes(os.path.join(new_dir, 'AerosolModes.in'), replaced, p_new)
+    with open(os.path.join(new_dir, 'CMAQ_OA_MAPPING.txt'), 'w') as fh:
+        fh.write('CMAQ AERO6/7 organic-aerosol emissions mapping for %s (%s)\n' % (case, label))
+        fh.write('\n'.join(oa_notes) + '\n\nPartitioning species (name, MW, C*298 ug/m3, dHvap J/mol, nonvolatile):\n')
+        fh.write('\n'.join('%s %.2f %.4g %.0f %s' % x for x in part) + '\n')
+        fh.write('\nSOA counters replaced by mass-yield products (counter -> species: coefficient per counter mole):\n')
+        for c in sorted(ae.used_ctr):
+            fh.write('%s -> %s\n' % (c, ' + '.join('%.4g %s' % (y, sp) for sp, y in ae.ctr[c])))
 
 
 # ----------------------------------------------------------------------------------------
@@ -221,7 +249,8 @@ def build_case(case):
         shutil.rmtree(new_dir)
     shutil.copytree(old_dir, new_dir)
     T, P = read_case_TP(old_dir)
-    tr = c2a.Translation(DEF, T, P, soa_counters='asp')
+    tr = c2a.Translation(DEF, T, P, soa_counters=OA_MODE)
+    ae = tr.ae
     hdr, old_rows, old_raw = read_old_gas(old_dir)
     ent = case_entries(case, old_rows)
     mapped, rows = sm.apply(ent)
@@ -244,7 +273,20 @@ def build_case(case):
     for nm in ('CO', 'CO2', 'Trace', 'NO', 'NO2', 'O3', 'PAN', 'NO3', 'N2O5', 'HONO', 'NH3', 'HNO3'):
         all_sp.setdefault(nm, 1)
     # IVOC chain species of the old deck
-    ivoc = [n for n in old_rows if re.match(r'^(IVOC|POA|LEVO|CBIO|CPD)', n) or n in SOA_ROWS_KEEP]
+    if ae:
+        ivoc = [n for n in old_rows if re.match(r'^(POA|LEVO|CBIO|CPD)', n)]
+        modes = cmaq_oa.read_modes(os.path.join(old_dir, 'AerosolModes.in'))
+        g_new, p_new, replaced, oa_notes = ae.emissions(old_rows, modes, T, P)
+        for sp, ppb in g_new.items():
+            mapped[sp] = [ppb, 0.0]
+            all_sp.setdefault(sp, 1)
+        for sp, _, _, _, _ in ae.partition(all_sp):
+            all_sp.setdefault(sp, 1)
+        for sp in p_new:
+            all_sp.setdefault(sp, 1)
+        all_sp.setdefault('PCVOC', 1)
+    else:
+        ivoc = [n for n in old_rows if re.match(r'^(IVOC|POA|LEVO|CBIO|CPD)', n) or n in SOA_ROWS_KEEP]
     # ---- GasPhaseChems.in --------------------------------------------------------------
     out = list(hdr)
     out[0] = '!! GasPhaseChems.in - %s case, Carbon Bond 6 revision 5 (CB6r5)' % case
@@ -261,6 +303,8 @@ def build_case(case):
             pass
         ini, bg = mapped.get(nm, [0.0, 0.0])
         mw = MW.get(nm) or MW.get(nm.upper())
+        if mw is None and ae is not None:
+            mw = ae.mw.get(nm) or ae.gc_mw.get(nm)
         if mw is None:
             if nm in ('Trace',):
                 mw = old_rows['Trace'][2]
@@ -286,6 +330,8 @@ def build_case(case):
 
     mech_file(case, old_dir, tr, T, P, os.path.join(new_dir, 'GasChemicalMechanism.in'))
     photo_table(old_dir, tr, os.path.join(new_dir, 'PhotoRates.in'))
+    if ae:
+        write_ae_files(ae, case, new_dir, all_sp, p_new, replaced, oa_notes, 'CB6r5')
 
     with open(os.path.join(new_dir, 'SPECIES_MAPPING.csv'), 'w', newline='') as fh:
         w = csv.writer(fh)

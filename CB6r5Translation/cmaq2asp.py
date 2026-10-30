@@ -25,6 +25,9 @@ from cmaq_def import read_classified
 # configuration
 # ----------------------------------------------------------------------------------------
 CORE = re.compile(r'^R\d+[a-z]*$')
+# 'ae' mode (CMAQ AERO7 organic-aerosol chemistry): also the SOA yield reactions (SA*), terpene nitrate formation / loss (BL18*, BP70mtp),
+# pcSOA and POA ageing groups (see cmaq_ae.py)
+CORE_AE = re.compile(r'^(R\d+[a-z]*|SA\d+[a-z]*|BL18[a-z]|BP70mtp|PCSOA|POA_AGE\d+)$')
 
 # CMAQ name -> ASP name
 RENAME = {'SULF': 'H2SO4',   # ASP's condensation / aqueous decks call gas sulfuric acid H2SO4
@@ -43,6 +46,7 @@ COUNTER_TO_ASP = {'TOLRO2': 'TOLSOA', 'XYLRO2': 'XYLSOA', 'ISOPRXN': 'ISOSOA',
 DROP_ALWAYS = {'BENZRO2', 'PAHRO2', 'SULRXN'}
 DROP_SPECIES = set(COUNTER_TO_ASP) | DROP_ALWAYS     # (kept for the notes below)
 SOA_MODE = {'mode': 'asp'}
+AE_OBJ = {'ae': None}       # cmaq_ae.AE instance in 'ae' mode
 
 # CMAQ carries CH4 (fixed at ATM_CH4) and ECH4 (emitted, evolving) as two species with the
 # same OH reaction.  ASP has a single evolving CH4, so only R124 is kept.
@@ -183,9 +187,15 @@ def clean_products(prods):
     """rename, re-key/drop counters, merge duplicates, drop zeros -> [(coef,name)]"""
     d = OrderedDict()
     for c, n in prods:
-        if n in DROP_ALWAYS:
+        if n in DROP_ALWAYS and not (SOA_MODE['mode'] == 'ae' and n != 'SULRXN'):
             continue
-        if n in COUNTER_TO_ASP:
+        if SOA_MODE['mode'] == 'ae':
+            ae = AE_OBJ['ae']
+            if ae.is_counter(n):
+                for sp, y in ae.expand(n, c):
+                    d[sp] = d.get(sp, 0.0) + y
+                continue
+        elif n in COUNTER_TO_ASP:
             if SOA_MODE['mode'] == 'drop':
                 continue
             n = COUNTER_TO_ASP[n]
@@ -256,10 +266,14 @@ class PhotoColumns:
 class Translation:
     def __init__(self, def_path, T, P_mbar, soa_counters='asp'):
         SOA_MODE['mode'] = soa_counters
+        if soa_counters == 'ae':
+            import cmaq_ae
+            AE_OBJ['ae'] = cmaq_ae.AE('CB6R5')
+        self.ae = AE_OBJ['ae'] if soa_counters == 'ae' else None
         self.T0, self.P0 = T, P_mbar
         self.all = read_classified(def_path)
         self.by_label = {r.label: r for r in self.all}
-        self.core = [r for r in self.all if CORE.match(r.label) and r.label not in SKIP_LABELS]
+        self.core = [r for r in self.all if (CORE_AE if soa_counters == 'ae' else CORE).match(r.label) and r.label not in SKIP_LABELS]
         self.skipped = [r for r in self.all if r not in self.core]
         self.photo = PhotoColumns()
         self.lines = []          # (label, cmaq_text, asp_line, nbodies, params)
@@ -296,8 +310,12 @@ class Translation:
         reacts = clean_reactants(r.reactants)
         prods = clean_products(r.products)
         kept = [n for _, n in r.products if n in COUNTER_TO_ASP and SOA_MODE['mode'] == 'asp']
-        gone = [n for _, n in r.products if n in DROP_ALWAYS or
+        gone = [n for _, n in r.products if (n in DROP_ALWAYS and SOA_MODE['mode'] != 'ae') or n == 'SULRXN' or
                 (n in COUNTER_TO_ASP and SOA_MODE['mode'] == 'drop')]
+        if SOA_MODE['mode'] == 'ae':
+            for n in [n for _, n in r.products if self.ae.is_counter(n)]:
+                self.note(r, 'soa', 'CMAQ SOA counter %s replaced by its mass-yield products: %s' % (
+                    n, ' + '.join('%.4g %s' % (y, sp) for sp, y in self.ae.ctr[n])))
         if kept:
             self.note(r, 'soa', 'CMAQ SOA counter re-keyed: ' +
                       ', '.join('%s->%s' % (n, COUNTER_TO_ASP[n]) for n in kept))

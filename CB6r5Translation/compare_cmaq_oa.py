@@ -6,6 +6,12 @@ import numpy as np
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 root, out = sys.argv[1], sys.argv[2]
+MECHS = sys.argv[3].split(',') if len(sys.argv) > 3 else ['CRACMM2', 'CRACMM3']
+COL = {'CRACMM2': '#009E73', 'CRACMM3': '#CC79A7', 'CB6r5': '#0072B2', 'SAPRC07TC': '#E69F00', 'SAPRC07TIC': '#D55E00'}
+OAKIND = 'CMAQ CRACMM' if MECHS[0].startswith('CRACMM') else 'CMAQ AERO6/7'
+OLDKIND = 'baseline IVOC-ladder organic aerosol'
+usage = 'usage: compare_cmaq_oa.py <runs_root> <out.png> [MECH,MECH,...]'
+
 HERE = os.path.dirname(os.path.abspath(__file__)); OBS = json.load(open(os.path.join(HERE, 'observations', 'observed_raw.json')))
 CASES = ['Williams', 'Otavi', 'Alaska', 'Timbavati']
 TP = {'Williams': (288.4, 880.0), 'Otavi': (290.0, 730.0), 'Alaska': (280.6, 846.5), 'Timbavati': (288.0, 900.0)}
@@ -36,12 +42,14 @@ def co_bg(case):
         if f[0] == 'CO' and len(f) >= 7: return float(f[5])
 
 
-STY = {('CRACMM2', 'old'): dict(color='#009E73', ls='--', lw=1.3), ('CRACMM2', 'new'): dict(color='#009E73', ls='-', lw=2.0),
-       ('CRACMM3', 'old'): dict(color='#CC79A7', ls='--', lw=1.3), ('CRACMM3', 'new'): dict(color='#CC79A7', ls='-', lw=2.0)}
+STY = {}
+for _m, _c in COL.items():
+    STY[(_m, 'old')] = dict(color=_c, ls='--', lw=1.3)
+    STY[(_m, 'new')] = dict(color=_c, ls='-', lw=2.0)
 fig, ax = plt.subplots(2, 4, figsize=(16, 7.2), sharex='col', sharey='row')
 for j, case in enumerate(CASES):
     T, P = TP[case]; bg = co_bg(case)
-    for mech in ('CRACMM2', 'CRACMM3'):
+    for mech in MECHS:
         for ver, pre in (('old', 'old_'), ('new', '')):
             run = f'{root}/{pre}{case}_{mech}'
             if not os.path.isdir(run + '/OutputFiles'): continue
@@ -60,13 +68,13 @@ for j, case in enumerate(CASES):
     for r_ in (0, 1): ax[r_, j].grid(alpha=0.3)
 ax[0, 0].set_ylabel(r'$\Delta$OA/$\Delta$CO ($\mu$g m$^{-3}$ STP / ppmv)'); ax[1, 0].set_ylabel(r'$\Delta$O$_3$/$\Delta$CO (ppb/ppb)')
 h_, l_ = ax[1, 0].get_legend_handles_labels(); h0, l0 = ax[0, 0].get_legend_handles_labels()
-fig.legend(h_ + h0[-1:], l_ + l0[-1:], loc='lower center', ncol=5, frameon=False)
-fig.suptitle('CRACMM2/3: baseline IVOC-ladder organic aerosol (dashed) vs CMAQ CRACMM organic-aerosol chemistry (solid)')
+fig.legend(h_ + h0[-1:], l_ + l0[-1:], loc='lower center', ncol=len(MECHS) * 2 + 1, frameon=False)
+fig.suptitle('%s: %s (dashed) vs %s organic-aerosol chemistry (solid)' % ('/'.join(MECHS), OLDKIND, OAKIND))
 fig.tight_layout(rect=(0, 0.06, 1, 0.97)); fig.savefig(out, dpi=150)
 print('case mech   dOA/dCO(5h) old new   dO3/dCO(5h) old new')
 for case in CASES:
     T, P = TP[case]; bg = co_bg(case); row = []
-    for mech in ('CRACMM2', 'CRACMM3'):
+    for mech in MECHS:
         vals = []
         for pre in ('old_', ''):
             run = f'{root}/{pre}{case}_{mech}'

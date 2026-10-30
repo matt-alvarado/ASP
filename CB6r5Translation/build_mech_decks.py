@@ -25,6 +25,7 @@ import mech_photo as mph                          # noqa: E402
 import mech_species as ms                         # noqa: E402
 import species_map as sm                          # noqa: E402
 import cmaq_oa                                    # noqa: E402
+import cmaq_ae                                    # noqa: E402
 
 DECKS = b6.DECKS
 CASES = b6.CASES
@@ -57,7 +58,7 @@ def old_chain(old_lines, keep):
 
 
 def mech_file(cfg, case, tr, T, P, old_lines, out_path):
-    cmaq = cfg.get('oa') == 'cmaq'
+    cmaq = cfg.get('oa') in ('cmaq', 'ae')
     chain, aging = ([], []) if cmaq else old_chain(old_lines, set(cfg['ivoc_counters']))
     aging = [l.replace('Acetic_Acid', cfg['acetic']) for l in aging]
     nm = cfg['label']
@@ -66,7 +67,12 @@ def mech_file(cfg, case, tr, T, P, old_lines, out_path):
     L.append('!! ASP')
     L.append('!! Translated from the CMAQ mechanism definition %s by CB6r5Translation/mech2asp.py' % os.path.basename(cfg['def_']))
     L.append('!! (see CB6r5Translation/NewMechanisms_README.md for every choice and warning).')
-    if cmaq:
+    if cfg.get('oa') == 'ae':
+        L.append('!! Gas-phase core plus CMAQ AERO organic-aerosol chemistry (AE group SOA yields -> SVAVB / SVBNZ / SVXYL / SVTOL ..., SOAALK, pcSOA).')
+        L.append('!! SOA counters (ISOPRXN, TRPRXN, SESQRXN, ALKRXN, XYLNRXN ...) are replaced by their CMAQ mass-yield products; MTNO3 / ISOPNN are')
+        L.append('!! partitioning vapors (see cmaq_ae.py, OrgPhaseChems.in, OrganicDissolution.in).  NOT translated: chlorine, heterogeneous (IEPOX,')
+        L.append('!! glyoxal) uptake, particle-phase hydrolysis / oligomerisation (OLIG_*, HYD_*), toxics.')
+    elif cmaq:
         L.append('!! Gas-phase core plus CMAQ\'s volatility-resolved organic-aerosol chemistry (ROCALK, ROCOXY, ROCARO, TRP groups; V* vapor')
         L.append('!! species are ASP gas / organic-phase species, ASOATJ -> ASOAT).  NOT translated: chlorine, isoprene heterogeneous (IEPOX/IPX/')
         L.append('!! INALD) uptake, particle-phase organic reactions (ATRPNJ/AHONITJ hydrolysis, AHOMJ photolysis) and toxics groups.  The baseline')
@@ -179,11 +185,17 @@ def build_case(case, mech):
         all_sp.setdefault(nm, 1)
     for nm in INTERFACE + PLACEHOLDERS + ['CO', 'CO2', 'Trace', 'NO', 'NO2', 'O3', 'PAN', 'NO3', 'N2O5', 'HONO']:
         all_sp.setdefault(nm, 1)
-    cmaq = cfg.get('oa') == 'cmaq'
+    cmaq = cfg.get('oa') in ('cmaq', 'ae')
+    ae = tr.ae
     if cmaq:
         ivoc = [n for n in old_rows if re.match(r'^(POA|LEVO|CBIO|CPD)', n)]
         modes = cmaq_oa.read_modes(os.path.join(old_dir, 'AerosolModes.in'))
-        g_new, p_new, replaced, oa_notes = cmaq_oa.emissions(case, old_rows, modes, table, T, P)
+        if ae is not None:
+            g_new, p_new, replaced, oa_notes = ae.emissions(old_rows, modes, T, P)
+            for sp in list(p_new) + [x[0] for x in ae.partition(all_sp)] + ['PCVOC']:
+                all_sp.setdefault(sp, 1)
+        else:
+            g_new, p_new, replaced, oa_notes = cmaq_oa.emissions(case, old_rows, modes, table, T, P)
         for sp, ppb in g_new.items():
             mapped[sp] = [ppb, 0.0]
             all_sp.setdefault(sp, 1)
@@ -204,6 +216,10 @@ def build_case(case, mech):
         ini, bg = mapped.get(nm, [0.0, 0.0])
         if nm in ('Trace', 'CO2') and nm in old_rows:
             mw = old_rows[nm][2]
+        elif ae is not None and nm in ae.mw and nm not in ms.MW_EXTRA:
+            mw = ae.mw[nm]
+        elif ae is not None and nm in ae.gc_mw and nm not in table and nm not in ms.MW_EXTRA:
+            mw = ae.gc_mw[nm]
         else:
             mw = ms.mw_of(mech, nm, table)
         pf = ms.peroxy_flag(mech, nm, table)
@@ -228,13 +244,17 @@ def build_case(case, mech):
     photo_file(cfg, case, old_dir, tr, T, os.path.join(new_dir, 'PhotoRates.in'))
     set_runlength(new_dir)
     if cmaq:
-        part = cmaq_oa.partitioning_species(list(all_sp), table)
+        part = ae.partition(list(all_sp)) if ae is not None else cmaq_oa.partitioning_species(list(all_sp), table)
         cmaq_oa.write_org_files(new_dir, part)
         cmaq_oa.rewrite_modes(os.path.join(new_dir, 'AerosolModes.in'), replaced, p_new)
         with open(os.path.join(new_dir, 'CMAQ_OA_MAPPING.txt'), 'w') as fh:
-            fh.write('CMAQ CRACMM organic-aerosol emissions mapping for %s (%s)\n' % (case, cfg['label']))
+            fh.write('CMAQ %s organic-aerosol emissions mapping for %s (%s)\n' % ('AERO6/7' if ae is not None else 'CRACMM', case, cfg['label']))
             fh.write('\n'.join(oa_notes) + '\n\nPartitioning species (name, MW, C*298 ug/m3, dHvap J/mol, nonvolatile):\n')
             fh.write('\n'.join('%s %.2f %.4g %.0f %s' % x for x in part) + '\n')
+            if ae is not None:
+                fh.write('\nSOA counters replaced by mass-yield products (counter -> species: coefficient per counter mole):\n')
+                for c in sorted(ae.used_ctr):
+                    fh.write('%s -> %s\n' % (c, ' + '.join('%.4g %s' % (y, sp) for sp, y in ae.ctr[c])))
 
     with open(os.path.join(new_dir, 'SPECIES_MAPPING.csv'), 'w', newline='') as fh:
         w = csv.writer(fh)

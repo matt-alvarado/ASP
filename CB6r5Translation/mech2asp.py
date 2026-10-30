@@ -53,6 +53,9 @@ for _p, _c, _ox in [('HC5', 'HC5SOA', ('OH',)), ('HC10', 'HC8SOA', ('OH',)),
     for _o in _ox:
         CRACMM_COUNTER_PAIRS[(_p, _o)] = _c
 
+# CMAQ AERO organic-aerosol chemistry (oa='ae', cmaq_ae.py): also the SOA yield reactions of the AE group, long-alkane SOA (AALK) and pcSOA
+SAPRC_CORE_AE = SAPRC_CORE[:-2] + r'|AE\d+[a-z]*|AALK|PCSOA)$'
+
 SAPRC_COUNTER_MAP = {'TOLRO2': 'TOLSOA', 'XYLRO2': 'XYLSOA', 'ISOPRXN': 'ISOSOA', 'TRPRXN': 'TERPSOA'}
 SAPRC_COUNTER_DROP = {'BENZRO2', 'PAHRO2', 'SULRXN', 'SESQRXN', 'TOLNRXN', 'TOLHRXN', 'XYLNRXN', 'XYLHRXN',
                       'BNZNRXN', 'BNZHRXN'}
@@ -81,11 +84,13 @@ CFG['SAPRC07TC'] = dict(
     rename={'O3P': 'O', 'HO2H': 'H2O2', 'SULF': 'H2SO4', 'HCL': 'HCl'},
     skip=set(), eliminate={'XC', 'XN'}, drop_prod=r'^$', drop_react=r'^$',
     counter_map=SAPRC_COUNTER_MAP, counter_drop=SAPRC_COUNTER_DROP,
-    counter_pairs={('TERP', 'NO3'): 'TERPSOA'},
-    ivoc_counters=['TOLSOA', 'XYLSOA', 'ISOSOA', 'TERPSOA'], acetic='CCOOH', o1d='M', ho2h2o='38')
+    counter_pairs={}, oa='ae', ae_mech='SAPRC07TC',
+    ivoc_counters=[], acetic='CCOOH', o1d='M', ho2h2o='38')
+CFG['SAPRC07TC'].update(core=SAPRC_CORE_AE, counter_map={}, counter_drop={'SULRXN'})
 CFG['SAPRC07TIC'] = dict(
     CFG['SAPRC07TC'], label='SAPRC07TIC', suffix='SAPRC07TIC',
     def_=MECHS + 'saprc07tic_ae7i_aq/mech_saprc07tic_ae7i_aq.def',
+    ae_mech='SAPRC07TIC',
     csqy=MECHS + 'saprc07tic_ae7i_aq/CSQY_DATA_saprc07tic_ae7i_aq',
     sp_table=MECHS + 'mechanism_information/saprc07tic_ae7i_aq/saprc07tic_ae7i_aq_species_table.md')
 
@@ -171,6 +176,10 @@ class Translation:
         self.all = read_classified(cfg['def_'])
         self.by = {r.label: r for r in self.all}
         core = re.compile(cfg['core'])
+        self.ae = None
+        if cfg.get('oa') == 'ae':
+            import cmaq_ae
+            self.ae = cmaq_ae.AE(cfg['ae_mech'])
         self.core = [r for r in self.all if core.match(r.label)]
         self.photo = PhotoColumns()
         self.lines = []          # dict(label, text, line, nb, params, note)
@@ -211,6 +220,12 @@ class Translation:
                 continue
             if n in cfg['counter_drop']:
                 dropped.append(n)
+                continue
+            if self.ae is not None and self.ae.is_counter(n):
+                exp = self.ae.expand(n, c)
+                for sp, y in exp:
+                    d[sp] = d.get(sp, 0.0) + y
+                counters.append((n, ' + '.join('%.4g %s' % (y, sp) for sp, y in self.ae.ctr[n])))
                 continue
             if re.match(cfg['drop_prod'], n):
                 dropped.append(n)

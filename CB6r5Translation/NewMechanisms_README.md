@@ -51,3 +51,14 @@ nonvolatile ASOAT (`cmaq_oa.py`, `mech2asp.py oa='cmaq'`).  Williams' IVOC distr
 same C*; other cases use CMAQ's GENERAL_POA profile.  Not translated: particle-phase hydrolysis/photolysis, IEPOX uptake, aqueous organic uptake.
 Each deck has `CMAQ_OA_MAPPING.txt`.  Note: `TotPOA`/`TotSOA` in Aerosol*.txt assume the baseline species order; use `TotOA` in SizeDist*.txt.
 `compare_cmaq_oa.py` makes `cmaq_oa_compare.png` (old vs new).  Rebuild: `python3 build_mech_decks.py CRACMM2 CRACMM3`.
+
+## CB6r5, SAPRC07TC and SAPRC07TIC organic aerosol now follow CMAQ AERO6/7 (2026-10-30)
+
+These 12 decks no longer use the baseline IVOC ladder, SOA counters or IVOC aging.  `cmaq_ae.py` reads the CMAQ `ORG_DEFN.F` (aero6 / aero7), AE and GC
+namelists: SOA counters (ISOPRXN, TRPRXN, SESQRXN, ALKRXN, XYLNRXN ...) are replaced by their mass-yield products (alpha x MW(counter)/MW(particle)),
+the AE-group yield reactions (SA*, AE5x, AALK), terpene nitrate, pcSOA and (CB6r5) POA ageing are translated, and every vapor/particle pair is one ASP
+species with CMAQ's C*, dHvap and MW.  Williams IVOC3-6 map to VSVPO1-3 / VIVPO1 by C*; IVOC7-9 (C* >= 1e4) have no CMAQ species and are dropped.
+Other cases use the CMAQ semivolatile POA profile.  Not translated: oligomerisation, nitrate hydrolysis, IEPOX/glyoxal uptake, MTNO3 photolysis (CB6r5).
+`cmaq_ae_compare.png` (old vs new): `python3 compare_cmaq_oa.py <runs> cmaq_ae_compare.png CB6r5,SAPRC07TC,SAPRC07TIC`.
+Rebuild: `python3 build_cb6r5_decks.py` (CB6r5) and `python3 build_mech_decks.py SAPRC07TC SAPRC07TIC`.  `OA_MODE = 'asp'` in build_cb6r5_decks.py
+restores the old behaviour for CB6r5.

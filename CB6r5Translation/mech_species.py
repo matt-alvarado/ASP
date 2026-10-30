@@ -54,7 +54,7 @@ ACYL = re.compile(r'(?i)acyl|acetylperoxy|propionylperoxy|enoylperoxy|enoyl\)?pe
 def peroxy_flag(mech, name, table):
     """1 = counted in RO2_T, 2 = also in RCO3_T (acyl peroxy), 0 = not a peroxy radical"""
     src = inv_rename(mech).get(name, name)
-    if name in ('RO2_T', 'RCO3_T'):
+    if name in ('RO2_T', 'RCO3_T') or name in ('TOLRO2', 'XYLRO2', 'BENZRO2', 'PAHRO2'):   # AERO SOA counters, not in the RO2 pool
         return 0
     desc = table.get(src, (0, ''))[1]
     fam = m2a.CFG[mech]['family']
