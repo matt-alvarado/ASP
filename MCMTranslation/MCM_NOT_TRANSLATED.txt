@@ -1,0 +1,3 @@
+MCM reaction 33: HNO3 -> NA: crude first-order uptake to nitrate aerosol; ASP computes gas-aerosol exchange explicitly
+MCM reaction 34: N2O5 -> 2 NA: crude first-order uptake to nitrate aerosol; ASP computes gas-aerosol exchange explicitly
+MCM reaction 15631 (C522CO3H + OH + hv = C522CO3 : J(J_CH3OOH)): photolysis rate constant used as a bimolecular rate constant in the MCM v3.3.1 file as published; omitted
