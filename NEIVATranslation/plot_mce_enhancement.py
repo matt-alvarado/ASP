@@ -29,7 +29,7 @@ def oa_series(run):
 runs = sorted(glob.glob(f'{root}/NEIVA_{tag}_MCE*'))
 mces = [int(re.search(r'MCE(\d+)', r).group(1)) / 1000 for r in runs]
 norm = colors.Normalize(min(mces), max(mces)); cmap = cm.viridis
-fig, ax = plt.subplots(1, 3, figsize=(15, 4.8))
+fig, AX = plt.subplots(2, 3, figsize=(15, 9), sharex=True); ax = AX[0]; bx = AX[1]
 rows = []
 for run, m in zip(runs, mces):
     c = cmap(norm(m))
@@ -39,11 +39,15 @@ for run, m in zip(runs, mces):
     ta, oa = oa_series(run); dco = np.interp(ta, tg, co) - BG
     ratio = oa * (1013.25 / P) * (T / 273.15) / (dco / 1000.0); k = ta >= 600
     ax[0].plot(te / 3600, o3, color=c, lw=1.8); ax[1].plot(ta[k] / 3600, ratio[k], color=c, lw=1.8); ax[2].plot(te / 3600, nox, color=c, lw=1.8)
+    dcoe = np.interp(te, tg, co) - BG
+    bx[0].plot(te / 3600, o3 * dcoe, color=c, lw=1.8); bx[1].plot(ta / 3600, oa, color=c, lw=1.8); bx[2].plot(te / 3600, nox * dcoe, color=c, lw=1.8)
     rows.append((m, o3[-1], ratio[-1], nox[-1], nox[np.searchsorted(te, 600)] if len(te) > 3 else np.nan))
 for a, yl in zip(ax, [r'$\Delta$O$_3$/$\Delta$CO (ppb/ppb)', r'$\Delta$OA/$\Delta$CO ($\mu$g m$^{-3}$ STP / ppmv)', r'$\Delta$NO$_x$/$\Delta$CO (ppb/ppb)']):
     a.set_xlabel('Time (h)'); a.set_ylabel(yl); a.grid(alpha=0.3); a.set_xlim(0, 5.05)
-ax[2].set_yscale('log')
-fig.colorbar(cm.ScalarMappable(norm, cmap), ax=ax, label='MCE', pad=0.01)
+for a, yl in zip(bx, [r'$\Delta$O$_3$ (ppb)', r'OA ($\mu$g m$^{-3}$, ambient)', r'$\Delta$NO$_x$ (ppb)']):
+    a.set_xlabel('Time (h)'); a.set_ylabel(yl); a.grid(alpha=0.3)
+ax[2].set_yscale('log'); bx[2].set_yscale('log'); bx[1].set_yscale('log')
+fig.colorbar(cm.ScalarMappable(norm, cmap), ax=list(AX.ravel()), label='MCE', pad=0.01)
 fig.suptitle('NEIVAv1.0 %s emission factors, MCE %.3f-%.3f, Williams baseline (RACM2-lumped) mechanism' % (tag.replace('_', ' '), min(mces), max(mces)))
 fig.savefig(out, dpi=150, bbox_inches='tight')
 print('MCE   dO3/dCO(5h)  dOA/dCO(5h)  dNOx/dCO(5h)')
