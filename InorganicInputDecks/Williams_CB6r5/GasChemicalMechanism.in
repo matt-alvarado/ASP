@@ -566,4 +566,13 @@ VSVOO1 + OH => OH + 0.3303 VLVOO1 + 0.2272 VLVOO2 + 0.2607 VSVOO1 + 0.0702 VSVOO
 VSVOO2 + OH => OH + 0.3444 VLVOO1 + 0.2749 VLVOO2 + 0.0491 VSVOO1 + 0.2577 VSVOO2 + 0.0739 VSVOO3 ; 4e-11; 0; -0; 1;
 !! POA_AGE10: <POA_AGE10> VSVOO3 + OH = OH + 0.3886 * VLVOO1 + 0.2421 * VLVOO2 + 0.0640 * VSVOO1 + 0.0385 * VSVOO2 + 0.2667 * VSVOO3 #4.0e-11;
 VSVOO3 + OH => OH + 0.3886 VLVOO1 + 0.2421 VLVOO2 + 0.064 VSVOO1 + 0.0385 VSVOO2 + 0.2667 VSVOO3 ; 4e-11; 0; -0; 1;
-
+!! CMAQ_HET_BEGIN
+!! CMAQ gas->particle uptake (tier 1), see cmaq_het.py / NewMechanisms_README.md
+!! flag 3: gamma, MW; flag 18: scale, MW, kind, channel (acid-dependent epoxide uptake)
+!! GLY -> AGLY: constant gamma 0.0029 (CMAQ GAMMA_GLY)
+!! MGLY -> AGLY: constant gamma 0.000261 (CMAQ GAMMA_GLY x 0.09)
+!! EPOX -> AISO3: acidity-dependent (flag 18, kind 1, channel 0, scale 1)
+GLY => AGLY ; 3 ; 0.0029 ; 58 ; 0 ;
+MGLY => AGLY ; 3 ; 0.000261 ; 72 ; 0 ;
+EPOX => AISO3 ; 18 ; 1 ; 118.1 ; 1 ; 0 ;
+!! CMAQ_HET_END

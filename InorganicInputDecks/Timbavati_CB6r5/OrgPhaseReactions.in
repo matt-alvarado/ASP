@@ -1,0 +1,10 @@
+!! OrgPhaseReactions.in - first-order particle-phase organic reactions of CMAQ (CB6R5)
+!! Reactant ; rate [1/s] (or PHOTO <gas rxn #> <scale>) ; products (mole coefficients)
+!! Needs common_asp with OrgPhaseReactions.h.  Products that are not organic-phase species go to the gas phase.
+SVAVB2   ; 9.48816e-06 ; 0.907 AOLGA   ! oligomerisation
+SVAVB3   ; 9.48816e-06 ; 0.925 AOLGA   ! oligomerisation
+SVAVB4   ; 9.48816e-06 ; 0.943 AOLGA   ! oligomerisation
+SVISO1   ; 9.48816e-06 ; 0.5 AOLGB   ! oligomerisation
+SVISO2   ; 9.48816e-06 ; 0.5 AOLGB   ! oligomerisation
+SVSQT    ; 9.48816e-06 ; 1.5 AOLGB   ! oligomerisation
+MTNO3    ; 9.259e-05 ; 1 AMTHYD   ! nitrate hydrolysis

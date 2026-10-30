@@ -87,3 +87,10 @@ VROCN1OXY1 <=> VROCN1OXY1	; 1.0;	1.	; 1.0074e-08	; 89.0	; ! C*298 = 0.1
 VROCN2OXY4 <=> VROCN2OXY4	; 1.0;	1.	; 1.3699e-09	; 93.0	; ! C*298 = 0.01
 VROCN1OXY3 <=> VROCN1OXY3	; 1.0;	1.	; 1.3670e-08	; 89.0	; ! C*298 = 0.1
 VROCN2OXY8 <=> VROCN2OXY8	; 1.0;	1.	; 1.6386e-09	; 93.0	; ! C*298 = 0.01
+! CMAQ uptake / particle-phase products: nonvolatile (C*(298) = 1e-10 ug/m3)
+AGLY <=> AGLY	; 1.0;	1.	; 3.7415e-17	; 1.0	; ! C*298 = 1e-10
+AISO3NOS <=> AISO3NOS	; 1.0;	1.	; 1.8241e-17	; 1.0	; ! C*298 = 1e-10
+AISO3OS <=> AISO3OS	; 1.0;	1.	; 1.1491e-17	; 1.0	; ! C*298 = 1e-10
+AISO4 <=> AISO4	; 1.0;	1.	; 1.4779e-17	; 1.0	; ! C*298 = 1e-10
+AISO5 <=> AISO5	; 1.0;	1.	; 1.6552e-17	; 1.0	; ! C*298 = 1e-10
+AHOM <=> AHOM	; 1.0;	1.	; 9.9375e-18	; 1.0	; ! C*298 = 1e-10

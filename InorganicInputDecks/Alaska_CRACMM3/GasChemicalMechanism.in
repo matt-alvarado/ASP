@@ -1091,4 +1091,19 @@ STYP + ACO3 => HO2 + HCHO + BALD + 0.7 MO2 + 0.3 ORA2 + 0.7 CO2 ; 2.5e-13; 0; -0
 !!     [<TRP58> ATRPNJ = AHOMJ + HNO3 - 1.0000*DELTA_N # 9.26E-05;]
 !! NOT TRANSLATED TRP59 (dropped): reactant is a particle-phase organic species (AHONITJ); ASP has no particle-phase organic chemistry
 !!     [<TRP59> AHONITJ = AHOMJ + HNO3 - 1.0000*DELTA_N # 9.26E-05;]
-
+!! CMAQ_HET_BEGIN
+!! CMAQ gas->particle uptake (tier 1), see cmaq_het.py / NewMechanisms_README.md
+!! flag 3: gamma, MW; flag 18: scale, MW, kind, channel (acid-dependent epoxide uptake)
+!! GLY -> AGLYOLIG: constant gamma 0.0029 (CMAQ GAMMA_GLY)
+!! MGLY -> AGLYOLIG: constant gamma 0.000261 (CMAQ GAMMA_GLY x 0.09)
+!! IEPOX -> AISO3NOS: acidity-dependent (flag 18, kind 1, channel 1, scale 1)
+!! IEPOX -> AISO3OS: acidity-dependent (flag 18, kind 1, channel 2, scale 1)
+!! IPX -> AISO4: acidity-dependent (flag 18, kind 1, channel 0, scale 2)
+!! INALD -> AISO5 + HNO3: acidity-dependent (flag 18, kind 1, channel 0, scale 0.5)
+GLY => AGLYOLIG ; 3 ; 0.0029 ; 58 ; 0 ;
+MGLY => AGLYOLIG ; 3 ; 0.000261 ; 72 ; 0 ;
+IEPOX => AISO3NOS ; 18 ; 1 ; 118.1 ; 1 ; 1 ;
+IEPOX => AISO3OS ; 18 ; 1 ; 118.1 ; 1 ; 2 ;
+IPX => AISO4 ; 18 ; 2 ; 150.1 ; 1 ; 0 ;
+INALD => AISO5 + HNO3 ; 18 ; 0.5 ; 195.1 ; 1 ; 0 ;
+!! CMAQ_HET_END

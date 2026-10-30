@@ -87,3 +87,7 @@ VSVPO1        ;1	;230.00	; 1.5 ;       1.0; 1.0;
 VSVPO2        ;1	;241.00	; 1.5 ;       1.0; 1.0;
 VSVPO3        ;1	;253.00	; 1.5 ;       1.0; 1.0;
 VIVPO1        ;1	;266.00	; 1.5 ;       1.0; 1.0;
+!CMAQ particle-phase products of uptake / particle-phase reactions (nonvolatile, one ASP species with its gas partner)
+AISO3         ;1	;168.20	; 1.5 ;       1.0; 1.0;
+AOLGA         ;1	;206.00	; 1.5 ;       1.0; 1.0;
+AOLGB         ;1	;248.00	; 1.5 ;       1.0; 1.0;

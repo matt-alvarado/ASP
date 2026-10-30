@@ -90,3 +90,7 @@ VSVPO1 <=> VSVPO1	; 1.0;	1.	; 1.3541e-07	; 85.0	; ! C*298 = 1
 VSVPO2 <=> VSVPO2	; 1.0;	1.	; 1.2546e-06	; 74.0	; ! C*298 = 10
 VSVPO3 <=> VSVPO3	; 1.0;	1.	; 1.1602e-05	; 63.0	; ! C*298 = 100
 VIVPO1 <=> VIVPO1	; 1.0;	1.	; 1.0714e-04	; 52.0	; ! C*298 = 1e+03
+! CMAQ uptake / particle-phase products: nonvolatile (C*(298) = 1e-10 ug/m3)
+AISO3 <=> AISO3	; 1.0;	1.	; 1.4770e-17	; 1.0	; ! C*298 = 1e-10
+AOLGA <=> AOLGA	; 1.0;	1.	; 1.2060e-17	; 1.0	; ! C*298 = 1e-10
+AOLGB <=> AOLGB	; 1.0;	1.	; 1.0018e-17	; 1.0	; ! C*298 = 1e-10

@@ -62,3 +62,20 @@ Other cases use the CMAQ semivolatile POA profile.  Not translated: oligomerisat
 `cmaq_ae_compare.png` (old vs new): `python3 compare_cmaq_oa.py <runs> cmaq_ae_compare.png CB6r5,SAPRC07TC,SAPRC07TIC`.
 Rebuild: `python3 build_cb6r5_decks.py` (CB6r5) and `python3 build_mech_decks.py SAPRC07TC SAPRC07TIC`.  `OA_MODE = 'asp'` in build_cb6r5_decks.py
 restores the old behaviour for CB6r5.
+
+## Gas-to-particle uptake and particle-phase organic reactions (2026-10-30)
+
+`cmaq_het.py` edits the 20 finished decks in place (run it after the deck builders; idempotent) and needs common_asp >= 5880438 (branch asp_v2.2.2).
+* **Tier 1, uptake** (lines between `CMAQ_HET_BEGIN/END` in GasChemicalMechanism.in; product species are nonvolatile, like ASOAT):
+  GLY, MGLY -> AGLY (AGLYOLIG in CRACMM3), flag 3, gamma 2.9e-3 and 0.09 x 2.9e-3 as CMAQ (not SAPRC07TC, which has no GLY uptake).
+  IEPOX (EPOX in CB6r5), IMAE, IHMML, IPX (x2), INALD (x0.5, + HNO3) use the new **1-body rate flag 18**:
+  `EPOX => AISO3 ; 18 ; scale ; MW ; kind ; channel ;`.  Per particle, the ring-opening rate sum k[acid][nucleophile] is built from H+, HSO4-, SO4--, NO3-
+  and water of that particle (CMAQ Eddingsaas/Piletic constants, concentrations per litre of aqueous solution, CMAQ uses total particle volume), gamma
+  follows CMAQ CALCISOPGAMMAS (alpha 0.02, D 1e-9 m2/s, H 3e7 / 1.2e5 M/atm) and the loss rate is summed over bins (flag-3 formula).
+  kind 1 IEPOX with nitrate, 2 IMAE, 3 IEPOX without nitrate; channel 0 all, 1 non-sulfate product, 2 organosulfate.
+  `cmaq_het.apply(dir, mech, acid=False)` gives constant gamma (flag 3) instead.
+* **Tier 2, `OrgPhaseReactions.in`** (new common_asp routine `StepOrgPhaseReactions`, run after organic condensation each condensation step, exact exponential
+  per particle): oligomerisation to AOLGA/AOLGB (9.48816e-6 /s), AMTNO3 / AISOPNN hydrolysis (9.259e-5 /s, HNO3 to the gas), CRACMM ATRPN/AHONIT -> AHOM + HNO3
+  (9.26e-5 /s), CRACMM3 AHOM -> 0.8 AMTN1 + 0.2 ORA1 at 0.01 x jNO2 (`PHOTO <gas rxn #> <scale>`).  Format is in `Condensation/OrgPhaseReactions.h`.
+* Not represented: NTR2 hydrolysis, NO3/HO2/N2O5 uptake, IEPOXP/sulfate consumption (epoxide goes directly to product), AERO7i dimers (folded into the
+  tetrol / organosulfate channels).  Gas and particle mass of a species are one ASP species, so converted mass re-equilibrates with the gas phase.

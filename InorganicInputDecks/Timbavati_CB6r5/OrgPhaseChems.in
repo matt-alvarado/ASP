@@ -87,3 +87,9 @@ SVAVB1        ;1	;198.00	; 1.5 ;       1.0; 1.0;
 SVAVB2        ;1	;179.00	; 1.5 ;       1.0; 1.0;
 SVAVB3        ;1	;169.00	; 1.5 ;       1.0; 1.0;
 SVAVB4        ;1	;158.00	; 1.5 ;       1.0; 1.0;
+!CMAQ particle-phase products of uptake / particle-phase reactions (nonvolatile, one ASP species with its gas partner)
+AGLY          ;1	;66.40	; 1.5 ;       1.0; 1.0;
+AISO3         ;1	;168.20	; 1.5 ;       1.0; 1.0;
+AOLGA         ;1	;206.00	; 1.5 ;       1.0; 1.0;
+AOLGB         ;1	;248.00	; 1.5 ;       1.0; 1.0;
+AMTHYD        ;1	;168.00	; 1.5 ;       1.0; 1.0;
