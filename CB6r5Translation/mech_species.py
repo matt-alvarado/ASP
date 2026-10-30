@@ -9,7 +9,7 @@ import mech2asp as m2a
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # ASP-specific / inorganic species whose molar mass is not in the mechanism tables
-MW_EXTRA = {'H2SO4': 98.08, 'HCl': 36.46, 'CH4': 16.04, 'H2': 2.016, 'CO2': 44.01, 'NH3': 17.03, 'HCN': 27.03,
+MW_EXTRA = {'ASOAT': 200.0, 'H2SO4': 98.08, 'HCl': 36.46, 'CH4': 16.04, 'H2': 2.016, 'CO2': 44.01, 'NH3': 17.03, 'HCN': 27.03,
             'N2O': 44.01, 'CH3NO3': 77.04, 'RO2_T': 12.0, 'RCO3_T': 12.0, 'CO': 28.01, 'O1D': 16.0, 'O': 16.0,
             'O3': 48.0, 'NO': 30.01, 'NO2': 46.01, 'NO3': 62.0, 'N2O5': 108.0, 'HONO': 47.01, 'HNO3': 63.01,
             'SO2': 64.06, 'H2O2': 34.01, 'OH': 17.01, 'HO2': 33.01, 'HNO4': 79.02, 'PAN': 121.05, 'Trace': 12.0}
@@ -71,7 +71,7 @@ def peroxy_flag(mech, name, table):
     if name in ('ACO3', 'RCO3', 'MACP', 'BALP'):
         return 2
     if re.search(r'(?i)peroxy', desc) and not re.search(r'(?i)peroxyacetic|peroxynitr|hydroperox|nitrate$', desc) \
-            and not name.startswith('V'):
+            and not re.match(r'^V(?!ROC.*(ALKP2?|AROP)$)', name):
         return 2 if ACYL.search(desc) else 1
     return 0
 

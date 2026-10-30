@@ -42,3 +42,12 @@ CH3COCH3B (vs A), UALD (vs acrolein), GLYH2 (vs GLYHX), BALD (vs MEK), AFG1 (vs 
 ## Results (5 h, dO3/dCO and dOA/dCO)
 See `run_summary_5h.csv` and `enhancement_ratios_6mech.png`. Runs take 10-45 s each. Earlier run_summary.csv predates the flag-5 fix and the 5 h length.
 Open: Timbavati OA about half of observed, SO2 background mismatch, Williams IVOC3-7 initial values, HET_/NTR2 not translated.
+
+## CRACMM2/3 organic aerosol now follows CMAQ (2026-10-30)
+
+The CRACMM2 and CRACMM3 decks no longer use the baseline IVOC1-9 ladder, SOA counters or IVOC aging. They use CMAQ's V/A volatility species
+(C*, MW, dHvap from `ORG_DEFN.F`), the CMAQ multigeneration gas chemistry of those species (ROCALK/ROCOXY/ROCARO, terpene HOM/nitrates) and
+nonvolatile ASOAT (`cmaq_oa.py`, `mech2asp.py oa='cmaq'`).  Williams' IVOC distribution is mapped bin-by-bin to the lowest-O:C OXY species of the
+same C*; other cases use CMAQ's GENERAL_POA profile.  Not translated: particle-phase hydrolysis/photolysis, IEPOX uptake, aqueous organic uptake.
+Each deck has `CMAQ_OA_MAPPING.txt`.  Note: `TotPOA`/`TotSOA` in Aerosol*.txt assume the baseline species order; use `TotOA` in SizeDist*.txt.
+`compare_cmaq_oa.py` makes `cmaq_oa_compare.png` (old vs new).  Rebuild: `python3 build_mech_decks.py CRACMM2 CRACMM3`.

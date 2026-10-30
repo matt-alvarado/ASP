@@ -38,7 +38,7 @@ CMAQ_ENV = {'M', 'O2', 'N2'}
 # ---------------------------------------------------------------------------------------------
 # per-mechanism configuration
 # ---------------------------------------------------------------------------------------------
-CRACMM_CORE = r'^(R|TRP|ROCARO|RAM|RBAL|T|HC)\d+[a-z]*$'
+CRACMM_CORE = r'^(R|TRP|ROCARO|RAM|RBAL|T|HC|ROCALK|ROCOXY)\d+[a-z]*$'   # ROCALK / ROCOXY: CMAQ's volatility-resolved IVOC chemistry
 SAPRC_CORE = r'^(\d+|BR\d+[a-z]*|R\d+[a-z]*|BP\d+[a-z]*|P\d+[a-z]*|PX\d+|PZ\d+|BE\d+[a-z]*|BT\d+[a-z]*|IS\d+[a-z]*|IA\d+[a-z]*|IC\d+[a-z]*|BL\d+[a-z]*)$'
 
 # SOA first-step counters of the baseline (RACM2) mechanism: (parent, oxidant) -> counter.
@@ -61,13 +61,16 @@ CFG = OrderedDict()
 CFG['CRACMM2'] = dict(
     label='CRACMM2', suffix='CRACMM2', def_=MECHS + 'cracmm2/mech_cracmm2.def', core=CRACMM_CORE,
     csqy=MECHS + 'cracmm2/CSQY_DATA_cracmm2', gc=MECHS + 'cracmm2/GC_cracmm2.nml', family='cracmm',
-    rename={'HO': 'OH', 'O3P': 'O', 'SULF': 'H2SO4', 'ECH4': 'CH4', 'HCL': 'HCl'},
+    rename={'HO': 'OH', 'O3P': 'O', 'SULF': 'H2SO4', 'ECH4': 'CH4', 'HCL': 'HCl', 'ASOATJ': 'ASOAT'},
     skip={'R364'},                         # ECH4 + HO: the CH4 tracer reaction (CH4 + HO is R071)
     eliminate={'DELTA_C', 'DELTA_N', 'DELTA_SI'},
-    drop_prod=r'^(V[A-Z0-9]+|A[A-Z0-9]+J|SULRXN)$',      # SVOC / aerosol bookkeeping products
-    drop_react=r'^(V[A-Z0-9]+|A[A-Z0-9]+J)$',                        # reactions of SVOC bookkeeping species
-    counter_map={}, counter_drop=set(), counter_pairs=CRACMM_COUNTER_PAIRS,
-    ivoc_counters=['HC5SOA', 'HC8SOA', 'OLTSOA', 'OLISOA', 'TOLSOA', 'XYLSOA', 'ISOSOA', 'TERPSOA'],
+    # CMAQ organic-aerosol chemistry is kept (oa='cmaq'): the V* vapor species are ASP gas/organic-phase species, ASOATJ becomes the
+    # nonvolatile species ASOAT.  Only the other particle-phase A*J species cannot be carried (ASP has no particle-phase organic chemistry).
+    oa='cmaq',
+    drop_prod=r'^(A(?!SOATJ$)[A-Z0-9]+J|SULRXN)$',
+    drop_react=r'^A[A-Z0-9]+J$',
+    counter_map={}, counter_drop=set(), counter_pairs={},
+    ivoc_counters=[],
     acetic='ORA2', o1d='split', ho2h2o='R046')
 CFG['CRACMM3'] = dict(CFG['CRACMM2'], label='CRACMM3', suffix='CRACMM3', def_=MECHS + 'cracmm3/mech_cracmm3.def',
                       csqy=MECHS + 'cracmm3/CSQY_DATA_cracmm3', gc=MECHS + 'cracmm3/GC_cracmm3.nml')
@@ -227,8 +230,8 @@ class Translation:
             return
         reacts_raw = [n for _, n in r.reactants]
         if any(re.match(cfg['drop_react'], n) for n in reacts_raw):
-            self.note(r, 'dropped', 'reactant is an SVOC/IVOC bookkeeping species of the CMAQ mechanism; ASP keeps its own '
-                      'IVOC block (%s)' % ', '.join(n for n in reacts_raw if re.match(cfg['drop_react'], n)))
+            self.note(r, 'dropped', 'reactant is a particle-phase organic species (%s); ASP has no particle-phase organic '
+                      'chemistry' % ', '.join(n for n in reacts_raw if re.match(cfg['drop_react'], n)))
             self.n_dropped += 1
             return
         # follow *K<ref> chains
@@ -246,7 +249,7 @@ class Translation:
         reacts = [self._name(n) for n in reacts_raw]
         prods, dropped, counters = self._clean_products(r)
         if dropped:
-            self.note(r, 'soa', 'CMAQ SOA/SVOC bookkeeping products not carried: ' + ', '.join(dropped))
+            self.note(r, 'soa', 'CMAQ particle-phase products not carried: ' + ', '.join(dropped))
         if counters:
             self.note(r, 'soa', 'CMAQ SOA counter re-keyed onto the ASP counter: ' +
                       ', '.join('%s->%s' % x for x in counters))

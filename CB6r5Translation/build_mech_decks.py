@@ -24,6 +24,7 @@ import mech2asp as m2a                            # noqa: E402
 import mech_photo as mph                          # noqa: E402
 import mech_species as ms                         # noqa: E402
 import species_map as sm                          # noqa: E402
+import cmaq_oa                                    # noqa: E402
 
 DECKS = b6.DECKS
 CASES = b6.CASES
@@ -56,7 +57,8 @@ def old_chain(old_lines, keep):
 
 
 def mech_file(cfg, case, tr, T, P, old_lines, out_path):
-    chain, aging = old_chain(old_lines, set(cfg['ivoc_counters']))
+    cmaq = cfg.get('oa') == 'cmaq'
+    chain, aging = ([], []) if cmaq else old_chain(old_lines, set(cfg['ivoc_counters']))
     aging = [l.replace('Acetic_Acid', cfg['acetic']) for l in aging]
     nm = cfg['label']
     L = []
@@ -64,7 +66,13 @@ def mech_file(cfg, case, tr, T, P, old_lines, out_path):
     L.append('!! ASP')
     L.append('!! Translated from the CMAQ mechanism definition %s by CB6r5Translation/mech2asp.py' % os.path.basename(cfg['def_']))
     L.append('!! (see CB6r5Translation/NewMechanisms_README.md for every choice and warning).')
-    L.append('!! Gas-phase core only; CMAQ chlorine, heterogeneous, aerosol/SVOC, POA-aging, oligomerisation and toxics groups are not')
+    if cmaq:
+        L.append('!! Gas-phase core plus CMAQ\'s volatility-resolved organic-aerosol chemistry (ROCALK, ROCOXY, ROCARO, TRP groups; V* vapor')
+        L.append('!! species are ASP gas / organic-phase species, ASOATJ -> ASOAT).  NOT translated: chlorine, isoprene heterogeneous (IEPOX/IPX/')
+        L.append('!! INALD) uptake, particle-phase organic reactions (ATRPNJ/AHONITJ hydrolysis, AHOMJ photolysis) and toxics groups.  The baseline')
+        L.append('!! SOA counters -> IVOC chains and the IVOC aging block are NOT used here (see OrgPhaseChems.in, OrganicDissolution.in).')
+    else:
+        L.append('!! Gas-phase core only; CMAQ chlorine, heterogeneous, aerosol/SVOC, POA-aging, oligomerisation and toxics groups are not')
     L.append('!! translated.  %d CMAQ statements -> %d ASP reactions.' % (len(tr.core), len(tr.lines)))
     L.append('!! REQUIRES common_asp >= 40c1760 (1-body rate flag 13, 3-body flag 4), which also contains the earlier flag fixes')
     L.append('!! (2-body flag 5 = 508ba8d, 3-body flag 2 = f3f1107).')
@@ -99,14 +107,15 @@ def mech_file(cfg, case, tr, T, P, old_lines, out_path):
                 L.append('!! NOT TRANSLATED %s (%s): %s' % (lab, n['level'], n['text']))
                 L.append('!!     [%s]' % n['cmaq'])
     L.append('')
-    L.append('!! ------------------------------------------------------------------------------------')
-    L.append('!! SOA precursor counters -> IVOC volatility bins (unchanged from the %s baseline deck).' % case)
-    L.append('!! Counters present in this mechanism: %s' % ', '.join(cfg['ivoc_counters']))
-    L.append('!! ------------------------------------------------------------------------------------')
-    L.extend(chain)
-    L.append('!')
-    L.extend(aging)
-    L.append('!')
+    if not cmaq:
+        L.append('!! ------------------------------------------------------------------------------------')
+        L.append('!! SOA precursor counters -> IVOC volatility bins (unchanged from the %s baseline deck).' % case)
+        L.append('!! Counters present in this mechanism: %s' % ', '.join(cfg['ivoc_counters']))
+        L.append('!! ------------------------------------------------------------------------------------')
+        L.extend(chain)
+        L.append('!')
+        L.extend(aging)
+        L.append('!')
     open(out_path, 'w').write('\n'.join(L) + '\n')
 
 
@@ -170,7 +179,16 @@ def build_case(case, mech):
         all_sp.setdefault(nm, 1)
     for nm in INTERFACE + PLACEHOLDERS + ['CO', 'CO2', 'Trace', 'NO', 'NO2', 'O3', 'PAN', 'NO3', 'N2O5', 'HONO']:
         all_sp.setdefault(nm, 1)
-    ivoc = [n for n in old_rows if re.match(r'^(IVOC|POA|LEVO|CBIO|CPD)', n) or n in cfg['ivoc_counters']]
+    cmaq = cfg.get('oa') == 'cmaq'
+    if cmaq:
+        ivoc = [n for n in old_rows if re.match(r'^(POA|LEVO|CBIO|CPD)', n)]
+        modes = cmaq_oa.read_modes(os.path.join(old_dir, 'AerosolModes.in'))
+        g_new, p_new, replaced, oa_notes = cmaq_oa.emissions(case, old_rows, modes, table, T, P)
+        for sp, ppb in g_new.items():
+            mapped[sp] = [ppb, 0.0]
+            all_sp.setdefault(sp, 1)
+    else:
+        ivoc = [n for n in old_rows if re.match(r'^(IVOC|POA|LEVO|CBIO|CPD)', n) or n in cfg['ivoc_counters']]
     # counters that exist in the mechanism's chains but whose rows come from the old deck
     skip = {'CO', 'O2', 'N2', 'OffGas'} | set(ivoc)
     missing_old = [n for n in cfg['ivoc_counters'] if n not in old_rows]
@@ -194,6 +212,8 @@ def build_case(case, mech):
     L.append('!')
     L.append('!VBS / organic-phase compounds referenced by the organic dissolution decks (unchanged from the %s deck)' % case)
     L.append('!MW from Grieshop et al.; ACP; 2009')
+    if cmaq:
+        L.append('!(IVOC1-9 of the baseline are replaced by the CMAQ V* species above)')
     for nm in ivoc:
         L.append(old_raw[nm])
     L.append('!')
@@ -207,6 +227,14 @@ def build_case(case, mech):
     mech_file(cfg, case, tr, T, P, old_lines, os.path.join(new_dir, 'GasChemicalMechanism.in'))
     photo_file(cfg, case, old_dir, tr, T, os.path.join(new_dir, 'PhotoRates.in'))
     set_runlength(new_dir)
+    if cmaq:
+        part = cmaq_oa.partitioning_species(list(all_sp), table)
+        cmaq_oa.write_org_files(new_dir, part)
+        cmaq_oa.rewrite_modes(os.path.join(new_dir, 'AerosolModes.in'), replaced, p_new)
+        with open(os.path.join(new_dir, 'CMAQ_OA_MAPPING.txt'), 'w') as fh:
+            fh.write('CMAQ CRACMM organic-aerosol emissions mapping for %s (%s)\n' % (case, cfg['label']))
+            fh.write('\n'.join(oa_notes) + '\n\nPartitioning species (name, MW, C*298 ug/m3, dHvap J/mol, nonvolatile):\n')
+            fh.write('\n'.join('%s %.2f %.4g %.0f %s' % x for x in part) + '\n')
 
     with open(os.path.join(new_dir, 'SPECIES_MAPPING.csv'), 'w', newline='') as fh:
         w = csv.writer(fh)
