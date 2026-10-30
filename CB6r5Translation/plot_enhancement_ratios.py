@@ -50,8 +50,8 @@ MECHS = [('base', '', dict(color='#0072B2', ls='-', lw=1.8, label='Baseline (RAC
          ('stc', '_SAPRC07TC', dict(color='#222222', ls=':', lw=2.0, label='SAPRC07TC'), 'v'),
          ('sti', '_SAPRC07TIC', dict(color='#E0B000', ls=(0, (3, 1, 1, 1)), lw=1.8, label='SAPRC07TIC'), 'P'),
          ('mcm', '_MCM331', dict(color='#56B4E9', ls=(0, (1, 1)), lw=2.2, label='MCM v3.3.1 + lumped'), 'X'),
-         ('mz1', '_MOZT1', dict(color='#7B3FA0', ls=(0, (4, 1.5)), lw=1.8, label='MOZART-T1 + lumped'), '<'),
-         ('gc', '_GCHEM', dict(color='#8C564B', ls=(0, (6, 1.5, 1, 1.5)), lw=1.8, label='GEOS-Chem 14.8 + lumped'), 'h')]
+         ('mz1', '_MOZT1', dict(color='#7B3FA0', ls=(0, (4, 1.5)), lw=1.8, label='MOZART-T1'), '<'),
+         ('gc', '_GCHEM', dict(color='#8C564B', ls=(0, (6, 1.5, 1, 1.5)), lw=1.8, label='GEOS-Chem 14.8'), 'h')]
 MARK = {t: mk for t, _, _, mk in MECHS}
 sty = {t: st for t, _, st, _ in MECHS}
 summary = []

@@ -1,619 +1,68 @@
-baseline_name,model_name,ic_scale,initial_ppb,background_ppb,treatment
-CO,CO,1.0,4900.0,182.0,GEOS-Chem species (same name)
-CO2,CO2,1.0,380000.0,380000.0,GEOS-Chem species (same name)
-RO2_T,RO2_T,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-RCO3_T,RCO3_T,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3O2,MO2,1.0,0.0,0.0,renamed to GEOS-Chem species
-CH3CO3,MCO3,1.0,0.0,0.0,renamed to GEOS-Chem species
-Trace,Trace,1.0,1000.0,0.0,"lumped species kept, baseline chemistry"
-NO,NO,1.0,55.0,0.296,GEOS-Chem species (same name)
-NO2,NO2,1.0,123.1,0.46,GEOS-Chem species (same name)
-O3,O3,1.0,0.0,35.7,GEOS-Chem species (same name)
-HO2,HO2,1.0,0.0,0.0,GEOS-Chem species (same name)
-OH,OH,1.0,0.0,0.0,GEOS-Chem species (same name)
-H2O2,H2O2,1.0,0.0,0.0,GEOS-Chem species (same name)
-HONO,HONO,1.0,5.8,0.0,GEOS-Chem species (same name)
-HNO4,HNO4,1.0,0.0,0.0,GEOS-Chem species (same name)
-SO2,SO2,1.0,70.4,10.0,GEOS-Chem species (same name)
-SO3,SO3,1.0,0.0,0.0,not used
-HNO3,HNO3,1.0,0.0,0.0,GEOS-Chem species (same name)
-H2SO4,H2SO4,1.0,0.0,0.0,GEOS-Chem species (same name)
-HCl,HCl,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NH3,NH3,1.0,8.0,0.478,"lumped species kept, baseline chemistry"
-O,O,1.0,0.0,0.0,GEOS-Chem species (same name)
-O1D,O1D,1.0,0.0,0.0,GEOS-Chem species (same name)
-NO3,NO3,1.0,0.0,0.0,GEOS-Chem species (same name)
-N2O5,N2O5,1.0,0.0,0.0,GEOS-Chem species (same name)
-H2,H2,1.0,0.0,0.0,GEOS-Chem species (same name)
-CH4,CH4,1.0,2049.1,1774.0,GEOS-Chem species (same name)
-HCHO,CH2O,1.0,89.1,0.855,renamed to GEOS-Chem species
-MEOH,MOH,1.0,70.9,2.5,renamed to GEOS-Chem species
-Formic_Acid,HCOOH,1.0,30.4,0.225,renamed to GEOS-Chem species
-HCN,HCN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ETHE,C2H4,1.0,75.8,0.32,renamed to GEOS-Chem species
-Ethane,C2H6,1.0,15.0,0.86,renamed to GEOS-Chem species
-Acetaldehyde,ALD2,1.0,32.3,0.304,renamed to GEOS-Chem species
-ETOH,EOH,1.0,0.49,0.0,renamed to GEOS-Chem species
-Acetic_Acid,ACTA,1.0,69.5,0.6,renamed to GEOS-Chem species
-GLY,GLYX,1.0,0.0,0.0,renamed to GEOS-Chem species
-Acetylene,C2H2,1.0,0.0,0.0,renamed to GEOS-Chem species
-Propene,PRPE,1.0,11.1,0.031,renamed to GEOS-Chem species
-Propane,C3H8,1.0,2.6,0.11,renamed to GEOS-Chem species
-ACR,ACR,1.0,2.9,0.0,GEOS-Chem species (same name)
-Propanal,RCHO,1.0,0.0,0.0,renamed to GEOS-Chem species
-Acetone,ACET,1.0,9.6,3.6,renamed to GEOS-Chem species
-IPROPOL,IPROPOL,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NPROPOL,NPROPOL,1.0,0.85,0.0,"lumped species kept, baseline chemistry"
-PROPACID,RCOOH,1.0,0.0,0.0,renamed to GEOS-Chem species
-MGLY,MGLY,1.0,0.0,0.0,GEOS-Chem species (same name)
-Butadiene,C4H6,1.0,1.4,0.0,renamed to GEOS-Chem species
-1-Butene,1-Butene,1.0,4.86,0.0,"lumped species kept, baseline chemistry"
-cis-2-Butene,cis-2-Butene,1.0,0.31,0.0,"lumped species kept, baseline chemistry"
-trans-2-Butene,trans-2-Butene,1.0,0.42,0.0,"lumped species kept, baseline chemistry"
-i-Butene,i-Butene,1.0,1.09,0.0,"lumped species kept, baseline chemistry"
-n-Butane,ALK4,0.9,0.423,0.0207,renamed to GEOS-Chem species
-i-Butane,ALK4,0.9,0.162,0.0081,renamed to GEOS-Chem species
-2-Butenal,2-Butenal,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-Butanal,Butanal,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEK,MEK,1.0,13.5,0.0,GEOS-Chem species (same name)
-MethylPropanal,MethylPropanal,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOL,NBUTOL,1.0,0.22,0.0,"lumped species kept, baseline chemistry"
-BUT2OL,BUT2OL,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOL,IBUTOL,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TBUTOL,TBUTOL,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTACID,BUTACID,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTACID,IBUTACID,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVK,MVK,1.0,0.0,0.0,GEOS-Chem species (same name)
-MCR,MACR,1.0,0.0,0.0,renamed to GEOS-Chem species
-ISOP,ISOP,1.0,0.9,0.0,GEOS-Chem species (same name)
-FURAN,FURA,1.0,0.0,0.0,renamed to GEOS-Chem species
-ALD,ALD,1.0,2.12,0.0,"lumped species kept, baseline chemistry"
-API,MTPA,1.0,0.115,0.0,renamed to GEOS-Chem species
-BALD,BALD,1.0,0.56,0.0,GEOS-Chem species (same name)
-BEN,BENZ,1.0,0.0,0.0,renamed to GEOS-Chem species
-CSL,CSL,1.0,0.0,0.0,GEOS-Chem species (same name)
-DCB1,DCB1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-DCB2,DCB2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-DCB3,DCB3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-DIEN,DIEN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-EPX,EPX,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC5,HC5,1.0,1.873,0.022,"lumped species kept, baseline chemistry"
-HC8,HC8,1.0,0.12,0.014,"lumped species kept, baseline chemistry"
-HKET,HKET,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-KET,KET,1.0,2.72,0.0,"lumped species kept, baseline chemistry"
-LIM,LIMO,1.0,0.115,0.0,renamed to GEOS-Chem species
-MCT,MCT,1.0,0.0,0.0,GEOS-Chem species (same name)
-OLI,OLI,1.0,0.657,0.0,"lumped species kept, baseline chemistry"
-OLT,OLT,1.0,11.398,0.0,"lumped species kept, baseline chemistry"
-ORA2,ORA2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PHEN,PHEN,1.0,16.3,0.0,GEOS-Chem species (same name)
-ROH,ROH,1.0,0.76,0.0,GEOS-Chem species (same name)
-TOL,TOLU,1.0,3.95,0.0,renamed to GEOS-Chem species
-UALD,UALD,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-XYM,XYLE,1.0,0.481172,0.0,renamed to GEOS-Chem species
-XYP,XYLE,1.0,0.131368,0.0,renamed to GEOS-Chem species
-XYO,XYLE,1.0,0.24746,0.0,renamed to GEOS-Chem species
-HOCH2CHO,GLYC,1.0,15.2,0.304,renamed to GEOS-Chem species
-ETHGLY,ETHGLY,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HCOCO2H,HCOCO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOCH2CO2H,HACTA,1.0,0.0,0.0,renamed to GEOS-Chem species
-UR28,UR28,1.0,0.0,0.0,not used
-ALLYLOH,ALLYLOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ACO2H,ACO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ACETOL,HAC,1.0,15.6,0.0,renamed to GEOS-Chem species
-CH3CHOHCHO,CH3CHOHCHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOC2H4CHO,HOC2H4CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PROPGLY,PROPGLY,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOC3H6OH,HOC3H6OH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOCH2COCHO,HOCH2COCHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C32OH13CO,C32OH13CO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3COCO2H,PYAC,1.0,0.0,0.0,renamed to GEOS-Chem species
-HOC2H4CO2H,HOC2H4CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HYPERACET,HYPERACET,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-OCCOHCOH,OCCOHCOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOCH2COCO2H,HOCH2COCO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C2OHOCO2H,C2OHOCO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MALDIAL,MALDIAL,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO2C3CHO,CO2C3CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BIACET,BIACET,1.0,13.45,0.0,"lumped species kept, baseline chemistry"
-EGLYOX,EGLYOX,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C3H5CO2H,C3H5CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTDIAL,IBUTDIAL,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACO2H,MACO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC3CHO,HC3CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKOH,MVKOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC3CCHO,HC3CCHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKAOH,MEKAOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKCOH,MEKCOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO2C3CHO,HO2C3CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOIPRCHO,HOIPRCHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTALOH,IBUTALOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOC3H6CHO,HOC3H6CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDAOH,BUTDAOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDBOH,BUTDBOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOLAOH,NBUTOLAOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUT2OLOH,BUT2OLOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLOHB,IBUTOLOHB,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOC4H8OH,HOC4H8OH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO2C4OH,HO2C4OH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLOHC,IBUTOLOHC,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO23C3CHO,CO23C3CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO2H3CHO,CO2H3CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CCOCOCOH,CCOCOCOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1CO3CHO,HO1CO3CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BIACETOH,BIACETOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO3C3CHO,HO3C3CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C3MDIALOH,C3MDIALOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC3CO2H,HC3CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO12CO3C4,HO12CO3C4,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO14CO2C4,HO14CO2C4,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO2C3CO2H,HO2C3CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4OCCOHCOH,C4OCCOHCOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOC3H6CO2H,HOC3H6CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACROH,MACROH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-H1CO23CHO,H1CO23CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-H13CO2CHO,H13CO2CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-H14CO23C4,H14CO23C4,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C41OH,C41OH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKOHAOH,MVKOHAOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ISOHC5,ISOHC5,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HPALD1,HPALD1,1.0,0.0,0.0,GEOS-Chem species (same name)
-HPALD2,HPALD2,1.0,0.0,0.0,GEOS-Chem species (same name)
-MOBA,MOBA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IEPOX,IEPOX,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-DHMOB,DHMOB,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-UR24,UR24,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-UR25,UR25,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PAN,PAN,1.0,0.0,0.0,GEOS-Chem species (same name)
-ACRPAN,ACRPAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PPN,PPN,1.0,0.0,0.0,GEOS-Chem species (same name)
-GLYPAN,GLYPAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PHAN,PHAN,1.0,0.0,0.0,GEOS-Chem species (same name)
-C3DBPAN,C3DBPAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPAN,MPAN,1.0,0.0,0.0,GEOS-Chem species (same name)
-PBN,PBN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PIPN,PIPN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IPROPOLPAN,IPROPOLPAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C3PAN1,C3PAN1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO2C3PAN,CO2C3PAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUDIALPAN,IBUDIALPAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4PAN7,C4PAN7,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4PAN8,C4PAN8,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO3C3PAN,HO3C3PAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HCOCOHPAN,HCOCOHPAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4PAN1,C4PAN1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4PAN3,C4PAN3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4PAN4,C4PAN4,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4PAN5,C4PAN5,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-A2PAN,A2PAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4PAN6,C4PAN6,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CHOMOHPAN,CHOMOHPAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NO3CH2PAN,NO3CH2PAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4PAN10,C4PAN10,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRNO3PAN,PRNO3PAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4PAN9,C4PAN9,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRBNO3PAN,MPRBNO3PAN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PAN_lump,PAN_lump,1.0,0.0,0.0,not used
-PPN_lump,PPN_lump,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PN11,PN11,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3O2NO2,MPN,1.0,0.0,0.0,renamed to GEOS-Chem species
-CH3NO3,CH3NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C2H5NO3,ETNO3,1.0,0.0,0.0,renamed to GEOS-Chem species
-IC3H7NO3,IPRNO3,1.0,0.0,0.0,renamed to GEOS-Chem species
-NC3H7NO3,NPRNO3,1.0,0.0,0.0,renamed to GEOS-Chem species
-NO3CH2CHO,NO3CH2CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ETHOHNO3,ETHOHNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CHOPRNO3,CHOPRNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NOA,PROPNN,1.0,0.0,0.0,renamed to GEOS-Chem species
-NC4H9NO3,NC4H9NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-SC4H9NO3,SC4H9NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IC4H9NO3,IC4H9NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TC4H9NO3,TC4H9NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PROPOLNO3,PROPOLNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PROLNO3,PROLNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1C3NO3,HO1C3NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NO3CH2CO2H,NO3CH2CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ETHO2HNO3,ETHO2HNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NMVK,NMVK,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NC3CHO,NC3CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKANO3,MEKANO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTALNO3,BUTALNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUALANO3,IBUALANO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO3C4NO3,CO3C4NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTONENO3,BUTONENO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTAL2NO3,BUTAL2NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NMGLYOX,NMGLYOX,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRBNO3CHO,MPRBNO3CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTDAOH,NBUTDAOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDANO3,BUTDANO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDBNO3,BUTDBNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOLANO3,NBUTOLANO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOLBNO3,NBUTOLBNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUT2OLNO3,BUT2OLNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TBUTOLNO3,TBUTOLNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLBNO3,IBUTOLBNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLCNO3,IBUTOLCNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO3C4NO3,HO3C4NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRNO3CO2H,PRNO3CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1C4NO3,HO1C4NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C42AOH,C42AOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NO3CH2CO3H,NO3CH2CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PR1O2HNO3,PR1O2HNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PR2O2HNO3,PR2O2HNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO23C4NO3,CO23C4NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NC3CO2H,NC3CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-INPN,INPN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ISOPNB,ISOPNB,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ISOPND,ISOPND,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ISNP,ISNP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKN,MVKN,1.0,0.0,0.0,GEOS-Chem species (same name)
-C4OCCOHNO3,C4OCCOHNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-COCCOHNO3,COCCOHNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO3C4NO3OH,CO3C4NO3OH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRNO3CO2H,MPRNO3CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HMVKANO3,HMVKANO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACROHNO3,MACROHNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTDAOOH,NBUTDAOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTDBOOH,NBUTDBOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRNO3CO3H,PRNO3CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C43NO34OOH,C43NO34OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BU1ENO3OOH,BU1ENO3OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4CONO3CO,C4CONO3CO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NCO23CHO,NCO23CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HNBIACET,HNBIACET,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NC3CO3H,NC3CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-H3NCO2CHO,H3NCO2CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4CONO3OOH,C4CONO3OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4NO3COOOH,C4NO3COOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-COC4NO3OOH,COC4NO3OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HNMVKOH,HNMVKOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C42OH,C42OH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C41NO3,C41NO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKOHANO3,MVKOHANO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTDBNO3,NBUTDBNO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HNMVKOOH,HNMVKOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C42OOH,C42OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ONIT,ONIT,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3OOH,MP,1.0,0.0,0.0,renamed to GEOS-Chem species
-CH3CO2H,ACTA,1.0,0.0,0.0,renamed to GEOS-Chem species
-C2H5OOH,ETP,1.0,0.0,0.0,renamed to GEOS-Chem species
-IC3H7OOH,RB3P,1.0,0.0,0.0,renamed to GEOS-Chem species
-NC3H7OOH,RA3P,1.0,0.0,0.0,renamed to GEOS-Chem species
-CH3CO3H,MAP,1.0,0.0,0.0,renamed to GEOS-Chem species
-HCOCH2OOH,HCOCH2OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HYETHO2H,HYETHO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ACO3H,ACO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HCOCO3H,HCOCO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PROPALOOH,PROPALOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NC4H9OOH,NC4H9OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-SC4H9OOH,SC4H9OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IC4H9OOH,IC4H9OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TC4H9OOH,TC4H9OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PERPROACID,PERPROACID,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOCH2CO3H,HOCH2CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IPROPOLO2H,IPROPOLO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1C3OOH,HO1C3OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HYPROPO2H,HYPROPO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C3DBCO3H,C3DBCO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRPAL2CO2H,PRPAL2CO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACO3H,MACO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOIPRCO2H,HOIPRCO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IPRHOCO2H,IPRHOCO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKAOOH,MEKAOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKBOOH,MEKBOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKCOOH,MEKCOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTALO2H,BUTALO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PERBUACID,PERBUACID,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PERIBUACID,PERIBUACID,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTALO2H,IBUTALO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTALBO2H,IBUTALBO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDAOOH,BUTDAOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDBOOH,BUTDBOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDCOOH,BUTDCOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOLAOOH,NBUTOLAOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOLBOOH,NBUTOLBOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLBO2H,IBUTOLBO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLCO2H,IBUTOLCO2H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IPROPOLPER,IPROPOLPER,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOC2H4CO3H,HOC2H4CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOCHOCOOH,HOCHOCOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-OCCOHCOOH,OCCOHCOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO3C4OOH,HO3C4OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUT2OLOOH,BUT2OLOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TBUTOLOOH,TBUTOLOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1C4OOH,HO1C4OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C3DIOLOOH,C3DIOLOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-RIP,RIP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRPAL2CO3H,PRPAL2CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO2C3CO3H,CO2C3CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BIACETOOH,BIACETOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC3CO3H,HC3CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC3CCO3H,HC3CCO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-COCCOHCOOH,COCCOHCOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOCO3C4OOH,HOCO3C4OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HCOCOHCO3H,HCOCOHCO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO2C3CO3H,HO2C3CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4OCCOHOOH,C4OCCOHOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOIPRCO3H,HOIPRCO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IPRHOCO3H,IPRHOCO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO3C3CO3H,HO3C3CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOC3H6CO3H,HOC3H6CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HMVKAOOH,HMVKAOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HMVKBOOH,HMVKBOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACROOH,MACROOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACROHOOH,MACROHOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C2OHOCOOH,C2OHOCOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO2H3CO3H,CO2H3CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CHOMOHCO3H,CHOMOHCO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C41OOH,C41OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKOHAOOH,MVKOHAOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKOHBOOH,MVKOHBOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IAP,IAP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-H13CO2CO3H,H13CO2CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C42NO33OOH,C42NO33OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRANO3OOH,MPRANO3OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRBNO3OOH,MPRBNO3OOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRNO3CO3H,MPRNO3CO3H,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-OP2,OP2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PAA,PAA,1.0,0.0,0.0,not used
-MALDIALOOH,MALDIALOOH,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH2OOA,CH2OOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH2OOB,CH2OOB,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH2OOC,CH2OOC,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH2OOD,CH2OOD,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH2OOG,CH2OOG,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3CHOOA,CH3CHOOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3CHOOB,CH3CHOOB,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ACROOA,ACROOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-GLYOOA,GLYOOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-GLYOOB,GLYOOB,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3CCH3OOA,CH3CCH3OOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C2H5CHOOA,C2H5CHOOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-GAOOA,GAOOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MGLOOA,MGLOOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MGLYOOB,MGLYOOB,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HMGLOOA,HMGLOOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NAOOA,NAOOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH2OO,CH2OO,1.0,0.0,0.0,GEOS-Chem species (same name)
-CH3CHOO,CH3CHOO,1.0,0.0,0.0,GEOS-Chem species (same name)
-ACROO,ACROO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-GLYOO,GLYOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C2H5CHOO,C2H5CHOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3CCH3OO,CH3CCH3OO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-GAOO,GAOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MGLOO,MGLOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MGLYOO,MGLYOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HMGLOO,HMGLOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NAOO,NAOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C2H5O2,ETO2,1.0,0.0,0.0,renamed to GEOS-Chem species
-CH3C2H2O2,CH3C2H2O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HCOCH2O2,HCOCH2O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IC3H7O2,B3O2,1.0,0.0,0.0,renamed to GEOS-Chem species
-NC3H7O2,A3O2,1.0,0.0,0.0,renamed to GEOS-Chem species
-HOCH2CH2O2,HOCH2CH2O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3COCH2O2,CH3COCH2O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NC4H9O2,NC4H9O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-SC4H9O2,SC4H9O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IC4H9O2,IC4H9O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TC4H9O2,TC4H9O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PROPALO2,PROPALO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IPROPOLO2,IPROPOLO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1C3O2,HO1C3O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HYPROPO2,HYPROPO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKAO2,MEKAO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKBO2,MEKBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKCO2,MEKCO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTALO2,BUTALO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTALBO2,IBUTALBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTALCO2,IBUTALCO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDAO2,BUTDAO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDBO2,BUTDBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDCO2,BUTDCO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-OCCOHCO2,OCCOHCO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO3C4O2,HO3C4O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOLAO2,NBUTOLAO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOLBO2,NBUTOLBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUT2OLO2,BUT2OLO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1C4O2,HO1C4O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLBO2,IBUTOLBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLCO2,IBUTOLCO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TBUTOLO2,TBUTOLO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C3DIOLO2,C3DIOLO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BIACETO2,BIACETO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ISOPBO2,ISOPBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ISOPDO2,ISOPDO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1CO3C4O2,HO1CO3C4O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4OCCOHCO2,C4OCCOHCO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-COCCOH2CO2,COCCOH2CO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HMVKAO2,HMVKAO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HMVKBO2,HMVKBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACRO2,MACRO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACROHO2,MACROHO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-A2PANOO,A2PANOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ETHENO3O2,ETHENO3O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC5OO,HC5OO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IEPOXOO,IEPOXOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C41O2,C41O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKOHAO2,MVKOHAO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKOHBO2,MVKOHBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRONO3AO2,PRONO3AO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRONO3BO2,PRONO3BO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MOBAOO,MOBAOO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTDAO2,NBUTDAO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTDBO2,NBUTDBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BU1ENO3O2,BU1ENO3O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C43NO34O2,C43NO34O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C42NO33O2,C42NO33O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRANO3O2,MPRANO3O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRBNO3O2,MPRBNO3O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-INO2,INO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4CONO3O2,C4CONO3O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4NO3COO2,C4NO3COO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO3C4NO3O2,CO3C4NO3O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ISOPNBO2,ISOPNBO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ISOPNDO2,ISOPNDO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HNMVKO2,HNMVKO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C42O2,C42O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ACO3,ACO3,1.0,0.0,0.0,GEOS-Chem species (same name)
-C2H5CO3,C2H5CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HCOCO3,HCOCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOCH2CO3,HOCH2CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C3DBCO3,C3DBCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACO3,MACO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C3H7CO3,C3H7CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IPRCO3,IPRCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3CHOHCO3,CH3CHOHCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOC2H4CO3,HOC2H4CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ACO3B,ACO3B,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO2C3CO3,CO2C3CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUDIALCO3,IBUDIALCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC3CO3,HC3CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC3CCO3,HC3CCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOC3H6CO3,HOC3H6CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HCOCOHCO3,HCOCOHCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO2C3CO3,HO2C3CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOIPRCO3,HOIPRCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IPRHOCO3,IPRHOCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO3C3CO3,HO3C3CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO2H3CO3,CO2H3CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CHOMOHCO3,CHOMOHCO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NO3CH2CO3,NO3CH2CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-H13CO2CO3,H13CO2CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRNO3CO3,PRNO3CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NC3CO3,NC3CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRBNO3CO3,MPRBNO3CO3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-RO2_59,RO2_59,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-RO2_60,RO2_60,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-APIP,APIP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BALP,BALP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BAL1,BAL1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BAL2,BAL2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BENP,BENP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC5P,HC5P,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC8P,HC8P,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-KETP,KETP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-LIMP,LIMP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-OLIP,OLIP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-OLND,OLND,1.0,0.0,0.0,GEOS-Chem species (same name)
-OLNN,OLNN,1.0,0.0,0.0,GEOS-Chem species (same name)
-OLTP,OLTP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ORAP,ORAP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PER1,PER1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PER2,PER2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-RCO3,RCO3,1.0,0.0,0.0,GEOS-Chem species (same name)
-TLP1,TLP1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TOLP,TOLP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TR2,TR2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-UALP,UALP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-XO2,XO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-XY2,XY2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-XYL1,XYL1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-XYLP,XYLP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-XYO2,XYO2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-XYOP,XYOP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PHO,PHO,1.0,0.0,0.0,not used
-MCTO,MCTO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ADDC,ADDC,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CHO,CHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ADCN,ADCN,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MCTP,MCTP,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3O,CH3O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C2H5O,C2H5O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IC3H7O,IC3H7O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NC3H7O,NC3H7O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HCOCH2O,HCOCH2O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HOCH2CH2O,HOCH2CH2O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CH3COCH2O,CH3COCH2O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PROPALO,PROPALO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NC4H9O,NC4H9O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-SC4H9O,SC4H9O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IC4H9O,IC4H9O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TC4H9O,TC4H9O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IPROPOLO,IPROPOLO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1C3O,HO1C3O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HYPROPO,HYPROPO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKAO,MEKAO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKBO,MEKBO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MEKCO,MEKCO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTALO,BUTALO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTAL2O,BUTAL2O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTALBO,IBUTALBO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-M2PROPAL2O,M2PROPAL2O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDAO,BUTDAO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDBO,BUTDBO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUTDCO,BUTDCO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUT2OLO,BUT2OLO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO3C4O,HO3C4O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOLAO,NBUTOLAO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTOLBO,NBUTOLBO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLBO,IBUTOLBO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IBUTOLCO,IBUTOLCO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BUT2OLAO,BUT2OLAO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TBUTOLO,TBUTOLO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1C4O,HO1C4O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CHOCOHCO,CHOCOHCO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-OCCOHCO,OCCOHCO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C3DIOLO,C3DIOLO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BIACETO,BIACETO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4CO2O,C4CO2O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO1CO3C4O,HO1CO3C4O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4OCCOHCO,C4OCCOHCO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-COCCOHCO,COCCOHCO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HO2CO3C4O,HO2CO3C4O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HMVKAO,HMVKAO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HMVKBO,HMVKBO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACRO,MACRO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MACROHO,MACROHO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-A2PANO,A2PANO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ETHENO3O,ETHENO3O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C41O,C41O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKOHAO,MVKOHAO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MVKOHBO,MVKOHBO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRONO3AO,PRONO3AO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-PRONO3BO,PRONO3BO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTDAO,NBUTDAO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-NBUTDBO,NBUTDBO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-BU1ENO3O,BU1ENO3O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C43NO34O,C43NO34O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C42NO33O,C42NO33O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRANO3O,MPRANO3O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-MPRBNO3O,MPRBNO3O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CO3C4NO3O,CO3C4NO3O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4CONO3O,C4CONO3O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C4NO3OCO,C4NO3OCO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HNMVKO,HNMVKO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-C42O,C42O,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-POA1,POA1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-POA2,POA2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-POA3,POA3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-POA4,POA4,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-POA5,POA5,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-POA6,POA6,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-POA7,POA7,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-POA8,POA8,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-LEVO,LEVO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CBIO,CBIO,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CPD1,CPD1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CPD2,CPD2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-CPD3,CPD3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC1,IVOC1,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC2,IVOC2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC3,IVOC3,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC4,IVOC4,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC5,IVOC5,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC6,IVOC6,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC7,IVOC7,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC8,IVOC8,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC9,IVOC9,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-IVOC1_R1O2,IVOC1_R1O2,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC5SOA,HC5SOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-HC8SOA,HC8SOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-OLTSOA,OLTSOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-OLISOA,OLISOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TOLSOA,TOLSOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-XYLSOA,XYLSOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-ISOSOA,ISOSOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-TERPSOA,TERPSOA,1.0,0.0,0.0,"lumped species kept, baseline chemistry"
-O2,O2,1.0,210000000.0,210000000.0,not used
-N2,N2,1.0,790000000.0,790000000.0,not used
-OffGas,OffGas,1.0,1000.0,1000.0,"lumped species kept, baseline chemistry"
+paper_species,mapping_key,initial_ppb,background_ppb,GEOS-Chem_representation,basis_note
+CO,CO,4900.0,182.0,CO,direct
+CH4,CH4,2049.1,1774.0,CH4,direct
+C2H6,ETHA,15.0,0.86,C2H6,explicit
+C2H4,ETH,75.8,0.32,C2H4,explicit
+C3H8,PRPA,2.6,0.11,C3H8,explicit
+C3H6,Propene,11.1,0.031,PRPE,explicit (>=C3 alkenes)
+C4H8,C4H8,1.6,0.0,PRPE,>=C3 alkenes
+HCHO,HCHO,89.1,0.855,CH2O,explicit
+OHCH2CHO,GLYD,15.2,0.304,GLYC,explicit (glycolaldehyde)
+CH3CHO,ALD2,32.3,0.304,ALD2,explicit
+CH3OH,MEOH,70.9,2.5,MOH,explicit
+HC(O)OH,FACD,30.4,0.225,HCOOH,explicit
+CH3C(O)OH,AACD,69.5,0.6,ACTA,explicit
+CH3C(O)CH3,Acetone,9.6,3.6,ACET,explicit
+C3H6O2,Hydroxyacetone,15.6,0.0,HAC,explicit
+C6H5OH,Phenol,16.3,0.0,PHEN,explicit
+C6H5CH3,TOL,3.7,0.0,TOLU,explicit
+C5H8,ISOP,0.9,0.0,ISOP,explicit
+C3H6O,C3H6O,7.8,0.0,PRPE,Timbavati lumped alkene treated as propene
+CH3COC2H5,MEK,13.5,0.0,MEK,explicit
+NO,NO,55.0,0.296,NO,direct
+NO2,NO2,123.1,0.46,NO2,direct
+HONO,HONO,5.8,0.0,HONO,direct
+SO2,SO2,70.4,10.0,SO2,direct
+NH3,NH3,8.0,0.478,NH3,direct
+i-butane,Butane,0.18,0.009,ALK4,GEOS-Chem ALK4 = >=C4 alkanes
+n-butane,Butane,0.47,0.023,ALK4,GEOS-Chem ALK4 = >=C4 alkanes
+trans-2-butene,2-Butene,0.42,0.0,PRPE,>=C3 alkenes
+cis-2-butene,2-Butene,0.31,0.0,PRPE,>=C3 alkenes
+i-pentane,Pentane,0.053,0.006,ALK4,>=C4 alkanes
+n-pentane,Pentane,0.11,0.009,ALK4,>=C4 alkanes
+butadiene,Butadiene,1.4,0.0,C4H6,explicit
+3-methyl-1-butene,1-Pentene,0.13,0.0,PRPE,>=C3 alkenes
+trans-2-pentene,2-Pentene,0.11,0.0,PRPE,>=C3 alkenes
+2-methyl-2-butene,2-Pentene,0.12,0.0,PRPE,>=C3 alkenes
+2-methyl-1-butene,1-Pentene,0.13,0.0,PRPE,>=C3 alkenes
+c-2-pentene,2-Pentene,0.067,0.0,PRPE,>=C3 alkenes
+n-hexane,Hexane,0.22,0.007,ALK4,>=C4 alkanes
+2-methyl-1-pentene,1-Hexene,0.078,0.0,PRPE,>=C3 alkenes
+heptane,Heptane,0.12,0.014,ALK4,>=C4 alkanes
+1-butene,1-Butene,3.26,0.0,PRPE,>=C3 alkenes
+i-butene,iButene,1.09,0.0,PRPE,>=C3 alkenes
+1-pentene,1-Pentene,0.64,0.0,PRPE,>=C3 alkenes
+2-methyl-butane,Pentane,0.31,0.0,ALK4,>=C4 alkanes
+cyclopentene,2-Pentene,0.36,0.0,PRPE,>=C3 alkenes
+4-methyl-1-pentene,1-Hexene,1.16,0.0,PRPE,>=C3 alkenes
+1-hexene,1-Hexene,0.89,0.0,PRPE,>=C3 alkenes
+isohexanes,Hexane,1.18,0.0,ALK4,>=C4 alkanes
+octenes,Octene,0.1,0.0,PRPE,>=C3 alkenes
+terpenes,TERP,0.23,0.0,0.5 MTPA + 0.5 LIMO,monoterpenes split 50/50 between MTPA and LIMO
+xylenes,Xylene,0.86,0.0,XYLE,explicit
+ethylbenzene,Ethylbenzene,0.25,0.0,EBZ,explicit
+styrene,Styrene,0.47,0.0,STYR,explicit
+PAHs,PAH,0.03,0.0,NAP,naphthalene
+ethanol,ETOH,0.49,0.0,EOH,explicit
+1-propanol,nPropanol,0.85,0.0,ROH,GEOS-Chem ROH = C3 alcohol
+butanols,nButanol,0.22,0.0,ROH,C3+ alcohols
+cyclopentanol,Cyclopentanol,0.76,0.0,ROH,alcohol
+acrolein,Acrolein,2.9,0.0,ACR,explicit
+C3-C7_aldehydes,ALD_hi,2.12,0.0,RCHO,C3-C7 aldehydes
+"2,3-butanedione",Biacetyl,13.45,0.0,1.33 MGLY,biacetyl: 1.33 MGLY (kOH-weighted)
+pentanones,Pentanone,0.35,0.0,MEK,ketone >= C4
+heptanones,Heptanone,0.11,0.0,MEK,ketone >= C4
+octanones,Octanone,0.24,0.0,MEK,ketone >= C4
+benzaldehyde,Benzaldehyde,0.56,0.0,BALD,explicit
+methyl_formate,MeFormate,0.51,0.0,C2H6,kOH 2.3e-13 ~ ethane 2.4e-13
+methyl_acetate,MeAcetate,1.51,0.0,C2H6,kOH 3.4e-13 ~ ethane
