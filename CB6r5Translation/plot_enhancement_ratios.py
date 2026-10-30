@@ -49,7 +49,8 @@ MECHS = [('base', '', dict(color='#0072B2', ls='-', lw=1.8, label='Baseline (RAC
          ('cr3', '_CRACMM3', dict(color='#CC79A7', ls=(0, (5, 1, 1, 1, 1, 1)), lw=1.6, label='CRACMM3'), 'D'),
          ('stc', '_SAPRC07TC', dict(color='#222222', ls=':', lw=2.0, label='SAPRC07TC'), 'v'),
          ('sti', '_SAPRC07TIC', dict(color='#E0B000', ls=(0, (3, 1, 1, 1)), lw=1.8, label='SAPRC07TIC'), 'P'),
-         ('mcm', '_MCM331', dict(color='#56B4E9', ls=(0, (1, 1)), lw=2.2, label='MCM v3.3.1 + lumped'), 'X')]
+         ('mcm', '_MCM331', dict(color='#56B4E9', ls=(0, (1, 1)), lw=2.2, label='MCM v3.3.1 + lumped'), 'X'),
+         ('mz1', '_MOZT1', dict(color='#7B3FA0', ls=(0, (4, 1.5)), lw=1.8, label='MOZART-T1 + lumped'), '<')]
 MARK = {t: mk for t, _, _, mk in MECHS}
 sty = {t: st for t, _, st, _ in MECHS}
 summary = []
