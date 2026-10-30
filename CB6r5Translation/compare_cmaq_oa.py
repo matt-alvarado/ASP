@@ -24,7 +24,7 @@ def oa_series(run):
         L = [l.rstrip('\n') for l in open(f) if l.strip()]
         i = L[0].index('TotOA') // 13
         for l in L[1:]:
-            try: t = float(l[0:13]); v = float(l[i * 13:(i + 1) * 13])
+            try: t = 60.0 * float(l[0:13]); v = float(l[i * 13:(i + 1) * 13])
             except ValueError: continue
             tot[t] = tot.get(t, 0.0) + v
     t = np.array(sorted(tot)); return t, np.array([tot[x] for x in t])
