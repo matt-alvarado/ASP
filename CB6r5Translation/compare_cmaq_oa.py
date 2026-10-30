@@ -7,7 +7,9 @@ import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 root, out = sys.argv[1], sys.argv[2]
 MECHS = sys.argv[3].split(',') if len(sys.argv) > 3 else ['CRACMM2', 'CRACMM3']
-COL = {'CRACMM2': '#009E73', 'CRACMM3': '#CC79A7', 'CB6r5': '#0072B2', 'SAPRC07TC': '#E69F00', 'SAPRC07TIC': '#D55E00'}
+NEWONLY = len(sys.argv) > 4 and sys.argv[4] == 'new'      # only the current decks (no dashed old versions); a mechanism named Baseline is the unchanged baseline deck
+VERS = (('new', ''),) if NEWONLY else (('old', 'old_'), ('new', ''))
+COL = {'Baseline': '0.25', 'CRACMM2': '#009E73', 'CRACMM3': '#CC79A7', 'CB6r5': '#0072B2', 'SAPRC07TC': '#E69F00', 'SAPRC07TIC': '#D55E00'}
 OAKIND = 'CMAQ CRACMM' if MECHS[0].startswith('CRACMM') else 'CMAQ AERO6/7'
 OLDKIND = 'baseline IVOC-ladder organic aerosol'
 usage = 'usage: compare_cmaq_oa.py <runs_root> <out.png> [MECH,MECH,...]'
@@ -50,12 +52,12 @@ fig, ax = plt.subplots(2, 4, figsize=(16, 7.2), sharex='col', sharey='row')
 for j, case in enumerate(CASES):
     T, P = TP[case]; bg = co_bg(case)
     for mech in MECHS:
-        for ver, pre in (('old', 'old_'), ('new', '')):
+        for ver, pre in VERS:
             run = f'{root}/{pre}{case}_{mech}'
             if not os.path.isdir(run + '/OutputFiles'): continue
             h, g = table(f'{run}/OutputFiles/GasOut1.txt'); tg, co = g[:, 0], g[:, h.index('CO')]
             he, e = table(f'{run}/OutputFiles/EnhanceRatios.txt'); te = e[:, 0]; k = np.r_[True, np.diff(te) > 0]
-            ax[1, j].plot(te[k] / 3600, e[:, he.index('dO3/dCO')][k], label=f'{mech} {ver}', **STY[(mech, ver)])
+            ax[1, j].plot(te[k] / 3600, e[:, he.index('dO3/dCO')][k], label=(mech if NEWONLY else f'{mech} {ver}'), **STY[(mech, ver)])
             ta, oa = oa_series(run); dco = np.interp(ta, tg, co) - bg
             r = oa * (1013.25 / P) * (T / 273.15) / (dco / 1000.0); m = ta >= 600
             ax[0, j].plot(ta[m] / 3600, r[m], **STY[(mech, ver)])
@@ -68,17 +70,18 @@ for j, case in enumerate(CASES):
     for r_ in (0, 1): ax[r_, j].grid(alpha=0.3)
 ax[0, 0].set_ylabel(r'$\Delta$OA/$\Delta$CO ($\mu$g m$^{-3}$ STP / ppmv)'); ax[1, 0].set_ylabel(r'$\Delta$O$_3$/$\Delta$CO (ppb/ppb)')
 h_, l_ = ax[1, 0].get_legend_handles_labels(); h0, l0 = ax[0, 0].get_legend_handles_labels()
-fig.legend(h_ + h0[-1:], l_ + l0[-1:], loc='lower center', ncol=len(MECHS) * 2 + 1, frameon=False)
-fig.suptitle('%s: %s (dashed) vs %s organic-aerosol chemistry (solid)' % ('/'.join(MECHS), OLDKIND, OAKIND))
+fig.legend(h_ + h0[-1:], l_ + l0[-1:], loc='lower center', ncol=len(MECHS) + 1 if NEWONLY else len(MECHS) * 2 + 1, frameon=False)
+fig.suptitle('Baseline, CRACMM2/3, CB6r5 and SAPRC07TC/TIC with CMAQ organic-aerosol chemistry' if NEWONLY else '%s: %s (dashed) vs %s organic-aerosol chemistry (solid)' % ('/'.join(MECHS), OLDKIND, OAKIND))
 fig.tight_layout(rect=(0, 0.06, 1, 0.97)); fig.savefig(out, dpi=150)
-print('case mech   dOA/dCO(5h) old new   dO3/dCO(5h) old new')
+print('case mech   dOA/dCO(5h) old new   dO3/dCO(5h) old new' if not NEWONLY else 'case mech dOA/dCO(5h)  dO3/dCO(5h)')
 for case in CASES:
     T, P = TP[case]; bg = co_bg(case); row = []
     for mech in MECHS:
         vals = []
-        for pre in ('old_', ''):
+        for _v, pre in VERS:
             run = f'{root}/{pre}{case}_{mech}'
             h, g = table(f'{run}/OutputFiles/GasOut1.txt'); tg, co = g[:, 0], g[:, h.index('CO')]
             he, e = table(f'{run}/OutputFiles/EnhanceRatios.txt'); ta, oa = oa_series(run)
             dco = np.interp(ta[-1], tg, co) - bg; vals.append((oa[-1] * (1013.25 / P) * (T / 273.15) / (dco / 1000.0), e[-1, he.index('dO3/dCO')]))
-        print('%-10s %s  OA %.1f -> %.1f   O3 %.3f -> %.3f' % (case, mech, vals[0][0], vals[1][0], vals[0][1], vals[1][1]))
+        if NEWONLY: print('%-10s %-10s OA %.1f   O3 %.3f' % (case, mech, vals[0][0], vals[0][1]))
+        else: print('%-10s %s  OA %.1f -> %.1f   O3 %.3f -> %.3f' % (case, mech, vals[0][0], vals[1][0], vals[0][1], vals[1][1]))
