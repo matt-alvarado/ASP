@@ -93,6 +93,7 @@ for j, case in enumerate(CASES):
             first = False
     obs_plot(ax[0, j], OBS[case]['O3'], j == 0)
     obs_plot(ax[1, j], OBS[case]['OA'], False)
+    obs_plot(ax[2, j], OBS[case].get('NOx', []), False)
     ax[0, j].set_title(case)
     ax[0, j].set_xlim(-0.15, 5.3)
     ax[2, j].set_xlabel('Time (h)')
@@ -105,7 +106,7 @@ from matplotlib.lines import Line2D
 h_ = [Line2D([], [], marker=MARK[t], mec='white', ms=8, **st) for t, _, st, _ in MECHS] + ax[0, 0].get_legend_handles_labels()[0][-1:]
 l_ = [st['label'] for _, _, st, _ in MECHS] + ax[0, 0].get_legend_handles_labels()[1][-1:]
 fig.legend(h_, l_, loc='lower center', ncol=5, frameon=False, fontsize=9)
-fig.suptitle('Enhancement ratios, 5 h runs: nine gas-phase mechanisms (O$_3$ and OA with observations; NO$_x$ model only)', y=0.995)
+fig.suptitle('Enhancement ratios, 5 h runs: nine gas-phase mechanisms (observations from the papers where available; none for NO$_x$ at Otavi/Timbavati)', y=0.995)
 fig.tight_layout(rect=(0, 0.07, 1, 1))
 fig.savefig(out, dpi=150)
 for s in summary:

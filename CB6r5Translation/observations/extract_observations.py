@@ -90,5 +90,30 @@ obs['Timbavati']['OA'].append(dict(t_h=47 / 60, tlo_h=47 / 60, thi_h=47 / 60,
                                    y=oa_stp / ((co47['y'] - BG['Timbavati']['CO']) / 1000.0),
                                    ylo=None, yhi=None,
                                    note='OC 34 ug/m3 (JGR Fig. 5, ambient) -> STP; dCO from the AFTIR point at %.1f min (%.0f ppb)' % (co47['x'], co47['y'])))
+
+# ---- NOx (NOx background taken as 0 in the decks) --------------------------------------------------------
+# Williams: ACP Fig. 6a is dNOx/dCO2 vs smoke age; convert with dCO2/dCO (r_co2_co) -> dNOx/dCO
+Pn = Panel(ACP.pages[11], (95.6, 290.3, 89.4, 233.2), ('x', 0, 5), ('y', 0.004, 0))
+obs['Williams']['NOx'] = sorted([dict(t_h=r['x'], tlo_h=r['xlo'], thi_h=r['xhi'], y=r['y'] * r_co2_co,
+                                      ylo=max(r['ylo'], 0) * r_co2_co, yhi=r['yhi'] * r_co2_co)
+                                 for r in Pn.points(2.3)], key=lambda r: r['t_h'])
+# Alaska: JGR Fig. 3c NOx (ppb) and Fig. 3a CO (two observation points at ~44 and ~117 min)
+pg = JGR.pages[5]
+nox = Panel(pg, (223.1, 336.4, 502.3, 642.9), ('y', 180, 0), ('x', 240, 0)).points(2.7)
+nox = [p for p in nox if 20 < p['x'] < 170]          # drop legend marker (103 min, 218 ppb) and the t=0 initial point
+coa = Panel(pg, (66.6, 179.9, 430.3, 570.8), ('y', 180, 0), ('x', 5000, 0)).points(2.7)
+coa = [p for p in coa if p['x'] > 10 and p['y'] < 4000]
+res = []
+for p in nox:
+    q = min(coa, key=lambda c: abs(c['x'] - p['x']))
+    if abs(q['x'] - p['x']) > 3.0:
+        continue
+    dco = q['y'] - BG['Alaska']['CO']
+    res.append(dict(t_h=p['x'] / 60, tlo_h=p['xlo'] / 60, thi_h=p['xhi'] / 60, y=p['y'] / dco,
+                    ylo=max(p['ylo'], 0) / dco, yhi=p['yhi'] / dco, NOx=p['y'], CO=q['y']))
+obs['Alaska']['NOx'] = sorted(res, key=lambda r: r['t_h'])
+# Otavi (Jost et al. NO2/NO) and Timbavati: the papers show no NOx measurements
+obs['Otavi']['NOx'] = []
+obs['Timbavati']['NOx'] = []
 json.dump(obs, open(os.path.join(HERE, 'observed_raw.json'), 'w'), indent=1)
 print({k: (len(v['O3']) if 'O3' in v else None) for k, v in obs.items()})
