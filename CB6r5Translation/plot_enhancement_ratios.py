@@ -41,7 +41,7 @@ def oa_series(run):
     return t, np.array([tot[x] for x in t])
 
 
-fig, ax = plt.subplots(2, 4, figsize=(16, 7.2), sharex='col', sharey='row')
+fig, ax = plt.subplots(3, 4, figsize=(16, 10.2), sharex='col', sharey='row')
 # tag -> deck-name suffix, style
 MECHS = [('base', '', dict(color='#0072B2', ls='-', lw=1.8, label='Baseline (RACM2-based)'), 'o'),
          ('cb6', '_CB6r5', dict(color='#D55E00', ls='--', lw=1.6, label='CB6r5'), 's'),
@@ -50,7 +50,8 @@ MECHS = [('base', '', dict(color='#0072B2', ls='-', lw=1.8, label='Baseline (RAC
          ('stc', '_SAPRC07TC', dict(color='#222222', ls=':', lw=2.0, label='SAPRC07TC'), 'v'),
          ('sti', '_SAPRC07TIC', dict(color='#E0B000', ls=(0, (3, 1, 1, 1)), lw=1.8, label='SAPRC07TIC'), 'P'),
          ('mcm', '_MCM331', dict(color='#56B4E9', ls=(0, (1, 1)), lw=2.2, label='MCM v3.3.1 + lumped'), 'X'),
-         ('mz1', '_MOZT1', dict(color='#7B3FA0', ls=(0, (4, 1.5)), lw=1.8, label='MOZART-T1 + lumped'), '<')]
+         ('mz1', '_MOZT1', dict(color='#7B3FA0', ls=(0, (4, 1.5)), lw=1.8, label='MOZART-T1 + lumped'), '<'),
+         ('gc', '_GCHEM', dict(color='#8C564B', ls=(0, (6, 1.5, 1, 1.5)), lw=1.8, label='GEOS-Chem 14.8 + lumped'), 'h')]
 MARK = {t: mk for t, _, _, mk in MECHS}
 sty = {t: st for t, _, st, _ in MECHS}
 summary = []
@@ -70,6 +71,9 @@ for j, case in enumerate(CASES):
         ax[0, j].plot(te / 3600, o3r, **sty[tag])
         xm = 5.0 - 0.14 * [t for t, _, _, _ in MECHS].index(tag)     # staggered so overlapping lines keep visible markers
         ax[0, j].plot(xm, np.interp(xm, te / 3600, o3r), MARK[tag], color=sty[tag]['color'], ms=9, mec='white', mew=0.8, zorder=6)
+        nox = e[:, he.index('dNOx/dCO')][keep]
+        ax[2, j].plot(te / 3600, nox, **sty[tag])
+        ax[2, j].plot(xm, np.interp(xm, te / 3600, nox), MARK[tag], color=sty[tag]['color'], ms=9, mec='white', mew=0.8, zorder=6)
         ta, oa = oa_series(run)
         dco = np.interp(ta, tg, co) - bg                      # ppb
         oa_stp = oa * (1013.25 / P) * (T / 273.15)            # ug/m3 STP
@@ -77,7 +81,7 @@ for j, case in enumerate(CASES):
         m = ta >= 600                                         # skip the first 10 min (dCO ~ 0 or OA ~ 0)
         ax[1, j].plot(ta[m] / 3600, ratio[m], **sty[tag])
         ax[1, j].plot(xm, np.interp(xm, ta / 3600, ratio), MARK[tag], color=sty[tag]['color'], ms=9, mec='white', mew=0.8, zorder=6)
-        summary.append((case, tag, o3r[-1], ratio[-1], ta[-1] / 3600))
+        summary.append((case, tag, o3r[-1], ratio[-1], nox[-1], ta[-1] / 3600))
     def obs_plot(a, pts, first):
         for p in pts:
             xe = [[max(p['t_h'] - p['tlo_h'], 0)], [max(p['thi_h'] - p['t_h'], 0)]]
@@ -91,17 +95,18 @@ for j, case in enumerate(CASES):
     obs_plot(ax[1, j], OBS[case]['OA'], False)
     ax[0, j].set_title(case)
     ax[0, j].set_xlim(-0.15, 5.3)
-    ax[1, j].set_xlabel('Time (h)')
-    for r in (0, 1):
+    ax[2, j].set_xlabel('Time (h)')
+    for r in (0, 1, 2):
         ax[r, j].grid(alpha=0.3)
 ax[0, 0].set_ylabel(r'$\Delta$O$_3$/$\Delta$CO (ppb/ppb)')
 ax[1, 0].set_ylabel(r'$\Delta$OA/$\Delta$CO ($\mu$g m$^{-3}$ STP / ppmv)')
+ax[2, 0].set_ylabel(r'$\Delta$NO$_x$/$\Delta$CO (ppb/ppb)')
 from matplotlib.lines import Line2D
 h_ = [Line2D([], [], marker=MARK[t], mec='white', ms=8, **st) for t, _, st, _ in MECHS] + ax[0, 0].get_legend_handles_labels()[0][-1:]
 l_ = [st['label'] for _, _, st, _ in MECHS] + ax[0, 0].get_legend_handles_labels()[1][-1:]
-fig.legend(h_, l_, loc='lower center', ncol=7, frameon=False, fontsize=9)
-fig.suptitle('Enhancement ratios, 5 h runs: seven gas-phase mechanisms (common_asp 710a126) with observations', y=0.995)
-fig.tight_layout(rect=(0, 0.05, 1, 1))
+fig.legend(h_, l_, loc='lower center', ncol=5, frameon=False, fontsize=9)
+fig.suptitle('Enhancement ratios, 5 h runs: nine gas-phase mechanisms (O$_3$ and OA with observations; NO$_x$ model only)', y=0.995)
+fig.tight_layout(rect=(0, 0.07, 1, 1))
 fig.savefig(out, dpi=150)
 for s in summary:
-    print('%-10s %-5s dO3/dCO %.3f  dOA/dCO %.1f ug/m3 STP/ppmv at %.1f h' % s)
+    print('%-10s %-5s dO3/dCO %.3f  dOA/dCO %.1f ug/m3 STP/ppmv  dNOx/dCO %.4f at %.1f h' % s)
