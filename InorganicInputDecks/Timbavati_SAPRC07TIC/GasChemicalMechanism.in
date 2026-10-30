@@ -1589,7 +1589,6 @@ PCVOC + OH => OH + LVPCSOG ; 1.25e-11; 0; -0; 1;
 !! IHMML -> AIMOS: acidity-dependent (flag 18, kind 2, channel 2, scale 1)
 !! N2O5 -> 2 HNO3: flag 20
 !! NO3 -> HNO3: flag 3
-!! NO2 -> 0.5 HONO + 0.5 HNO3: flag 21
 GLY => AGLY ; 3 ; 0.0029 ; 58 ; 0 ;
 MGLY => AGLY ; 3 ; 0.000261 ; 72 ; 0 ;
 IEPOX => AIETET ; 18 ; 1 ; 118.1 ; 3 ; 1 ;
@@ -1600,5 +1599,4 @@ IHMML => AIMGA ; 18 ; 1 ; 102 ; 2 ; 1 ;
 IHMML => AIMOS ; 18 ; 1 ; 102 ; 2 ; 2 ;
 N2O5 => 2 HNO3 ; 20 ; 1 ; 108.01 ;
 NO3 => HNO3 ; 3 ; 1e-3 ; 62.0 ; 0 ;
-NO2 => 0.5 HONO + 0.5 HNO3 ; 21 ; 1e-4 ;
 !! CMAQ_HET_END

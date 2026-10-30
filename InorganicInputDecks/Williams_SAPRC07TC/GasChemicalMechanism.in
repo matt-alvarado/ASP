@@ -1257,8 +1257,6 @@ PCVOC + OH => OH + LVPCSOG ; 1.25e-11; 0; -0; 1;
 !! flag 3: gamma, MW; flag 18: scale, MW, kind, channel (acid-dependent epoxide uptake)
 !! IEPOX -> AISO3: acidity-dependent (flag 18, kind 1, channel 0, scale 1)
 !! N2O5 -> 2 HNO3: flag 20
-!! NO2 -> 0.5 HONO + 0.5 HNO3: flag 21
 IEPOX => AISO3 ; 18 ; 1 ; 118.1 ; 1 ; 0 ;
 N2O5 => 2 HNO3 ; 20 ; 1 ; 108.01 ;
-NO2 => 0.5 HONO + 0.5 HNO3 ; 21 ; 1e-4 ;
 !! CMAQ_HET_END

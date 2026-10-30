@@ -98,9 +98,9 @@ and reactions-only, so the share of each tier is not separated.
 
 ### Update: NO2 uptake to HONO (flag 21; common_asp asp_v2.2.2 head)
 * `NO2 => 0.5 HONO + 0.5 HNO3 ; 1 ; 21 ; 1e-4 ;` (CMAQ HETERO_NO2, Vogel et al. 2003): k = v x wet surface area per volume of air, v = 1e-4 m/s, summed over bins
-  with r < 1.25 um (CMAQ I+J modes).  It is in all five mechanism decks (CMAQ has it in CRACMM2/3 and CB6r5; AERO7i/SAPRC decks get it as well, as a switchable
-  `CMAQ_HET` line: delete it to remove it).  Logged k is about 1.7e-6 /s in Williams at t=0.
-* OA at 290 min is unchanged to <= 0.2 ug/m3 in every case (Williams CRACMM2 193.0 -> 193.0, CRACMM3 129.2 -> 129.4, CB6r5 77.7, SAPRC07TC 25.2, SAPRC07TIC 52.9),
+  with r < 1.25 um (CMAQ I+J modes).  It is in the CB6r5 and CRACMM2/3 decks only, where CMAQ has it; the SAPRC07TC / SAPRC07TIC decks do not use it, as in CMAQ.
+  Logged k is about 1.7e-6 /s in Williams at t=0.
+* OA at 290 min is unchanged to <= 0.2 ug/m3 in every case (Williams CRACMM2 193.1 -> 193.0, CRACMM3 129.2 -> 129.4, CB6r5 77.7; SAPRC decks are unchanged),
   as expected for a gas-phase NOx/HONO pathway.  Comparison plots regenerated.
 
 ### Open items carried over from earlier steps
