@@ -89,17 +89,17 @@ F !!
 !! Please remember, composition must be in ug/m3, or in total dry mass % (no water)
 !
 !
-210678 ; 0.1 ; 1.9;
+395685 ; 0.1 ; 1.9;
 Williams;
-NH4Cl; 9.9257;
-NH4NO3; 67.016;
+NH4Cl; 18.642;
+NH4NO3; 125.87;
 KCl; 0;
-K2SO4; 13.253;
-BC; 8.4711;
-IVOC3; 82.351;
-IVOC4; 115.27;
-IVOC5; 271.74;
-IVOC6; 354.12;
+K2SO4; 24.891;
+BC; 15.91;
+IVOC3; 154.67;
+IVOC4; 216.5;
+IVOC5; 510.36;
+IVOC6; 665.09;
 !
 !
 !0 ; 1.0 ; 2.0

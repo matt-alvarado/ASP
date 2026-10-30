@@ -9,7 +9,7 @@ NEIVAv1.0 (Shahid et al., GMD 17, 7679, 2024; please cite) Integrated emission f
 Files: `neiva_data.py` (CSV/SQL reader), `neiva_map.py` (compound -> deck species), `mce_fit.py` (EF vs MCE), `build_neiva_decks.py`, `coverage.py`, `plot_mce_enhancement.py`.
 
 Method
-* CO, CO2 from the carbon balance: dC = dCO/(1-MCE), dCO2 = dCO MCE/(1-MCE); dCO fixed at the template value.
+* Total emitted carbon (CO+CO2) is fixed at the Williams template value (~148,300 ppbC); CO = dC (1-MCE), CO2 = dC MCE (carbon balance). `--fix-dCO` fixes dCO instead (carbon then scales as 1/(1-MCE)). The header initial-CO value is updated per deck.
 * Other species: carbon-normalised EF y (g/gC) per study column, linear fit vs MCE (log-linear for OA, BC) if n>=10, span>=0.05, p<0.10 and leave-one-out beats the mean; otherwise the mean y (no MCE dependence). OA is not significant for temperate forest and uses the mean.
 * Lumped NEIVA rows are apportioned to member compounds. Routes: explicit deck species; baseline lumps (carbon-conserving); other identified NMOG -> IVOC bins by log10 C* (mass-conserving; C* >= 1e6 ug/m3 all land in IVOC9); halogenated/inorganic skipped.
 * Template's unidentified-NMOG pool (gas IVOC3-7) is kept as a constant multiple of NEIVA identified NMOG (`--no-unid-scale` to keep it per unit dCO instead).

@@ -18,11 +18,18 @@ def table(path, strict=True):
 
 
 def oa_series(run):
+    """Time, TotPOA+TotSOA summed over the Aerosol*.txt bin files. Rows are read by fixed width (13 characters per field) because
+    three-digit exponents (E-100) fuse neighbouring fields in later columns; Time/TotPOA/TotSOA come early in the row."""
     tot = {}
     for f in glob.glob(f'{run}/OutputFiles/Aerosol[0-9]*.txt'):
-        h, a = table(f, strict=False)
-        for r in a:
-            tot[r[0]] = tot.get(r[0], 0.0) + r[h.index('TotPOA')] + r[h.index('TotSOA')]
+        L = [l.rstrip('\n') for l in open(f) if l.strip()]
+        hd = L[0].split(); ip, isoa = hd.index('TotPOA'), hd.index('TotSOA')
+        for l in L[1:]:
+            try:
+                t = float(l[0:13]); v = float(l[ip * 13:(ip + 1) * 13]) + float(l[isoa * 13:(isoa + 1) * 13])
+            except ValueError:
+                continue
+            tot[t] = tot.get(t, 0.0) + v
     t = np.array(sorted(tot)); return t, np.array([tot[x] for x in t])
 
 

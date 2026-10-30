@@ -2,8 +2,8 @@
 
     python3 build_neiva_decks.py [--type "temperate forest"] [--mce 0.800 0.975 0.025] [--template Williams] [--no-unid-scale]
 
-Per deck (MCE m):  dCO = template CO excess (10000 - 129.2 ppb), dC = dCO/(1-m) (ppb of emitted carbon as CO+CO2),
-  CO2 excess = dCO m/(1-m);  every other species:  ppb = y_X(m) dC 12.011 / M_X   (y in g X per g C, see mce_fit.py)
+Per deck (MCE m):  total emitted carbon dC (CO+CO2) is FIXED at the template's value (dCO_t/(1-MCE_t), default; --fix-dCO fixes dCO instead);
+  CO excess = dC (1-m), CO2 excess = dC m;  every other species:  ppb = y_X(m) dC 12.011 / M_X   (y in g X per g C, see mce_fit.py)
 Routes (neiva_map.py): explicit species | baseline lumps (carbon-conserving) | IVOC bins by C* (mass-conserving) | skipped.
 Aerosol: OA (particle IVOC3-6, template volatility split), BC and the salts NH4Cl/NH4NO3/KCl/K2SO4 from the NEIVA ions; Nt scaled with mass.
 Unidentified NMOG pool (template IVOC3-7 gas, Akagi-based) = r * identified NEIVA NMOG(m), r fixed from the template at its own MCE.
@@ -68,14 +68,15 @@ def build(args):
     out = []
     for m in np.arange(args.mce[0], args.mce[1] + 1e-9, args.mce[2]):
         m = round(float(m), 4)
-        dC = dCO / (1 - m)
+        dC = dC_ref if args.fix_carbon else dCO / (1 - m)
+        dCm = dC * (1 - m)                       # CO excess of this deck
         L = list(L0); rr = dict(rows); mapping = []
         touched = {}
         def put(name, ppb, why):
             touched[name] = touched.get(name, 0.0) + ppb; mapping.append((name, why, ppb))
         # CO / CO2 from carbon balance
         L = L0.copy()
-        touched['CO'] = dCO + g('CO')[1]; touched['CO2'] = dCO * m / (1 - m) + g('CO2')[1]
+        touched['CO'] = dCm + g('CO')[1]; touched['CO2'] = dC * m + g('CO2')[1]
         ivb = {k: 0.0 for k in range(1, 10)}
         lump = {k: 0.0 for k in nm.LUMPS}; expl = {}; unid_ident = 0.0
         for _, r in d.iterrows():
@@ -124,6 +125,7 @@ def build(args):
         if os.path.isdir(nd_): shutil.rmtree(nd_)
         shutil.copytree(tdir, nd_)
         L[0] = '!! GasPhaseChems.in - NEIVAv1.0 %s, MCE = %.3f, on the %s baseline deck' % (args.type, m, args.template)
+        L = [re.sub(r'^2; *[0-9.]+!', '2; %d!' % round(touched['CO']), l) for l in L]      # initial CO in the header
         open(os.path.join(nd_, 'GasPhaseChems.in'), 'w').write('\n'.join(L) + '\n')
         open(os.path.join(nd_, 'AerosolModes.in'), 'w').write(AA)
         with open(os.path.join(nd_, 'NEIVA_SPECIES_MAPPING.csv'), 'w', newline='') as fh:
@@ -135,7 +137,7 @@ def build(args):
             'Study columns used: %d (MCE %.3f-%.3f)%s\nCO = %.1f ppb excess; carbon excess dC = %.0f ppb; CO2 excess = %.0f ppb (carbon balance)\n'
             'Unidentified-NMOG ratio r = %s\nAerosol (ug/m3): OA %.1f, BC %.2f, %s\n' % (
                 args.type, m, args.template, mce_ref, len(cols), mce.min(), mce.max(),
-                '  ** extrapolated beyond the data **' if m > mce.max() or m < mce.min() else '', dCO, dC, dCO * m / (1 - m),
+                '  ** extrapolated beyond the data **' if m > mce.max() or m < mce.min() else '', dCm, dC, dC * m,
                 'off' if r_unid is None else '%.3f' % r_unid, oa, bc, ', '.join('%s %.1f' % kv for kv in salts.items())))
         out.append(dict(deck=name, mce=m, dC=dC, oa=oa, bc=bc, nox=touched['NO'] + touched['NO2'], unid=sum(ivb[k] for k in range(3, 8)), Nt=round(234000 * tot / tot_t)))
     return pd.DataFrame(out), info
@@ -144,7 +146,8 @@ def build(args):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--type', default='temperate forest'); ap.add_argument('--template', default='Williams')
-    ap.add_argument('--mce', nargs=3, type=float, default=[0.80, 0.975, 0.025]); ap.add_argument('--no-unid-scale', dest='unid_scale', action='store_false')
+    ap.add_argument('--mce', nargs=3, type=float, default=[0.80, 0.975, 0.025]); ap.add_argument('--fix-dCO', dest='fix_carbon', action='store_false', help='fix dCO (total carbon then scales as 1/(1-MCE)) instead of total emitted carbon')
+    ap.add_argument('--no-unid-scale', dest='unid_scale', action='store_false')
     a = ap.parse_args()
     df, info = build(a)
     print(info); print(df.to_string())

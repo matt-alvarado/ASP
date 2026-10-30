@@ -1,6 +1,6 @@
 NEIVAv1.0 (Shahid et al., GMD 17, 7679, 2024), fire type: temperate forest, MCE = 0.850
 Template deck: Williams (template MCE from its CO2/CO: 0.933)
 Study columns used: 53 (MCE 0.781-0.968)
-CO = 9870.8 ppb excess; carbon excess dC = 65805 ppb; CO2 excess = 55934 ppb (carbon balance)
+CO = 22246.6 ppb excess; carbon excess dC = 148311 ppb; CO2 excess = 126064 ppb (carbon balance)
 Unidentified-NMOG ratio r = 1.069
-Aerosol (ug/m3): OA 686.2, BC 3.70, NH4Cl 8.3, NH4NO3 55.8, KCl 0.0, K2SO4 11.0
+Aerosol (ug/m3): OA 1546.6, BC 8.35, NH4Cl 18.6, NH4NO3 125.9, KCl 0.0, K2SO4 24.9
