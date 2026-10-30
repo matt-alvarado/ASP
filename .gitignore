@@ -2,3 +2,4 @@ OutputFiles/
 asp_v*
 unifac.err
 
+__pycache__/
