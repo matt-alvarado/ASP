@@ -54,3 +54,16 @@ NAP treated as the IVOC surrogate and converted to ARO2CARB-equivalent yields (a
 GEOS-Chem cloud / aqueous sulfur (K_CLD, SO2uptk*, HMS): ASP's S(IV) aqueous chemistry is disabled in all decks; GEOS-Chem simple-SOA alternative; T1 has no aqueous mechanism in the KPP set.
 
 **Check run (5 h, Williams):** every new SOA species forms. GEOS-Chem: ASOA2/ASOA3/SVPOA2/OPOA1 dominate the new organic mass; MOZART-T1: POM 87 %, SOAG0 8 %.
+
+**Results (5 h, all four cases; common_asp c506969):** all eight decks run (rc = 0, 9-41 s). `gchem_mozt1_oa_compare.png` (GCHEM vs MOZT1) and
+`../CB6r5Translation/all_mechs_oa_o3_compare.png` (all nine mechanisms) show dOA/dCO and dO3/dCO against observations.
+
+| Case | OA 290 min GCHEM / MOZT1 (ug/m3) | dOA/dCO 5 h GCHEM / MOZT1 | dO3/dCO 5 h GCHEM / MOZT1 |
+| --- | --- | --- | --- |
+| Williams | 170.3 / 58.3 | 376.6 / 127.3 | 0.074 / 0.103 |
+| Otavi | 7.9 / 11.2 | 123.1 / 173.7 | 0.105 / 0.113 |
+| Alaska | 33.4 / 29.3 | 47.2 / 41.5 | 0.065 / 0.053 |
+| Timbavati | 12.0 / 11.1 | 46.9 / 43.8 | 0.183 / 0.166 |
+
+Williams GEOS-Chem dOA/dCO is about five times observed (about 78 at 4.2 h); OA rises from 45 to 170 ug/m3 when IVOC is carried as NAP. Open questions are in
+`../CB6r5Translation/Mechanism_notes_Part3_CRACMM_OA_chemistry.md` (Part 4).

@@ -70,3 +70,9 @@ glyoxal channel split (TUV/JPL: radical channel dominant; MCM parameterisation: 
 * Baseline chemistry kept for species that exist in the MCM only if a lumped reactant is involved; orphaned lumped intermediates (e.g. ISOHC5, RIP,
   HPALD1) are formed only by retained reactions and stay near zero.
 * Runtime is much larger than the lumped mechanisms (see the timing table in the run report).
+
+## Results (5 h, 2026-11-02; common_asp c506969)
+
+All four decks run (rc = 0, 349-385 s on one core). dOA/dCO at 5 h (ug/m3 STP per ppmv): Williams 107.6, Otavi 153.7, Alaska 37.9, Timbavati 46.4,
+within 2 % of Baseline since both use the IVOC-ladder OA. dO3/dCO at 5 h: 0.144, 0.154, 0.070, 0.206, the highest or near-highest of the nine mechanisms in every case.
+See `../CB6r5Translation/all_mechs_oa_o3_compare.png` and `../CB6r5Translation/NewMechanisms_README.md`.

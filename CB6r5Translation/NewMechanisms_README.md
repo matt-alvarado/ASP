@@ -103,6 +103,28 @@ and reactions-only, so the share of each tier is not separated.
 * OA at 290 min is unchanged to <= 0.2 ug/m3 in every case (Williams CRACMM2 193.0 -> 193.0, CRACMM3 129.2 -> 129.4, CB6r5 77.7, SAPRC07TC 25.2, SAPRC07TIC 52.9),
   as expected for a gas-phase NOx/HONO pathway.  Comparison plots regenerated.
 
+### All nine mechanisms, 5 h (2026-11-02; common_asp c506969)
+`all_mechs_oa_o3_compare.png`: Baseline, the five CMAQ-derived decks, GCHEM, MOZT1 and MCM331 against observations (`all_mechs_compare.png`, the six-mechanism
+version, is unchanged and still matches). Baseline and MCM331 use the IVOC-ladder OA. Notes and open questions: `Mechanism_notes_Part3_CRACMM_OA_chemistry.md`.
+
+**dOA/dCO at 5 h (ug/m3 STP per ppmv)**
+
+| Case | Baseline | CRACMM2 | CRACMM3 | CB6r5 | SAPRC07TC | SAPRC07TIC | GCHEM | MOZT1 | MCM331 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Williams | 106 | 419 | 285 | 172 | 55 | 118 | 377 | 127 | 108 |
+| Otavi | 151 | 163 | 165 | 144 | 118 | 120 | 123 | 174 | 154 |
+| Alaska | 38 | 41 | 41 | 26 | 18 | 23 | 47 | 42 | 38 |
+| Timbavati | 46 | 47 | 48 | 39 | 29 | 31 | 47 | 44 | 46 |
+
+**dO3/dCO at 5 h (ppb/ppb)**
+
+| Case | Baseline | CRACMM2 | CRACMM3 | CB6r5 | SAPRC07TC | SAPRC07TIC | GCHEM | MOZT1 | MCM331 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Williams | 0.128 | 0.133 | 0.061 | 0.100 | 0.127 | 0.109 | 0.074 | 0.103 | 0.144 |
+| Otavi | 0.142 | 0.098 | 0.095 | 0.141 | 0.143 | 0.153 | 0.105 | 0.113 | 0.154 |
+| Alaska | 0.050 | 0.048 | 0.047 | 0.056 | 0.056 | 0.065 | 0.065 | 0.053 | 0.070 |
+| Timbavati | 0.169 | 0.155 | 0.152 | 0.186 | 0.202 | 0.209 | 0.183 | 0.166 | 0.206 |
+
 ### Open items carried over from earlier steps
 * Timbavati OA about half of observed; SO2 background mismatch; Williams IVOC3-7 initial values.
 * NTR2 hydrolysis rate was only seen in the log at t=0 (0); not verified later in the run.
