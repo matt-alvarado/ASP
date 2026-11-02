@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """dOA/dCO and dO3/dCO of the CRACMM2/3 decks before (baseline IVOC ladder + counters) and after (CMAQ organic-aerosol chemistry).
-usage: compare_cmaq_oa.py <runs_root> <out.png>   (runs_root holds <Case>_CRACMMn = new and old_<Case>_CRACMMn = old runs)"""
+usage: compare_cmaq_oa.py <runs_root> <out.png> [MECH,MECH,...] [new]   (MECH also GCHEM, MOZT1, MCM331; runs_root holds <Case>_CRACMMn = new and old_<Case>_CRACMMn = old runs)"""
 import glob, json, os, re, sys
 import numpy as np
 import matplotlib; matplotlib.use('Agg')
@@ -9,8 +9,8 @@ root, out = sys.argv[1], sys.argv[2]
 MECHS = sys.argv[3].split(',') if len(sys.argv) > 3 else ['CRACMM2', 'CRACMM3']
 NEWONLY = len(sys.argv) > 4 and sys.argv[4] == 'new'      # only the current decks (no dashed old versions); a mechanism named Baseline is the unchanged baseline deck
 VERS = (('new', ''),) if NEWONLY else (('old', 'old_'), ('new', ''))
-COL = {'Baseline': '0.25', 'CRACMM2': '#009E73', 'CRACMM3': '#CC79A7', 'CB6r5': '#0072B2', 'SAPRC07TC': '#E69F00', 'SAPRC07TIC': '#D55E00'}
-OAKIND = 'CMAQ CRACMM' if MECHS[0].startswith('CRACMM') else 'CMAQ AERO6/7'
+COL = {'Baseline': '0.25', 'CRACMM2': '#009E73', 'CRACMM3': '#CC79A7', 'CB6r5': '#0072B2', 'SAPRC07TC': '#E69F00', 'SAPRC07TIC': '#D55E00', 'GCHEM': '#56B4E9', 'MOZT1': '#882255', 'MCM331': '#999933'}
+OAKIND = 'GEOS-Chem / MOZART-T1' if MECHS[0] in ('GCHEM', 'MOZT1') else 'CMAQ CRACMM' if MECHS[0].startswith('CRACMM') else 'CMAQ AERO6/7'
 OLDKIND = 'baseline IVOC-ladder organic aerosol'
 usage = 'usage: compare_cmaq_oa.py <runs_root> <out.png> [MECH,MECH,...]'
 
@@ -70,8 +70,12 @@ for j, case in enumerate(CASES):
     for r_ in (0, 1): ax[r_, j].grid(alpha=0.3)
 ax[0, 0].set_ylabel(r'$\Delta$OA/$\Delta$CO ($\mu$g m$^{-3}$ STP / ppmv)'); ax[1, 0].set_ylabel(r'$\Delta$O$_3$/$\Delta$CO (ppb/ppb)')
 h_, l_ = ax[1, 0].get_legend_handles_labels(); h0, l0 = ax[0, 0].get_legend_handles_labels()
-fig.legend(h_ + h0[-1:], l_ + l0[-1:], loc='lower center', ncol=len(MECHS) + 1 if NEWONLY else len(MECHS) * 2 + 1, frameon=False)
-fig.suptitle('Baseline, CRACMM2/3, CB6r5 and SAPRC07TC/TIC with CMAQ organic-aerosol chemistry' if NEWONLY else '%s: %s (dashed) vs %s organic-aerosol chemistry (solid)' % ('/'.join(MECHS), OLDKIND, OAKIND))
+fig.legend(h_ + h0[-1:], l_ + l0[-1:], loc='lower center', ncol=min(len(MECHS) + 1, 10) if NEWONLY else len(MECHS) * 2 + 1, frameon=False)
+CMAQM = {'CRACMM2', 'CRACMM3', 'CB6r5', 'SAPRC07TC', 'SAPRC07TIC'}
+NEWTITLE = ('GEOS-Chem 14.8.0 (GCHEM) and MOZART-T1 (MOZT1) organic-aerosol chemistry' if set(MECHS) <= {'GCHEM', 'MOZT1'}
+            else 'Baseline, CRACMM2/3, CB6r5 and SAPRC07TC/TIC with CMAQ organic-aerosol chemistry' if set(MECHS) <= CMAQM | {'Baseline'}
+            else 'Baseline and MCM331 (IVOC-ladder OA), CMAQ-derived decks (CMAQ OA), GEOS-Chem and MOZART-T1 (own OA)')
+fig.suptitle(NEWTITLE if NEWONLY else '%s: %s (dashed) vs %s organic-aerosol chemistry (solid)' % ('/'.join(MECHS), OLDKIND, OAKIND))
 fig.tight_layout(rect=(0, 0.06, 1, 0.97)); fig.savefig(out, dpi=150)
 print('case mech   dOA/dCO(5h) old new   dO3/dCO(5h) old new' if not NEWONLY else 'case mech dOA/dCO(5h)  dO3/dCO(5h)')
 for case in CASES:
