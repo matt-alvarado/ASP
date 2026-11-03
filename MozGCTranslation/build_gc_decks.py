@@ -52,7 +52,7 @@ def header(n_gc):
 !!           17  [A;C;K;fO2]  A exp(C/T)(X+K)/(2X+K), X = fO2 M  (GLYX + NO3)        18  [A;C;a;b;sel]  GLYC / HAC + OH branching
 !!           19  [A;B;C;D;E]  as 1-body 17                      20 / 21  [a;b;c;d;e;f;g]  ISOP + OH  (GC_ISO1 / GC_ISO2)
 !!   3-body  2; A; B; C; D     M A T^B exp(C/T)^D          4; A0;n0;E0;Ai;ni;Ei;F;N   Troe fall-off with explicit N
-!! REQUIRES common_asp >= ba61060 (rate flags 12-21; photolysis scale e4888c4 and 3-body flag 4 40c1760 are earlier).
+!! REQUIRES common_asp >= 53d416e (OrgPhaseReactions.in; 2-body rate flags 12-21 ba61060, photolysis scale e4888c4 and 3-body flag 4 40c1760 are earlier).
 !!
 """ % n_gc
 

@@ -80,7 +80,7 @@ def mech_file(cfg, case, tr, T, P, old_lines, out_path):
     else:
         L.append('!! Gas-phase core only; CMAQ chlorine, heterogeneous, aerosol/SVOC, POA-aging, oligomerisation and toxics groups are not')
     L.append('!! translated.  %d CMAQ statements -> %d ASP reactions.' % (len(tr.core), len(tr.lines)))
-    L.append('!! REQUIRES common_asp >= 40c1760 (1-body rate flag 13, 3-body flag 4), which also contains the earlier flag fixes')
+    L.append('!! REQUIRES common_asp >= c506969 (1-body rate flags 18-21 for the CMAQ heterogeneous chemistry and OrgPhaseReactions.in 53d416e; 1-body rate flag 13, 3-body flag 4 and the earlier flag fixes 40c1760 are older)')
     L.append('!! (2-body flag 5 = 508ba8d, 3-body flag 2 = f3f1107).')
     L.append('!! Rate-flag conventions: see the header of the baseline decks; new flags:')
     L.append('!!   1-body flag 13:  k = kf / Keq,  kf = fall-off with explicit Troe N')

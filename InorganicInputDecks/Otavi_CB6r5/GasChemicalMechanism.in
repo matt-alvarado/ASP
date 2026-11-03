@@ -8,7 +8,7 @@
 !! toxics, heterogeneous (IEPOX, glyoxal) uptake, particle-phase hydrolysis / oligomerisation, BP71mtp (MTNO3 photolysis).
 !! Case conditions: T = 290.0 K, P = 730.0 mb (used only to choose the IUPAC/JPL fall-off forms).
 !! Rate-flag conventions are those of the original ASP deck (see the file header of the old decks).
-!! REQUIRES common_asp >= f3f1107: R46 uses 2-body rate flag 5 and R24 3-body flag 2, both mis-coded in earlier versions.
+!! REQUIRES common_asp >= c506969 (1-body rate flags 18-21 for the CMAQ heterogeneous chemistry and OrgPhaseReactions.in 53d416e); R46 uses 2-body rate flag 5 and R24 3-body flag 2, both mis-coded before f3f1107.
 !!
 !! Format: "!! <label>: <CMAQ statement>" precedes each translated reaction.
 !! WARNING lines name rate forms ASP cannot reproduce exactly.

@@ -190,7 +190,7 @@ def mech_file(case, case_dir, tr, T, P, out_path):
         L.append('!! aerosol heterogeneous groups are NOT included (gas chemistry only, per project scope).')
     L.append('!! Case conditions: T = %.1f K, P = %.1f mb (used only to choose the IUPAC/JPL fall-off forms).' % (T, P))
     L.append('!! Rate-flag conventions are those of the original ASP deck (see the file header of the old decks).')
-    L.append('!! REQUIRES common_asp >= f3f1107: R46 uses 2-body rate flag 5 and R24 3-body flag 2, both mis-coded in earlier versions.')
+    L.append('!! REQUIRES common_asp >= c506969 (1-body rate flags 18-21 for the CMAQ heterogeneous chemistry and OrgPhaseReactions.in 53d416e); R46 uses 2-body rate flag 5 and R24 3-body flag 2, both mis-coded before f3f1107.')
     L.append('!!')
     L.append('!! Format: "!! <label>: <CMAQ statement>" precedes each translated reaction.')
     L.append('!! WARNING lines name rate forms ASP cannot reproduce exactly.')

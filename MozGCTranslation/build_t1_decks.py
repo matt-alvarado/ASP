@@ -59,7 +59,7 @@ def header(n_t1):
 !!           3; gamma; MW; r   first-order heterogeneous    13; A0;n0;E0;Ai;ni;Ei;F;N;KeqA;KeqE  fall-off / equilibrium (TROEE)
 !!   2-body  A; B; C; D        A T^B exp(C/T)^D            4 / 5 / 10 / 11  (k1 + k2 M ; HNO3 + OH form ; H2O term ; CO + OH pressure form)
 !!   3-body  2; A; B; C; D     M A T^B exp(C/T)^D          4; A0;n0;E0;Ai;ni;Ei;F;N   Troe fall-off with explicit N (common_asp 40c1760)
-!! REQUIRES common_asp >= e4888c4 (photolysis scale) and 40c1760 (3-body flag 4).
+!! REQUIRES common_asp >= 53d416e (OrgPhaseReactions.in, including its PHOTO rates); photolysis scale e4888c4 and 3-body flag 4 40c1760 are earlier.
 !!
 """ % n_t1
 

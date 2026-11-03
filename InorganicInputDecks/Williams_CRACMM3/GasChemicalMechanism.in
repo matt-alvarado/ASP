@@ -7,7 +7,7 @@
 !! INALD) uptake, particle-phase organic reactions (ATRPNJ/AHONITJ hydrolysis, AHOMJ photolysis) and toxics groups.  The baseline
 !! SOA counters -> IVOC chains and the IVOC aging block are NOT used here (see OrgPhaseChems.in, OrganicDissolution.in).
 !! translated.  529 CMAQ statements -> 525 ASP reactions.
-!! REQUIRES common_asp >= 40c1760 (1-body rate flag 13, 3-body flag 4), which also contains the earlier flag fixes
+!! REQUIRES common_asp >= c506969 (1-body rate flags 18-21 for the CMAQ heterogeneous chemistry and OrgPhaseReactions.in 53d416e; 1-body rate flag 13, 3-body flag 4 and the earlier flag fixes 40c1760 are older)
 !! (2-body flag 5 = 508ba8d, 3-body flag 2 = f3f1107).
 !! Rate-flag conventions: see the header of the baseline decks; new flags:
 !!   1-body flag 13:  k = kf / Keq,  kf = fall-off with explicit Troe N
