@@ -132,4 +132,4 @@ version, is unchanged and still matches). Baseline and MCM331 use the IVOC-ladde
   H2NO3P / NO2P tracer products of N2O5 uptake; coarse-mode N2O5 gamma.
 * SAPRC07TIC OA gain (+83 % Williams) is not from epoxide uptake or the volume basis; its cause is not isolated.  Share of uptake vs particle-phase reactions not split.
 * Held by request: SurfaceTension simplification; thermodynamics NaN warnings stay uncommented.
-* `src` submodule stays pinned to ba61060; master untouched (Matt merges).
+* `src` submodule pin follows the `common_asp` `asp_v2.2.2` tip: moved whenever that branch gets a commit (2c3b2c4 as of patch 28); master untouched (Matt merges).
