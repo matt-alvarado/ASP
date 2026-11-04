@@ -1,7 +1,7 @@
 #!/bin/bash
 # run_asp.sh <tag> <ASP binary> [extra environment, e.g. ASP_FEE_OUTER=worst]
 # Runs the ThermoTest in every run directory made by "python3 mkcase.py <tag>".
-# Tags used by analysis.py: p34 (down scan), up (ASP_THERMO_SCAN=up; decks start at RH 0.20),
+# Tags used by analysis.py (config.py TAG_DOWN, TAG_UP): down (down scan), up (ASP_THERMO_SCAN=up; decks start at RH 0.20),
 # worst (ASP_FEE_OUTER=worst), base (pre-Claude build).
 HERE=$(cd $(dirname $0) && pwd); WORK=${THERMO_WORK:-$HERE/work}
 tag=$1; bin=$2; shift 2

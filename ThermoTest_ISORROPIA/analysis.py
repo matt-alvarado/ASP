@@ -1,8 +1,8 @@
 import sys; sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
-from config import WORK, OUT, DECKS, ISO_EXE
+from config import WORK, OUT, DECKS, ISO_EXE, TAG_DOWN, TAG_UP
 from load2 import *
 import pandas as pd
-MODELS=[('ASP_down','asp','p34'),('ASP_up','asp','up'),('ASP_down_worstfirst','asp','worst'),('ASP_down_preClaude','asp','base'),
+MODELS=[('ASP_down','asp',TAG_DOWN),('ASP_up','asp',TAG_UP),('ASP_down_worstfirst','asp','worst'),('ASP_down_preClaude','asp','base'),
         ('ISO_stable','iso','stable'),('ISO_metastable','iso','meta')]
 RHS=np.round(np.arange(0.20,0.9001,0.02),2)
 def get(kind,tag,case,T):

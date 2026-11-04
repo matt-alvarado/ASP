@@ -24,7 +24,8 @@ temperatures (273.15–313.15 K every 5 K), RH 0.20–0.90 in steps of 0.02. Wri
   mol m⁻³, temperature and the metastable flag, and prints gas, liquid and solid results for RH 0.90 → 0.20).
 - Python 3 with numpy, pandas, matplotlib, openpyxl; gfortran.
 
-Paths come from `config.py` (environment variables `THERMO_WORK`, `THERMO_OUT`, `ASP_DECKS`, `ISO_EXE`); by default
+Paths and labels come from `config.py` (environment variables `THERMO_WORK`, `THERMO_OUT`, `ASP_DECKS`, `ISO_EXE`,
+`TAG_DOWN`, `TAG_UP`, `ASP_LABEL`); by default
 run directories go to `work/`, plots and the workbook to `results/`, and the deck is `../InorganicInputDecks`.
 
 ## Steps
@@ -35,14 +36,14 @@ python3 run_iso.py                               # ISORROPIA stable + metastable
 
 # ASP run directories (copies of the default deck: one bulk mode, ThermoTest on, coagulation off,
 # T set per run, initial NH3/HNO3/HCl/H2SO4 gas zero)
-for tag in p34 up worst base; do python3 mkcase.py $tag; done
-./run_asp.sh p34   /path/to/asp_v2.2.2/asp_binary                       # RH scanned down 0.90 -> 0.20
+for tag in down up worst base; do python3 mkcase.py $tag; done
+./run_asp.sh down  /path/to/asp_v2.2.2/asp_binary                       # RH scanned down 0.90 -> 0.20
 ./run_asp.sh up    /path/to/asp_v2.2.2/asp_binary ASP_THERMO_SCAN=up    # RH scanned up 0.20 -> 0.90
 ./run_asp.sh worst /path/to/asp_v2.2.2/asp_binary ASP_FEE_OUTER=worst   # worst-first electrolyte loop
 ./run_asp.sh base  /path/to/pre-Claude/asp_binary                       # optional: 34b7ec7 + build/IonReset fixes
 
 # optional: electrolyte-solver diagnostics (dump every solve, replay with coupled and worst-first solvers)
-./solver_diag.sh p34 /path/to/asp_v2.2.2/asp_binary
+./solver_diag.sh down /path/to/asp_v2.2.2/asp_binary
 ./solver_diag.sh up  /path/to/asp_v2.2.2/asp_binary up
 python3 collect_solver.py
 
@@ -55,7 +56,7 @@ The pre-Claude build (`base`) needs the `BinEdges` guard (09afe88), the `IonRese
 output fix from patch 32 to run and report correctly; it still stops at the letovicite composition at 6 of 9
 temperatures (negative molality), which the workbook shows as n/a.
 
-## Outputs (`results/`, from the run of 3 November 2026, ASP asp_v2.2.2 patch 33)
+## Outputs (`results/`, from the runs of 4 November 2026, ASP asp_v2.2.2 patch 34)
 
 - `ThermoTest_<case>.png`: aerosol fraction (gas fraction on the right axis) and aerosol water vs RH, all temperatures.
 - `ThermoTest_<case>_ugm3.png`, `_ugm3_3T.png`: aerosol amounts (µg m⁻³, species on one axis per case), all

@@ -1,5 +1,5 @@
 import sys; sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
-from config import WORK, OUT, DECKS, ISO_EXE
+from config import WORK, OUT, DECKS, ISO_EXE, ASP_LABEL
 import pandas as pd, numpy as np
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -29,7 +29,7 @@ MOD=[('ASP_down','ASP, RH down (0.90→0.20)'),('ASP_up','ASP, RH up (0.20→0.9
 ws=wb.active; ws.title='README'
 lines=[('ASP ThermoTest vs ISORROPIA II: gas–aerosol partitioning of the inorganic species',TITLE),('',None),
 ('What was run',BOLD),
-('ASP: common_asp asp_v2.2.2 at patch 33 (coupled Newton electrolyte solve, patch 32 fixes), ThermoTest run mode, one bulk particle, T = 273.15–313.15 K every 5 K, P = 1000 mb.',None),
+('ASP: '+ASP_LABEL+' (common_asp; coupled Newton electrolyte solve), ThermoTest run mode, one bulk particle, T = 273.15–313.15 K every 5 K, P = 1000 mb.',None),
 ('  Down scan: initial equilibrium at RH 0.70, then RH 0.90 → 0.20 in steps of 0.02 (efflorescence branch). Up scan (ASP_THERMO_SCAN=up): initial equilibrium at RH 0.20, then 0.20 → 0.90 (deliquescence branch).',None),
 ('  Also on the down scan: the same code with the worst-first electrolyte loop (ASP_FEE_OUTER=worst), and the code before any Claude change (34b7ec7 + BinEdges build guard + IonReset fix + the letovicite output fix).',None),
 ('ISORROPIA II 2.3 (EPFL-LAPI, github.com/EPFL-LAPI/ISORROPIA-II), forward problem, default settings, stable (solids allowed) and metastable (liquid only), solved independently at each RH and T.',None),

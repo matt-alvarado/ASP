@@ -1,5 +1,5 @@
 import sys; sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
-from config import WORK, OUT, DECKS, ISO_EXE
+from config import WORK, OUT, DECKS, ISO_EXE, ASP_LABEL
 import pandas as pd, numpy as np
 import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -35,7 +35,7 @@ for case in CASES:
     lg.legend(handles=hs,loc='center',frameon=False,fontsize=9,ncol=2)
     for a in axs[len(sp)+2:]: a.axis('off')
     comp=', '.join(f'{s} {v:g}' for s,v in CASES[case])
-    fig.suptitle(f'{TITLE[case]}\ninput (µg m$^{{-3}}$): {comp}; ASP asp_v2.2.2 patch 33',fontsize=12)
+    fig.suptitle(f'{TITLE[case]}\ninput (µg m$^{{-3}}$): {comp}; {ASP_LABEL}',fontsize=12)
     fig.savefig(f'{OUT}/ThermoTest_{case}.png',dpi=120); plt.close(fig)
 # phase transitions: lowest RH with water (deliquescence on the up scan / efflorescence on the down scan)
 thr=0.01

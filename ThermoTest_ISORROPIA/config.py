@@ -6,3 +6,7 @@ OUT   = os.environ.get('THERMO_OUT',   os.path.join(HERE, 'results'))   # plots 
 DECKS = os.environ.get('ASP_DECKS',    os.path.join(HERE, '..', 'InorganicInputDecks'))  # default ASP deck
 ISO_EXE = os.environ.get('ISO_EXE',    os.path.join(HERE, 'isobuild', 'iso'))  # ISORROPIA II built with iso_driver.f
 for d in (WORK, OUT): os.makedirs(d, exist_ok=True)
+# run-directory tags (python3 mkcase.py <tag>) for the two ASP scans of the current build
+TAG_DOWN = os.environ.get('TAG_DOWN', 'down')
+TAG_UP   = os.environ.get('TAG_UP',   'up')
+ASP_LABEL = os.environ.get('ASP_LABEL', 'ASP asp_v2.2.2 patch 34')

@@ -1,5 +1,5 @@
 import sys; sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
-from config import WORK, OUT, DECKS, ISO_EXE
+from config import WORK, OUT, DECKS, ISO_EXE, ASP_LABEL
 import pandas as pd, numpy as np
 import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -41,6 +41,6 @@ for case in CASES:
     lg.legend(handles=hs,loc='center',frameon=False,fontsize=9,ncol=2)
     for a in axs[len(sp)+2:]: a.axis('off')
     comp=', '.join(f'{s} {v:g}' for s,v in CASES[case])
-    fig.suptitle(f'{TITLE[case]}: aerosol-phase amounts\ninput (µg m$^{{-3}}$): {comp}; ASP asp_v2.2.2 patch 33; 273.15, 298.15 and 313.15 K; species panels share one y axis',fontsize=12)
+    fig.suptitle(f'{TITLE[case]}: aerosol-phase amounts\ninput (µg m$^{{-3}}$): {comp}; {ASP_LABEL}; 273.15, 298.15 and 313.15 K; species panels share one y axis',fontsize=12)
     fig.savefig(f'{OUT}/ThermoTest_{case}_ugm3_3T.png',dpi=120); plt.close(fig)
 print('ok')
