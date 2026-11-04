@@ -56,7 +56,7 @@ The pre-Claude build (`base`) needs the `BinEdges` guard (09afe88), the `IonRese
 output fix from patch 32 to run and report correctly; it still stops at the letovicite composition at 6 of 9
 temperatures (negative molality), which the workbook shows as n/a.
 
-## Outputs (`results/`, from the runs of 4 November 2026, ASP asp_v2.2.2 patch 35)
+## Outputs (`results/`, from the runs of 4 November 2026, ASP asp_v2.2.2 patch 36)
 
 - `ThermoTest_<case>.png`: aerosol fraction (gas fraction on the right axis) and aerosol water vs RH, all temperatures.
 - `ThermoTest_<case>_ugm3.png`, `_ugm3_3T.png`: aerosol amounts (µg m⁻³, species on one axis per case), all

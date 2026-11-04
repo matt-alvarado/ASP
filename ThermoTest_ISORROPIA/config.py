@@ -9,4 +9,4 @@ for d in (WORK, OUT): os.makedirs(d, exist_ok=True)
 # run-directory tags (python3 mkcase.py <tag>) for the two ASP scans of the current build
 TAG_DOWN = os.environ.get('TAG_DOWN', 'down')
 TAG_UP   = os.environ.get('TAG_UP',   'up')
-ASP_LABEL = os.environ.get('ASP_LABEL', 'ASP asp_v2.2.2 patch 35')
+ASP_LABEL = os.environ.get('ASP_LABEL', 'ASP asp_v2.2.2 patch 36')
