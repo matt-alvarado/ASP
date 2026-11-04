@@ -1,5 +1,5 @@
 """Collect the replay reports written by solver_diag.sh into WORK/solver.pkl (Solver sheet of the workbook)."""
-import sys, os, re, pandas as pd; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
+import sys, os, re, numpy as np, pandas as pd; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 from config import WORK, TAG_DOWN, TAG_UP
 from cases import CASES, TEMPS
 def parse(f):
@@ -8,7 +8,10 @@ def parse(f):
     fb=g(r'coupled: fallbacks, singular, max iter, cycles')
     return dict(records=g('records')[0], fallbacks=fb[0], singular=fb[1], drops=g('coupled: DRH-ordered drops accepted')[0],
         resolved=g('calls with an unstable set resolved')[0], unstable=g(r'records with an unstable solid set: input, reference, replay')[2],
-        violating=g(r'records violating by > 2 x tolerance: reference, replay')[1], cpu=float(re.search(r'solver CPU s\s+(\S+)',s).group(1)))
+        violating=g(r'records violating by > 2 x tolerance: reference, replay')[1],
+        dry=(g(r'coupled: dry particles put into solids')[0] if 'dry particles put' in s else 0),
+        wetviol=(g(r'wet results violating by > 2 x tolerance: reference, replay')[1] if 'wet results violating' in s else np.nan),
+        cpu=float(re.search(r'solver CPU s\s+(\S+)',s).group(1)))
 rows=[]
 for tag,scan in ((TAG_DOWN,'down'),(TAG_UP,'up')):
     for c in CASES:

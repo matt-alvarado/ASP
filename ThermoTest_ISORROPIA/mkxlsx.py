@@ -40,6 +40,7 @@ lines=[('ASP ThermoTest vs ISORROPIA II: gas–aerosol partitioning of the inorg
 ('MaxDiff – largest |difference in aerosol fraction| from ISORROPIA stable over RH, by phase state (formulas on Data).',None),
 ('PhaseRH – lowest RH at which each model holds water (formulas on Water).',None),
 ('Solver – coupled vs worst-first electrolyte solver diagnostics from the dump/replay harness.',None),
+('DrySolids – solids in the dry particle at RH 0.20: ASP (both scans) and ISORROPIA stable, and the fraction of solid moles placed differently.',None),
 ('Data – every case × T × RH × species point: aerosol fractions for all models (blue = model output), water, and formula columns.',None),
 ('Water – aerosol water (µg m⁻³) for all models at every point.',None),
 ('Plots – the PNG plots that go with this workbook.',None),
@@ -176,8 +177,8 @@ wp.freeze_panes='C2'
 
 # ---------------- Solver
 wsv=wb.create_sheet('Solver',4)
-cols=['RH scan','Case','T (K)','Electrolyte solver','Solves replayed','Fallbacks to worst-first','Singular Jacobians','DRH-ordered drops accepted','Calls with an unstable set resolved','Results with an unstable solid set','Results violating equilibrium (> 2× tol)','Solver CPU (s)','Violating fraction']
-header(wsv,1,cols,[8,13,8,12,10,11,10,11,11,11,12,10,10])
+cols=['RH scan','Case','T (K)','Electrolyte solver','Solves replayed','Fallbacks to worst-first','Singular Jacobians','DRH-ordered drops accepted','Calls with an unstable set resolved','Results with an unstable solid set','Results violating equilibrium (> 2× tol)','Solver CPU (s)','Violating fraction','Dry particles put into solids','Wet results violating (> 2× tol)']
+header(wsv,1,cols,[8,13,8,12,10,11,10,11,11,11,12,10,10,11,12])
 Sd=S.sort_values(['scan','case','T','solver'],key=lambda c: c.map({k:i for i,k in enumerate(CASES)}) if c.name=='case' else c)
 for i,rw in enumerate(Sd.itertuples(index=False),start=2):
     vals=[rw.scan,rw.case,rw.T,rw.solver,rw.records,rw.fallbacks,rw.singular,rw.drops,rw.resolved,rw.unstable,rw.violating,rw.cpu]
@@ -186,21 +187,48 @@ for i,rw in enumerate(Sd.itertuples(index=False),start=2):
         if j>=5: c.font=BLUE
     wsv.cell(i,12).number_format='0.000'
     wsv.cell(i,13,f'=IF(E{i}=0,0,K{i}/E{i})').number_format='0.0%'
+    for j,v in ((14,getattr(rw,'dry',None)),(15,getattr(rw,'wetviol',None))):
+        c=wsv.cell(i,j,None if v is None or (isinstance(v,float) and np.isnan(v)) else int(v)); c.font=BLUE
 ns=len(Sd)+1
 r=ns+2; wsv.cell(r,1,'Totals').font=BOLD
-header(wsv,r+1,['RH scan','Solver','Solves','Fallbacks','Singular','Unstable sets','Violating','Violating fraction'])
+header(wsv,r+1,['RH scan','Solver','Solves','Fallbacks','Singular','Unstable sets','Violating','Violating fraction','Dry → solids','Wet violating'])
 for k,(sc,sv) in enumerate([(a,b) for a in ('down','up') for b in ('coupled','worst-first')]):
     rr=r+2+k; wsv.cell(rr,1,sc); wsv.cell(rr,2,sv)
     for j,col in enumerate(['E','F','G','J','K']):
         wsv.cell(rr,3+j,f'=SUMIFS(${col}$2:${col}${ns},$A$2:$A${ns},$A{rr},$D$2:$D${ns},$B{rr})')
     wsv.cell(rr,8,f'=IF(C{rr}=0,0,G{rr}/C{rr})').number_format='0.0%'
+    wsv.cell(rr,9,f'=SUMIFS($N$2:$N${ns},$A$2:$A${ns},$A{rr},$D$2:$D${ns},$B{rr})')
+    wsv.cell(rr,10,f'=SUMIFS($O$2:$O${ns},$A$2:$A${ns},$A{rr},$D$2:$D${ns},$B{rr})')
 wsv.cell(r+7,1,'From the dump/replay harness (patch 27): every electrolyte solve of each ThermoTest scan dumped, then re-solved with the coupled solve and with the worst-first loop. A coupled fallback uses the worst-first result for that solve.').font=f(italic=True)
 wsv.freeze_panes='E2'
 
-# ---------------- Plots
+# ---------------- DrySolids
+SO=pd.read_pickle(WORK+'/solids.pkl')
+wds=wb.create_sheet('DrySolids',5)
+header(wds,1,['Case','T (K)','Solid','ISORROPIA stable (µmol m⁻³)','ASP down (µmol m⁻³)','ASP up (µmol m⁻³)','|ASP down − ISO|','|ASP up − ISO|'],[13,8,15,14,14,14,12,12])
+for i,rw in enumerate(SO.itertuples(index=False),start=2):
+    wds.cell(i,1,rw.case); wds.cell(i,2,rw.T); wds.cell(i,3,rw.solid)
+    for j,v in ((4,rw.ISO_stable),(5,rw.ASP_down),(6,rw.ASP_up)):
+        c=wds.cell(i,j,None if pd.isna(v) else float(v)); c.font=BLUE; c.number_format='0.00000'
+    wds.cell(i,7,f'=IFERROR(ABS(E{i}-D{i}),"n/a")').number_format='0.00000'
+    wds.cell(i,8,f'=IFERROR(ABS(F{i}-D{i}),"n/a")').number_format='0.00000'
+nds=len(SO)+1
+r=nds+2; wds.cell(r,1,'Solid moles placed differently from ISORROPIA (half the summed |difference| / ISORROPIA solid moles), RH 0.20').font=BOLD
+header(wds,r+1,['Case','T (K)','ISO solid moles (µmol m⁻³)','ASP down: fraction different','ASP up: fraction different','',''])
+k=r+2
+for case in CASES:
+    for T in TEMPS:
+        wds.cell(k,1,case); wds.cell(k,2,T)
+        crit=f'$A$2:$A${nds},$A{k},$B$2:$B${nds},$B{k}'
+        wds.cell(k,3,f'=SUMIFS($D$2:$D${nds},{crit})').number_format='0.0000'
+        wds.cell(k,4,f'=IF(C{k}=0,"–",SUMIFS($G$2:$G${nds},{crit})/2/C{k})').number_format='0.0%'
+        wds.cell(k,5,f'=IF(C{k}=0,"–",SUMIFS($H$2:$H${nds},{crit})/2/C{k})').number_format='0.0%'
+        k+=1
+wds.freeze_panes='D2'
+
 wpl=wb.create_sheet('Plots')
 wpl.cell(1,1,'Plots (also delivered as separate PNG files)').font=TITLE
-imgs=['ThermoTest_summary_RH090_vs_T.png','ThermoTest_phase_transitions.png']+[f'ThermoTest_{c}.png' for c in CASES]
+imgs=['ThermoTest_summary_RH090_vs_T.png','ThermoTest_phase_transitions.png','ThermoTest_dry_solids_RH020.png']+[f'ThermoTest_{c}.png' for c in CASES]
 rowp=3
 for im in imgs:
     wpl.cell(rowp,1,im).font=BOLD

@@ -132,7 +132,7 @@ Otavi, Alaska and Timbavati change by under 0.2 µg/m³ with the last two steps.
 - **Not represented:** IEPOXP/sulfate consumption (epoxide goes straight to product), AERO7i dimers (folded into the tetrol and organosulfate channels), CMAQ's H2NO3P/NO2P tracer products of N2O5 uptake, and the coarse-mode N2O5 γ.
 - **Unresolved from the base mechanism work:** Timbavati OA is about half of observed, SO2 background mismatch, Williams IVOC3–7 initial values.
 - **Held by request:** SurfaceTension simplification; thermodynamics NaN warnings stay uncommented.
-- **Standing constraints:** master untouched (you merge); `src` submodule pin moved to the `common_asp` `asp_v2.2.2` tip whenever that branch gets a commit (00160d2 as of patch 34).
+- **Standing constraints:** master untouched (you merge); `src` submodule pin moved to the `common_asp` `asp_v2.2.2` tip whenever that branch gets a commit (ac30032 as of patch 35).
 
 ## Part 4: GEOS-Chem 14.8.0 and MOZART-T1 OA
 
