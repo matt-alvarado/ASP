@@ -58,3 +58,11 @@ Otavi, Alaska and Timbavati originally used the Grieshop et al. (2009) functiona
 half fragmentation / half functionalization with HOx/NOx chemistry (`IVOC(i) + OH => 0.5375 IVOC(i-1) + 0.5375 IVOC(i+1) + 0.6 HO2 + IVOC1_R1O2 + 0.5 Acetic_Acid`, k = 1e-11; `IVOC1_R1O2 + NO => 0.75 NO2`).
 The CB6r5 decks inherit the same block (with `Acetic_Acid` renamed `AACD`).
 Effect (end of run, baseline mechanism): OA changes by 0 to -3% (Otavi 0, Alaska 26.3 -> 25.9, Timbavati 17.4 -> 17.1 ug/m3 of SOA); O3 is unchanged to within 0.1 ppb.
+
+## NitrateGroups.in (all decks)
+Every deck folder (and this directory) has a `NitrateGroups.in` listing the gas species ASP sums for the dTotPNs/dCO
+(`PN`: peroxy nitrates, RC(O)OONO2 and RO2NO2) and dTotANs/dCO (`AN`: alkyl and other organic nitrates, RONO2) columns of
+`EnhanceRatios.txt` (common_ASP patch 39). The files are written by `make_nitrate_groups.py`, which derives the lists from each
+deck's own `GasPhaseChems.in` and `GasChemicalMechanism.in` and applies a short per-mechanism correction table (see the script);
+rerun it after changing a deck's species or mechanism. A deck without the file still runs: ASP then uses its original positional
+sums (33 species from PAN, 77 from CH3NO3), which are valid only for the baseline mechanism, and warns.
