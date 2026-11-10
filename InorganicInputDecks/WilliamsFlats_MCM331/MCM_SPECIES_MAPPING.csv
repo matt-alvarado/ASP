@@ -1,0 +1,619 @@
+baseline_name,model_name,initial_ppb,background_ppb,treatment
+CO,CO,10000,129.213,MCM species (same name)
+CO2,CO2,528425,390000,"lumped species kept, baseline chemistry"
+RO2_T,RO2_T,0,0,"lumped species kept, baseline chemistry"
+RCO3_T,RCO3_T,0,0,"lumped species kept, baseline chemistry"
+CH3O2,CH3O2,0,0,MCM species (same name)
+CH3CO3,CH3CO3,0,0,MCM species (same name)
+Trace,Trace,1000,0,"lumped species kept, baseline chemistry"
+NO,NO,224.923,0.015,MCM species (same name)
+NO2,NO2,0.04,0.04,MCM species (same name)
+O3,O3,50,50,MCM species (same name)
+HO2,HO2,0,0,MCM species (same name)
+OH,OH,0,0,MCM species (same name)
+H2O2,H2O2,1.50589,0.755,MCM species (same name)
+HONO,HONO,45.7835,0,MCM species (same name)
+HNO4,HO2NO2,0,0,renamed to MCM species
+SO2,SO2,27.4737,0.12,MCM species (same name)
+SO3,SO3,0,0,MCM species (same name)
+HNO3,HNO3,0.450516,0.41,MCM species (same name)
+H2SO4,H2SO4,0,0,MCM species (same name)
+HCl,HCl,16.2061,0,MCM species (same name)
+NH3,NH3,378.977,0.001,"lumped species kept, baseline chemistry"
+O,O,0,0,MCM species (same name)
+O1D,O1D,0,0,MCM species (same name)
+NO3,NO3,0,0,MCM species (same name)
+N2O5,N2O5,0,0,MCM species (same name)
+H2,H2,3647.16,0,MCM species (same name)
+CH4,CH4,2761.64,1900,MCM species (same name)
+HCHO,HCHO,165.668,0.33,MCM species (same name)
+MEOH,CH3OH,165.262,0,renamed to MCM species
+Formic_Acid,HCOOH,6.50147,0,renamed to MCM species
+HCN,HCN,128.326,0,"lumped species kept, baseline chemistry"
+ETHE,C2H4,126.348,0,renamed to MCM species
+Ethane,C2H6,80.2376,0,renamed to MCM species
+Acetaldehyde,CH3CHO,47.2473,0,renamed to MCM species
+ETOH,C2H5OH,0.792862,0,renamed to MCM species
+Acetic_Acid,CH3CO2H,139.2,0,renamed to MCM species
+GLY,GLYOX,76.5904,0,renamed to MCM species
+Acetylene,C2H2,26.6523,0,renamed to MCM species
+Propene,C3H6,47.7605,0,renamed to MCM species
+Propane,C3H8,16.7438,0,renamed to MCM species
+ACR,ACR,4.88459,0,MCM species (same name)
+Propanal,C2H5CHO,0.565939,0,renamed to MCM species
+Acetone,CH3COCH3,10.0611,0,renamed to MCM species
+IPROPOL,IPROPOL,0,0,MCM species (same name)
+NPROPOL,NPROPOL,1.51965,0,MCM species (same name)
+PROPACID,PROPACID,0,0,MCM species (same name)
+MGLY,MGLYOX,40.7388,0,renamed to MCM species
+Butadiene,C4H6,3.51208,0,renamed to MCM species
+1-Butene,BUT1ENE,2.8005,0,renamed to MCM species
+cis-2-Butene,CBUT2ENE,0.586151,0,renamed to MCM species
+trans-2-Butene,TBUT2ENE,0.716407,0,renamed to MCM species
+i-Butene,i-Butene,1.56307,0,"lumped species kept, baseline chemistry"
+n-Butane,NC4H10,10.0611,0,renamed to MCM species
+i-Butane,IC4H10,0.251529,0,renamed to MCM species
+2-Butenal,2-Butenal,0,0,"lumped species kept, baseline chemistry"
+Butanal,C3H7CHO,2.78603,0,renamed to MCM species
+MEK,MEK,12.6638,0,MCM species (same name)
+MethylPropanal,IPRCHO,0,0,renamed to MCM species
+NBUTOL,NBUTOL,0.394288,0,MCM species (same name)
+BUT2OL,BUT2OL,0,0,MCM species (same name)
+IBUTOL,IBUTOL,0,0,MCM species (same name)
+TBUTOL,TBUTOL,0,0,MCM species (same name)
+BUTACID,BUTACID,0,0,MCM species (same name)
+IBUTACID,IBUTACID,0,0,MCM species (same name)
+MVK,MVK,0,0,MCM species (same name)
+MCR,MACR,0,0,renamed to MCM species
+ISOP,C5H8,2.4672,0,renamed to MCM species
+FURAN,FURAN,14.4814,0,"lumped species kept, baseline chemistry"
+ALD,ALD,0.585939,0.02,"lumped species kept, baseline chemistry"
+API,APINENE,32.1809,0,renamed to MCM species
+BALD,BENZAL,1.03222,0,renamed to MCM species
+BEN,BENZENE,9.21143,0,renamed to MCM species
+CSL,CSL,0,0,"lumped species kept, baseline chemistry"
+DCB1,DCB1,0,0,"lumped species kept, baseline chemistry"
+DCB2,DCB2,0,0,"lumped species kept, baseline chemistry"
+DCB3,DCB3,0,0,"lumped species kept, baseline chemistry"
+DIEN,DIEN,1.0131,0,"lumped species kept, baseline chemistry"
+EPX,EPX,0,0,"lumped species kept, baseline chemistry"
+HC5,HC5,2.13876,1.075,"lumped species kept, baseline chemistry"
+HC8,HC8,0,0,"lumped species kept, baseline chemistry"
+HKET,HKET,0,0,"lumped species kept, baseline chemistry"
+KET,KET,1.31468,0,"lumped species kept, baseline chemistry"
+LIM,LIMONENE,32.1809,0,renamed to MCM species
+MCT,MCT,0,0,"lumped species kept, baseline chemistry"
+OLI,OLI,1.76995,0,"lumped species kept, baseline chemistry"
+OLT,OLT,0.694698,0,"lumped species kept, baseline chemistry"
+ORA2,ORA2,0,0,"lumped species kept, baseline chemistry"
+PHEN,PHENOL,14.7439,0,renamed to MCM species
+ROH,ROH,1.39808,0,"lumped species kept, baseline chemistry"
+TOL,TOLUENE,3.36966,0,renamed to MCM species
+UALD,UALD,0,0,"lumped species kept, baseline chemistry"
+XYM,MXYL,0.275258,0,renamed to MCM species
+XYP,PXYL,0.0688144,0,renamed to MCM species
+XYO,OXYL,0.137629,0,renamed to MCM species
+HOCH2CHO,HOCH2CHO,0.243144,0,MCM species (same name)
+ETHGLY,ETHGLY,0,0,MCM species (same name)
+HCOCO2H,HCOCO2H,0,0,MCM species (same name)
+HOCH2CO2H,HOCH2CO2H,0,0,MCM species (same name)
+UR28,UR28,0,0,not used
+ALLYLOH,ALLYLOH,0,0,MCM species (same name)
+ACO2H,ACO2H,0,0,MCM species (same name)
+ACETOL,ACETOL,22.3266,0,MCM species (same name)
+CH3CHOHCHO,CH3CHOHCHO,0,0,MCM species (same name)
+HOC2H4CHO,HOC2H4CHO,0,0,MCM species (same name)
+PROPGLY,PROPGLY,0,0,MCM species (same name)
+HOC3H6OH,HOC3H6OH,0,0,MCM species (same name)
+HOCH2COCHO,HOCH2COCHO,0,0,MCM species (same name)
+C32OH13CO,C32OH13CO,0,0,MCM species (same name)
+CH3COCO2H,CH3COCO2H,0,0,MCM species (same name)
+HOC2H4CO2H,HOC2H4CO2H,0,0,MCM species (same name)
+HYPERACET,HYPERACET,0,0,MCM species (same name)
+OCCOHCOH,OCCOHCOH,0,0,MCM species (same name)
+HOCH2COCO2H,HOCH2COCO2H,0,0,MCM species (same name)
+C2OHOCO2H,C2OHOCO2H,0,0,MCM species (same name)
+MALDIAL,MALDIAL,0,0,MCM species (same name)
+CO2C3CHO,CO2C3CHO,0,0,MCM species (same name)
+BIACET,BIACET,23.1552,0,MCM species (same name)
+EGLYOX,EGLYOX,0,0,MCM species (same name)
+C3H5CO2H,C3H5CO2H,0,0,MCM species (same name)
+IBUTDIAL,IBUTDIAL,0,0,MCM species (same name)
+MACO2H,MACO2H,0,0,MCM species (same name)
+HC3CHO,HC3CHO,0,0,MCM species (same name)
+MVKOH,MVKOH,0,0,MCM species (same name)
+HC3CCHO,HC3CCHO,0,0,MCM species (same name)
+MEKAOH,MEKAOH,0,0,MCM species (same name)
+MEKCOH,MEKCOH,0,0,MCM species (same name)
+HO2C3CHO,HO2C3CHO,0,0,MCM species (same name)
+HOIPRCHO,HOIPRCHO,0,0,MCM species (same name)
+IBUTALOH,IBUTALOH,0,0,MCM species (same name)
+HOC3H6CHO,HOC3H6CHO,0,0,MCM species (same name)
+BUTDAOH,BUTDAOH,0,0,MCM species (same name)
+BUTDBOH,BUTDBOH,0,0,MCM species (same name)
+NBUTOLAOH,NBUTOLAOH,0,0,MCM species (same name)
+BUT2OLOH,BUT2OLOH,0,0,MCM species (same name)
+IBUTOLOHB,IBUTOLOHB,0,0,MCM species (same name)
+HOC4H8OH,HOC4H8OH,0,0,MCM species (same name)
+HO2C4OH,HO2C4OH,0,0,MCM species (same name)
+IBUTOLOHC,IBUTOLOHC,0,0,MCM species (same name)
+CO23C3CHO,CO23C3CHO,0,0,MCM species (same name)
+CO2H3CHO,CO2H3CHO,0,0,MCM species (same name)
+CCOCOCOH,CCOCOCOH,0,0,MCM species (same name)
+HO1CO3CHO,HO1CO3CHO,0,0,MCM species (same name)
+BIACETOH,BIACETOH,0,0,MCM species (same name)
+HO3C3CHO,HO3C3CHO,0,0,MCM species (same name)
+C3MDIALOH,C3MDIALOH,0,0,MCM species (same name)
+HC3CO2H,HC3CO2H,0,0,MCM species (same name)
+HO12CO3C4,HO12CO3C4,0,0,MCM species (same name)
+HO14CO2C4,HO14CO2C4,0,0,MCM species (same name)
+HO2C3CO2H,HO2C3CO2H,0,0,MCM species (same name)
+C4OCCOHCOH,C4OCCOHCOH,0,0,MCM species (same name)
+HOC3H6CO2H,HOC3H6CO2H,0,0,MCM species (same name)
+MACROH,MACROH,0,0,MCM species (same name)
+H1CO23CHO,H1CO23CHO,0,0,MCM species (same name)
+H13CO2CHO,H13CO2CHO,0,0,MCM species (same name)
+H14CO23C4,H14CO23C4,0,0,MCM species (same name)
+C41OH,C41OH,0,0,MCM species (same name)
+MVKOHAOH,MVKOHAOH,0,0,MCM species (same name)
+ISOHC5,ISOHC5,0,0,"lumped species kept, baseline chemistry"
+HPALD1,HPALD1,0,0,"lumped species kept, baseline chemistry"
+HPALD2,HPALD2,0,0,"lumped species kept, baseline chemistry"
+MOBA,MOBA,0,0,"lumped species kept, baseline chemistry"
+IEPOX,IEPOX,0,0,"lumped species kept, baseline chemistry"
+DHMOB,DHMOB,0,0,"lumped species kept, baseline chemistry"
+UR24,UR24,0,0,"lumped species kept, baseline chemistry"
+UR25,UR25,0,0,"lumped species kept, baseline chemistry"
+PAN,PAN,6.93248,0.03,MCM species (same name)
+ACRPAN,ACRPAN,0,0,MCM species (same name)
+PPN,PPN,0.00327016,0.003,MCM species (same name)
+GLYPAN,GLYPAN,0,0,"lumped species kept, baseline chemistry"
+PHAN,PHAN,0,0,MCM species (same name)
+C3DBPAN,C3DBPAN,0,0,MCM species (same name)
+MPAN,MPAN,0,0,MCM species (same name)
+PBN,PBN,0,0,MCM species (same name)
+PIPN,PIPN,0,0,MCM species (same name)
+IPROPOLPAN,IPROPOLPAN,0,0,MCM species (same name)
+C3PAN1,C3PAN1,0,0,MCM species (same name)
+CO2C3PAN,CO2C3PAN,0,0,MCM species (same name)
+IBUDIALPAN,IBUDIALPAN,0,0,MCM species (same name)
+C4PAN7,C4PAN7,0,0,MCM species (same name)
+C4PAN8,C4PAN8,0,0,MCM species (same name)
+HO3C3PAN,HO3C3PAN,0,0,MCM species (same name)
+HCOCOHPAN,HCOCOHPAN,0,0,MCM species (same name)
+C4PAN1,C4PAN1,0,0,MCM species (same name)
+C4PAN3,C4PAN3,0,0,MCM species (same name)
+C4PAN4,C4PAN4,0,0,MCM species (same name)
+C4PAN5,C4PAN5,0,0,MCM species (same name)
+A2PAN,A2PAN,0,0,MCM species (same name)
+C4PAN6,C4PAN6,0,0,MCM species (same name)
+CHOMOHPAN,CHOMOHPAN,0,0,MCM species (same name)
+NO3CH2PAN,NO3CH2PAN,0,0,MCM species (same name)
+C4PAN10,C4PAN10,0,0,MCM species (same name)
+PRNO3PAN,PRNO3PAN,0,0,MCM species (same name)
+C4PAN9,C4PAN9,0,0,MCM species (same name)
+MPRBNO3PAN,MPRBNO3PAN,0,0,MCM species (same name)
+PAN_lump,PAN_lump,0,0,not used
+PPN_lump,PPN_lump,0,0,"lumped species kept, baseline chemistry"
+PN11,PN11,0,0,"lumped species kept, baseline chemistry"
+CH3O2NO2,CH3O2NO2,0,0,MCM species (same name)
+CH3NO3,CH3NO3,0.0236829,0,MCM species (same name)
+C2H5NO3,C2H5NO3,0,0,MCM species (same name)
+IC3H7NO3,IC3H7NO3,0,0,MCM species (same name)
+NC3H7NO3,NC3H7NO3,0,0,MCM species (same name)
+NO3CH2CHO,NO3CH2CHO,0,0,MCM species (same name)
+ETHOHNO3,ETHOHNO3,0,0,MCM species (same name)
+CHOPRNO3,CHOPRNO3,0,0,MCM species (same name)
+NOA,NOA,0,0,MCM species (same name)
+NC4H9NO3,NC4H9NO3,0,0,MCM species (same name)
+SC4H9NO3,SC4H9NO3,0,0,MCM species (same name)
+IC4H9NO3,IC4H9NO3,0,0,MCM species (same name)
+TC4H9NO3,TC4H9NO3,0,0,MCM species (same name)
+PROPOLNO3,PROPOLNO3,0,0,MCM species (same name)
+PROLNO3,PROLNO3,0,0,MCM species (same name)
+HO1C3NO3,HO1C3NO3,0,0,MCM species (same name)
+NO3CH2CO2H,NO3CH2CO2H,0,0,MCM species (same name)
+ETHO2HNO3,ETHO2HNO3,0,0,MCM species (same name)
+NMVK,NMVK,0,0,MCM species (same name)
+NC3CHO,NC3CHO,0,0,MCM species (same name)
+MEKANO3,MEKANO3,0,0,MCM species (same name)
+BUTALNO3,BUTALNO3,0,0,MCM species (same name)
+IBUALANO3,IBUALANO3,0,0,MCM species (same name)
+CO3C4NO3,CO3C4NO3,0,0,MCM species (same name)
+BUTONENO3,BUTONENO3,0,0,MCM species (same name)
+BUTAL2NO3,BUTAL2NO3,0,0,MCM species (same name)
+NMGLYOX,NMGLYOX,0,0,MCM species (same name)
+MPRBNO3CHO,MPRBNO3CHO,0,0,MCM species (same name)
+NBUTDAOH,NBUTDAOH,0,0,MCM species (same name)
+BUTDANO3,BUTDANO3,0,0,MCM species (same name)
+BUTDBNO3,BUTDBNO3,0,0,MCM species (same name)
+NBUTOLANO3,NBUTOLANO3,0,0,MCM species (same name)
+NBUTOLBNO3,NBUTOLBNO3,0,0,MCM species (same name)
+BUT2OLNO3,BUT2OLNO3,0,0,MCM species (same name)
+TBUTOLNO3,TBUTOLNO3,0,0,MCM species (same name)
+IBUTOLBNO3,IBUTOLBNO3,0,0,MCM species (same name)
+IBUTOLCNO3,IBUTOLCNO3,0,0,MCM species (same name)
+HO3C4NO3,HO3C4NO3,0,0,MCM species (same name)
+PRNO3CO2H,PRNO3CO2H,0,0,MCM species (same name)
+HO1C4NO3,HO1C4NO3,0,0,MCM species (same name)
+C42AOH,C42AOH,0,0,MCM species (same name)
+NO3CH2CO3H,NO3CH2CO3H,0,0,MCM species (same name)
+PR1O2HNO3,PR1O2HNO3,0,0,MCM species (same name)
+PR2O2HNO3,PR2O2HNO3,0,0,MCM species (same name)
+CO23C4NO3,CO23C4NO3,0,0,MCM species (same name)
+NC3CO2H,NC3CO2H,0,0,MCM species (same name)
+INPN,INPN,0,0,"lumped species kept, baseline chemistry"
+ISOPNB,ISOPNB,0,0,"lumped species kept, baseline chemistry"
+ISOPND,ISOPND,0,0,"lumped species kept, baseline chemistry"
+ISNP,ISNP,0,0,"lumped species kept, baseline chemistry"
+MVKN,MVKN,0,0,"lumped species kept, baseline chemistry"
+C4OCCOHNO3,C4OCCOHNO3,0,0,MCM species (same name)
+COCCOHNO3,COCCOHNO3,0,0,MCM species (same name)
+CO3C4NO3OH,CO3C4NO3OH,0,0,MCM species (same name)
+MPRNO3CO2H,MPRNO3CO2H,0,0,MCM species (same name)
+HMVKANO3,HMVKANO3,0,0,MCM species (same name)
+MACROHNO3,MACROHNO3,0,0,"lumped species kept, baseline chemistry"
+NBUTDAOOH,NBUTDAOOH,0,0,MCM species (same name)
+NBUTDBOOH,NBUTDBOOH,0,0,MCM species (same name)
+PRNO3CO3H,PRNO3CO3H,0,0,MCM species (same name)
+C43NO34OOH,C43NO34OOH,0,0,MCM species (same name)
+BU1ENO3OOH,BU1ENO3OOH,0,0,MCM species (same name)
+C4CONO3CO,C4CONO3CO,0,0,MCM species (same name)
+NCO23CHO,NCO23CHO,0,0,MCM species (same name)
+HNBIACET,HNBIACET,0,0,MCM species (same name)
+NC3CO3H,NC3CO3H,0,0,MCM species (same name)
+H3NCO2CHO,H3NCO2CHO,0,0,MCM species (same name)
+C4CONO3OOH,C4CONO3OOH,0,0,MCM species (same name)
+C4NO3COOOH,C4NO3COOOH,0,0,MCM species (same name)
+COC4NO3OOH,COC4NO3OOH,0,0,MCM species (same name)
+HNMVKOH,HNMVKOH,0,0,MCM species (same name)
+C42OH,C42OH,0,0,MCM species (same name)
+C41NO3,C41NO3,0,0,MCM species (same name)
+MVKOHANO3,MVKOHANO3,0,0,MCM species (same name)
+NBUTDBNO3,NBUTDBNO3,0,0,MCM species (same name)
+HNMVKOOH,HNMVKOOH,0,0,MCM species (same name)
+C42OOH,C42OOH,0,0,MCM species (same name)
+ONIT,ONIT,0,0,"lumped species kept, baseline chemistry"
+CH3OOH,CH3OOH,0,0,MCM species (same name)
+CH3CO2H,CH3CO2H,0,0,MCM species (same name)
+C2H5OOH,C2H5OOH,0,0,MCM species (same name)
+IC3H7OOH,IC3H7OOH,0,0,MCM species (same name)
+NC3H7OOH,NC3H7OOH,0,0,MCM species (same name)
+CH3CO3H,CH3CO3H,0,0,MCM species (same name)
+HCOCH2OOH,HCOCH2OOH,0,0,MCM species (same name)
+HYETHO2H,HYETHO2H,0,0,MCM species (same name)
+ACO3H,ACO3H,0,0,MCM species (same name)
+HCOCO3H,HCOCO3H,0,0,MCM species (same name)
+PROPALOOH,PROPALOOH,0,0,MCM species (same name)
+NC4H9OOH,NC4H9OOH,0,0,MCM species (same name)
+SC4H9OOH,SC4H9OOH,0,0,MCM species (same name)
+IC4H9OOH,IC4H9OOH,0,0,MCM species (same name)
+TC4H9OOH,TC4H9OOH,0,0,MCM species (same name)
+PERPROACID,PERPROACID,0,0,MCM species (same name)
+HOCH2CO3H,HOCH2CO3H,0,0,MCM species (same name)
+IPROPOLO2H,IPROPOLO2H,0,0,MCM species (same name)
+HO1C3OOH,HO1C3OOH,0,0,MCM species (same name)
+HYPROPO2H,HYPROPO2H,0,0,MCM species (same name)
+C3DBCO3H,C3DBCO3H,0,0,MCM species (same name)
+PRPAL2CO2H,PRPAL2CO2H,0,0,MCM species (same name)
+MACO3H,MACO3H,0,0,MCM species (same name)
+HOIPRCO2H,HOIPRCO2H,0,0,MCM species (same name)
+IPRHOCO2H,IPRHOCO2H,0,0,MCM species (same name)
+MEKAOOH,MEKAOOH,0,0,MCM species (same name)
+MEKBOOH,MEKBOOH,0,0,MCM species (same name)
+MEKCOOH,MEKCOOH,0,0,MCM species (same name)
+BUTALO2H,BUTALO2H,0,0,MCM species (same name)
+PERBUACID,PERBUACID,0,0,MCM species (same name)
+PERIBUACID,PERIBUACID,0,0,MCM species (same name)
+IBUTALO2H,IBUTALO2H,0,0,MCM species (same name)
+IBUTALBO2H,IBUTALBO2H,0,0,MCM species (same name)
+BUTDAOOH,BUTDAOOH,0,0,MCM species (same name)
+BUTDBOOH,BUTDBOOH,0,0,MCM species (same name)
+BUTDCOOH,BUTDCOOH,0,0,MCM species (same name)
+NBUTOLAOOH,NBUTOLAOOH,0,0,MCM species (same name)
+NBUTOLBOOH,NBUTOLBOOH,0,0,MCM species (same name)
+IBUTOLBO2H,IBUTOLBO2H,0,0,MCM species (same name)
+IBUTOLCO2H,IBUTOLCO2H,0,0,MCM species (same name)
+IPROPOLPER,IPROPOLPER,0,0,MCM species (same name)
+HOC2H4CO3H,HOC2H4CO3H,0,0,MCM species (same name)
+HOCHOCOOH,HOCHOCOOH,0,0,MCM species (same name)
+OCCOHCOOH,OCCOHCOOH,0,0,MCM species (same name)
+HO3C4OOH,HO3C4OOH,0,0,MCM species (same name)
+BUT2OLOOH,BUT2OLOOH,0,0,MCM species (same name)
+TBUTOLOOH,TBUTOLOOH,0,0,MCM species (same name)
+HO1C4OOH,HO1C4OOH,0,0,MCM species (same name)
+C3DIOLOOH,C3DIOLOOH,0,0,MCM species (same name)
+RIP,RIP,0,0,"lumped species kept, baseline chemistry"
+PRPAL2CO3H,PRPAL2CO3H,0,0,MCM species (same name)
+CO2C3CO3H,CO2C3CO3H,0,0,MCM species (same name)
+BIACETOOH,BIACETOOH,0,0,MCM species (same name)
+HC3CO3H,HC3CO3H,0,0,MCM species (same name)
+HC3CCO3H,HC3CCO3H,0,0,MCM species (same name)
+COCCOHCOOH,COCCOHCOOH,0,0,MCM species (same name)
+HOCO3C4OOH,HOCO3C4OOH,0,0,MCM species (same name)
+HCOCOHCO3H,HCOCOHCO3H,0,0,MCM species (same name)
+HO2C3CO3H,HO2C3CO3H,0,0,MCM species (same name)
+C4OCCOHOOH,C4OCCOHOOH,0,0,MCM species (same name)
+HOIPRCO3H,HOIPRCO3H,0,0,MCM species (same name)
+IPRHOCO3H,IPRHOCO3H,0,0,MCM species (same name)
+HO3C3CO3H,HO3C3CO3H,0,0,MCM species (same name)
+HOC3H6CO3H,HOC3H6CO3H,0,0,MCM species (same name)
+HMVKAOOH,HMVKAOOH,0,0,MCM species (same name)
+HMVKBOOH,HMVKBOOH,0,0,MCM species (same name)
+MACROOH,MACROOH,0,0,MCM species (same name)
+MACROHOOH,MACROHOOH,0,0,MCM species (same name)
+C2OHOCOOH,C2OHOCOOH,0,0,MCM species (same name)
+CO2H3CO3H,CO2H3CO3H,0,0,MCM species (same name)
+CHOMOHCO3H,CHOMOHCO3H,0,0,MCM species (same name)
+C41OOH,C41OOH,0,0,MCM species (same name)
+MVKOHAOOH,MVKOHAOOH,0,0,MCM species (same name)
+MVKOHBOOH,MVKOHBOOH,0,0,MCM species (same name)
+IAP,IAP,0,0,"lumped species kept, baseline chemistry"
+H13CO2CO3H,H13CO2CO3H,0,0,MCM species (same name)
+C42NO33OOH,C42NO33OOH,0,0,MCM species (same name)
+MPRANO3OOH,MPRANO3OOH,0,0,MCM species (same name)
+MPRBNO3OOH,MPRBNO3OOH,0,0,MCM species (same name)
+MPRNO3CO3H,MPRNO3CO3H,0,0,MCM species (same name)
+OP2,OP2,0,0,"lumped species kept, baseline chemistry"
+PAA,PAA,0,0,not used
+MALDIALOOH,MALDIALOOH,0,0,MCM species (same name)
+CH2OOA,CH2OOA,0,0,MCM species (same name)
+CH2OOB,CH2OOB,0,0,MCM species (same name)
+CH2OOC,CH2OOC,0,0,MCM species (same name)
+CH2OOD,CH2OOD,0,0,MCM species (same name)
+CH2OOG,CH2OOG,0,0,MCM species (same name)
+CH3CHOOA,CH3CHOOA,0,0,MCM species (same name)
+CH3CHOOB,CH3CHOOB,0,0,MCM species (same name)
+ACROOA,ACROOA,0,0,MCM species (same name)
+GLYOOA,GLYOOA,0,0,MCM species (same name)
+GLYOOB,GLYOOB,0,0,MCM species (same name)
+CH3CCH3OOA,CH3CCH3OOA,0,0,MCM species (same name)
+C2H5CHOOA,C2H5CHOOA,0,0,MCM species (same name)
+GAOOA,GAOOA,0,0,MCM species (same name)
+MGLOOA,MGLOOA,0,0,MCM species (same name)
+MGLYOOB,MGLYOOB,0,0,MCM species (same name)
+HMGLOOA,HMGLOOA,0,0,MCM species (same name)
+NAOOA,NAOOA,0,0,MCM species (same name)
+CH2OO,CH2OO,0,0,MCM species (same name)
+CH3CHOO,CH3CHOO,0,0,MCM species (same name)
+ACROO,ACROO,0,0,MCM species (same name)
+GLYOO,GLYOO,0,0,MCM species (same name)
+C2H5CHOO,C2H5CHOO,0,0,MCM species (same name)
+CH3CCH3OO,CH3CCH3OO,0,0,MCM species (same name)
+GAOO,GAOO,0,0,MCM species (same name)
+MGLOO,MGLOO,0,0,MCM species (same name)
+MGLYOO,MGLYOO,0,0,MCM species (same name)
+HMGLOO,HMGLOO,0,0,MCM species (same name)
+NAOO,NAOO,0,0,MCM species (same name)
+C2H5O2,C2H5O2,0,0,MCM species (same name)
+CH3C2H2O2,CH3C2H2O2,0,0,MCM species (same name)
+HCOCH2O2,HCOCH2O2,0,0,MCM species (same name)
+IC3H7O2,IC3H7O2,0,0,MCM species (same name)
+NC3H7O2,NC3H7O2,0,0,MCM species (same name)
+HOCH2CH2O2,HOCH2CH2O2,0,0,MCM species (same name)
+CH3COCH2O2,CH3COCH2O2,0,0,MCM species (same name)
+NC4H9O2,NC4H9O2,0,0,MCM species (same name)
+SC4H9O2,SC4H9O2,0,0,MCM species (same name)
+IC4H9O2,IC4H9O2,0,0,MCM species (same name)
+TC4H9O2,TC4H9O2,0,0,MCM species (same name)
+PROPALO2,PROPALO2,0,0,MCM species (same name)
+IPROPOLO2,IPROPOLO2,0,0,MCM species (same name)
+HO1C3O2,HO1C3O2,0,0,MCM species (same name)
+HYPROPO2,HYPROPO2,0,0,MCM species (same name)
+MEKAO2,MEKAO2,0,0,MCM species (same name)
+MEKBO2,MEKBO2,0,0,MCM species (same name)
+MEKCO2,MEKCO2,0,0,MCM species (same name)
+BUTALO2,BUTALO2,0,0,MCM species (same name)
+IBUTALBO2,IBUTALBO2,0,0,MCM species (same name)
+IBUTALCO2,IBUTALCO2,0,0,MCM species (same name)
+BUTDAO2,BUTDAO2,0,0,MCM species (same name)
+BUTDBO2,BUTDBO2,0,0,MCM species (same name)
+BUTDCO2,BUTDCO2,0,0,MCM species (same name)
+OCCOHCO2,OCCOHCO2,0,0,MCM species (same name)
+HO3C4O2,HO3C4O2,0,0,MCM species (same name)
+NBUTOLAO2,NBUTOLAO2,0,0,MCM species (same name)
+NBUTOLBO2,NBUTOLBO2,0,0,MCM species (same name)
+BUT2OLO2,BUT2OLO2,0,0,MCM species (same name)
+HO1C4O2,HO1C4O2,0,0,MCM species (same name)
+IBUTOLBO2,IBUTOLBO2,0,0,MCM species (same name)
+IBUTOLCO2,IBUTOLCO2,0,0,MCM species (same name)
+TBUTOLO2,TBUTOLO2,0,0,MCM species (same name)
+C3DIOLO2,C3DIOLO2,0,0,MCM species (same name)
+BIACETO2,BIACETO2,0,0,MCM species (same name)
+ISOPBO2,ISOPBO2,0,0,MCM species (same name)
+ISOPDO2,ISOPDO2,0,0,MCM species (same name)
+HO1CO3C4O2,HO1CO3C4O2,0,0,MCM species (same name)
+C4OCCOHCO2,C4OCCOHCO2,0,0,MCM species (same name)
+COCCOH2CO2,COCCOH2CO2,0,0,MCM species (same name)
+HMVKAO2,HMVKAO2,0,0,MCM species (same name)
+HMVKBO2,HMVKBO2,0,0,MCM species (same name)
+MACRO2,MACRO2,0,0,MCM species (same name)
+MACROHO2,MACROHO2,0,0,MCM species (same name)
+A2PANOO,A2PANOO,0,0,MCM species (same name)
+ETHENO3O2,ETHENO3O2,0,0,MCM species (same name)
+HC5OO,HC5OO,0,0,"lumped species kept, baseline chemistry"
+IEPOXOO,IEPOXOO,0,0,"lumped species kept, baseline chemistry"
+C41O2,C41O2,0,0,MCM species (same name)
+MVKOHAO2,MVKOHAO2,0,0,MCM species (same name)
+MVKOHBO2,MVKOHBO2,0,0,MCM species (same name)
+PRONO3AO2,PRONO3AO2,0,0,MCM species (same name)
+PRONO3BO2,PRONO3BO2,0,0,MCM species (same name)
+MOBAOO,MOBAOO,0,0,"lumped species kept, baseline chemistry"
+NBUTDAO2,NBUTDAO2,0,0,MCM species (same name)
+NBUTDBO2,NBUTDBO2,0,0,MCM species (same name)
+BU1ENO3O2,BU1ENO3O2,0,0,MCM species (same name)
+C43NO34O2,C43NO34O2,0,0,MCM species (same name)
+C42NO33O2,C42NO33O2,0,0,MCM species (same name)
+MPRANO3O2,MPRANO3O2,0,0,MCM species (same name)
+MPRBNO3O2,MPRBNO3O2,0,0,MCM species (same name)
+INO2,INO2,0,0,"lumped species kept, baseline chemistry"
+C4CONO3O2,C4CONO3O2,0,0,MCM species (same name)
+C4NO3COO2,C4NO3COO2,0,0,MCM species (same name)
+CO3C4NO3O2,CO3C4NO3O2,0,0,MCM species (same name)
+ISOPNBO2,ISOPNBO2,0,0,"lumped species kept, baseline chemistry"
+ISOPNDO2,ISOPNDO2,0,0,"lumped species kept, baseline chemistry"
+HNMVKO2,HNMVKO2,0,0,MCM species (same name)
+C42O2,C42O2,0,0,MCM species (same name)
+ACO3,ACO3,0,0,MCM species (same name)
+C2H5CO3,C2H5CO3,0,0,MCM species (same name)
+HCOCO3,HCOCO3,0,0,MCM species (same name)
+HOCH2CO3,HOCH2CO3,0,0,MCM species (same name)
+C3DBCO3,C3DBCO3,0,0,MCM species (same name)
+MACO3,MACO3,0,0,MCM species (same name)
+C3H7CO3,C3H7CO3,0,0,MCM species (same name)
+IPRCO3,IPRCO3,0,0,MCM species (same name)
+CH3CHOHCO3,CH3CHOHCO3,0,0,MCM species (same name)
+HOC2H4CO3,HOC2H4CO3,0,0,MCM species (same name)
+ACO3B,ACO3B,0,0,"lumped species kept, baseline chemistry"
+CO2C3CO3,CO2C3CO3,0,0,MCM species (same name)
+IBUDIALCO3,IBUDIALCO3,0,0,MCM species (same name)
+HC3CO3,HC3CO3,0,0,MCM species (same name)
+HC3CCO3,HC3CCO3,0,0,MCM species (same name)
+HOC3H6CO3,HOC3H6CO3,0,0,MCM species (same name)
+HCOCOHCO3,HCOCOHCO3,0,0,MCM species (same name)
+HO2C3CO3,HO2C3CO3,0,0,MCM species (same name)
+HOIPRCO3,HOIPRCO3,0,0,MCM species (same name)
+IPRHOCO3,IPRHOCO3,0,0,MCM species (same name)
+HO3C3CO3,HO3C3CO3,0,0,MCM species (same name)
+CO2H3CO3,CO2H3CO3,0,0,MCM species (same name)
+CHOMOHCO3,CHOMOHCO3,0,0,MCM species (same name)
+NO3CH2CO3,NO3CH2CO3,0,0,MCM species (same name)
+H13CO2CO3,H13CO2CO3,0,0,MCM species (same name)
+PRNO3CO3,PRNO3CO3,0,0,MCM species (same name)
+NC3CO3,NC3CO3,0,0,MCM species (same name)
+MPRBNO3CO3,MPRBNO3CO3,0,0,MCM species (same name)
+RO2_59,RO2_59,0,0,"lumped species kept, baseline chemistry"
+RO2_60,RO2_60,0,0,"lumped species kept, baseline chemistry"
+APIP,APIP,0,0,"lumped species kept, baseline chemistry"
+BALP,BALP,0,0,"lumped species kept, baseline chemistry"
+BAL1,BAL1,0,0,"lumped species kept, baseline chemistry"
+BAL2,BAL2,0,0,"lumped species kept, baseline chemistry"
+BENP,BENP,0,0,"lumped species kept, baseline chemistry"
+HC5P,HC5P,0,0,"lumped species kept, baseline chemistry"
+HC8P,HC8P,0,0,"lumped species kept, baseline chemistry"
+KETP,KETP,0,0,"lumped species kept, baseline chemistry"
+LIMP,LIMP,0,0,"lumped species kept, baseline chemistry"
+OLIP,OLIP,0,0,"lumped species kept, baseline chemistry"
+OLND,OLND,0,0,"lumped species kept, baseline chemistry"
+OLNN,OLNN,0,0,"lumped species kept, baseline chemistry"
+OLTP,OLTP,0,0,"lumped species kept, baseline chemistry"
+ORAP,ORAP,0,0,"lumped species kept, baseline chemistry"
+PER1,PER1,0,0,"lumped species kept, baseline chemistry"
+PER2,PER2,0,0,"lumped species kept, baseline chemistry"
+RCO3,RCO3,0,0,"lumped species kept, baseline chemistry"
+TLP1,TLP1,0,0,"lumped species kept, baseline chemistry"
+TOLP,TOLP,0,0,"lumped species kept, baseline chemistry"
+TR2,TR2,0,0,"lumped species kept, baseline chemistry"
+UALP,UALP,0,0,"lumped species kept, baseline chemistry"
+XO2,XO2,0,0,"lumped species kept, baseline chemistry"
+XY2,XY2,0,0,"lumped species kept, baseline chemistry"
+XYL1,XYL1,0,0,"lumped species kept, baseline chemistry"
+XYLP,XYLP,0,0,"lumped species kept, baseline chemistry"
+XYO2,XYO2,0,0,"lumped species kept, baseline chemistry"
+XYOP,XYOP,0,0,"lumped species kept, baseline chemistry"
+PHO,PHO,0,0,not used
+MCTO,MCTO,0,0,"lumped species kept, baseline chemistry"
+ADDC,ADDC,0,0,"lumped species kept, baseline chemistry"
+CHO,CHO,0,0,"lumped species kept, baseline chemistry"
+ADCN,ADCN,0,0,"lumped species kept, baseline chemistry"
+MCTP,MCTP,0,0,"lumped species kept, baseline chemistry"
+CH3O,CH3O,0,0,MCM species (same name)
+C2H5O,C2H5O,0,0,MCM species (same name)
+IC3H7O,IC3H7O,0,0,MCM species (same name)
+NC3H7O,NC3H7O,0,0,MCM species (same name)
+HCOCH2O,HCOCH2O,0,0,MCM species (same name)
+HOCH2CH2O,HOCH2CH2O,0,0,MCM species (same name)
+CH3COCH2O,CH3COCH2O,0,0,MCM species (same name)
+PROPALO,PROPALO,0,0,MCM species (same name)
+NC4H9O,NC4H9O,0,0,MCM species (same name)
+SC4H9O,SC4H9O,0,0,MCM species (same name)
+IC4H9O,IC4H9O,0,0,MCM species (same name)
+TC4H9O,TC4H9O,0,0,MCM species (same name)
+IPROPOLO,IPROPOLO,0,0,MCM species (same name)
+HO1C3O,HO1C3O,0,0,MCM species (same name)
+HYPROPO,HYPROPO,0,0,MCM species (same name)
+MEKAO,MEKAO,0,0,MCM species (same name)
+MEKBO,MEKBO,0,0,MCM species (same name)
+MEKCO,MEKCO,0,0,MCM species (same name)
+BUTALO,BUTALO,0,0,MCM species (same name)
+BUTAL2O,BUTAL2O,0,0,MCM species (same name)
+IBUTALBO,IBUTALBO,0,0,MCM species (same name)
+M2PROPAL2O,M2PROPAL2O,0,0,MCM species (same name)
+BUTDAO,BUTDAO,0,0,MCM species (same name)
+BUTDBO,BUTDBO,0,0,MCM species (same name)
+BUTDCO,BUTDCO,0,0,MCM species (same name)
+BUT2OLO,BUT2OLO,0,0,MCM species (same name)
+HO3C4O,HO3C4O,0,0,MCM species (same name)
+NBUTOLAO,NBUTOLAO,0,0,MCM species (same name)
+NBUTOLBO,NBUTOLBO,0,0,MCM species (same name)
+IBUTOLBO,IBUTOLBO,0,0,MCM species (same name)
+IBUTOLCO,IBUTOLCO,0,0,MCM species (same name)
+BUT2OLAO,BUT2OLAO,0,0,MCM species (same name)
+TBUTOLO,TBUTOLO,0,0,MCM species (same name)
+HO1C4O,HO1C4O,0,0,MCM species (same name)
+CHOCOHCO,CHOCOHCO,0,0,MCM species (same name)
+OCCOHCO,OCCOHCO,0,0,MCM species (same name)
+C3DIOLO,C3DIOLO,0,0,MCM species (same name)
+BIACETO,BIACETO,0,0,MCM species (same name)
+C4CO2O,C4CO2O,0,0,MCM species (same name)
+HO1CO3C4O,HO1CO3C4O,0,0,MCM species (same name)
+C4OCCOHCO,C4OCCOHCO,0,0,MCM species (same name)
+COCCOHCO,COCCOHCO,0,0,MCM species (same name)
+HO2CO3C4O,HO2CO3C4O,0,0,MCM species (same name)
+HMVKAO,HMVKAO,0,0,MCM species (same name)
+HMVKBO,HMVKBO,0,0,MCM species (same name)
+MACRO,MACRO,0,0,MCM species (same name)
+MACROHO,MACROHO,0,0,MCM species (same name)
+A2PANO,A2PANO,0,0,MCM species (same name)
+ETHENO3O,ETHENO3O,0,0,MCM species (same name)
+C41O,C41O,0,0,MCM species (same name)
+MVKOHAO,MVKOHAO,0,0,MCM species (same name)
+MVKOHBO,MVKOHBO,0,0,MCM species (same name)
+PRONO3AO,PRONO3AO,0,0,MCM species (same name)
+PRONO3BO,PRONO3BO,0,0,MCM species (same name)
+NBUTDAO,NBUTDAO,0,0,MCM species (same name)
+NBUTDBO,NBUTDBO,0,0,MCM species (same name)
+BU1ENO3O,BU1ENO3O,0,0,MCM species (same name)
+C43NO34O,C43NO34O,0,0,MCM species (same name)
+C42NO33O,C42NO33O,0,0,MCM species (same name)
+MPRANO3O,MPRANO3O,0,0,MCM species (same name)
+MPRBNO3O,MPRBNO3O,0,0,MCM species (same name)
+CO3C4NO3O,CO3C4NO3O,0,0,MCM species (same name)
+C4CONO3O,C4CONO3O,0,0,MCM species (same name)
+C4NO3OCO,C4NO3OCO,0,0,MCM species (same name)
+HNMVKO,HNMVKO,0,0,MCM species (same name)
+C42O,C42O,0,0,MCM species (same name)
+POA1,POA1,0,0,"lumped species kept, baseline chemistry"
+POA2,POA2,0,0,"lumped species kept, baseline chemistry"
+POA3,POA3,0,0,"lumped species kept, baseline chemistry"
+POA4,POA4,0,0,"lumped species kept, baseline chemistry"
+POA5,POA5,0,0,"lumped species kept, baseline chemistry"
+POA6,POA6,0,0,"lumped species kept, baseline chemistry"
+POA7,POA7,0,0,"lumped species kept, baseline chemistry"
+POA8,POA8,0,0,"lumped species kept, baseline chemistry"
+LEVO,LEVO,0,0,"lumped species kept, baseline chemistry"
+CBIO,CBIO,0,0,"lumped species kept, baseline chemistry"
+CPD1,CPD1,0,0,"lumped species kept, baseline chemistry"
+CPD2,CPD2,0,0,"lumped species kept, baseline chemistry"
+CPD3,CPD3,0,0,"lumped species kept, baseline chemistry"
+IVOC1,IVOC1,48.7216,0,"lumped species kept, baseline chemistry"
+IVOC2,IVOC2,0,0,"lumped species kept, baseline chemistry"
+IVOC3,IVOC3,29.4126,0,"lumped species kept, baseline chemistry"
+IVOC4,IVOC4,0,0,"lumped species kept, baseline chemistry"
+IVOC5,IVOC5,111.323,0,"lumped species kept, baseline chemistry"
+IVOC6,IVOC6,0,0,"lumped species kept, baseline chemistry"
+IVOC7,IVOC7,201.025,0,"lumped species kept, baseline chemistry"
+IVOC8,IVOC8,0,0,"lumped species kept, baseline chemistry"
+IVOC9,IVOC9,0,0,"lumped species kept, baseline chemistry"
+IVOC1_R1O2,IVOC1_R1O2,0,0,"lumped species kept, baseline chemistry"
+HC5SOA,HC5SOA,0,0,"lumped species kept, baseline chemistry"
+HC8SOA,HC8SOA,0,0,"lumped species kept, baseline chemistry"
+OLTSOA,OLTSOA,0,0,"lumped species kept, baseline chemistry"
+OLISOA,OLISOA,0,0,"lumped species kept, baseline chemistry"
+TOLSOA,TOLSOA,0,0,"lumped species kept, baseline chemistry"
+XYLSOA,XYLSOA,0,0,"lumped species kept, baseline chemistry"
+ISOSOA,ISOSOA,0,0,"lumped species kept, baseline chemistry"
+TERPSOA,TERPSOA,0,0,"lumped species kept, baseline chemistry"
+O2,O2,2.1e+08,2.1e+08,not used
+N2,N2,7.9e+08,7.9e+08,not used
+OffGas,OffGas,1000,1000,"lumped species kept, baseline chemistry"

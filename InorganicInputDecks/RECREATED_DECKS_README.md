@@ -66,3 +66,9 @@ Every deck folder (and this directory) has a `NitrateGroups.in` listing the gas 
 deck's own `GasPhaseChems.in` and `GasChemicalMechanism.in` and applies a short per-mechanism correction table (see the script);
 rerun it after changing a deck's species or mechanism. A deck without the file still runs: ASP then uses its original positional
 sums (33 species from PAN, 77 from CH3NO3), which are valid only for the baseline mechanism, and warns.
+
+## Williams Flats (2019): `WilliamsFlats/` and `WilliamsFlats_<MECH>/`
+
+The Williams Flats Fire (WA, 3 Aug 2019, FIREX-AQ) decks are built by `WilliamsFlatsTranslation/build_williamsflats_decks.py`
+from the SAM-ASP-TUV v1.0.0 decks (Zenodo 10.5281/zenodo.13385240), for the baseline mechanism and all eight others.
+See `WilliamsFlatsTranslation/README.md`. Their `PhotoRates.in` is provisional (TUV 5.3.1; regenerate with TUV 5.4).

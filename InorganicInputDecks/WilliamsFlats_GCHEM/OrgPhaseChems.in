@@ -1,0 +1,71 @@
+!! OrgPhaseChems.in
+!! ASP
+!! Matt Alvarado, 2004-2013 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 (c)
+!!
+!! This is the HYDROPHOBIC PHASE CHEMICALS INPUT DECK for MELAM	      !!
+!! that is read in by SetOrgPhaseChemistry() in OrgPhaseChemInits.h     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!
+!! Black Carbon (BC) is hard coded to be the first compound and should not
+!! be included here.
+!!
+!! Specify the following variables, separating each by a semi-colon and 
+!! including each on a single line for each gas:
+!!	1. NAME (no more than 15 characters): Make sure this is the same
+!!	     as that used in the other chemical input decks
+!!	2. CONSTANT?: Some chemicals will be held fixed, and others allowed
+!!	  to evolve with time.  Put a "1" if evolving, "0" if not
+!!	3. MOLECULAR MASS (g / mole)
+!!      4. DENSITY (g/cm3)
+!!      5. ACTIVITY COEFFICIENT FLAG
+!!         if 0. - number than follows is the index (starting at 1) 
+!!                 of the compound in unifacparams.h and the 
+!!                 subroutine UNIDRIV
+!!         if 1. - number that follows is a constant 
+!!                 organic activity coefficient (usually 1.0)
+!!         NOTE: It is safest to set these flags the same for all compounds
+!!         considered. Otherwise the UNIFAC compunds are treated as their 
+!!         own solution that doesn't inteact with the constant compounds.
+!!
+!! Use the same name here as in the gas phase chemical input deck to 
+!! assure proper matching between the two 
+!
+!Molecular Weights from Pun et al. 2002 and Griffin et al. 2005
+!Refractive Index for OC from Jacobson, "Fund. of Atm. Modeling", 2nd ed, p. 303
+!
+!SOA1	  ;1	;90.0	  ; 1.5 ;       0.0; 9.0;
+!SOA2	  ;1	;184.0	  ; 1.5 ;       0.0;10.0;
+!SOA3	  ;1	;154.0	  ; 1.5 ;       0.0;11.0;
+!SOA4	  ;1	;186.0	  ; 1.5 ;       0.0;12.0;
+!SOA5	  ;1	;186.0	  ; 1.5 ;       0.0;13.0;
+!SOA6	  ;1	;211.0	  ; 1.5 ;       0.0;14.0;
+!SOA7	  ;1	;178.0	  ; 1.5 ;       0.0;15.0;
+!SOA8	  ;1	;217.0	  ; 1.5 ;       0.0;16.0;
+!SOA9	  ;1	;303.0	  ; 1.5 ;       0.0;17.0;
+!SO10	  ;1	;217.0	  ; 1.5 ;       0.0;18.0;
+!
+!MW from Grieshop et al., ACP, 2009
+!
+!
+!GEOS-Chem 14.8.0 complex SOA with semivolatile POA (carbon_mod.F90 SOA_PARA_INIT): C*, one MW (mass-based absorption), dHvap = 5000 K x R
+TSOA0         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+TSOA1         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+TSOA2         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+TSOA3         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+ASOA1         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+ASOA2         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+ASOA3         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+ASOAN         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+SVPOA1        ;1	;150.00	; 1.5 ;       1.0; 1.0;
+SVPOA2        ;1	;150.00	; 1.5 ;       1.0; 1.0;
+OPOA1         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+OPOA2         ;1	;150.00	; 1.5 ;       1.0; 1.0;
+!CMAQ particle-phase products of uptake / particle-phase reactions (nonvolatile, one ASP species with its gas partner)
+SOAGX         ;1	;58.04	; 1.5 ;       1.0; 1.0;
+SOAIE         ;1	;118.15	; 1.5 ;       1.0; 1.0;
+LVOCOA        ;1	;154.19	; 1.5 ;       1.0; 1.0;
+IONITA        ;1	;147.13	; 1.5 ;       1.0; 1.0;
+MONITA        ;1	;215.00	; 1.5 ;       1.0; 1.0;
+AONITA        ;1	;189.12	; 1.5 ;       1.0; 1.0;
+INDIOL        ;1	;102.00	; 1.5 ;       1.0; 1.0;

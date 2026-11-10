@@ -1,0 +1,98 @@
+!! OrganicDissolution.in
+!! ASP
+!! Matt Alvarado, 2004-2013 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 (c)
+!!
+!! This is the HYDROPHOBIC (organic) PHASE DISSOLUTION INPUT DECK for ASP
+!! that is read in by SetOrganicDissolution() 
+!! in CondensationInitialization.h     
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!
+!! Only direct dissolution without reaction is allowed here.
+!!
+!! Specify the following variables, separating each by a semi-colon and 
+!! including each on a single line for each gas:
+!!	REACTION (each no more than 15 characters): Make sure this is the same
+!!	          as that used in the other chemical input decks
+!!
+!!      MASS ACCOMMODATION COEFFICIENT: A positive value
+!!
+!!      The next four parameters are needed to calculate vapor pressure
+!!      following Myrdal and Yalkowski (1997) (Flag = 0):
+!!	BOILING POINT (K)(From ACD/Boiling Point Software)
+!!      TORSIONAL BOND NUMBER (From Rob Griffin)
+!!      HYDROGEN BOND NUMBER
+!!      Correction Factor (CF) (divide calculated vapor pressure by this factor - 
+!!                         see discussion in Griffin et al 2005, JGR 101, D05304,
+!!				   doi:10.1029/2004JD005219)
+!!       
+!! NOTE: Equilibrium or Flux is controlled by flag in Dissolution.in
+!! For the IVOCS in the VBS system (Flag = 1), after accomodation coeff, the parameters are
+!! VAPOR PRESSURE at 300 K (mbar)
+!! HEAT OF VAPORIZATION (KJ/mol)
+!!
+! Reaction           	; Mass Acc ; Flag; Tb(K)    ; Tau  ; HBN     ; CF ;
+POA1 <=> POA1		; 0.1;          0.;    714.0;  26. ;       0.; 1.0;
+POA2 <=> POA2		; 0.1;          0.;    509.0;   2. ; 1.20e-2 ; 1.0; 
+POA3 <=> POA3		; 0.1;          0.;    710.0;   0.5; 6.55e-3 ; 1.0; 
+POA4 <=> POA4		; 0.1;          0.;    797.0;   0. ; 0.      ; 1.0; 
+POA5 <=> POA5		; 0.1;          0.;    731.0; 0.5  ; 0.      ; 1.0; 
+POA6 <=> POA6		; 0.1;          0.;    651.0; 0.5  ; 8.52e-3 ; 1.0; 
+POA7 <=> POA7		; 0.1;          0.;    633.0; 15.5 ; 3.52e-3 ; 1.0; 
+POA8 <=> POA8		; 0.1;          0.;    710.0; 5.5  ; 0.	     ; 1.0; 
+!
+!SOA1 <=> SOA1          ;  0.1;           0.;  560.0; 0.   ; 1.57e-2 ; 1.0;
+!SOA2 <=> SOA2          ;  0.1;           0.;  698.0; 2.5  ; 7.68e-3 ; 1.0;
+!SOA3 <=> SOA3          ;  0.1;           0.;  575.0; 2.   ; 6.49e-3 ; 33.0;
+!SOA4 <=> SOA4          ;  0.1;           0.;  679.0; 3.0  ; 7.60e-3 ; 3.3;
+!SOA5 <=> SOA5          ;  0.1;           0.;  615.0; 5.0  ; 5.37e-3 ; 15.0;
+!SOA6 <=> SOA6          ;  0.1;           0.;  685.3; 0.5  ; 6.70e-3 ; 1.5;
+!SOA7 <=> SOA7          ;  0.1;           0.;  634.0; 0.5  ; 5.61e-3 ; 1.4;
+!SOA8 <=> SOA8          ;  0.1;           0.;  645.5; 2.0  ; 0.      ; 2.4;
+!SOA9 <=> SOA9          ;  0.1;           0.;  672.2; 14.5 ; 3.30e-3 ; 1.0;
+!SO10 <=> SO10          ;  0.1;           0.;  566.3; 1.   ; 4.61e-3 ; 66.0;
+!
+LEVO <=> LEVO	        ; 0.1;          0.;    657.0; 0.   ; 1.069e-2; 1.0;
+CBIO <=> CBIO		; 0.1;          0.;    914.0; 2.   ; 7.55e-3 ; 1.0;
+CPD1 <=> CPD1		; 0.1;          0.;    929.1; 2.5  ; 6.055e-3; 1.0;
+CPD2 <=> CPD2		; 0.1;          0.;    850.0; 0.   ; 4.25e-3 ; 1.0;
+CPD3 <=> CPD3		; 0.1;          0.;    1232.0; 16.5; 3.35e-3 ; 1.0;
+!
+! Delta Hvap from Grieshop et al., ACP, 9, 1263-1277, 2009.
+! Psat matches MW's from Greishop et al., ACP, 2009.    
+! Reaction      ; Mass Acc ; Flag       ; Psat(300K)    ; Delta Hvap (KJ/mol)  
+!
+!
+! CMAQ CRACMM species: C*(298 K) and Delta Hvap from ORG_DEFN.F converted to Psat(300 K) in mbar (flag 1);
+! C*(T) = C*(298) (298/T) exp[dHvap/R (1/298 - 1/T)] in CMAQ is the same functional form ASP uses.  Mass accommodation 1.0 (CMAQ alphorg).
+! Reaction      ; Mass Acc ; Flag       ; Psat(300K) mbar    ; Delta Hvap (KJ/mol)  ; [C*(298K) ug/m3]
+SVALK1 <=> SVALK1	; 1.0;	1.	; 1.8694e-08	; 53.0	; ! C*298 = 0.147
+SVALK2 <=> SVALK2	; 1.0;	1.	; 7.2276e-06	; 53.0	; ! C*298 = 51.9
+SVXYL1 <=> SVXYL1	; 1.0;	1.	; 2.0393e-07	; 32.0	; ! C*298 = 1.31
+SVXYL2 <=> SVXYL2	; 1.0;	1.	; 5.0336e-06	; 32.0	; ! C*298 = 34.5
+SVTOL1 <=> SVTOL1	; 1.0;	1.	; 3.7111e-07	; 18.0	; ! C*298 = 2.33
+SVTOL2 <=> SVTOL2	; 1.0;	1.	; 3.1620e-06	; 18.0	; ! C*298 = 21.3
+SVBNZ1 <=> SVBNZ1	; 1.0;	1.	; 4.8783e-08	; 18.0	; ! C*298 = 0.302
+SVBNZ2 <=> SVBNZ2	; 1.0;	1.	; 2.1564e-05	; 18.0	; ! C*298 = 111
+SVPAH1 <=> SVPAH1	; 1.0;	1.	; 2.2068e-07	; 18.0	; ! C*298 = 1.66
+SVPAH2 <=> SVPAH2	; 1.0;	1.	; 3.8518e-05	; 18.0	; ! C*298 = 265
+SVTRP1 <=> SVTRP1	; 1.0;	1.	; 2.3059e-06	; 40.0	; ! C*298 = 14.8
+SVTRP2 <=> SVTRP2	; 1.0;	1.	; 1.8636e-05	; 40.0	; ! C*298 = 134
+SVISO1 <=> SVISO1	; 1.0;	1.	; 2.4250e-05	; 40.0	; ! C*298 = 116
+SVISO2 <=> SVISO2	; 1.0;	1.	; 1.2800e-07	; 40.0	; ! C*298 = 0.617
+SVSQT <=> SVSQT	; 1.0;	1.	; 2.5252e-06	; 40.0	; ! C*298 = 25
+AXYL3 <=> AXYL3	; 1.0;	1.	; 1.1396e-17	; 1.0	; ! C*298 = 1e-10
+ATOL3 <=> ATOL3	; 1.0;	1.	; 1.2806e-17	; 1.0	; ! C*298 = 1e-10
+ABNZ3 <=> ABNZ3	; 1.0;	1.	; 1.3802e-17	; 1.0	; ! C*298 = 1e-10
+APAH3 <=> APAH3	; 1.0;	1.	; 1.1708e-17	; 1.0	; ! C*298 = 1e-10
+LVPCSOG <=> LVPCSOG	; 1.0;	1.	; 1.6231e-12	; 40.0	; ! C*298 = 1e-05
+VSVPO1 <=> VSVPO1	; 1.0;	1.	; 1.3541e-07	; 85.0	; ! C*298 = 1
+VSVPO2 <=> VSVPO2	; 1.0;	1.	; 1.2546e-06	; 74.0	; ! C*298 = 10
+VSVPO3 <=> VSVPO3	; 1.0;	1.	; 1.1602e-05	; 63.0	; ! C*298 = 100
+VIVPO1 <=> VIVPO1	; 1.0;	1.	; 1.0714e-04	; 52.0	; ! C*298 = 1e+03
+! CMAQ uptake / particle-phase products: nonvolatile (C*(298) = 1e-10 ug/m3)
+AISO3 <=> AISO3	; 1.0;	1.	; 1.4770e-17	; 1.0	; ! C*298 = 1e-10
+AOLGA <=> AOLGA	; 1.0;	1.	; 1.2060e-17	; 1.0	; ! C*298 = 1e-10
+AOLGB <=> AOLGB	; 1.0;	1.	; 1.0018e-17	; 1.0	; ! C*298 = 1e-10
+
+VLVPO1 <=> VLVPO1	; 1.0;	1.	; 1.4715e-08	; 96.0	; ! C*298 = 0.1

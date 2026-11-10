@@ -1,0 +1,14 @@
+Organic-aerosol mapping for Williams Flats (MCM331, rules of the base builder)
+gas IVOC1 48.72 ppb
+gas IVOC2 0 ppb
+gas IVOC3 29.41 ppb
+gas IVOC4 0 ppb
+gas IVOC5 111.3 ppb
+gas IVOC6 0 ppb
+gas IVOC7 201 ppb
+gas IVOC8 0 ppb
+gas IVOC9 0 ppb
+particle IVOC1 18.6 (mass fraction weight)
+particle IVOC3 9.3 (mass fraction weight)
+particle IVOC5 27.9 (mass fraction weight)
+particle IVOC7 37.2 (mass fraction weight)

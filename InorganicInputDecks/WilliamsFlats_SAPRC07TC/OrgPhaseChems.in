@@ -1,0 +1,94 @@
+!! OrgPhaseChems.in
+!! ASP
+!! Matt Alvarado, 2004-2013 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 (c)
+!!
+!! This is the HYDROPHOBIC PHASE CHEMICALS INPUT DECK for MELAM	      !!
+!! that is read in by SetOrgPhaseChemistry() in OrgPhaseChemInits.h     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!
+!! Black Carbon (BC) is hard coded to be the first compound and should not
+!! be included here.
+!!
+!! Specify the following variables, separating each by a semi-colon and 
+!! including each on a single line for each gas:
+!!	1. NAME (no more than 15 characters): Make sure this is the same
+!!	     as that used in the other chemical input decks
+!!	2. CONSTANT?: Some chemicals will be held fixed, and others allowed
+!!	  to evolve with time.  Put a "1" if evolving, "0" if not
+!!	3. MOLECULAR MASS (g / mole)
+!!      4. DENSITY (g/cm3)
+!!      5. ACTIVITY COEFFICIENT FLAG
+!!         if 0. - number than follows is the index (starting at 1) 
+!!                 of the compound in unifacparams.h and the 
+!!                 subroutine UNIDRIV
+!!         if 1. - number that follows is a constant 
+!!                 organic activity coefficient (usually 1.0)
+!!         NOTE: It is safest to set these flags the same for all compounds
+!!         considered. Otherwise the UNIFAC compunds are treated as their 
+!!         own solution that doesn't inteact with the constant compounds.
+!!
+!! Use the same name here as in the gas phase chemical input deck to 
+!! assure proper matching between the two 
+!
+!Molecular Weights from Pun et al. 2002 and Griffin et al. 2005
+!Refractive Index for OC from Jacobson, "Fund. of Atm. Modeling", 2nd ed, p. 303
+POA1	  ;1	;408.0	  ; 1.5 ;       0.0; 1.0;
+POA2	  ;1	;118.0	  ; 1.5 ;       0.0; 2.0;
+POA3	  ;1	;216.0	  ; 1.5 ;       0.0; 3.0;
+POA4	  ;1	;276.0	  ; 1.5 ;       0.0; 4.0;
+POA5	  ;1	;412.0	  ; 1.5 ;       0.0; 5.0;
+POA6	  ;1	;166.0	  ; 1.5 ;       0.0; 6.0;
+POA7	  ;1	;284.0	  ; 1.5 ;       0.0; 7.0;
+POA8	  ;1	;390.0	  ; 1.5 ;       0.0; 8.0;
+!
+!SOA1	  ;1	;90.0	  ; 1.5 ;       0.0; 9.0;
+!SOA2	  ;1	;184.0	  ; 1.5 ;       0.0;10.0;
+!SOA3	  ;1	;154.0	  ; 1.5 ;       0.0;11.0;
+!SOA4	  ;1	;186.0	  ; 1.5 ;       0.0;12.0;
+!SOA5	  ;1	;186.0	  ; 1.5 ;       0.0;13.0;
+!SOA6	  ;1	;211.0	  ; 1.5 ;       0.0;14.0;
+!SOA7	  ;1	;178.0	  ; 1.5 ;       0.0;15.0;
+!SOA8	  ;1	;217.0	  ; 1.5 ;       0.0;16.0;
+!SOA9	  ;1	;303.0	  ; 1.5 ;       0.0;17.0;
+!SO10	  ;1	;217.0	  ; 1.5 ;       0.0;18.0;
+!
+LEVO	;1	;162.1	  ; 1.5 ;       0.0;19.0;
+CBIO	;1	;324.3	  ; 1.5 ;       0.0;20.0;
+CPD1	;1	;330.3	  ; 1.5 ;       0.0;21.0;
+CPD2	;1	;332.4	  ; 1.5 ;       0.0;22.0;
+CPD3	;1	;730.7	  ; 1.5 ;       0.0;23.0;
+!MW from Grieshop et al., ACP, 2009
+!
+!
+!CMAQ CRACMM organic-aerosol species (CCTM/src/aero/cracmm/ORG_DEFN.F): gas V* / particle A* pair = one ASP species
+SVALK1        ;1	;225.00	; 1.5 ;       1.0; 1.0;
+SVALK2        ;1	;205.10	; 1.5 ;       1.0; 1.0;
+SVXYL1        ;1	;174.00	; 1.5 ;       1.0; 1.0;
+SVXYL2        ;1	;185.00	; 1.5 ;       1.0; 1.0;
+SVTOL1        ;1	;163.00	; 1.5 ;       1.0; 1.0;
+SVTOL2        ;1	;175.00	; 1.5 ;       1.0; 1.0;
+SVBNZ1        ;1	;161.00	; 1.5 ;       1.0; 1.0;
+SVBNZ2        ;1	;134.00	; 1.5 ;       1.0; 1.0;
+SVPAH1        ;1	;195.60	; 1.5 ;       1.0; 1.0;
+SVPAH2        ;1	;178.70	; 1.5 ;       1.0; 1.0;
+SVTRP1        ;1	;177.00	; 1.5 ;       1.0; 1.0;
+SVTRP2        ;1	;198.00	; 1.5 ;       1.0; 1.0;
+SVISO1        ;1	;132.00	; 1.5 ;       1.0; 1.0;
+SVISO2        ;1	;133.00	; 1.5 ;       1.0; 1.0;
+SVSQT         ;1	;273.00	; 1.5 ;       1.0; 1.0;
+AXYL3         ;1	;218.00	; 1.5 ;       1.0; 1.0;
+ATOL3         ;1	;194.00	; 1.5 ;       1.0; 1.0;
+ABNZ3         ;1	;180.00	; 1.5 ;       1.0; 1.0;
+APAH3         ;1	;212.20	; 1.5 ;       1.0; 1.0;
+LVPCSOG       ;1	;170.00	; 1.5 ;       1.0; 1.0;
+VSVPO1        ;1	;230.00	; 1.5 ;       1.0; 1.0;
+VSVPO2        ;1	;241.00	; 1.5 ;       1.0; 1.0;
+VSVPO3        ;1	;253.00	; 1.5 ;       1.0; 1.0;
+VIVPO1        ;1	;266.00	; 1.5 ;       1.0; 1.0;
+!CMAQ particle-phase products of uptake / particle-phase reactions (nonvolatile, one ASP species with its gas partner)
+AISO3         ;1	;168.20	; 1.5 ;       1.0; 1.0;
+AOLGA         ;1	;206.00	; 1.5 ;       1.0; 1.0;
+AOLGB         ;1	;248.00	; 1.5 ;       1.0; 1.0;
+
+VLVPO1        ;1	;218.00	; 1.5 ;       1.0; 1.0;

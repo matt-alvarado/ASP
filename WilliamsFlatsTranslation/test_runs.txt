@@ -1,0 +1,13 @@
+ASP parcel model, common_ASP 111426c (gfortran, double), 300-min runs, 2026-11-10.
+Enhancement ratios (ppb/ppb) at the end of the run, from OutputFiles/EnhanceRatios.txt.
+Photolysis from the PROVISIONAL TUV 5.3.1 table (see README.md).
+
+WilliamsFlats      rc=0  23.6 s  files=109 | after 299 min: dO3/dCO 0.183  dNOx/dCO 0.0019  dPAN/dCO 0.0036
+WilliamsFlats_CB6r5 rc=0  22.2 s  files=109 | after 299 min: dO3/dCO 0.214  dNOx/dCO 0.0044  dPAN/dCO 0.0036
+WilliamsFlats_CRACMM2 rc=0  22.7 s  files=109 | after 299 min: dO3/dCO 0.209  dNOx/dCO 0.0060  dPAN/dCO 0.0056
+WilliamsFlats_CRACMM3 rc=0  22.5 s  files=109 | after 299 min: dO3/dCO 0.138  dNOx/dCO 0.0142  dPAN/dCO 0.0026
+WilliamsFlats_GCHEM rc=0  21.4 s  files=109 | after 299 min: dO3/dCO 0.153  dNOx/dCO 0.0082  dPAN/dCO 0.0026
+WilliamsFlats_MCM331 rc=0  83.3 s  files=109 | after 299 min: dO3/dCO 0.224  dNOx/dCO 0.0027  dPAN/dCO 0.0028
+WilliamsFlats_MOZT1 rc=0  20.3 s  files=109 | after 299 min: dO3/dCO 0.186  dNOx/dCO 0.0055  dPAN/dCO 0.0028
+WilliamsFlats_SAPRC07TC rc=0  22.6 s  files=109 | after 299 min: dO3/dCO 0.233  dNOx/dCO 0.0050  dPAN/dCO 0.0044
+WilliamsFlats_SAPRC07TIC rc=0  22.9 s  files=109 | after 299 min: dO3/dCO 0.232  dNOx/dCO 0.0050  dPAN/dCO 0.0040

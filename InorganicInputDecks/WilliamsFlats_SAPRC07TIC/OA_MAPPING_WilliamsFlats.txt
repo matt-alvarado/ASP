@@ -1,0 +1,7 @@
+Organic-aerosol mapping for Williams Flats (SAPRC07TIC, rules of the ae7 builder)
+gas VLVPO1 117.1 ppb
+gas VSVPO1 55.5 ppb
+gas VSVPO3 151.4 ppb
+particle VLVPO1 18.6 (mass fraction weight)
+particle VSVPO1 9.3 (mass fraction weight)
+particle VSVPO3 27.9 (mass fraction weight)

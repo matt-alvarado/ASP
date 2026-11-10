@@ -1,0 +1,333 @@
+!! GasPhaseChems.in - Williams case, GEOS-Chem
+!! ASP
+!! Matt Alvarado, 2004-2013 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 
+!!
+!! This is the GAS PHASE CHEMISTRY INPUT DECK for ASP		
+!! that is read in by SetGasPhaseChemistry() in GasPhaseChemistry.h
+!!
+!! The following is the full list of gases tracked in the gas phase 
+!! (water vapor is hard coded in and should not be included here)
+!!
+!! Specify the following variables; separating each by a semi-colon and 
+!! including each on a single line for each gas:
+!!	NAME (no more than 15 characters): Make sure this is the same
+!!	     as that used in the other chemical input decks
+!!	CONSTANT?: Some chemicals will be held fixed; and others allowed
+!!	  to evolve with time.  Put a 1 if evolving; 0 if not
+!!	MOLECULAR MASS (g / mole)
+!!	INITIAL CONCENTRATION (ppbv): If this is
+!! 	  a string; the program will look for an input deck of that name
+!!	  in the main directory that contains point-by-point data.  Otherwise 
+!!	  it is homogeneously set to this value.
+!!	BACKGROUND CONCENTRATION (ppbv)
+!!	DEPOSITION VELOCITY (cm/s)
+!!
+!! CONCENTRATION INPUT TYPE FLAG:
+!! (0 if input concentrations are ppbv; 1 if they are mg / m3)
+2; 10000!   !! Flag 2 = initial concentrations (ppbv) read from the 5th column; second value = initial CO (ppbv)
+!
+!!
+!! Use the same name here as in the aerosol chemistry input deck to 
+!! assure proper matching between the two
+!! NOTE: Values below are for the Williams Flats Fire (WA, 3 Aug 2019); see WilliamsFlatsTranslation/
+!! Put CO first to use gasphasechems_scale.pro;Evolve flag;Peroxy Flag;MW;Init Conc;Back Conc;Dep Vel!;;;
+CO	;1	;0;28;10000;129.213;0!
+O3	;1	;0;48;50;50;0!
+NO	;1	;0;30.01;224.923;0.015;0!
+NO2	;1	;0;46.01;0.04;0.04;0!
+OH	;1	;0;17.007;0;0;0!
+HO2	;1	;0;33.006;0;0;0!
+NO3	;1	;0;62.004;0;0;0!
+MO2	;1	;1;47.033;0;0;0!
+CH2O	;1	;0;30.026;165.668;0.33;0!
+O	;1	;0;16;0;0;0!
+H2O2	;1	;0;34.01;1.50589;0.755;0!
+CO2	;1	;0;44.01;528425;390000;0!
+CH4	;1	;0;16.04;2761.64;1900;0!
+MENO3	;1	;0;77.039;0.0236829;0;0!
+MP	;1	;0;48.041;0;0;0!
+MOH	;1	;0;32.042;165.262;0;0!
+ATOOH	;1	;0;90.078;0;0;0!
+ATO2	;1	;1;89;0;0;0!
+MGLY	;1	;0;72.063;71.5352;0;0!
+HNO3	;1	;0;63.01;0.450516;0.41;0!
+HONO	;1	;1;47.01;45.7835;0;0!
+HNO4	;1	;0;79.011;0;0;0!
+N2O5	;1	;0;108;0;0;0!
+HCOOH	;1	;0;46.025;6.50147;0;0!
+ALD2	;1	;0;44.053;47.2473;0;0!
+MCO3	;1	;2;75;0;0;0!
+PAN	;1	;0;121.05;6.93248;0.03;0!
+C2H6	;1	;0;30.07;80.2376;0;0!
+ETO2	;1	;1;61.06;0;0;0!
+ETNO3	;1	;0;91.066;0;0;0!
+OTHRO2	;1	;1;61;0;0;0!
+C3H8	;1	;0;44.097;16.7438;0;0!
+B3O2	;1	;1;75;0;0;0!
+A3O2	;1	;1;75;0;0;0!
+RCHO	;1	;0;58;3.93791;0.02;0!
+NPRNO3	;1	;0;106.101;0;0;0!
+PO2	;1	;1;91;0;0;0!
+ALK6	;1	;0;86;0;0;0!
+R7O2	;1	;1;103;0;0;0!
+R4O2	;1	;1;89;0;0;0!
+MEK	;1	;0;72;13.9785;0;0!
+R7N2	;1	;0;147;0;0;0!
+R7P	;1	;0;118;0;0;0!
+R7N1	;1	;1;162;0;0;0!
+C4H6	;1	;0;54.092;4.52518;0;0!
+BUTO2	;1	;1;119;0;0;0!
+ACR	;1	;0;56;4.88459;0;0!
+BUTN	;1	;0;117;0;0;0!
+GLYC	;1	;0;60.052;0.243144;0;0!
+ACO3	;1	;2;87.054;0;0;0!
+ACRO2	;1	;1;105;0;0;0!
+GLYX	;1	;0;58.036;76.5904;0;0!
+APAN	;1	;0;133.059;0;0;0!
+ALK4	;1	;0;58.1;12.4514;1.075;0!
+ALK4O2	;1	;1;89;0;0;0!
+ACET	;1	;0;58.08;10.0611;0;0!
+ALK4N2	;1	;0;119;0;0;0!
+ALK4N1	;1	;1;147;0;0;0!
+R4N2	;1	;0;133;0;0;0!
+R4N1	;1	;1;148;0;0;0!
+KO2	;1	;1;103;0;0;0!
+IPRNO3	;1	;0;106.101;0;0;0!
+PRN1	;1	;1;137;0;0;0!
+ACTA	;1	;0;60.052;139.2;0;0!
+RCO3	;1	;2;89;0;0;0!
+PPN	;1	;0;135.075;0.00327016;0.003;0!
+ROH	;1	;0;60;3.31202;0;0!
+HAC	;1	;0;74.079;22.3266;0;0!
+R4P	;1	;0;90.122;0;0;0!
+ALK4P	;1	;0;90.122;0;0;0!
+RB3P	;1	;0;76.095;0;0;0!
+PRPN	;1	;0;137.091;0;0;0!
+MEKCO3	;1	;2;101;0;0;0!
+MEKPN	;1	;0;163;0;0;0!
+ETOO	;1	;1;77;0;0;0!
+RCOOH	;1	;0;74;0;0;0!
+RP	;1	;0;90.078;0;0;0!
+EOH	;1	;0;46.069;0.792862;0;0!
+ETP	;1	;0;62.068;0;0;0!
+RA3P	;1	;0;76.095;0;0;0!
+PP	;1	;0;92.094;0;0;0!
+PRPE	;1	;0;42.1;55.8913;0;0!
+CH3CHOO	;1	;0;60.052;0;0;0!
+CH2OO	;1	;0;46.025;0;0;0!
+GCO3	;1	;2;91;0;0;0!
+PHAN	;1	;0;134.023;0;0;0!
+HACTA	;1	;0;76;0;0;0!
+PROPNN	;1	;0;119.076;0;0;0!
+LVOC	;1	;0;166;0;0;0!
+MAP	;1	;0;76.051;0;0;0!
+MPN	;1	;0;93.038;0;0;0!
+DMS	;1	;0;62.13;0;0;0!
+SO2	;1	;0;64.06;27.4737;0.12;0!
+MSA	;1	;0;96.1;0;0;0!
+H2SO4	;1	;0;98.08;0;0;0!
+O1D	;1	;0;16;0;0;0!
+H2	;1	;0;2.016;3647.16;0;0!
+H	;1	;0;1.008;0;0;0!
+N2O	;1	;0;44.01;0;0;0!
+N	;1	;0;14.007;0;0;0!
+ETHLN	;1	;0;105.049;0;0;0!
+HMHP	;1	;0;64.04;0;0;0!
+MTPA	;1	;0;136;48.2713;0;0!
+OLNN	;1	;1;250;0;0;0!
+OLND	;1	;1;250;0;0;0!
+MTPO	;1	;0;136;0;0;0!
+LIMO	;1	;0;136.238;16.0905;0;0!
+LIMO2	;1	;1;185;0;0;0!
+AROMRO2	;1	;1;150;0;0;0!
+LIMAL	;1	;0;168;0;0;0!
+LIMO3	;1	;2;199;0;0;0!
+APINO2	;1	;1;185;0;0;0!
+BPINO2	;1	;1;185;0;0;0!
+PIO2	;1	;1;185;0;0;0!
+MVK	;1	;0;70.091;0;0;0!
+MYRCO	;1	;0;152;0;0;0!
+BPINOO2	;1	;1;201;0;0;0!
+BPINO	;1	;0;152;0;0;0!
+PINAL	;1	;0;168;0;0;0!
+APINP	;1	;0;186;0;0;0!
+APINN	;1	;0;215;0;0;0!
+PINO3	;1	;2;183;0;0;0!
+C96N	;1	;0;231;0;0;0!
+C96O2	;1	;2;199;0;0;0!
+PINO3H	;1	;0;200;0;0;0!
+PINONIC	;1	;0;184;0;0;0!
+PINPAN	;1	;0;231;0;0;0!
+C96O2H	;1	;0;202;0;0;0!
+MONITS	;1	;0;215;0;0;0!
+BPINP	;1	;0;186;0;0;0!
+BPINN	;1	;0;215;0;0;0!
+BPINON	;1	;0;184;0;0;0!
+BPINOOH	;1	;0;186;0;0;0!
+LIMKET	;1	;0;170;0;0;0!
+LIMN	;1	;0;215;0;0;0!
+LIMKB	;1	;0;170;0;0;0!
+LIMNB	;1	;0;215;0;0;0!
+LIMKO2	;1	;1;201;0;0;0!
+LIMO3H	;1	;0;200;0;0;0!
+LIMO2H	;1	;0;186;0;0;0!
+LIMPAN	;1	;0;231;0;0;0!
+PIP	;1	;0;186;0;0;0!
+PIN	;1	;0;136;0;0;0!
+MONITU	;1	;0;215;0;0;0!
+HONIT	;1	;0;215;0;0;0!
+ISOP	;1	;0;68.119;2.4672;0;0!
+MACR	;1	;0;70.091;0;0;0!
+IHOO1	;1	;1;117;0;0;0!
+IHOO4	;1	;0;117;0;0;0!
+HPALD3	;1	;0;116.116;0;0;0!
+HPALD1	;1	;0;116.116;0;0;0!
+HPETHNL	;1	;0;76.051;0;0;0!
+HPALD4	;1	;0;116.116;0;0;0!
+HPALD2	;1	;0;116.116;0;0;0!
+RIPA	;1	;0;118.132;0;0;0!
+RIPC	;1	;0;118.132;0;0;0!
+RIPB	;1	;0;118.132;0;0;0!
+RIPD	;1	;0;118.132;0;0;0!
+HC5A	;1	;0;100.117;0;0;0!
+MVKHP	;1	;0;120.104;0;0;0!
+MCRHP	;1	;0;120.104;0;0;0!
+IHN2	;1	;0;147.13;0;0;0!
+IHN4	;1	;0;147.13;0;0;0!
+IHN3	;1	;0;147.13;0;0;0!
+IHN1	;1	;0;147.13;0;0;0!
+HPALD1OO	;1	;1;147;0;0;0!
+IDC	;1	;0;98;0;0;0!
+ICHE	;1	;0;116.116;0;0;0!
+HPALD2OO	;1	;1;147;0;0;0!
+IEPOXAOO	;1	;1;149;0;0;0!
+IEPOXBOO	;1	;1;149;0;0;0!
+MVKPC	;1	;0;118.088;0;0;0!
+IHPOO3	;1	;0;149;0;0;0!
+IHPOO1	;1	;1;149;0;0;0!
+IEPOXA	;1	;0;118.132;0;0;0!
+IEPOXB	;1	;0;118.132;0;0;0!
+IHPOO2	;1	;1;149;0;0;0!
+ICHOO	;1	;1;133;0;0;0!
+IEPOXD	;1	;0;118.132;0;0;0!
+ICPDH	;1	;0;150.13;0;0;0!
+IDHPE	;1	;0;150.13;0;0;0!
+ITHN	;1	;0;197.143;0;0;0!
+IDHDP	;1	;0;168.145;0;0;0!
+IDCHP	;1	;0;148.114;0;0;0!
+MVKDH	;1	;0;105.113;0;0;0!
+ITCN	;1	;0;195.127;0;0;0!
+MCRDH	;1	;0;104.105;0;0;0!
+MVKHC	;1	;0;102;0;0;0!
+ISOPNOO1	;1	;1;178;0;0;0!
+ISOPNOO2	;1	;1;178;0;0;0!
+IDHNDOO1	;1	;1;194;0;0;0!
+IDHNDOO2	;1	;1;194;0;0;0!
+MCRHNB	;1	;0;149.102;0;0;0!
+ICN	;1	;0;145.114;0;0;0!
+MVKN	;1	;0;149.102;0;0;0!
+MCRHN	;1	;0;149.102;0;0;0!
+IDN	;1	;0;192.127;0;0;0!
+IDHNBOO	;1	;1;194;0;0;0!
+INO2B	;1	;1;162;0;0;0!
+INO2D	;1	;1;162;0;0;0!
+INPB	;1	;0;163.129;0;0;0!
+INPD	;1	;0;163.129;0;0;0!
+INA	;1	;0;163;0;0;0!
+IHPNBOO	;1	;1;194;0;0;0!
+IHPNDOO	;1	;1;194;0;0;0!
+ICNOO	;1	;1;178;0;0;0!
+IDNOO	;1	;1;210;0;0;0!
+MVKOHOO	;1	;1;119;0;0;0!
+PYAC	;1	;0;88.062;0;0;0!
+MCROHOO	;1	;1;119;0;0;0!
+MACR1OO	;1	;2;101;0;0;0!
+MVKHCB	;1	;0;102;0;0;0!
+MACRNO2	;1	;1;165;0;0;0!
+C4HVP1	;1	;1;117;0;0;0!
+C4HVP2	;1	;1;117;0;0;0!
+MCRENOL	;1	;0;86;0;0;0!
+MACR1OOH	;1	;0;102.089;0;0;0!
+HMML	;1	;0;102.089;0;0;0!
+MPAN	;1	;0;147.086;0;0;0!
+NAP	;1	;0;128;398.349;0;0!
+NRO2	;1	;1;190;0;0;0!
+STYR	;1	;0;104;0;0;0!
+ZRO2	;1	;1;130;0;0;0!
+BALD	;1	;0;106;1.03222;0;0!
+BENZ	;1	;0;78.114;9.21143;0;0!
+BENZO2	;1	;1;125;0;0;0!
+EBZ	;1	;0;106;0;0;0!
+CSL	;1	;0;108;0;0;0!
+AROMP5	;1	;0;114;0;0;0!
+AROMP4	;1	;0;100;0;0;0!
+TMB	;1	;0;120;0;0;0!
+TLFUONE	;1	;0;98.101;0;0;0!
+RNO3	;1	;0;227;0;0;0!
+C2H4	;1	;0;28.05;126.348;0;0!
+C2H2	;1	;0;26.038;26.6523;0;0!
+ETHP	;1	;0;78;0;0;0!
+ETO	;1	;0;61;0;0;0!
+ETHN	;1	;0;107;0;0;0!
+BRO2	;1	;1;125;0;0;0!
+PHEN	;1	;0;94;14.7439;0;0!
+TOLU	;1	;0;92.1;3.36966;0;0!
+TRO2	;1	;1;141;0;0;0!
+XYLE	;1	;0;106.2;0.481701;0;0!
+XRO2	;1	;1;100;0;0;0!
+TLFUO2	;1	;1;159;0;0;0!
+AROMCHO	;1	;0;130.099;0;0;0!
+AROMCO3	;1	;2;165;0;0;0!
+AROMPN	;1	;0;190;0;0;0!
+BENZO	;1	;0;93;0;0;0!
+MCT	;1	;0;124;0;0;0!
+NPHEN	;1	;0;139;0;0;0!
+BZCO3	;1	;2;121;0;0;0!
+BENZP	;1	;0;126;0;0;0!
+BZCO3H	;1	;0;138;0;0;0!
+BZPAN	;1	;0;183;0;0;0!
+FURA	;1	;0;68;14.4814;0;0!
+BUTDI	;1	;0;84;0;0;0!
+HCl	;1	;0;36.46;16.2061;0;0!
+NH3	;1	;0;17.03;378.977;0.001;0!
+HCN	;1	;0;27.03;128.326;0;0!
+Trace	;1	;0;100;1000;0;0!
+CH3NO3	;1	;0;77.04;0;0;0!
+RO2_T	;1	;0;12;0;0;0!
+RCO3_T	;1	;0;12;0;0;0!
+!
+!VBS / organic-phase compounds referenced by the organic dissolution decks (unchanged from the Williams deck)
+!MW from Grieshop et al.; ACP; 2009
+!
+!
+! organic-aerosol species added by moz_oa.py
+TSOA0	;1	;0;150;0;0;0!
+TSOA1	;1	;0;150;0;0;0!
+TSOA2	;1	;0;150;0;0;0!
+TSOA3	;1	;0;150;0;0;0!
+ASOA1	;1	;0;150;0;0;0!
+ASOA2	;1	;0;150;0;0;0!
+ASOA3	;1	;0;150;0;0;0!
+ASOAN	;1	;0;150;0;0;0!
+SVPOA1	;1	;0;150;250.195;0;0!
+SVPOA2	;1	;0;150;260.407;0;0!
+OPOA1	;1	;0;150;0;0;0!
+OPOA2	;1	;0;150;0;0;0!
+SRO2MT	;1	;0;150;0;0;0!
+SRO2LI	;1	;0;150;0;0;0!
+SOAGX	;1	;0;58.04;0;0;0!
+SOAIE	;1	;0;118.15;0;0;0!
+LVOCOA	;1	;0;154.19;0;0;0!
+IONITA	;1	;0;147.13;0;0;0!
+MONITA	;1	;0;215;0;0;0!
+AONITA	;1	;0;189.12;0;0;0!
+INDIOL	;1	;0;102;0;0;0!
+!
+! lumped SOA precursors of the SAM-ASP-TUV Williams Flats deck (OXYARO, OTHERO + OH, OH regenerated)
+OXYARO	;1	;0;117;62.3447;0;0.!
+OTHERO	;1	;0;102;160.904;0;0.!
+O2		;0	;0; 32.		;210000000.	;210000000.	;0.!
+N2		;0	;0; 28.		;790000000.	;790000000.	;0.!
+OffGas      	;0    	;0; 12.       	;1000.      	;1000.		;0.!
+END-OF-FILE-012343210-ELIF-FO-DNE

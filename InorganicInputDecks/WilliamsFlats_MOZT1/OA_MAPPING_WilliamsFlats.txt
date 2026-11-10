@@ -1,0 +1,4 @@
+Organic-aerosol mapping for Williams Flats (MOZT1, rules of the moz builder)
+gas SVOC 306.4 ppb
+gas IVOC 277.5 ppb
+particle POM 93 (mass fraction weight)

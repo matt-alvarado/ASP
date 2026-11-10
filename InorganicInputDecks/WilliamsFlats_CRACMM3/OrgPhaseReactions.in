@@ -1,0 +1,6 @@
+!! OrgPhaseReactions.in - first-order particle-phase organic reactions of CMAQ (CRACMM3)
+!! Reactant ; rate [1/s] (or PHOTO <gas rxn #> <scale>) ; products (mole coefficients)
+!! Needs common_asp with OrgPhaseReactions.h.  Products that are not organic-phase species go to the gas phase.
+VTRPN    ; 9.26e-05 ; 1 AHOM + 1 HNO3   ! organic nitrate -> AHOM
+VHONIT   ; 9.26e-05 ; 1 AHOM + 1 HNO3   ! organic nitrate -> AHOM
+VHOM     ; PHOTO 4 0.01 ; 0.8 AMTN1 + 0.2 ORA1   ! AHOM photolysis, 0.01 x jNO2

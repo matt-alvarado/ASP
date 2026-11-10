@@ -1,0 +1,18 @@
+!! OrgPhaseReactions.in - first-order particle-phase organic reactions of CMAQ (SAPRC07TC)
+!! Reactant ; rate [1/s] (or PHOTO <gas rxn #> <scale>) ; products (mole coefficients)
+!! Needs common_asp with OrgPhaseReactions.h.  Products that are not organic-phase species go to the gas phase.
+SVXYL1   ; 9.48816e-06 ; 0.8571 AOLGA   ! oligomerisation
+SVXYL2   ; 9.48816e-06 ; 1.143 AOLGA   ! oligomerisation
+SVTOL1   ; 9.48816e-06 ; 0.8571 AOLGA   ! oligomerisation
+SVTOL2   ; 9.48816e-06 ; 1.143 AOLGA   ! oligomerisation
+SVBNZ1   ; 9.48816e-06 ; 0.7143 AOLGA   ! oligomerisation
+SVBNZ2   ; 9.48816e-06 ; 0.7143 AOLGA   ! oligomerisation
+SVTRP1   ; 9.48816e-06 ; 0.8 AOLGB   ! oligomerisation
+SVTRP2   ; 9.48816e-06 ; 0.9 AOLGB   ! oligomerisation
+SVISO1   ; 9.48816e-06 ; 0.5 AOLGB   ! oligomerisation
+SVISO2   ; 9.48816e-06 ; 0.5 AOLGB   ! oligomerisation
+SVSQT    ; 9.48816e-06 ; 1.5 AOLGB   ! oligomerisation
+SVPAH1   ; 9.48816e-06 ; 1.429 AOLGA   ! oligomerisation
+SVPAH2   ; 9.48816e-06 ; 1.429 AOLGA   ! oligomerisation
+SVALK1   ; 9.48816e-06 ; 1.714 AOLGA   ! oligomerisation
+SVALK2   ; 9.48816e-06 ; 1.714 AOLGA   ! oligomerisation

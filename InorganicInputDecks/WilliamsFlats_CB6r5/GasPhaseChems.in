@@ -1,0 +1,185 @@
+!! GasPhaseChems.in - Williams case, Carbon Bond 6 revision 5 (CB6r5)
+!! ASP
+!! Matt Alvarado, 2004-2013 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 
+!!
+!! This is the GAS PHASE CHEMISTRY INPUT DECK for ASP		
+!! that is read in by SetGasPhaseChemistry() in GasPhaseChemistry.h
+!!
+!! The following is the full list of gases tracked in the gas phase 
+!! (water vapor is hard coded in and should not be included here)
+!!
+!! Specify the following variables; separating each by a semi-colon and 
+!! including each on a single line for each gas:
+!!	NAME (no more than 15 characters): Make sure this is the same
+!!	     as that used in the other chemical input decks
+!!	CONSTANT?: Some chemicals will be held fixed; and others allowed
+!!	  to evolve with time.  Put a 1 if evolving; 0 if not
+!!	MOLECULAR MASS (g / mole)
+!!	INITIAL CONCENTRATION (ppbv): If this is
+!! 	  a string; the program will look for an input deck of that name
+!!	  in the main directory that contains point-by-point data.  Otherwise 
+!!	  it is homogeneously set to this value.
+!!	BACKGROUND CONCENTRATION (ppbv)
+!!	DEPOSITION VELOCITY (cm/s)
+!!
+!! CONCENTRATION INPUT TYPE FLAG:
+!! (0 if input concentrations are ppbv; 1 if they are mg / m3)
+2; 10000!   !! Flag 2 = initial concentrations (ppbv) read from the 5th column; second value = initial CO (ppbv)
+!
+!!
+!! Use the same name here as in the aerosol chemistry input deck to 
+!! assure proper matching between the two
+!! NOTE: Values below are for the Williams Flats Fire (WA, 3 Aug 2019); see WilliamsFlatsTranslation/
+!! Put CO first to use gasphasechems_scale.pro;Evolve flag;Peroxy Flag;MW;Init Conc;Back Conc;Dep Vel!;;;
+CO	;1	;0;28;10000;129.213;0!
+CO2	;1	;0;43.984;528425;390000;0!
+NO	;1	;0;30.01;224.923;0.015;0!
+NO2	;1	;0;46.01;0.04;0.04;0!
+O3	;1	;0;48;50;50;0!
+H2O2	;1	;0;34.01;1.50589;0.755;0!
+HONO	;1	;0;47.01;45.7835;0;0!
+SO2	;1	;0;64.06;27.4737;0.12;0!
+HNO3	;1	;0;63.01;0.450516;0.41;0!
+HCl	;1	;0;36.46;16.2061;0;0!
+NH3	;1	;0;17.03;378.977;0.001;0!
+H2	;1	;0;2.016;3647.16;0;0!
+CH4	;1	;0;16.04;2761.64;1900;0!
+FORM	;1	;0;30;165.668;0.33;0!
+MEOH	;1	;0;32;165.262;0;0!
+FACD	;1	;0;46;6.50147;0;0!
+HCN	;1	;0;27.03;128.326;0;0!
+ETH	;1	;0;28;126.348;0;0!
+ETHA	;1	;0;30.07;80.2376;0;0!
+ALD2	;1	;0;44;47.2473;0;0!
+ETOH	;1	;0;46.07;0.792862;0;0!
+AACD	;1	;0;60;139.2;0;0!
+GLY	;1	;0;58;76.5904;0;0!
+ETHY	;1	;0;26;26.6523;0;0!
+OLE	;1	;0;42.1;90.8319;0;0!
+PAR	;1	;0;14;213.941;5.435;0!
+PRPA	;1	;0;44.1;16.7438;0;0!
+ISPD	;1	;0;70.1;3.66344;0;0!
+ALDX	;1	;0;58.1;3.93791;0.02;0!
+ACET	;1	;0;58.1;10.0611;0;0!
+MGLY	;1	;0;72;75.4716;0;0!
+IOLE	;1	;0;56.1;3.07251;0;0!
+KET	;1	;0;72.1;36.3051;0;0!
+ISOP	;1	;0;68.1;2.4672;0;0!
+APIN	;1	;0;136.2;32.1809;0;0!
+TOL	;1	;0;92.1;4.40188;0;0!
+BENZENE	;1	;0;78.1;9.21143;0;0!
+TERP	;1	;0;136.2;32.1809;0;0!
+CRES	;1	;0;108.1;14.7439;0;0!
+XYLMN	;1	;0;106.2;0.481701;0;0!
+GLYD	;1	;0;60;0.243144;0;0!
+PAN	;1	;0;121.05;6.93248;0.03;0!
+PANX	;1	;0;135;0.00327016;0.003;0!
+NTR1	;1	;0;119.1;0.0236829;0;0!
+Trace	;1	;0;100;1000;0;0!
+O	;1	;0;16;0;0;0!
+NO3	;1	;0;62;0;0;0!
+O1D	;1	;0;16;0;0;0!
+OH	;1	;0;17;0;0;0!
+HO2	;1	;0;33;0;0;0!
+N2O5	;1	;0;108;0;0;0!
+PNA	;1	;0;79;0;0;0!
+H2SO4	;1	;0;98.08;0;0;0!
+C2O3	;1	;2;75;0;0;0!
+MEO2	;1	;0;47;0;0;0!
+RO2	;1	;1;87.1;0;0;0!
+PACD	;1	;0;76;0;0;0!
+CXO3	;1	;2;89;0;0;0!
+XO2H	;1	;0;87.1;0;0;0!
+MEPX	;1	;0;48;0;0;0!
+ROOH	;1	;0;90.1;0;0;0!
+XO2	;1	;0;87.1;0;0;0!
+XO2N	;1	;0;87.1;0;0;0!
+NTR2	;1	;0;135.1;0;0;0!
+HCO3	;1	;0;63;0;0;0!
+XPRP	;1	;0;89.1;0;0;0!
+XPAR	;1	;0;45;0;0;0!
+ROR	;1	;0;29;0;0;0!
+ISO2	;1	;0;117.1;0;0;0!
+SVISO1	;1	;0;132;0;0;0!
+SVISO2	;1	;0;133;0;0;0!
+INTR	;1	;0;147.1;0;0;0!
+ISPX	;1	;0;118.1;0;0;0!
+HPLD	;1	;0;116.1;0;0;0!
+OPO3	;1	;2;115;0;0;0!
+EPOX	;1	;0;118.1;0;0;0!
+EPX2	;1	;0;149.1;0;0;0!
+SVMT1	;1	;0;300;0;0;0!
+SVMT2	;1	;0;200;0;0;0!
+SVMT3	;1	;0;186;0;0;0!
+SVMT4	;1	;0;184;0;0;0!
+SVMT5	;1	;0;170;0;0;0!
+SVMT6	;1	;0;168;0;0;0!
+TERPNRO2	;1	;0;197;0;0;0!
+BZO2	;1	;0;159.1;0;0;0!
+OPEN	;1	;0;84;0;0;0!
+BENZRO2	;1	;0;127;0;0;0!
+TO2	;1	;0;173.1;0;0;0!
+TOLRO2	;1	;0;141;0;0;0!
+XOPN	;1	;0;98.1;0;0;0!
+XLO2	;1	;0;187.1;0;0;0!
+XYLRO2	;1	;0;155;0;0;0!
+NAPH	;1	;0;128.2;0;0;0!
+PAHRO2	;1	;0;187.2;0;0;0!
+CRO	;1	;0;107.1;0;0;0!
+CAT1	;1	;0;124.1;0;0;0!
+CRON	;1	;0;153.1;0;0;0!
+OPAN	;1	;0;161;0;0;0!
+SVAVB2	;1	;0;179;0;0;0!
+SVAVB3	;1	;0;169;0;0;0!
+SVAVB4	;1	;0;158;0;0;0!
+SVAVB1	;1	;0;198;0;0;0!
+SESQ	;1	;0;204;0;0;0!
+SVSQT	;1	;0;273;0;0;0!
+SOAALK	;1	;0;112;0;0;0!
+MTNO3	;1	;0;231;0;0;0!
+PCVOC	;1	;0;170;0;0;0!
+LVPCSOG	;1	;0;170;0;0;0!
+VLVPO1	;1	;0;218;117.111;0;0!
+VSVPO1	;1	;0;230;55.5003;0;0!
+VSVPO2	;1	;0;241;0.411598;0;0!
+VSVPO3	;1	;0;253;151.364;0;0!
+VIVPO1	;1	;0;266;42.4973;0;0!
+VLVOO1	;1	;0;136;0;0;0!
+VLVOO2	;1	;0;136;0;0;0!
+VSVOO2	;1	;0;135;0;0;0!
+VSVOO3	;1	;0;134;0;0;0!
+VSVOO1	;1	;0;135;0;0;0!
+CH3NO3	;1	;0;77.04;0;0;0!
+RO2_T	;1	;0;12;0;0;0!
+RCO3_T	;1	;0;12;0;0;0!
+!
+!VBS / organic-phase compounds referenced by the organic dissolution decks (unchanged from the Williams deck)
+!MW from Grieshop et al.; ACP; 2009
+POA1	  	;1	;0;408.0	;0.		;0. 		;0.!
+POA2	  	;1	;0;118.0	;0.		;0. 		;0.!
+POA3	  	;1	;0;216.0	;0.		;0. 		;0.!
+POA4	  	;1	;0;276.0	;0.		;0. 		;0.!
+POA5	  	;1	;0;412.0	;0.		;0. 		;0.!
+POA6	  	;1	;0;166.0	;0.		;0. 		;0.!
+POA7	  	;1	;0;284.0	;0.		;0. 		;0.!
+POA8	  	;1	;0;390.0	;0.		;0. 		;0.!
+LEVO		;1	;0;162.1	;0. 		;0. 		;0.!
+CBIO	  	;1	;0;324.3	;0. 		;0. 		;0.!
+CPD1	  	;1	;0;330.3	;0. 		;0. 		;0.!
+CPD2	  	;1	;0;332.4	;0. 		;0. 		;0.!
+CPD3	  	;1	;0;730.7	;0. 		;0. 		;0.!
+!
+AGLY	;1	;0;66.4;0;0;0!
+AISO3	;1	;0;168.2;0;0;0!
+AOLGA	;1	;0;206;0;0;0!
+AOLGB	;1	;0;248;0;0;0!
+AMTHYD	;1	;0;168;0;0;0!
+!
+! lumped SOA precursors of the SAM-ASP-TUV Williams Flats deck (OXYARO, OTHERO + OH, OH regenerated)
+OXYARO	;1	;0;117;62.3447;0;0.!
+OTHERO	;1	;0;102;160.904;0;0.!
+O2	;0	;0;32.;2.095e+08;2.095e+08;0!
+N2	;0	;0;28.;7.808e+08;7.808e+08;0!
+OffGas	;0	;0;12.;1000;1000;0!
+END-OF-FILE-012343210-ELIF-FO-DNE

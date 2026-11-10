@@ -1,0 +1,6 @@
+Organic-aerosol mapping for Williams Flats (GCHEM, rules of the gc builder)
+gas SVPOA1 250.2 ppb
+gas SVPOA2 260.4 ppb
+gas NAP 398.3 ppb
+particle SVPOA1 45.57 (mass fraction weight)
+particle SVPOA2 47.43 (mass fraction weight)

@@ -1,0 +1,205 @@
+!! GasPhaseChems.in - Williams case, MOZART-T1
+!! ASP
+!! Matt Alvarado, 2004-2013 (c)
+!! Based on MELAM by Donnan Steele, 2000-2004 
+!!
+!! This is the GAS PHASE CHEMISTRY INPUT DECK for ASP		
+!! that is read in by SetGasPhaseChemistry() in GasPhaseChemistry.h
+!!
+!! The following is the full list of gases tracked in the gas phase 
+!! (water vapor is hard coded in and should not be included here)
+!!
+!! Specify the following variables; separating each by a semi-colon and 
+!! including each on a single line for each gas:
+!!	NAME (no more than 15 characters): Make sure this is the same
+!!	     as that used in the other chemical input decks
+!!	CONSTANT?: Some chemicals will be held fixed; and others allowed
+!!	  to evolve with time.  Put a 1 if evolving; 0 if not
+!!	MOLECULAR MASS (g / mole)
+!!	INITIAL CONCENTRATION (ppbv): If this is
+!! 	  a string; the program will look for an input deck of that name
+!!	  in the main directory that contains point-by-point data.  Otherwise 
+!!	  it is homogeneously set to this value.
+!!	BACKGROUND CONCENTRATION (ppbv)
+!!	DEPOSITION VELOCITY (cm/s)
+!!
+!! CONCENTRATION INPUT TYPE FLAG:
+!! (0 if input concentrations are ppbv; 1 if they are mg / m3)
+2; 10000!   !! Flag 2 = initial concentrations (ppbv) read from the 5th column; second value = initial CO (ppbv)
+!
+!!
+!! Use the same name here as in the aerosol chemistry input deck to 
+!! assure proper matching between the two
+!! NOTE: Values below are for the Williams Flats Fire (WA, 3 Aug 2019); see WilliamsFlatsTranslation/
+!! Put CO first to use gasphasechems_scale.pro;Evolve flag;Peroxy Flag;MW;Init Conc;Back Conc;Dep Vel!;;;
+CO	;1	;0;28;10000;129.213;0!
+H2O2	;1	;0;34.01;1.50589;0.755;0!
+OH	;1	;0;100;0;0;0!
+O	;1	;0;100;0;0;0!
+O3	;1	;0;48;50;50;0!
+O1D	;1	;0;100;0;0;0!
+HNO3	;1	;0;63.01;0.450516;0.41;0!
+NO2	;1	;0;46.01;0.04;0.04;0!
+HO2NO2	;1	;0;100;0;0;0!
+HO2	;1	;0;100;0;0;0!
+NO3	;1	;0;100;0;0;0!
+N2O	;1	;0;44.01;0;0;0!
+N2O5	;1	;0;108;0;0;0!
+NO	;1	;0;30.01;224.923;0.015;0!
+ALKNIT	;1	;0;119;0;0;0!
+CH3CHO	;1	;0;100;51.1852;0.02;0!
+CH2O	;1	;0;100;165.668;0.33;0!
+CH3COCH3	;1	;0;100;10.0611;0;0!
+MEK	;1	;0;100;13.9785;0;0!
+ALKOOH	;1	;0;118;0;0;0!
+BENZOOH	;1	;0;127;0;0;0!
+GLYOXAL	;1	;0;100;76.5904;0;0!
+BIGALD1	;1	;0;84;0;0;0!
+BEPOMUC	;1	;0;112;0;0;0!
+BIGALD	;1	;0;98;0;0;0!
+CH3CO3	;1	;2;100;0;0;0!
+CH3COCHO	;1	;0;100;71.5352;0;0!
+MALO2	;1	;1;115;0;0;0!
+BIGALD2	;1	;0;100;0;0;0!
+DICARBO2	;1	;1;117;0;0;0!
+BIGALD3	;1	;0;98;0;0;0!
+MDIALO2	;1	;1;131;0;0;0!
+BIGALD4	;1	;0;98;0;0;0!
+BZOOH	;1	;0;108;0;0;0!
+BZALD	;1	;0;100;1.03222;0;0!
+C2H5OOH	;1	;0;100;0;0;0!
+C3H7OOH	;1	;0;76;0;0;0!
+C6H5OOH	;1	;0;110;0;0;0!
+PHENO	;1	;0;93;0;0;0!
+H2	;1	;0;2.016;3647.16;0;0!
+CH3O2	;1	;1;100;0;0;0!
+CH3COOOH	;1	;0;100;0;0;0!
+CO2	;1	;0;44.01;528425;390000;0!
+CH3OOH	;1	;0;100;0;0;0!
+EOOH	;1	;0;78;0;0;0!
+EO	;1	;0;61;0;0;0!
+GLYALD	;1	;0;100;0.243144;0;0!
+HMPROP	;1	;0;74;0;0;0!
+HONITR	;1	;0;119;0;0;0!
+HYAC	;1	;0;100;22.3266;0;0!
+HPALD	;1	;0;116;0;0;0!
+ISOPNOOH	;1	;0;148;0;0;0!
+ISOPOOH	;1	;0;118;0;0;0!
+MVK	;1	;0;100;0;0;0!
+MACR	;1	;0;100;4.88459;0;0!
+MCO3	;1	;2;101;0;0;0!
+MBOOOH	;1	;0;118;0;0;0!
+C2H5O2	;1	;1;100;0;0;0!
+MEKOOH	;1	;0;104;0;0;0!
+MPAN	;1	;0;100;0;0;0!
+C3H6	;1	;0;100;48.4552;0;0!
+NC4CHO	;1	;0;147;0;0;0!
+NOA	;1	;0;100;0;0;0!
+NTERPOOH	;1	;0;231;0;0;0!
+TERPROD1	;1	;0;168;0;0;0!
+ONITR	;1	;0;119;0.0236829;0;0!
+PAN	;1	;0;121.05;6.93575;0.033;0!
+PHENOOH	;1	;0;126;0;0;0!
+POOH	;1	;0;92;0;0;0!
+ROOH	;1	;0;90;0;0;0!
+TEPOMUC	;1	;0;140;0;0;0!
+TERP2OOH	;1	;0;202;0;0;0!
+TERPROD2	;1	;0;170;0;0;0!
+TERPNIT	;1	;0;215;0;0;0!
+TERPOOH	;1	;0;186;0;0;0!
+RO2_T1	;1	;1;89;0;0;0!
+TOLOOH	;1	;0;142;0;0;0!
+XOOH	;1	;0;134;0;0;0!
+XYLENOOH	;1	;0;156;0;0;0!
+XYLOLOOH	;1	;0;154;0;0;0!
+CH4	;1	;0;16.04;2761.64;1900;0!
+HOCH2OO	;1	;1;100;0;0;0!
+CH3OH	;1	;0;100;165.262;0;0!
+HCN	;1	;0;27.03;128.326;0;0!
+HCOOH	;1	;0;100;6.50147;0;0!
+C2H2	;1	;0;100;26.6523;0;0!
+C2H4	;1	;0;100;126.348;0;0!
+C2H5OH	;1	;0;100;4.10488;0;0!
+C2H6	;1	;0;100;80.2376;0;0!
+CH3CN	;1	;0;41;0;0;0!
+CH3COOH	;1	;0;100;139.2;0;0!
+EO2	;1	;1;77;0;0;0!
+C3H7O2	;1	;1;100;0;0;0!
+C3H8	;1	;0;100;16.7438;0;0!
+PO2	;1	;1;91;0;0;0!
+BIGENE	;1	;0;56;26.4427;0;0!
+ENEO2	;1	;1;133;0;0;0!
+MACRO2	;1	;1;119;0;0;0!
+MACROOH	;1	;0;120;0;0;0!
+MEKO2	;1	;1;103;0;0;0!
+ALKO2	;1	;1;117;0;0;0!
+BIGALK	;1	;0;72;12.4514;1.075;0!
+XO2	;1	;1;133;0;0;0!
+HYDRALD	;1	;0;100;0;0;0!
+IEPOX	;1	;0;100;0;0;0!
+ISOPAO2	;1	;1;117;0;0;0!
+ISOPNITA	;1	;0;147;0;0;0!
+ISOPBO2	;1	;1;100;0;0;0!
+ISOPNITB	;1	;0;147;0;0;0!
+ISOP	;1	;0;100;2.4672;0;0!
+ISOPNO3	;1	;1;147;0;0;0!
+NC4CH2OH	;1	;0;149;0;0;0!
+HMPROPO2	;1	;1;105;0;0;0!
+MBO	;1	;0;86;0;0;0!
+MBONO3O2	;1	;1;164;0;0;0!
+MBOO2	;1	;1;117;0;0;0!
+ACBZO2	;1	;2;149;0;0;0!
+C6H5O2	;1	;1;109;0;0;0!
+BENZENE	;1	;0;100;9.21143;0;0!
+PHENOL	;1	;0;100;14.7439;0;0!
+BENZO2	;1	;1;100;0;0;0!
+BZOO	;1	;1;107;0;0;0!
+CRESOL	;1	;0;100;0;0;0!
+PHENO2	;1	;1;125;0;0;0!
+PBZNIT	;1	;0;183;0;0;0!
+TOLO2	;1	;1;141;0;0;0!
+TOLUENE	;1	;0;100;3.36966;0;0!
+XYLENES	;1	;0;106;0.481701;0;0!
+XYLOL	;1	;0;122;0;0;0!
+XYLENO2	;1	;1;155;0;0;0!
+XYLOLO2	;1	;1;153;0;0;0!
+APIN	;1	;0;100;48.2713;0;0!
+NTERPO2	;1	;1;230;0;0;0!
+TERPO2	;1	;1;185;0;0;0!
+BCARY	;1	;0;204;0;0;0!
+BPIN	;1	;0;136;0;0;0!
+LIMON	;1	;0;100;16.0905;0;0!
+MYRC	;1	;0;136;0;0;0!
+TERP2O2	;1	;1;201;0;0;0!
+DMS	;1	;0;62;0;0;0!
+SO2	;1	;0;64.06;27.4737;0.12;0!
+NH3	;1	;0;17.03;378.977;0.001;0!
+H2SO4	;1	;0;98.08;0;0;0!
+HONO	;1	;0;47.01;45.7835;0;0!
+HCl	;1	;0;36.46;16.2061;0;0!
+Trace	;1	;0;100;1000;0;0!
+CH3NO3	;1	;0;77.04;0;0;0!
+RO2_T	;1	;0;12;0;0;0!
+RCO3_T	;1	;0;12;0;0;0!
+!
+!VBS / organic-phase compounds referenced by the organic dissolution decks (unchanged from the Williams deck)
+!MW from Grieshop et al.; ACP; 2009
+!
+!
+! organic-aerosol species added by moz_oa.py
+SOAG0	;1	;0;150;0;0;0!
+SOAG1	;1	;0;150;0;0;0!
+SOAG2	;1	;0;150;0;0;0!
+SOAG3	;1	;0;150;0;0;0!
+SOAG4	;1	;0;150;0;0;0!
+POM	;1	;0;250;0;0;0!
+SVOC	;1	;0;250;306.361;0;0!
+IVOC	;1	;0;184;277.502;0;0!
+!
+! lumped SOA precursors of the SAM-ASP-TUV Williams Flats deck (OXYARO, OTHERO + OH, OH regenerated)
+OXYARO	;1	;0;117;62.3447;0;0.!
+OTHERO	;1	;0;102;160.904;0;0.!
+O2		;0	;0; 32.		;210000000.	;210000000.	;0.!
+N2		;0	;0; 28.		;790000000.	;790000000.	;0.!
+OffGas      	;0    	;0; 12.       	;1000.      	;1000.		;0.!
+END-OF-FILE-012343210-ELIF-FO-DNE

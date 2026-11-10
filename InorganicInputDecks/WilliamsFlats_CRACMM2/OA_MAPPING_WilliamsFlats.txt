@@ -1,0 +1,9 @@
+Organic-aerosol mapping for Williams Flats (CRACMM2, rules of the cracmm builder)
+gas VROCN2OXY2 90.4 ppb
+gas VROCP0OXY2 52.66 ppb
+gas VROCP2OXY2 191.2 ppb
+gas VROCP4OXY2 322.8 ppb
+particle VROCN2OXY2 18.6 (mass fraction weight)
+particle VROCP0OXY2 9.3 (mass fraction weight)
+particle VROCP2OXY2 27.9 (mass fraction weight)
+particle VROCP4OXY2 37.2 (mass fraction weight)
