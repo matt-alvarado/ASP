@@ -3,7 +3,7 @@
 
 ## Submodule Revisions
 
-The src submodule is linked to a specific commit of the https://lex-gitlab.aer.com/AQAC/common_ASP repository, and modifications may have been made at numerous points. This is fine and indeed what Git intends (see flow charts in http://paynedigital.com/articles/2011/10/introduction-to-git-submodules), but one may want to keep track of what was modified. We can do this by examining the working copy, the latest commit into the local repository (HEAD), or the copy in the central repository (i.e., the Gitlab host).
+The src submodule is linked to a specific commit of common_ASP repository, and modifications may have been made at numerous points. This is fine and indeed what Git intends (see flow charts in http://paynedigital.com/articles/2011/10/introduction-to-git-submodules), but one may want to keep track of what was modified. We can do this by examining the working copy, the latest commit into the local repository (HEAD), or the copy in the central repository (i.e., the Gitlab host).
 
 In the next few examples, let's assume I made a small change to the EulerianBoxDriver.f90 file.
 
