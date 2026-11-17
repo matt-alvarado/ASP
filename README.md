@@ -1,24 +1,5 @@
 # SETUP
 
-## Checking Out the Repository
-
-```
-% pwd
-/rd47/scratch/ASP
-% git clone --recursive git@lex-gitlab.aer.com:AQAC/ASP.git GitASP
-```
-
-this will copy a local branch called "GitASP" into /rd47/scratch/ASP, which will change depending on the user and will just referred to as the working directory. the user's local branch will also be referred to as the user's local repository. the **--recursive** keyword descends into any submodules that were set for the ASP repo, which for now is the v2.1.1 (tag) version of the common_ASP. any checkout will use the v2.1.1 common_ASP as a src submodule until we specify otherwise.
-
-When cloning with submodules, Git initializes them in a "detached head" state, meaning that they are not associated with any branch. This is important because if any changes are made in the submodule, Git will not know where to push the commits. To rectify this behavior, one must checkout the branch with which they plan on working. For ASP, this is just the master common_ASP branch:
-
-```
-% pwd
-/rd47/scratch/ASP/GitASP/src
-% git checkout master
-% git status
-# On branch master
-```
 
 ## Submodule Revisions
 
