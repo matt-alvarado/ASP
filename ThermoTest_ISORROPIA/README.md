@@ -36,15 +36,18 @@ python3 run_iso.py                               # ISORROPIA stable + metastable
 
 # ASP run directories (copies of the default deck: one bulk mode, ThermoTest on, coagulation off,
 # T set per run, initial NH3/HNO3/HCl/H2SO4 gas zero)
-for tag in down up worst base; do python3 mkcase.py $tag; done
-./run_asp.sh down  /path/to/asp_v2.2.2/asp_binary                       # RH scanned down 0.90 -> 0.20
-./run_asp.sh up    /path/to/asp_v2.2.2/asp_binary ASP_THERMO_SCAN=up    # RH scanned up 0.20 -> 0.90
-./run_asp.sh worst /path/to/asp_v2.2.2/asp_binary ASP_FEE_OUTER=worst   # worst-first electrolyte loop
-./run_asp.sh base  /path/to/pre-Claude/asp_binary                       # optional: 34b7ec7 + build/IonReset fixes
+# solver choices and the scan direction are deck settings written by mkcase.py (see src/README.md)
+python3 mkcase.py down                           # RH scanned down 0.90 -> 0.20
+python3 mkcase.py up                             # RH scanned up 0.20 -> 0.90 (adds ThermoScanUp = 1)
+python3 mkcase.py worst AqOuterSolver=0          # worst-first electrolyte loop
+python3 mkcase.py base                           # optional: for the pre-Claude build
+for tag in down up worst; do ./run_asp.sh $tag /path/to/asp_v2.2.2/asp_binary; done
+./run_asp.sh base /path/to/pre-Claude/asp_binary   # optional: 34b7ec7 + build/IonReset fixes
 
-# optional: electrolyte-solver diagnostics (dump every solve, replay with coupled and worst-first solvers)
-./solver_diag.sh down /path/to/asp_v2.2.2/asp_binary
-./solver_diag.sh up  /path/to/asp_v2.2.2/asp_binary up
+# optional: electrolyte-solver diagnostics (dump every solve, replay with coupled and worst-first solvers);
+# build asp_feedump and FEEReplay first (src/Tests/README.md)
+./solver_diag.sh down /path/to/src/Tests/asp_feedump /path/to/src/Tests/FEEReplay
+./solver_diag.sh up   /path/to/src/Tests/asp_feedump /path/to/src/Tests/FEEReplay
 python3 collect_solver.py
 
 python3 analysis.py                              # work/frac.pkl, work/water.pkl

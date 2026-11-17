@@ -1,11 +1,14 @@
-"""Make ThermoTest run directories: python3 mkcase.py <tag> writes WORK/runs/<tag>/<case>_<T>/ from the default deck.
-Tags ending in "up" start at RH 0.20 (for ASP_THERMO_SCAN=up)."""
+"""Make ThermoTest run directories: python3 mkcase.py <tag> [Name=value ...] writes WORK/runs/<tag>/<case>_<T>/ from
+the default deck.
+Tags ending in "up" start at RH 0.20 and scan RH upward (deck setting ThermoScanUp = 1).
+Each Name=value argument is added to ASPInputDeck.in as an optional deck setting (see src/README.md), for example
+AqOuterSolver=0 for the worst-first electrolyte loop."""
 import os, re, shutil, sys
 import sys; sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 from config import WORK, OUT, DECKS, ISO_EXE
 from cases import CASES, TEMPS
 SRC=DECKS
-def mk(case, d, T=298.15, rh0=None):
+def mk(case, d, T=298.15, rh0=None, settings=()):
     deck=f'{d}/InorganicInputDecks'; os.makedirs(f'{d}/OutputFiles', exist_ok=True)
     os.makedirs(deck, exist_ok=True)
     for f in os.listdir(SRC):
@@ -25,6 +28,9 @@ def mk(case, d, T=298.15, rh0=None):
     setline(63,f'{T}','Temperature')
     if rh0 is not None:
         setline(65,f'{rh0}','Initial Relative Humidity'); setline(66,f'{rh0}','Background Relative Humidity')
+    # optional "Name = value" settings go after the last line of the deck (before the final line break)
+    end = len(L)-1 if L[-1]=='' else len(L)
+    L[end:end] = [f'{name} = {value}' for name, value in settings]
     open(f'{deck}/ASPInputDeck.in','wb').write('\r\n'.join(L).encode('latin-1'))
     # GasPhaseChems: no NH3/HNO3/HCl/H2SO4 in the gas initially (totals come from AerosolModes)
     s=open(f'{deck}/GasPhaseChems.in','rb').read().decode('latin-1'); out=[]
@@ -36,5 +42,12 @@ def mk(case, d, T=298.15, rh0=None):
     open(f'{deck}/GasPhaseChems.in','wb').write('\n'.join(out).encode('latin-1'))
 if __name__=='__main__':
     tag=sys.argv[1]
+    settings=[]
+    for arg in sys.argv[2:]:
+        name, sep, value = arg.partition('=')
+        if not sep or not name.strip() or not value.strip(): sys.exit(f'mkcase.py: expected Name=value, got {arg!r}')
+        settings.append((name.strip(), value.strip()))
+    scan_up = tag.endswith('up')
+    if scan_up: settings.insert(0, ('ThermoScanUp', '1'))
     for c in CASES:
-        for T in TEMPS: mk(c, f'{WORK}/runs/{tag}/{c}_{T:.2f}', T, 0.2 if tag.endswith('up') else None)
+        for T in TEMPS: mk(c, f'{WORK}/runs/{tag}/{c}_{T:.2f}', T, 0.2 if scan_up else None, settings)
