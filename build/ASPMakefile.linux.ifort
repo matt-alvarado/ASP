@@ -100,7 +100,9 @@ FC = ifort -DIFORT -fp-stack-check
 
 LDFLAGS := -Wl,-zmuldefs
 
-FFLAGS :=  -fpp -FI -O -r8 -prec_div -g -traceback \
+# -fp-model precise: value-safe floating point, so results do not depend on how the
+# compiler vectorises or reorders arithmetic (ifx's default fast mode changes results).
+FFLAGS :=  -fpp -FI -O -r8 -prec_div -fp-model precise -g -traceback \
 	   -I$(MODULES_OUTPUT_DIR) -module $(MODULES_OUTPUT_DIR)
 F90FLAGS := $(FFLAGS) -FR -DIFORT
 
